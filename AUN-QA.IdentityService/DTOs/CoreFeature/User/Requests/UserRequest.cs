@@ -1,0 +1,29 @@
+﻿using AUN_QA.IdentityService.DTOs.Base;
+using FluentValidation;
+
+namespace AUN_QA.IdentityService.DTOs.CoreFeature.User.Requests
+{
+    public class UserRequest : BaseRequest
+    {
+        public Guid Id { get; set; }
+
+        public string Username { get; set; } = null!;
+
+        public string Fullname { get; set; } = null!;
+
+        public string Password { get; set; } = null!;
+    }
+
+    public class UserRequestValidator : AbstractValidator<UserRequest>
+    {
+        public UserRequestValidator()
+        {
+            RuleFor(x => x.Username)
+                .NotEmpty().WithMessage("Tên tài khoản không được để trống");
+            RuleFor(x => x.Fullname)
+                .NotEmpty().WithMessage("Họ và tên không được để trống");
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Mật khẩu không được để trống");
+        }
+    }
+}

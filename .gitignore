@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/AUN-QA.IdentityService/appsettings.Development.json
+/AUN-QA.IdentityService/Dockerfile
+/AUN-QA.AppHost/appsettings.Development.json
+/Document

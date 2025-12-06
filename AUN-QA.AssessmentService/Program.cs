@@ -1,5 +1,5 @@
-using AUN_QA.IdentityService.Config;
-using AUN_QA.IdentityService.Middlewares;
+using AUN_QA.AssessmentService.Config;
+using AUN_QA.AssessmentService.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +26,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors();
 
 app.UseHttpsRedirection();
 

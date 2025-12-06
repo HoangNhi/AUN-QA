@@ -1,12 +1,10 @@
-using AUN_QA.IdentityService.DTOs.CoreFeature.User.Requests;
-using AUN_QA.IdentityService.Infrastructure.Data;
+using AUN_QA.AssessmentService.Infrastructure.Data;
 using AutoDependencyRegistration;
 using AutoMapper;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AUN_QA.IdentityService.Config
+namespace AUN_QA.AssessmentService.Config
 {
     public static class ConfigService
     {
@@ -17,9 +15,9 @@ namespace AUN_QA.IdentityService.Config
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            //DATABASE
-            builder.Services.AddDbContext<IdentityContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
+            ////DATABASE
+            builder.Services.AddDbContext<AssessmentContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("Assessment")));
 
             //MAPPER
             using var serviceProvider = builder.Services.BuildServiceProvider();
@@ -39,14 +37,14 @@ namespace AUN_QA.IdentityService.Config
             {
                 options.SuppressModelStateInvalidFilter = true;
             });
-            builder.Services.AddMvc()
-                .AddFluentValidation(config =>
-                {
-                    config.ImplicitlyValidateChildProperties = true;
-                    config.DisableDataAnnotationsValidation = true;
-                    config.RegisterValidatorsFromAssemblyContaining<UserRequestValidator>();
-                })
-                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+            //builder.Services.AddMvc()
+            //    .AddFluentValidation(config =>
+            //    {
+            //        config.ImplicitlyValidateChildProperties = true;
+            //        config.DisableDataAnnotationsValidation = true;
+            //        config.RegisterValidatorsFromAssemblyContaining<UserRequestValidator>();
+            //    })
+            //    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();

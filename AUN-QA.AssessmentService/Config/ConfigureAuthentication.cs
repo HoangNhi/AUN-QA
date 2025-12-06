@@ -1,10 +1,10 @@
-﻿using AUN_QA.IdentityService.DTOs.Base;
+﻿using AUN_QA.AssessmentService.DTOs.Base;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace AUN_QA.IdentityService.Config
+namespace AUN_QA.AssessmentService.Config
 {
     public static class ConfigureAuthentication
     {

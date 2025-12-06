@@ -1,22 +1,21 @@
-﻿using AUN_QA.IdentityService.DTOs.Base;
-using AUN_QA.IdentityService.DTOs.CoreFeature.User.Dtos;
-using AUN_QA.IdentityService.DTOs.CoreFeature.User.Requests;
-using AUN_QA.IdentityService.Helpers;
-using AUN_QA.IdentityService.Infrastructure.Data;
+﻿using AUN_QA.AssessmentService.DTOs.Base;
+using AUN_QA.AssessmentService.DTOs.CoreFeature.Faculty.Dtos;
+using AUN_QA.AssessmentService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.AssessmentService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 
-namespace AUN_QA.IdentityService.Services.User
+namespace AUN_QA.AssessmentService.Services.Faculty
 {
     [RegisterClassAsTransient]
-    public class UserService : IUserService
+    public class FacultyService : IFacultyService
     {
-        private readonly IdentityContext _context;
+        private readonly AssessmentContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public UserService(
-            IdentityContext context,
+        public FacultyService(
+            AssessmentContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor)
         {
@@ -25,57 +24,54 @@ namespace AUN_QA.IdentityService.Services.User
             _contextAccessor = contextAccessor;
         }
 
-        public ModelUser GetById(GetByIdRequest request)
+        public ModelFaculty GetById(GetByIdRequest request)
         {
-            var data = _context.Users.Find(request.Id);
+            var data = _context.Faculties.Find(request.Id);
             if (data == null)
             {
                 throw new Exception("Not found");
             }
 
-            var result = _mapper.Map<ModelUser>(data);
-            result.Password = "Abc@123";
+            var result = _mapper.Map<ModelFaculty>(data);
 
             return result;
         }
 
-        public ModelUser Insert(UserRequest request)
+        public ModelFaculty Insert(FacultyRequest request)
         {
-            var data = _context.Users.Where(x =>
-                x.Username == request.Username
+            var data = _context.Faculties.Where(x =>
+                (x.Code == request.Code || x.Name == request.Name)
                 && !x.IsDeleted
             );
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập đã tồn tại");
+                throw new Exception("Dữ liệu đã tồn tại");
             }
 
-            var add = _mapper.Map<Entities.User>(request);
+            var add = _mapper.Map<Entities.Faculty>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.PasswordSalt = Encrypt_DecryptHelper.GenerateSalt();
-            add.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, add.PasswordSalt);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
-            _context.Users.Add(add);
+            _context.Faculties.Add(add);
             _context.SaveChanges();
 
-            return _mapper.Map<ModelUser>(add);
+            return _mapper.Map<ModelFaculty>(add);
         }
 
-        public ModelUser Update(UserRequest request)
+        public ModelFaculty Update(FacultyRequest request)
         {
-            var data = _context.Users.Where(x =>
-                x.Username == request.Username
+            var data = _context.Faculties.Where(x =>
+                (x.Code == request.Code || x.Name == request.Name)
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập đã tồn tại");
+                throw new Exception("Dữ liệu đã tồn tại");
             }
 
-            var update = _context.Users.Find(request.Id);
+            var update = _context.Faculties.Find(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -83,24 +79,20 @@ namespace AUN_QA.IdentityService.Services.User
 
             _mapper.Map(request, update);
 
-            if (request.Password != "Abc@123")
-            {
-                update.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, update.PasswordSalt);
-            }
-
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
-            _context.Users.Update(update);
+
+            _context.Faculties.Update(update);
             _context.SaveChanges();
 
-            return _mapper.Map<ModelUser>(update);
+            return _mapper.Map<ModelFaculty>(update);
         }
 
         public string DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.Users.Find(id);
+                var delete = _context.Faculties.Find(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -110,14 +102,14 @@ namespace AUN_QA.IdentityService.Services.User
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                 delete.UpdatedAt = DateTime.Now;
 
-                _context.Users.Update(delete);
+                _context.Faculties.Update(delete);
             }
 
             _context.SaveChanges();
             return String.Join(',', request.Ids);
         }
 
-        public Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request)
+        public Task<GetListPagingResponse<ModelFaculty>> GetList(GetListPagingRequest request)
         {
             throw new NotImplementedException();
         }

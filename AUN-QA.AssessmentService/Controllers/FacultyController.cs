@@ -1,19 +1,19 @@
-﻿using AUN_QA.IdentityService.DTOs.Base;
-using AUN_QA.IdentityService.DTOs.Common;
-using AUN_QA.IdentityService.DTOs.CoreFeature.User.Dtos;
-using AUN_QA.IdentityService.DTOs.CoreFeature.User.Requests;
-using AUN_QA.IdentityService.Services.User;
+﻿using AUN_QA.AssessmentService.DTOs.Base;
+using AUN_QA.AssessmentService.DTOs.Common;
+using AUN_QA.AssessmentService.DTOs.CoreFeature.Faculty.Dtos;
+using AUN_QA.AssessmentService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.AssessmentService.Services.Faculty;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AUN_QA.IdentityService.Controllers
+namespace AUN_QA.AssessmentService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : BaseController<UserController>
+    public class FacultyController : BaseController<FacultyController>
     {
-        private readonly IUserService _service;
+        private readonly IFacultyService _service;
 
-        public UserController(IUserService service)
+        public FacultyController(IFacultyService service)
         {
             _service = service;
         }
@@ -25,7 +25,7 @@ namespace AUN_QA.IdentityService.Controllers
                 return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelUser>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelFaculty>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]
@@ -35,27 +35,27 @@ namespace AUN_QA.IdentityService.Controllers
                 return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.GetById(request);
-            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
-        public IActionResult Insert([FromBody] UserRequest request)
+        public IActionResult Insert([FromBody] FacultyRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.Insert(request);
-            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
-        public IActionResult Update(UserRequest request)
+        public IActionResult Update(FacultyRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.Update(request);
-            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]

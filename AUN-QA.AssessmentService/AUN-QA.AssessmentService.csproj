@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>AUN_QA.IdentityService</RootNamespace>
-    <UserSecretsId>653689e4-0bcc-4a26-bed1-37fde1379670</UserSecretsId>
+    <RootNamespace>AUN_QA.AssessmentService</RootNamespace>
+    <UserSecretsId>8d27b27d-a3c2-4aa4-9722-4d356648ad28</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
@@ -26,12 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Config\" />
-    <Folder Include="Entities\" />
-    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>

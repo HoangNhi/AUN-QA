@@ -2,7 +2,7 @@
 
 namespace AUN_QA.IdentityService.DTOs.CoreFeature.User.Dtos
 {
-    public class MODELUser : BaseModel
+    public class ModelUser : BaseModel
     {
         public Guid Id { get; set; }
 

@@ -4,9 +4,12 @@ var identityService = builder.AddProject<Projects.AUN_QA_IdentityService>("Ident
 
 var assessmentService = builder.AddProject<Projects.AUN_QA_AssessmentService>("AssessmentService");
 
-builder.AddNpmApp("Web", "../AUN-QA.Web", "dev")
-    .WithReference(assessmentService)
+var gateway = builder.AddProject<Projects.AUN_QA_ApiGateway>("APIGateway")
     .WithReference(identityService)
+    .WithReference(assessmentService);
+
+builder.AddNpmApp("Web", "../AUN-QA.Web", "dev")
+    .WithReference(gateway)
     .WithHttpEndpoint(env: "PORT")
     .WithExternalHttpEndpoints();
 

@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AUN-QA.ApiGateway\AUN-QA.ApiGateway.csproj" />
     <ProjectReference Include="..\AUN-QA.AssessmentService\AUN-QA.AssessmentService.csproj" />
     <ProjectReference Include="..\AUN-QA.IdentityService\AUN-QA.IdentityService.csproj" />
   </ItemGroup>

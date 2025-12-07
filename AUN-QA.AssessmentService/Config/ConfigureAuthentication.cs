@@ -1,0 +1,62 @@
+﻿using AUN_QA.AssessmentService.DTOs.Base;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using System.Text;
+
+namespace AUN_QA.AssessmentService.Config
+{
+    public static class ConfigureAuthentication
+    {
+        public static void ExecuteConfigAuthentication(this WebApplicationBuilder builder)
+        {
+            builder.Services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                        ValidAudience = builder.Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+
+                        ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnChallenge = async context =>
+                        {
+                            context.HandleResponse();
+
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            context.Response.ContentType = "application/json";
+
+                            var response = new BaseResponse(false, 401, "Xác thực không thành công: token không hợp lệ hoặc bị thiếu.");
+                            var json = JsonConvert.SerializeObject(response);
+
+                            await context.Response.WriteAsync(json);
+                        },
+
+                        OnForbidden = async context =>
+                        {
+                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            context.Response.ContentType = "application/json";
+
+                            var response = new BaseResponse(false, 403, "You do not have permission to access this resource.");
+                            var json = JsonConvert.SerializeObject(response);
+
+                            await context.Response.WriteAsync(json);
+                        }
+                    };
+                });
+        }
+    }
+}

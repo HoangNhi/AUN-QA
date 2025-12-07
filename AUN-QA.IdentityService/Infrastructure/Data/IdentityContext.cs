@@ -27,6 +27,7 @@ public partial class IdentityContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(255)
@@ -40,7 +41,9 @@ public partial class IdentityContext : DbContext
                 .HasColumnName("is_deleted");
             entity.Property(e => e.Password).HasColumnName("password");
             entity.Property(e => e.PasswordSalt).HasColumnName("password_salt");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");

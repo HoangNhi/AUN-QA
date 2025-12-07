@@ -6,7 +6,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace BE.Config
+namespace AUN_QA.IdentityService.Config
 {
     public static class ConfigService
     {
@@ -19,7 +19,7 @@ namespace BE.Config
 
             //DATABASE
             builder.Services.AddDbContext<IdentityContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("Trendly")));
+                options.UseNpgsql(builder.Configuration.GetConnectionString("Identity")));
 
             //MAPPER
             using var serviceProvider = builder.Services.BuildServiceProvider();

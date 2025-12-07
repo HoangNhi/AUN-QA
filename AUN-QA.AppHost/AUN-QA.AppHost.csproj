@@ -12,9 +12,13 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.AppHost" Version="9.5.0" />
+    <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.0" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.5.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AUN-QA.ApiGateway\AUN-QA.ApiGateway.csproj" />
+    <ProjectReference Include="..\AUN-QA.AssessmentService\AUN-QA.AssessmentService.csproj" />
     <ProjectReference Include="..\AUN-QA.IdentityService\AUN-QA.IdentityService.csproj" />
   </ItemGroup>
 

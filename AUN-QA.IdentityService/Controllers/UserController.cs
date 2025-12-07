@@ -22,47 +22,47 @@ namespace AUN_QA.IdentityService.Controllers
         public async Task<IActionResult> GetList(GetListPagingRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<MODELUser>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelUser>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]
         public IActionResult GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.GetById(request);
-            return Ok(new BaseResponse<MODELUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
         public IActionResult Insert([FromBody] UserRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.Insert(request);
-            return Ok(new BaseResponse<MODELUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
         public IActionResult Update(UserRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.Update(request);
-            return Ok(new BaseResponse<MODELUser> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]
         public IActionResult DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });

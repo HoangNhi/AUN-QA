@@ -3,10 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36717.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.AppHost", "AUN-QA.AppHost\AUN-QA.AppHost.csproj", "{B3CAA983-D4BB-47E5-A8DF-51AC62751F12}"
+	ProjectSection(ProjectDependencies) = postProject
+		{081BA2B9-2B01-1D1C-0545-CB8434CE9C06} = {081BA2B9-2B01-1D1C-0545-CB8434CE9C06}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.ServiceDefaults", "AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj", "{D7E06511-C9F8-6C1A-F124-87D31E04AD45}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.IdentityService", "AUN-QA.IdentityService\AUN-QA.IdentityService.csproj", "{D954EA03-1419-5E08-BF95-2AB9CD951378}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.AssessmentService", "AUN-QA.AssessmentService\AUN-QA.AssessmentService.csproj", "{A15B1068-D736-2360-5B36-3296A693C188}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.ApiGateway", "AUN-QA.ApiGateway\AUN-QA.ApiGateway.csproj", "{081BA2B9-2B01-1D1C-0545-CB8434CE9C06}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D7E06511-C9F8-6C1A-F124-87D31E04AD45} = {D7E06511-C9F8-6C1A-F124-87D31E04AD45}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +36,14 @@ Global
 		{D954EA03-1419-5E08-BF95-2AB9CD951378}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D954EA03-1419-5E08-BF95-2AB9CD951378}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D954EA03-1419-5E08-BF95-2AB9CD951378}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A15B1068-D736-2360-5B36-3296A693C188}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A15B1068-D736-2360-5B36-3296A693C188}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A15B1068-D736-2360-5B36-3296A693C188}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A15B1068-D736-2360-5B36-3296A693C188}.Release|Any CPU.Build.0 = Release|Any CPU
+		{081BA2B9-2B01-1D1C-0545-CB8434CE9C06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{081BA2B9-2B01-1D1C-0545-CB8434CE9C06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{081BA2B9-2B01-1D1C-0545-CB8434CE9C06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{081BA2B9-2B01-1D1C-0545-CB8434CE9C06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

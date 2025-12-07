@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System.Text;
 
-namespace BE.Config
+namespace AUN_QA.IdentityService.Config
 {
     public static class ConfigureAuthentication
     {

@@ -6,6 +6,6 @@ namespace AUN_QA.AssessmentService.DTOs.Base
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
         public int PageIndex { get; set; }
-        public int RowPerPage { get; set; } = 10;
+        public int PageSize { get; set; } = 10;
     }
 }

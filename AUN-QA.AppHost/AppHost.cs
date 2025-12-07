@@ -10,7 +10,7 @@ var gateway = builder.AddProject<Projects.AUN_QA_ApiGateway>("APIGateway")
 
 builder.AddNpmApp("Web", "../AUN-QA.Web", "dev")
     .WithReference(gateway)
-    .WithHttpEndpoint(env: "PORT")
+    .WithHttpEndpoint(env: "VITE_DEV_PORT", port: 5173)
     .WithExternalHttpEndpoints();
 
 builder.Build().Run();

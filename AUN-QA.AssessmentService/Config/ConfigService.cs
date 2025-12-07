@@ -1,6 +1,8 @@
+using AUN_QA.AssessmentService.DTOs.CoreFeature.Faculty.Requests;
 using AUN_QA.AssessmentService.Infrastructure.Data;
 using AutoDependencyRegistration;
 using AutoMapper;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,14 +39,14 @@ namespace AUN_QA.AssessmentService.Config
             {
                 options.SuppressModelStateInvalidFilter = true;
             });
-            //builder.Services.AddMvc()
-            //    .AddFluentValidation(config =>
-            //    {
-            //        config.ImplicitlyValidateChildProperties = true;
-            //        config.DisableDataAnnotationsValidation = true;
-            //        config.RegisterValidatorsFromAssemblyContaining<UserRequestValidator>();
-            //    })
-            //    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+            builder.Services.AddMvc()
+                .AddFluentValidation(config =>
+                {
+                    config.ImplicitlyValidateChildProperties = true;
+                    config.DisableDataAnnotationsValidation = true;
+                    config.RegisterValidatorsFromAssemblyContaining<FacultyRequestValidator>();
+                })
+                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();

@@ -1,14 +1,5 @@
 import { type ColumnDef } from "@tanstack/react-table";
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
-export type Payment = {
-  id: string;
-  amount: number;
-  status: "pending" | "processing" | "success" | "failed";
-  email: string;
-};
-
 import { MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,23 +10,49 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { User } from "@/types/identity/user.types";
+import { Checkbox } from "@/components/ui/checkbox";
 
-export const columns: ColumnDef<Payment>[] = [
+export const getColumns = (
+  showPopupDetail: (id: string, isEdit: boolean) => void,
+  deleteList: (ids: string[]) => void
+): ColumnDef<User>[] => [
   {
-    accessorKey: "status",
-    header: "Status",
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
   },
   {
-    accessorKey: "email",
+    accessorKey: "Username",
+    header: "Tên đăng nhập",
+  },
+  {
+    accessorKey: "Fullname",
+    header: "Họ và tên",
+  },
+  {
+    accessorKey: "Email",
     header: "Email",
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
-  },
-  {
     id: "actions",
-    cell: () => {
+    className: "text-center",
+    cell: ({ row }) => {
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -46,8 +63,14 @@ export const columns: ColumnDef<Payment>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            <DropdownMenuItem>Cập nhật</DropdownMenuItem>
-            <DropdownMenuItem>Xóa</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => showPopupDetail(row.original.Id, true)}
+            >
+              Cập nhật
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
+              Xóa
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

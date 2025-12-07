@@ -5,6 +5,7 @@ using AUN_QA.IdentityService.Helpers;
 using AUN_QA.IdentityService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using Npgsql;
 
 namespace AUN_QA.IdentityService.Services.User
 {
@@ -117,9 +118,17 @@ namespace AUN_QA.IdentityService.Services.User
             return String.Join(',', request.Ids);
         }
 
-        public Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request)
         {
-            throw new NotImplementedException();
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_textsearch", request.TextSearch),
+                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pagesize", request.PageSize),
+            };
+
+            var result = await _context.ExcutePagingFunction<ModelUser>("fn_user_getlistpaging", parameters);
+            return result;
         }
     }
 }

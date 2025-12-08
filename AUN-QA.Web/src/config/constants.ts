@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
             INSERT: `${IDENTITY_BASE}/User/insert`,
             UPDATE: `${IDENTITY_BASE}/User/update`,
             DELETE_LIST: `${IDENTITY_BASE}/User/delete-list`,
+        },
+        Auth: {
+            LOGIN: `${IDENTITY_BASE}/Auth/login`,
         }
     }
 }

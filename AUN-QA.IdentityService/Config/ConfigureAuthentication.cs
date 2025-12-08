@@ -36,10 +36,10 @@ namespace AUN_QA.IdentityService.Config
                         {
                             context.HandleResponse();
 
-                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            context.Response.StatusCode = StatusCodes.Status200OK;
                             context.Response.ContentType = "application/json";
 
-                            var response = new BaseResponse(false, 401, "Xác thực không thành công: token không hợp lệ hoặc bị thiếu.");
+                            var response = new BaseResponse(false, 401, "Xác thực không thành công: token không hợp lệ hoặc bị thiếu");
                             var json = JsonConvert.SerializeObject(response);
 
                             await context.Response.WriteAsync(json);
@@ -47,10 +47,10 @@ namespace AUN_QA.IdentityService.Config
 
                         OnForbidden = async context =>
                         {
-                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            context.Response.StatusCode = StatusCodes.Status200OK;
                             context.Response.ContentType = "application/json";
 
-                            var response = new BaseResponse(false, 403, "You do not have permission to access this resource.");
+                            var response = new BaseResponse(false, 403, "Bạn không có quyền truy cập tài nguyên này");
                             var json = JsonConvert.SerializeObject(response);
 
                             await context.Response.WriteAsync(json);

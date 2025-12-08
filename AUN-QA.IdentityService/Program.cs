@@ -13,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.ExecuteConfigService();
+builder.ExecuteConfigAuthentication();
 
 var app = builder.Build();
 

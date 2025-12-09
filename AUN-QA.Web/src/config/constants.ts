@@ -9,6 +9,20 @@ export const API_ENDPOINTS = {
             UPDATE: `${IDENTITY_BASE}/User/update`,
             DELETE_LIST: `${IDENTITY_BASE}/User/delete-list`,
         },
+        SystemGroup: {
+            GET_LIST: `${IDENTITY_BASE}/SystemGroup/get-list`,
+            GET_BY_ID: `${IDENTITY_BASE}/SystemGroup/get-by-id`,
+            INSERT: `${IDENTITY_BASE}/SystemGroup/insert`,
+            UPDATE: `${IDENTITY_BASE}/SystemGroup/update`,
+            DELETE_LIST: `${IDENTITY_BASE}/SystemGroup/delete-list`,
+        },
+        Menu: {
+            GET_LIST: `${IDENTITY_BASE}/Menu/get-list`,
+            GET_BY_ID: `${IDENTITY_BASE}/Menu/get-by-id`,
+            INSERT: `${IDENTITY_BASE}/Menu/insert`,
+            UPDATE: `${IDENTITY_BASE}/Menu/update`,
+            DELETE_LIST: `${IDENTITY_BASE}/Menu/delete-list`,
+        },
         Auth: {
             LOGIN: `${IDENTITY_BASE}/Auth/login`,
         }

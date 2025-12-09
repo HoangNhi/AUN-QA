@@ -5,13 +5,14 @@ const REFRESH_TOKEN = 'refresh_token';
 
 export const saveTokens = (accessToken: string, refreshToken: string) => {
   Cookies.set(ACCESS_TOKEN, accessToken, {
-    expires: import.meta.env.VITE_ACCESS_TOKEN_EXPIRES || 2 / 24,
+    expires: new Date(Date.now() + import.meta.env.VITE_ACCESS_TOKEN_EXPIRES * 60 * 60 * 1000),
     sameSite: 'Lax',
     secure: window.location.protocol === 'https:',
   });
 
+  const refreshExpires = Number(import.meta.env.VITE_REFRESH_TOKEN_EXPIRES) || 7;
   Cookies.set(REFRESH_TOKEN, refreshToken, {
-    expires: import.meta.env.VITE_REFRESH_TOKEN_EXPIRES || 7,
+    expires: refreshExpires,
     sameSite: 'Lax',
     secure: window.location.protocol === 'https:',
   });

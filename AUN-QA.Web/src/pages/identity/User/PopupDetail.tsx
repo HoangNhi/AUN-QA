@@ -58,10 +58,16 @@ const PopupDetail = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <form onSubmit={(e) => onSubmit(false)}>
-        <DialogContent
-          className="sm:max-w-[425px]"
-          onPointerDownOutside={(e) => e.preventDefault()}
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
+        <form
+          className="grid gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit(false);
+          }}
         >
           <DialogHeader>
             <DialogTitle>
@@ -96,13 +102,13 @@ const PopupDetail = ({
             <DialogClose asChild>
               <Button variant="outline">Hủy</Button>
             </DialogClose>
-            <Button>Lưu</Button>
+            <Button type="submit">Lưu</Button>
             <Button type="button" onClick={() => onSubmit(true)}>
               Lưu và thêm tiếp
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </form>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 };

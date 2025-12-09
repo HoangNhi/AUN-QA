@@ -1,5 +1,6 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import { API_ENDPOINTS } from '@/config/constants';
+import { getAccessToken } from './cookies';
 
 export interface ApiResponse<T = any> {
   Data?: T;
@@ -22,16 +23,16 @@ class ApiClient {
       },
     });
 
-    // this.axiosInstance.interceptors.request.use(
-    //   (config) => {
-    //     const token = getAccessToken();
-    //     if (token) {
-    //       config.headers.Authorization = `Bearer ${token}`;
-    //     }
-    //     return config;
-    //   },
-    //   (error) => Promise.reject(error)
-    // );
+    this.axiosInstance.interceptors.request.use(
+      (config) => {
+        const token = getAccessToken();
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
     this.axiosInstance.interceptors.response.use(
       (response) => response,

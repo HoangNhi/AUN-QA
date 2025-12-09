@@ -17,6 +17,7 @@ import { authService } from "@/services/identity/auth.service";
 import { jwtDecode } from "jwt-decode";
 import type { User } from "@/types/identity/user.types";
 import type { AuthContextType } from "@/types/identity/auth.types";
+import { toast } from "sonner";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -35,7 +36,6 @@ interface AuthProviderProps {
 export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
 
   const performLogout = async () => {
     setUser(null);
@@ -46,26 +46,25 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const initAuth = useCallback(async () => {
     // BẮT ĐẦU TRY-FINALLY ĐỂ ĐẢM BẢO LOADING LUÔN TẮT
     try {
+      setLoading(true);
       const token = getAccessToken();
-
       if (token) {
         try {
           const decoded: { [key: string]: any } = jwtDecode(token);
 
           if (decoded.exp * 1000 > Date.now()) {
-            const userJson = localStorage.getItem(STORAGE_KEYS.USER);
+            const userJson = localStorage.getItem("user");
             if (userJson) {
               setUser(JSON.parse(userJson));
             } else {
               setUser({
                 Id: decoded.sub || decoded.Id || "",
-                Email: decoded.email || decoded.Email || "",
-                FullName:
+                Username: decoded.username || decoded.Username || "",
+                Fullname:
                   decoded.name ||
                   decoded.unique_name ||
                   decoded.FullName ||
                   "User",
-                Role: decoded.role || decoded.Role || "User",
               });
             }
           } else {
@@ -106,7 +105,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       } else {
         await performLogout();
       }
-    } catch (err: any) {
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
       await performLogout();
     } finally {
       setLoading(false);
@@ -121,7 +121,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     async (username: string, password: string): Promise<any> => {
       try {
         setLoading(true);
-        setError(null);
         const response = await authService.login({
           Username: username,
           Password: password,
@@ -150,10 +149,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         setUser(userData);
         return response;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Đăng nhập thất bại";
-        setError(errorMessage);
-        throw err;
+        toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
       } finally {
         setLoading(false);
       }
@@ -166,8 +162,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       await performLogout();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng xuất thất bại");
-      await performLogout();
+      toast.error(err instanceof Error ? err.message : "Đăng xuất thất bại");
     } finally {
       setLoading(false);
     }
@@ -175,9 +170,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
-    loading,
-    error,
     isAuthenticated: !!user,
+    loading,
     login,
     logout,
   };

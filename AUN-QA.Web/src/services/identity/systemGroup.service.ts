@@ -1,12 +1,12 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { SystemGroup } from "@/types/identity/systemGroup.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type { SystemGroup, SystemGroupGetListPaging } from "@/types/identity/systemGroup.types";
+import type { GetListPagingRequest, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 
 export const systemGroupService = {
-  getList: async (request: GetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<SystemGroup>>> => {
-    return api.post<GetListPagingResponse<SystemGroup>>(API_ENDPOINTS.Identity.SystemGroup.GET_LIST, request);
+  getList: async (request: GetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<SystemGroupGetListPaging>>> => {
+    return api.post<GetListPagingResponse<SystemGroupGetListPaging>>(API_ENDPOINTS.Identity.SystemGroup.GET_LIST, request);
   },
 
   getById: async (id: string): Promise<ApiResponse<SystemGroup>> => {
@@ -23,5 +23,9 @@ export const systemGroupService = {
 
   deleteList: async (ids: string[]): Promise<ApiResponse<SystemGroup[]>> => {
     return api.delete<SystemGroup[]>(API_ENDPOINTS.Identity.SystemGroup.DELETE_LIST, { data: { ids } });
+  },
+
+  getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+    return api.get<ModelCombobox[]>(API_ENDPOINTS.Identity.SystemGroup.GET_ALL_COMBOBOX);
   },
 };

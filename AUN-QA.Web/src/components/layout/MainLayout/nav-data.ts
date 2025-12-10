@@ -32,6 +32,10 @@ export const data = {
           title: "Tài khoản",
           url: "/user",
         },
+        {
+          title: "Nhóm quyền",
+          url: "/system-group",
+        },
       ],
     },
   ],

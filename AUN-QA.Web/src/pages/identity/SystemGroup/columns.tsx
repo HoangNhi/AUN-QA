@@ -39,7 +39,11 @@ export const getColumns = (
   },
   {
     accessorKey: "Name",
-    header: "Tên nhóm",
+    header: "Tên gọi",
+  },
+  {
+    accessorKey: "Parent",
+    header: "Nhóm cha",
   },
   {
     accessorKey: "Sort",
@@ -53,7 +57,7 @@ export const getColumns = (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">Chức năng</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

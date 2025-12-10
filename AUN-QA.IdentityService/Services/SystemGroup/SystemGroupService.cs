@@ -1,10 +1,11 @@
 using AUN_QA.IdentityService.DTOs.Base;
 using AUN_QA.IdentityService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.IdentityService.DTOs.CoreFeature.SystemGroup.Requests;
+using AUN_QA.IdentityService.Helpers;
 using AUN_QA.IdentityService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AUN_QA.IdentityService.Services.SystemGroup
 {
@@ -107,31 +108,30 @@ namespace AUN_QA.IdentityService.Services.SystemGroup
             return String.Join(',', request.Ids);
         }
 
-        public async Task<GetListPagingResponse<ModelSystemGroup>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelSystemGroupGetListPaging>> GetList(GetListPagingRequest request)
         {
-            var query = _context.SystemGroups.AsQueryable();
-
-            if (!string.IsNullOrEmpty(request.TextSearch))
+            var parameters = new[]
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch));
-            }
-
-            query = query.Where(x => !x.IsDeleted);
-
-            var totalRow = await query.CountAsync();
-
-            var data = await query.OrderBy(x => x.Sort)
-                .Skip((request.PageIndex - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
-
-            return new GetListPagingResponse<ModelSystemGroup>
-            {
-                Data = _mapper.Map<List<ModelSystemGroup>>(data),
-                TotalRow = totalRow,
-                PageIndex = request.PageIndex,
-                PageSize = request.PageSize
+                new NpgsqlParameter("i_textsearch", request.TextSearch),
+                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pagesize", request.PageSize),
             };
+
+            var result = await _context.ExcutePagingFunction<ModelSystemGroupGetListPaging>("fn_system_group_getlistpaging", parameters);
+            return result;
+        }
+
+        public List<MODELCombobox> GetAllForCombobox()
+        {
+            var data = _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var result = data.Select(x => new MODELCombobox
+            {
+                Text = x.Name,
+                Value = x.Id.ToString(),
+                Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
+            }).OrderBy(x => x.Text).ToList();
+
+            return result;
         }
     }
 }

@@ -6,6 +6,7 @@ import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./pages/assessment/faculty/FacultyPage";
 import LoginPage from "./pages/identity/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import SystemGroupPage from "./pages/identity/SystemGroup/SystemGroupPage";
 
 const Router: FC = () => {
   return (
@@ -25,6 +26,7 @@ const Router: FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<UserPage />} />
           <Route path="/faculty" element={<FacultyPage />} />
+          <Route path="/system-group" element={<SystemGroupPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -2,6 +2,10 @@ export interface SystemGroup {
     Id: string;
     Name: string;
     Sort: number;
-    Parentid?: string;
+    ParentId?: string;
     IsEdit: boolean;
+}
+
+export interface SystemGroupGetListPaging extends SystemGroup {
+    Parent: string;
 }

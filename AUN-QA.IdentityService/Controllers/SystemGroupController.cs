@@ -25,7 +25,7 @@ namespace AUN_QA.IdentityService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelSystemGroup>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelSystemGroupGetListPaging>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]
@@ -66,6 +66,13 @@ namespace AUN_QA.IdentityService.Controllers
 
             var result = _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
+        }
+
+        [HttpGet, Route("get-all-combobox")]
+        public IActionResult GetAllForCombobox()
+        {
+            var result = _service.GetAllForCombobox();
+            return Ok(new BaseResponse<List<MODELCombobox>> { Data = result, Success = true });
         }
     }
 }

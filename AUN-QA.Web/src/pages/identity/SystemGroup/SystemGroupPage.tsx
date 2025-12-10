@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { systemGroupService } from "@/services/identity/systemGroup.service";
-import type { SystemGroup } from "@/types/identity/systemGroup.types";
+import type {
+  SystemGroup,
+  SystemGroupGetListPaging,
+} from "@/types/identity/systemGroup.types";
 import { toast } from "sonner";
 import type {
   GetListPagingRequest,
@@ -14,7 +17,9 @@ import type { RowSelectionState } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
 
 const SystemGroupPage = () => {
-  const [data, setData] = useState<GetListPagingResponse<SystemGroup>>({
+  const [data, setData] = useState<
+    GetListPagingResponse<SystemGroupGetListPaging>
+  >({
     Data: [],
     TotalRow: 0,
     PageIndex: 1,

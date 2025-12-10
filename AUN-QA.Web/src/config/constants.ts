@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
             INSERT: `${IDENTITY_BASE}/SystemGroup/insert`,
             UPDATE: `${IDENTITY_BASE}/SystemGroup/update`,
             DELETE_LIST: `${IDENTITY_BASE}/SystemGroup/delete-list`,
+            GET_ALL_COMBOBOX: `${IDENTITY_BASE}/SystemGroup/get-all-combobox`,
         },
         Menu: {
             GET_LIST: `${IDENTITY_BASE}/Menu/get-list`,

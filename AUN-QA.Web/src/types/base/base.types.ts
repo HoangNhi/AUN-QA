@@ -10,3 +10,11 @@ export interface GetListPagingResponse<T> {
     PageSize: number;
     TotalRow: number;
 }
+
+export interface ModelCombobox {
+    Text?: string;
+    Value?: string;
+    Sort?: number | null;
+    Parent?: string;
+    IsSelected?: boolean;
+}

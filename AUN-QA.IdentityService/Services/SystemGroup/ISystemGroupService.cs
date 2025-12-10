@@ -10,6 +10,7 @@ namespace AUN_QA.IdentityService.Services.SystemGroup
         ModelSystemGroup Insert(SystemGroupRequest request);
         ModelSystemGroup Update(SystemGroupRequest request);
         string DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelSystemGroup>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelSystemGroupGetListPaging>> GetList(GetListPagingRequest request);
+        List<MODELCombobox> GetAllForCombobox();
     }
 }

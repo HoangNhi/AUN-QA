@@ -39,15 +39,93 @@ export const getColumns = (
   },
   {
     accessorKey: "Name",
-    header: "Tên menu",
+    header: "Tên gọi",
+  },
+  {
+    accessorKey: "SystemGroup",
+    header: "Nhóm quyền",
   },
   {
     accessorKey: "Controller",
     header: "Controller",
   },
   {
-    accessorKey: "Sort",
-    header: "Thứ tự",
+    accessorKey: "CanView",
+    header: "Xem",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanView}
+          onCheckedChange={(value) => (row.original.CanView = !!value)}
+        />
+      );
+    },
+  },
+  {
+    accessorKey: "CanAdd",
+    header: "Thêm",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanAdd}
+          onCheckedChange={(value) => (row.original.CanAdd = !!value)}
+        />
+      );
+    },
+  },
+  {
+    accessorKey: "CanUpdate",
+    header: "Cập nhật",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanUpdate}
+          onCheckedChange={(value) => (row.original.CanUpdate = !!value)}
+        />
+      );
+    },
+  },
+  {
+    accessorKey: "CanDelete",
+    header: "Xóa",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanDelete}
+          onCheckedChange={(value) => (row.original.CanDelete = !!value)}
+        />
+      );
+    },
+  },
+  {
+    accessorKey: "CanApprove",
+    header: "Duyệt",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanApprove}
+          onCheckedChange={(value) => (row.original.CanApprove = !!value)}
+        />
+      );
+    },
+  },
+  {
+    accessorKey: "CanAnalyze",
+    header: "Thống kê",
+    className: "text-center",
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.original.CanAnalyze}
+          onCheckedChange={(value) => (row.original.CanAnalyze = !!value)}
+        />
+      );
+    },
   },
   {
     id: "actions",

@@ -10,6 +10,6 @@ namespace AUN_QA.IdentityService.Services.Menu
         ModelMenu Insert(MenuRequest request);
         ModelMenu Update(MenuRequest request);
         string DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelMenu>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelMenuGetListPaging>> GetList(GetListPagingRequest request);
     }
 }

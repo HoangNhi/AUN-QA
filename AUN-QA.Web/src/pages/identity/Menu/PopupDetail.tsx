@@ -16,12 +16,14 @@ import { v4 as uuidv4 } from "uuid";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { systemGroupService } from "@/services/identity/systemGroup.service";
 import type { SystemGroup } from "@/types/identity/systemGroup.types";
+import type { ModelCombobox } from "@/types/base/base.types";
 
 const PopupDetail = ({
   data,
@@ -49,18 +51,14 @@ const PopupDetail = ({
   const [canAnalyze, setCanAnalyze] = useState(false);
 
   // System Groups for dropdown
-  const [systemGroups, setSystemGroups] = useState<SystemGroup[]>([]);
+  const [systemGroups, setSystemGroups] = useState<ModelCombobox[]>([]);
 
   useEffect(() => {
     const fetchSystemGroups = async () => {
       // Fetch all system groups for dropdown (page index 1, large page size)
-      const res = await systemGroupService.getList({
-        PageIndex: 1,
-        PageSize: 100,
-        TextSearch: "",
-      });
+      const res = await systemGroupService.getAllCombobox();
       if (res?.Success && res.Data) {
-        setSystemGroups(res.Data.Data);
+        setSystemGroups(res.Data);
       }
     };
     if (isOpen) {
@@ -151,17 +149,25 @@ const PopupDetail = ({
               />
             </div>
             <div className="grid gap-3">
-              <Label>Nhóm Hệ thống</Label>
-              <Select value={systemGroupId} onValueChange={setSystemGroupId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn nhóm" />
+              <Label>Nhóm quyền</Label>
+              <Select
+                value={systemGroupId || "no-parent"}
+                onValueChange={(value) =>
+                  setSystemGroupId(value === "no-parent" ? null : value)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn nhóm quyền" />
                 </SelectTrigger>
                 <SelectContent>
-                  {systemGroups.map((group) => (
-                    <SelectItem key={group.Id} value={group.Id}>
-                      {group.Name}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectItem value="no-parent">Chọn nhóm quyền</SelectItem>
+                    {systemGroups.map((item) => (
+                      <SelectItem key={item.Value} value={item.Value}>
+                        {item.Text}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -224,7 +230,7 @@ const PopupDetail = ({
                   checked={canAnalyze}
                   onCheckedChange={(c) => setCanAnalyze(!!c)}
                 />
-                <Label htmlFor="canAnalyze">Phân tích</Label>
+                <Label htmlFor="canAnalyze">Thống kê</Label>
               </div>
             </div>
           </div>
@@ -234,9 +240,11 @@ const PopupDetail = ({
               <Button variant="outline">Hủy</Button>
             </DialogClose>
             <Button type="submit">Lưu</Button>
-            <Button type="button" onClick={() => onSubmit(true)}>
-              Lưu và thêm tiếp
-            </Button>
+            {!data?.IsEdit && (
+              <Button type="button" onClick={() => onSubmit(true)}>
+                Lưu và thêm tiếp
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

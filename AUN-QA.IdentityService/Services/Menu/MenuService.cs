@@ -1,10 +1,11 @@
 using AUN_QA.IdentityService.DTOs.Base;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Menu.Dtos;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Menu.Requests;
+using AUN_QA.IdentityService.Helpers;
 using AUN_QA.IdentityService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AUN_QA.IdentityService.Services.Menu
 {
@@ -107,31 +108,17 @@ namespace AUN_QA.IdentityService.Services.Menu
             return String.Join(',', request.Ids);
         }
 
-        public async Task<GetListPagingResponse<ModelMenu>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelMenuGetListPaging>> GetList(GetListPagingRequest request)
         {
-            var query = _context.Menus.AsQueryable();
-
-            if (!string.IsNullOrEmpty(request.TextSearch))
+            var parameters = new[]
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch) || x.Controller.Contains(request.TextSearch));
-            }
-
-            query = query.Where(x => !x.IsDeleted);
-
-            var totalRow = await query.CountAsync();
-            
-            var data = await query.OrderBy(x => x.Sort)
-                .Skip((request.PageIndex - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
-
-            return new GetListPagingResponse<ModelMenu>
-            {
-                Data = _mapper.Map<List<ModelMenu>>(data),
-                TotalRow = totalRow,
-                PageIndex = request.PageIndex,
-                PageSize = request.PageSize
+                new NpgsqlParameter("i_textsearch", request.TextSearch),
+                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pagesize", request.PageSize),
             };
+
+            var result = await _context.ExcutePagingFunction<ModelMenuGetListPaging>("fn_menu_getlistpaging", parameters);
+            return result;
         }
     }
 }

@@ -49,6 +49,7 @@ const PopupDetail = ({
         Id: id || uuidv4(),
         Name: name,
         Sort: sort,
+        ParentId: parentId,
         IsEdit: data?.IsEdit || false,
       },
       isAddMore
@@ -142,9 +143,11 @@ const PopupDetail = ({
               <Button variant="outline">Hủy</Button>
             </DialogClose>
             <Button type="submit">Lưu</Button>
-            <Button type="button" onClick={() => onSubmit(true)}>
-              Lưu và thêm tiếp
-            </Button>
+            {!data?.IsEdit && (
+              <Button type="button" onClick={() => onSubmit(true)}>
+                Lưu và thêm tiếp
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

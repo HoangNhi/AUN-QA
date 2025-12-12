@@ -36,6 +36,10 @@ export const data = {
           title: "Nhóm quyền",
           url: "/system-group",
         },
+        {
+          title: "Menu",
+          url: "/menu",
+        }
       ],
     },
   ],

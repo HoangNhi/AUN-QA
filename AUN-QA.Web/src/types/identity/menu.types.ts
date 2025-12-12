@@ -12,3 +12,8 @@ export interface Menu {
   CanAnalyze: boolean;
   IsEdit: boolean;
 }
+
+export interface MenuGetListPaging extends Menu {
+  SystemGroup: string;
+}
+

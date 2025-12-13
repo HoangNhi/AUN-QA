@@ -117,7 +117,7 @@ namespace AUN_QA.IdentityService.Services.SystemGroup
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcutePagingFunction<ModelSystemGroupGetListPaging>("fn_system_group_getlistpaging", parameters);
+            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelSystemGroupGetListPaging>>("fn_system_group_getlistpaging", parameters);
             return result;
         }
 

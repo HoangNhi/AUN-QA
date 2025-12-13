@@ -1,5 +1,4 @@
-﻿using AUN_QA.IdentityService.DTOs.Base;
-using AUN_QA.IdentityService.Infrastructure.Data;
+﻿using AUN_QA.IdentityService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -10,7 +9,7 @@ namespace AUN_QA.IdentityService.Helpers
 {
     public static class DBContextHelper
     {
-        public static async Task<GetListPagingResponse<TModel>> ExcutePagingFunction<TModel>(this IdentityContext _context, string functionName, NpgsqlParameter[]? parameters) where TModel : new()
+        public static async Task<TModel> ExcuteFunction<TModel>(this IdentityContext _context, string functionName, NpgsqlParameter[]? parameters) where TModel : new()
         {
             if (_context.Database.GetDbConnection().State != ConnectionState.Open)
             {
@@ -32,7 +31,7 @@ namespace AUN_QA.IdentityService.Helpers
             var result = await dbCommand.ExecuteScalarAsync();
 
             if (result == null || result == DBNull.Value)
-                return new GetListPagingResponse<TModel>();
+                return new TModel();
 
             string json = result.ToString()!;
             try
@@ -44,9 +43,9 @@ namespace AUN_QA.IdentityService.Helpers
                         NamingStrategy = new SnakeCaseNamingStrategy()
                     }
                 };
-                var pagingResponse = JsonConvert.DeserializeObject<GetListPagingResponse<TModel>>(json, settings);
+                var pagingResponse = JsonConvert.DeserializeObject<TModel>(json, settings);
 
-                return pagingResponse ?? new GetListPagingResponse<TModel>();
+                return pagingResponse ?? new TModel();
             }
             catch (Exception ex)
             {

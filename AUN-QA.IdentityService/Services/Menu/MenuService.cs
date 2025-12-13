@@ -117,7 +117,7 @@ namespace AUN_QA.IdentityService.Services.Menu
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcutePagingFunction<ModelMenuGetListPaging>("fn_menu_getlistpaging", parameters);
+            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelMenuGetListPaging>>("fn_menu_getlistpaging", parameters);
             return result;
         }
     }

@@ -24,6 +24,14 @@ export const API_ENDPOINTS = {
             UPDATE: `${IDENTITY_BASE}/Menu/update`,
             DELETE_LIST: `${IDENTITY_BASE}/Menu/delete-list`,
         },
+        Role: {
+            GET_LIST: `${IDENTITY_BASE}/Role/get-list`,
+            GET_BY_ID: `${IDENTITY_BASE}/Role/get-by-id`,
+            INSERT: `${IDENTITY_BASE}/Role/insert`,
+            UPDATE: `${IDENTITY_BASE}/Role/update`,
+            DELETE_LIST: `${IDENTITY_BASE}/Role/delete-list`,
+            GET_PERMISIONS_BY_ROLE: `${IDENTITY_BASE}/Role/get-permisions-by-role`,
+        },
         Auth: {
             LOGIN: `${IDENTITY_BASE}/Auth/login`,
         }

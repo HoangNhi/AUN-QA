@@ -1,3 +1,5 @@
+import { Title } from "@radix-ui/react-dialog";
+
 export const data = {
   navMain: [
     {
@@ -31,6 +33,10 @@ export const data = {
         {
           title: "Tài khoản",
           url: "/user",
+        },
+        {
+          title: "Vai trò",
+          url: "/role",
         },
         {
           title: "Nhóm quyền",

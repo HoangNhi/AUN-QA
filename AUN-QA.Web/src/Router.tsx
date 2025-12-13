@@ -8,6 +8,7 @@ import LoginPage from "./pages/identity/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./pages/identity/SystemGroup/SystemGroupPage";
 import MenuPage from "./pages/identity/Menu/MenuPage";
+import RolePage from "./pages/identity/Role";
 
 const Router: FC = () => {
   return (
@@ -29,6 +30,7 @@ const Router: FC = () => {
           <Route path="/faculty" element={<FacultyPage />} />
           <Route path="/system-group" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
+          <Route path="/role" element={<RolePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

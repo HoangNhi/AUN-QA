@@ -16,7 +16,7 @@ const formatDate = (dateString: string) => {
   const date = new Date(dateString);
 
   // Helper function to pad single digits with a leading zero
-  const pad = (num) => String(num).padStart(2, "0");
+  const pad = (num: number) => String(num).padStart(2, "0");
 
   const day = pad(date.getDate());
   const month = pad(date.getMonth() + 1); // Remember: Months are 0-indexed (Jan is 0)
@@ -29,7 +29,8 @@ const formatDate = (dateString: string) => {
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
-  deleteList: (ids: string[]) => void
+  deleteList: (ids: string[]) => void,
+  showPopupPermission: (id: string) => void
 ): ColumnDef<Role>[] => [
   {
     id: "select",
@@ -85,6 +86,11 @@ export const getColumns = (
               onClick={() => showPopupDetail(row.original.Id, true)}
             >
               Cập nhật
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => showPopupPermission(row.original.Id)}
+            >
+              Phân quyền
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
               Xóa

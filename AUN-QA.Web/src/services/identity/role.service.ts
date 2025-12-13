@@ -1,5 +1,5 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { ModelPermision, Role } from "@/types/identity/role.types";
+import type { Permission, PermissionRequest, Role } from "@/types/identity/role.types";
 import type { GetListPagingRequest } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
@@ -34,9 +34,15 @@ export const roleService = {
     });
   },
 
-  getPermissionsByRole: async (id: string): Promise<ApiResponse<ModelPermision[]>> => {
-    return api.get<ModelPermision[]>(API_ENDPOINTS.Identity.Role.GET_PERMISIONS_BY_ROLE, {
+  getPermissionsByRole: async (id: string): Promise<ApiResponse<Permission[]>> => {
+    return api.get<Permission[]>(API_ENDPOINTS.Identity.Role.GET_PERMISSIONS_BY_ROLE, {
       params: { id },
     });
   },
+  
+  updatePermission: async (data: PermissionRequest[]): Promise<ApiResponse<boolean>> => {
+      return api.put<boolean>(API_ENDPOINTS.Identity.Role.UPDATE_PERMISSIONS, {
+        permissions: data
+      });
+  }
 };

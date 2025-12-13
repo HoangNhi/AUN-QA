@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import { roleService } from "@/services/identity/role.service";
-import type { Role } from "@/types/identity/role.types";
+import type {
+  Permission,
+  PermissionRequest,
+  Role,
+} from "@/types/identity/role.types";
 import { toast } from "sonner";
 import type {
   GetListPagingRequest,
@@ -12,6 +16,7 @@ import PopupDetail from "./PopupDetail";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
+import PopupPermission from "./PopupPermission";
 
 const RolePage = () => {
   const [data, setData] = useState<GetListPagingResponse<Role>>({
@@ -22,6 +27,8 @@ const RolePage = () => {
   });
   const [selectedItem, setSelectedItem] = useState<Role | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isOpenPermission, setIsOpenPermission] = useState(false);
+  const [permissionData, setPermissionData] = useState<Permission[]>([]);
   const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
     PageIndex: 1,
     PageSize: 10,
@@ -48,9 +55,24 @@ const RolePage = () => {
     }
   }, []);
 
+  const showPopupPermission = useCallback(async (id: string) => {
+    const response = await roleService.getPermissionsByRole(id);
+    if (response?.Success && response.Data) {
+      setPermissionData(response.Data);
+      setIsOpenPermission(true);
+    } else {
+      toast.error(response?.Message);
+    }
+  }, []);
+
   const onOpenChange = (open: boolean) => {
     setIsOpen(open);
     setSelectedItem(null);
+  };
+
+  const onOpenPermissionChange = (open: boolean) => {
+    setIsOpenPermission(open);
+    if (!open) setPermissionData([]);
   };
 
   const getList = useCallback(async (request: GetListPagingRequest) => {
@@ -103,6 +125,16 @@ const RolePage = () => {
     }
   };
 
+  const savePermission = async (data: PermissionRequest[]) => {
+    const response = await roleService.updatePermission(data);
+    if (response?.Success) {
+      toast.success("Cập nhật phân quyền thành công");
+      setIsOpenPermission(false);
+    } else {
+      toast.error(response?.Message);
+    }
+  };
+
   const deleteList = useCallback(
     async (ids: string[]) => {
       const response = await roleService.deleteList(ids);
@@ -125,8 +157,8 @@ const RolePage = () => {
   }, [pageRequest, getList]);
 
   const columns = useMemo(
-    () => getColumns(showPopupDetail, deleteList),
-    [showPopupDetail, deleteList]
+    () => getColumns(showPopupDetail, deleteList, showPopupPermission),
+    [showPopupDetail, deleteList, showPopupPermission]
   );
 
   return (
@@ -150,6 +182,14 @@ const RolePage = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           saveChange={saveChange}
+        />
+      )}
+      {isOpenPermission && (
+        <PopupPermission
+          data={permissionData}
+          isOpen={isOpenPermission}
+          onOpenChange={onOpenPermissionChange}
+          saveChange={savePermission}
         />
       )}
     </div>

@@ -79,36 +79,31 @@ public partial class IdentityContext : DbContext
 
             entity.ToTable("permission");
 
+            entity.HasIndex(e => new { e.RoleId, e.MenuId }, "permission_role_menu_unique").IsUnique();
+
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
-            entity.Property(e => e.CanAdd).HasColumnName("can_add");
-            entity.Property(e => e.CanAnalyze).HasColumnName("can_analyze");
-            entity.Property(e => e.CanApprove).HasColumnName("can_approve");
-            entity.Property(e => e.CanDelete).HasColumnName("can_delete");
-            entity.Property(e => e.CanUpdate).HasColumnName("can_update");
-            entity.Property(e => e.CanView).HasColumnName("can_view");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("created_at");
-            entity.Property(e => e.CreatedBy)
-                .HasMaxLength(255)
-                .HasColumnName("created_by");
-            entity.Property(e => e.IsActived)
-                .HasDefaultValue(true)
-                .HasColumnName("is_actived");
+            entity.Property(e => e.IsAdded)
+                .HasDefaultValue(false)
+                .HasColumnName("is_added");
+            entity.Property(e => e.IsAnalyzed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_analyzed");
+            entity.Property(e => e.IsApproved)
+                .HasDefaultValue(false)
+                .HasColumnName("is_approved");
             entity.Property(e => e.IsDeleted)
                 .HasDefaultValue(false)
                 .HasColumnName("is_deleted");
+            entity.Property(e => e.IsUpdated)
+                .HasDefaultValue(false)
+                .HasColumnName("is_updated");
+            entity.Property(e => e.IsViewed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_viewed");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
-            entity.Property(e => e.UpdatedAt)
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UpdatedBy)
-                .HasMaxLength(255)
-                .HasColumnName("updated_by");
         });
 
         modelBuilder.Entity<Role>(entity =>

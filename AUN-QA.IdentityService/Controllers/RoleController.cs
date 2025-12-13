@@ -1,6 +1,7 @@
 using AUN_QA.IdentityService.DTOs.Base;
 using AUN_QA.IdentityService.DTOs.Common;
-using AUN_QA.IdentityService.DTOs.CoreFeature.Permision.Dtos;
+using AUN_QA.IdentityService.DTOs.CoreFeature.Permission.Dtos;
+using AUN_QA.IdentityService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Role.Dtos;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Role.Requests;
 using AUN_QA.IdentityService.Services.Role;
@@ -69,14 +70,24 @@ namespace AUN_QA.IdentityService.Controllers
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
-        [HttpGet, Route("get-permisions-by-role")]
+        [HttpGet, Route("get-permissions-by-role")]
         public async Task<IActionResult> GetPermissionsByRole([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetPermissionsByRole(request);
-            return Ok(new BaseResponse<List<ModelPermision>> { Data = result, Success = true });
+            return Ok(new BaseResponse<List<ModelPermission>> { Data = result, Success = true });
+        }
+
+        [HttpPut, Route("update-permissions")]
+        public IActionResult UpdatePermissions(UpdatePermissionsRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = _service.UpdatePermissions(request);
+            return Ok(new BaseResponse<bool> { Success = true });
         }
     }
 }

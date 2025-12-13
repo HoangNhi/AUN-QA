@@ -17,21 +17,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Permision, Permision_Menu } from "@/types/identity/role.types";
+import type {
+  Permission,
+  Permission_Menu,
+  PermissionRequest,
+} from "@/types/identity/role.types";
 import { useEffect, useState } from "react";
 
-const PopupPermision = ({
+const PopupPermission = ({
   data,
   isOpen,
   onOpenChange,
   saveChange,
 }: {
-  data: Permision[];
+  data: Permission[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  saveChange: (data: Permision[], isAddMore: boolean) => void;
+  saveChange: (data: PermissionRequest[]) => void;
 }) => {
-  const [permissions, setPermissions] = useState<Permision[]>(data);
+  const [permissions, setPermissions] = useState<Permission[]>(data);
 
   useEffect(() => {
     setPermissions(data);
@@ -40,7 +44,7 @@ const PopupPermision = ({
   const handlePermissionChange = (
     systemGroup: string,
     menuId: string,
-    field: keyof Permision_Menu,
+    field: keyof Permission_Menu,
     value: boolean
   ) => {
     setPermissions((prev) =>
@@ -61,8 +65,21 @@ const PopupPermision = ({
     );
   };
 
-  const onSubmit = (isAddMore: boolean = false) => {
-    saveChange(permissions, isAddMore);
+  const onSubmit = () => {
+    const data: PermissionRequest[] = permissions
+      .flatMap((group) => group.Roles)
+      .map((role) => ({
+        Id: role.Id,
+        RoleId: role.RoleId,
+        MenuId: role.MenuId,
+        IsViewed: role.IsViewed,
+        IsAdded: role.IsAdded,
+        IsUpdated: role.IsUpdated,
+        IsDeleted: role.IsDeleted,
+        IsApproved: role.IsApproved,
+        IsAnalyzed: role.IsAnalyzed,
+      }));
+    saveChange(data);
   };
 
   return (
@@ -105,7 +122,7 @@ const PopupPermision = ({
                             <TableHead className="text-center">Xóa</TableHead>
                             <TableHead className="text-center">Duyệt</TableHead>
                             <TableHead className="text-center">
-                              Phân tích
+                              Thống kê
                             </TableHead>
                           </TableRow>
                         </TableHeader>
@@ -116,94 +133,88 @@ const PopupPermision = ({
                                 {menu.Name}
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanView && (
-                                  <Checkbox
-                                    checked={menu.IsViewed}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsViewed",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanView}
+                                  checked={menu.IsViewed}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsViewed",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanAdd && (
-                                  <Checkbox
-                                    checked={menu.IsAdded}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsAdded",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanAdd}
+                                  checked={menu.IsAdded}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsAdded",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanUpdate && (
-                                  <Checkbox
-                                    checked={menu.IsUpdated}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsUpdated",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanUpdate}
+                                  checked={menu.IsUpdated}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsUpdated",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanDelete && (
-                                  <Checkbox
-                                    checked={menu.IsDeleted}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsDeleted",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanDelete}
+                                  checked={menu.IsDeleted}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsDeleted",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanApprove && (
-                                  <Checkbox
-                                    checked={menu.IsApproved}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsApproved",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanApprove}
+                                  checked={menu.IsApproved}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsApproved",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                               <TableCell className="text-center">
-                                {menu.CanAnalyze && (
-                                  <Checkbox
-                                    checked={menu.IsAnalyzed}
-                                    onCheckedChange={(checked) =>
-                                      handlePermissionChange(
-                                        item.SystemGroup,
-                                        menu.MenuId,
-                                        "IsAnalyzed",
-                                        checked as boolean
-                                      )
-                                    }
-                                  />
-                                )}
+                                <Checkbox
+                                  disabled={!menu.CanAnalyze}
+                                  checked={menu.IsAnalyzed}
+                                  onCheckedChange={(checked) =>
+                                    handlePermissionChange(
+                                      item.SystemGroup,
+                                      menu.MenuId,
+                                      "IsAnalyzed",
+                                      checked as boolean
+                                    )
+                                  }
+                                />
                               </TableCell>
                             </TableRow>
                           ))}
@@ -221,11 +232,6 @@ const PopupPermision = ({
               <Button variant="outline">Hủy</Button>
             </DialogClose>
             <Button type="submit">Lưu</Button>
-            {/* {!data[0]?.IsEdit && (
-              <Button type="button" onClick={() => onSubmit(true)}>
-                Lưu và thêm tiếp
-              </Button>
-            )} */}
           </DialogFooter>
         </form>
       </DialogContent>
@@ -233,4 +239,4 @@ const PopupPermision = ({
   );
 };
 
-export default PopupPermision;
+export default PopupPermission;

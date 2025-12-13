@@ -1,5 +1,6 @@
 using AUN_QA.IdentityService.DTOs.Base;
-using AUN_QA.IdentityService.DTOs.CoreFeature.Permision.Dtos;
+using AUN_QA.IdentityService.DTOs.CoreFeature.Permission.Dtos;
+using AUN_QA.IdentityService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Role.Dtos;
 using AUN_QA.IdentityService.DTOs.CoreFeature.Role.Requests;
 using AUN_QA.IdentityService.Helpers;
@@ -123,15 +124,37 @@ namespace AUN_QA.IdentityService.Services.Role
             return result;
         }
 
-        public async Task<List<ModelPermision>> GetPermissionsByRole(GetByIdRequest request)
+        public async Task<List<ModelPermission>> GetPermissionsByRole(GetByIdRequest request)
         {
             var parameters = new[]
             {
                 new NpgsqlParameter("i_role_id", request.Id)
             };
 
-            var result = await _context.ExcuteFunction<List<ModelPermision>>("fn_permision_getbyrole", parameters);
+            var result = await _context.ExcuteFunction<List<ModelPermission>>("fn_permission_getbyrole", parameters);
             return result;
+        }
+
+        public bool UpdatePermissions(UpdatePermissionsRequest request)
+        {
+            foreach (var item in request.Permissions)
+            {
+                var resultUpdate = _context.Permissions.Find(item.Id);
+                if (resultUpdate == null)
+                {
+                    var add = _mapper.Map<Entities.Permission>(item);
+                    _context.Add(add);
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    _mapper.Map(item, resultUpdate);
+                    _context.Update(resultUpdate);
+                    _context.SaveChanges();
+                }
+            }
+
+            return true;
         }
     }
 }

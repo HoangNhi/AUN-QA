@@ -11,27 +11,15 @@ public partial class Permission
 
     public Guid MenuId { get; set; }
 
-    public bool? CanView { get; set; }
+    public bool IsViewed { get; set; }
 
-    public bool? CanAdd { get; set; }
+    public bool IsAdded { get; set; }
 
-    public bool? CanUpdate { get; set; }
-
-    public bool? CanDelete { get; set; }
-
-    public bool? CanApprove { get; set; }
-
-    public bool? CanAnalyze { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public string CreatedBy { get; set; } = null!;
-
-    public DateTime? UpdatedAt { get; set; }
-
-    public string? UpdatedBy { get; set; }
-
-    public bool IsActived { get; set; }
+    public bool IsUpdated { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public bool IsApproved { get; set; }
+
+    public bool IsAnalyzed { get; set; }
 }

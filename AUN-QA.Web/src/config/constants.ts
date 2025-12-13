@@ -30,7 +30,8 @@ export const API_ENDPOINTS = {
             INSERT: `${IDENTITY_BASE}/Role/insert`,
             UPDATE: `${IDENTITY_BASE}/Role/update`,
             DELETE_LIST: `${IDENTITY_BASE}/Role/delete-list`,
-            GET_PERMISIONS_BY_ROLE: `${IDENTITY_BASE}/Role/get-permisions-by-role`,
+            GET_PERMISSIONS_BY_ROLE: `${IDENTITY_BASE}/Role/get-permissions-by-role`,
+            UPDATE_PERMISSIONS: `${IDENTITY_BASE}/Role/update-permissions`,
         },
         Auth: {
             LOGIN: `${IDENTITY_BASE}/Auth/login`,

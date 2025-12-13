@@ -8,12 +8,12 @@ export interface Role {
 
 export interface RoleGetListPaging extends Role {}
 
-export interface Permision {
+export interface Permission {
     SystemGroup: string;
-    Roles: Permision_Menu[];
+    Roles: Permission_Menu[];
 }
 
-export interface Permision_Menu {
+export interface Permission_Menu {
     Id: string;
     RoleId: string;
     MenuId: string;
@@ -30,4 +30,16 @@ export interface Permision_Menu {
     CanDelete: boolean;
     CanApprove: boolean;
     CanAnalyze: boolean;
+}
+
+export interface PermissionRequest {
+    Id: string;
+    RoleId: string;
+    MenuId: string;
+    IsViewed: boolean;
+    IsAdded: boolean;
+    IsUpdated: boolean;
+    IsDeleted: boolean;
+    IsApproved: boolean;
+    IsAnalyzed: boolean;
 }

@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <Folder Include="Config\" />
-    <Folder Include="DTOs\CoreFeature\Permision\Requests\" />
+    <Folder Include="DTOs\CoreFeature\Permission\Requests\" />
     <Folder Include="Entities\" />
     <Folder Include="Infrastructure\" />
   </ItemGroup>

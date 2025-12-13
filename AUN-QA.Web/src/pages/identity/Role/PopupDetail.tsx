@@ -46,7 +46,7 @@ const PopupDetail = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-4xl"
+        className="sm:max-w-xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <form
@@ -62,29 +62,18 @@ const PopupDetail = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex w-full max-w-sm flex-col gap-6">
-            <Tabs defaultValue="update">
-              <TabsList>
-                <TabsTrigger value="update">Cập nhật</TabsTrigger>
-                <TabsTrigger value="permission">Phân quyền</TabsTrigger>
-              </TabsList>
-              <TabsContent value="update">
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Tên gọi
-                    </Label>
-                    <Input
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="permission">Phân quyền</TabsContent>
-            </Tabs>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Tên gọi
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
           </div>
 
           <DialogFooter>

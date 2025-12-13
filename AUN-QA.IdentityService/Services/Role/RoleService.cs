@@ -144,15 +144,21 @@ namespace AUN_QA.IdentityService.Services.Role
                 {
                     var add = _mapper.Map<Entities.Permission>(item);
                     _context.Add(add);
-                    _context.SaveChanges();
                 }
                 else
                 {
                     _mapper.Map(item, resultUpdate);
                     _context.Update(resultUpdate);
-                    _context.SaveChanges();
                 }
+
+                var roleUpdate = _context.Roles.Find(item.RoleId);
+                roleUpdate.UpdatedAt = DateTime.Now;
+                roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                _context.Update(roleUpdate);
             }
+
+
+            _context.SaveChanges();
 
             return true;
         }

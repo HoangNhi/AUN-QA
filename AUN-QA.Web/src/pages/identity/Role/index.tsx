@@ -130,6 +130,11 @@ const RolePage = () => {
     if (response?.Success) {
       toast.success("Cập nhật phân quyền thành công");
       setIsOpenPermission(false);
+      getList({
+        PageIndex: pageRequest.PageIndex,
+        PageSize: pageRequest.PageSize,
+        TextSearch: pageRequest.TextSearch,
+      });
     } else {
       toast.error(response?.Message);
     }

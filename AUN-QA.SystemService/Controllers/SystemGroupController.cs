@@ -72,7 +72,7 @@ namespace AUN_QA.SystemService.Controllers
         public IActionResult GetAllForCombobox()
         {
             var result = _service.GetAllForCombobox();
-            return Ok(new BaseResponse<List<MODELCombobox>> { Data = result, Success = true });
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
     }
 }

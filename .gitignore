@@ -370,3 +370,4 @@ FodyWeavers.xsd
 /AUN-QA.AssessmentService/appsettings.Development.json
 /AUN-QA.ApiGateway/appsettings.Development.json
 /AUN-QA.SystemService/appsettings.Development.json
+/AUN-QA.CatalogService/appsettings.Development.json

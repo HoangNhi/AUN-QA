@@ -121,10 +121,10 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             return result;
         }
 
-        public List<MODELCombobox> GetAllForCombobox()
+        public List<ModelCombobox> GetAllForCombobox()
         {
             var data = _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToList();
-            var result = data.Select(x => new MODELCombobox
+            var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),

@@ -1,5 +1,5 @@
-using AUN_QA.SystemService.Configs;
-using AUN_QA.SystemService.Middlewares;
+using AUN_QA.CatalogService.Configs;
+using AUN_QA.CatalogService.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 

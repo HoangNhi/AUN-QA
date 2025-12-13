@@ -18,7 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AUN-QA.ApiGateway\AUN-QA.ApiGateway.csproj" />
-    <ProjectReference Include="..\AUN-QA.AssessmentService\AUN-QA.AssessmentService.csproj" />
+    <ProjectReference Include="..\AUN-QA.BusinessService\AUN-QA.BusinessService.csproj" />
+    <ProjectReference Include="..\AUN-QA.CatalogService\AUN-QA.CatalogService.csproj" />
     <ProjectReference Include="..\AUN-QA.SystemService\AUN-QA.SystemService.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-using AUN_QA.ApiGateway.Config;
+using AUN_QA.ApiGateway.Configs;
 using AUN_QA.ApiGateway.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);

@@ -11,6 +11,6 @@ namespace AUN_QA.SystemService.Services.SystemGroup
         ModelSystemGroup Update(SystemGroupRequest request);
         string DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelSystemGroupGetListPaging>> GetList(GetListPagingRequest request);
-        List<MODELCombobox> GetAllForCombobox();
+        List<ModelCombobox> GetAllForCombobox();
     }
 }

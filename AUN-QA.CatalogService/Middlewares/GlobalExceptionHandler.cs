@@ -1,8 +1,8 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+﻿using AUN_QA.CatalogService.DTOs.Base;
 using System.Net;
 using System.Text.Json;
 
-namespace AUN_QA.SystemService.Middlewares
+namespace AUN_QA.CatalogService.Middlewares
 {
     public class GlobalExceptionHandler
     {

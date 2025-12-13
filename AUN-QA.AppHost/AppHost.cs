@@ -2,11 +2,14 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var SystemService = builder.AddProject<Projects.AUN_QA_SystemService>("SystemService");
 
-var assessmentService = builder.AddProject<Projects.AUN_QA_AssessmentService>("AssessmentService");
+var CatalogService = builder.AddProject<Projects.AUN_QA_CatalogService>("CatalogService").WithReference(SystemService);
+
+var BusinessService = builder.AddProject<Projects.AUN_QA_BusinessService>("BusinessService").WithReference(SystemService);
 
 var gateway = builder.AddProject<Projects.AUN_QA_ApiGateway>("APIGateway")
     .WithReference(SystemService)
-    .WithReference(assessmentService);
+    .WithReference(CatalogService)
+    .WithReference(BusinessService);
 
 builder.AddNpmApp("Web", "../AUN-QA.Web", "dev")
     .WithReference(gateway)

@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace AUN_QA.SystemService.DTOs.Base
+namespace AUN_QA.CatalogService.DTOs.Base
 {
     public class GetByIdRequest
     {

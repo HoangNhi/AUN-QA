@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>AUN_QA.SystemService</RootNamespace>
-    <UserSecretsId>653689e4-0bcc-4a26-bed1-37fde1379670</UserSecretsId>
+    <RootNamespace>AUN_QA.CatalogService</RootNamespace>
+    <UserSecretsId>cf34940c-70c8-486b-bb21-6974d691eb73</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
@@ -17,9 +17,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.22">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.3" />
     <PackageReference Include="Stax.AutoDependencyInjectionRegistration" Version="4.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
@@ -29,10 +33,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Configs\" />
-    <Folder Include="DTOs\CoreFeature\Permission\Requests\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="DTOs\CoreFeature\" />
     <Folder Include="Entities\" />
-    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>

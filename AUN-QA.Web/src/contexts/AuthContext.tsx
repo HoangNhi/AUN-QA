@@ -13,10 +13,10 @@ import {
   clearTokens,
   getRefreshToken,
 } from "@/lib/cookies";
-import { authService } from "@/services/identity/auth.service";
+import { authService } from "@/services/system/auth.service";
 import { jwtDecode } from "jwt-decode";
-import type { User } from "@/types/identity/user.types";
-import type { AuthContextType } from "@/types/identity/auth.types";
+import type { User } from "@/types/system/user.types";
+import type { AuthContextType } from "@/types/system/auth.types";
 import { toast } from "sonner";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

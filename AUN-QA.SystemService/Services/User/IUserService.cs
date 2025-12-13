@@ -1,0 +1,15 @@
+﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
+using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
+
+namespace AUN_QA.SystemService.Services.User
+{
+    public interface IUserService
+    {
+        ModelUser GetById(GetByIdRequest request);
+        ModelUser Insert(UserRequest request);
+        ModelUser Update(UserRequest request);
+        string DeleteList(DeleteListRequest request);
+        Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request);
+    }
+}

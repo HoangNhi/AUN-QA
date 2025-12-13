@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.AppHost", "AUN-QA.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.ServiceDefaults", "AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj", "{D7E06511-C9F8-6C1A-F124-87D31E04AD45}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.IdentityService", "AUN-QA.IdentityService\AUN-QA.IdentityService.csproj", "{D954EA03-1419-5E08-BF95-2AB9CD951378}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.SystemService", "AUN-QA.SystemService\AUN-QA.SystemService.csproj", "{D954EA03-1419-5E08-BF95-2AB9CD951378}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AUN-QA.AssessmentService", "AUN-QA.AssessmentService\AUN-QA.AssessmentService.csproj", "{A15B1068-D736-2360-5B36-3296A693C188}"
 EndProject

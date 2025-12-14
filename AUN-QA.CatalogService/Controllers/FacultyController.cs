@@ -2,6 +2,7 @@ using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.CatalogService.Helpers;
 using AUN_QA.CatalogService.Services.CoreFeature.Faculty;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpPost, Route("get-list")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(GetListPagingRequest request)
         {
             if (!ModelState.IsValid)

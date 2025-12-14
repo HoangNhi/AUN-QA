@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option csharp_namespace = "AUN_QA.SystemService.Protos";
+
+package system;
+
+service SystemProto {
+  rpc CheckAction (CheckActionRequest) returns (CheckActionResponse);
+}
+
+message CheckActionRequest {
+  string user_id = 1;
+  string controller = 2;
+  int32 action = 3;
+}
+
+message CheckActionResponse {
+  bool result = 1;
+}

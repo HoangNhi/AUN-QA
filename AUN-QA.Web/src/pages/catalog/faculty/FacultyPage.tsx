@@ -98,6 +98,9 @@ const FacultyPage = () => {
   const getList = async (request: GetListPagingRequest) => {
     try {
       const response = await facultyService.getList(request);
+      if (!response.Success) {
+        throw new Error(response.Message);
+      }
       setData(
         response?.Data || {
           Data: [],
@@ -107,7 +110,7 @@ const FacultyPage = () => {
         }
       );
     } catch (error) {
-      toast.error("Lỗi khi tải dữ liệu");
+      toast.error(error?.message || "Lỗi khi tải dữ liệu");
     } finally {
       setRowSelection({});
     }

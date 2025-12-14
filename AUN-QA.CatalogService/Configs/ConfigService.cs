@@ -1,4 +1,5 @@
 ﻿using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
 using AutoMapper;
 using FluentValidation.AspNetCore;
@@ -68,6 +69,11 @@ namespace AUN_QA.CatalogService.Configs
                                   .AllowAnyMethod();
                         }
                     });
+            });
+
+            builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
+            {
+                o.Address = new Uri("http://SystemService");
             });
         }
     }

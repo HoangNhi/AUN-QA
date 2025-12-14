@@ -42,7 +42,10 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Name)
                 .HasColumnType("text")
                 .HasColumnName("name");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp")
+                .HasColumnName("updated_at");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");

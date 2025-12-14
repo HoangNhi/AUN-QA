@@ -366,8 +366,6 @@ FodyWeavers.xsd
 /AUN-QA.AppHost/appsettings.Development.json
 /Document
 /.idea
-/AUN-QA.AssessmentService/Dockerfile
-/AUN-QA.AssessmentService/appsettings.Development.json
 /AUN-QA.ApiGateway/appsettings.Development.json
 /AUN-QA.SystemService/appsettings.Development.json
 /AUN-QA.CatalogService/appsettings.Development.json

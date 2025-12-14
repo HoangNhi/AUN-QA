@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/Home/HomePage";
 import UserPage from "./pages/system/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
-import FacultyPage from "./pages/assessment/faculty/FacultyPage";
+import FacultyPage from "./pages/catalog/faculty/FacultyPage";
 import LoginPage from "./pages/system/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./pages/system/SystemGroup/SystemGroupPage";

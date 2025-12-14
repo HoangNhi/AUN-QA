@@ -35,6 +35,16 @@ export const API_ENDPOINTS = {
         },
         Auth: {
             LOGIN: `${SYSTEM_BASE}/Auth/login`,
+        },
+    },
+    Catalog: {
+        Faculty: {
+            GET_LIST: `/Catalog/Faculty/get-list`,
+            GET_BY_ID: `/Catalog/Faculty/get-by-id`,
+            INSERT: `/Catalog/Faculty/insert`,
+            UPDATE: `/Catalog/Faculty/update`,
+            DELETE_LIST: `/Catalog/Faculty/delete-list`,
+            GET_ALL_COMBOBOX: `/Catalog/Faculty/get-all-combobox`,
         }
     }
 }

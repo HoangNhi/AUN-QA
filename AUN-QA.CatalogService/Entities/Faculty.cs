@@ -13,7 +13,7 @@ public partial class Faculty
 
     public string CreatedBy { get; set; } = null!;
 
-    public int? UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     public string? UpdatedBy { get; set; }
 

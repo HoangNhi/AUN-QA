@@ -1,0 +1,178 @@
+using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
+using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
+using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
+using AUN_QA.SystemService.DTOs.CoreFeature.Role.Requests;
+using AUN_QA.SystemService.Helpers;
+using AUN_QA.SystemService.Infrastructure.Data;
+using AutoDependencyRegistration.Attributes;
+using AutoMapper;
+using Npgsql;
+
+namespace AUN_QA.SystemService.Services.Role
+{
+    [RegisterClassAsTransient]
+    public class RoleService : IRoleService
+    {
+        private readonly SystemContext _context;
+        private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _contextAccessor;
+
+        public RoleService(
+            SystemContext context,
+            IMapper mapper,
+            IHttpContextAccessor contextAccessor)
+        {
+            _context = context;
+            _mapper = mapper;
+            _contextAccessor = contextAccessor;
+        }
+
+        public ModelRole GetById(GetByIdRequest request)
+        {
+            var data = _context.Roles.Find(request.Id);
+            if (data == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            return _mapper.Map<ModelRole>(data);
+        }
+
+        public ModelRole Insert(RoleRequest request)
+        {
+            var data = _context.Roles.Where(x =>
+                x.Name == request.Name
+                && !x.IsDeleted
+            );
+
+            if (data.Any())
+            {
+                throw new Exception("Tên gọi đã tồn tại");
+            }
+
+            var add = _mapper.Map<Entities.Role>(request);
+            add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            add.CreatedAt = DateTime.Now;
+            add.IsActived = true;
+
+            _context.Roles.Add(add);
+            _context.SaveChanges();
+
+            return _mapper.Map<ModelRole>(add);
+        }
+
+        public ModelRole Update(RoleRequest request)
+        {
+            var data = _context.Roles.Where(x =>
+                x.Name == request.Name
+                && !x.IsDeleted && x.Id != request.Id);
+
+            if (data.Any())
+            {
+                throw new Exception("Tên gọi đã tồn tại");
+            }
+
+            var update = _context.Roles.Find(request.Id);
+            if (update == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            _mapper.Map(request, update);
+
+            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            update.UpdatedAt = DateTime.Now;
+            _context.Roles.Update(update);
+            _context.SaveChanges();
+
+            return _mapper.Map<ModelRole>(update);
+        }
+
+        public string DeleteList(DeleteListRequest request)
+        {
+            foreach (var id in request.Ids)
+            {
+                var delete = _context.Roles.Find(id);
+                if (delete == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                delete.IsDeleted = true;
+                delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                delete.UpdatedAt = DateTime.Now;
+
+                _context.Roles.Update(delete);
+            }
+
+            _context.SaveChanges();
+            return String.Join(',', request.Ids);
+        }
+
+        public async Task<GetListPagingResponse<ModelRoleGetListPaging>> GetList(GetListPagingRequest request)
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_textsearch", request.TextSearch),
+                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pagesize", request.PageSize),
+            };
+
+            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelRoleGetListPaging>>("fn_role_getlistpaging", parameters);
+            return result;
+        }
+
+        public List<ModelCombobox> GetAllForCombobox()
+        {
+            var data = _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var result = data.Select(x => new ModelCombobox
+            {
+                Text = x.Name,
+                Value = x.Id.ToString(),
+            }).OrderBy(x => x.Text).ToList();
+
+            return result;
+        }
+
+        public async Task<List<ModelPermission>> GetPermissionsByRole(GetByIdRequest request)
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_role_id", request.Id)
+            };
+
+            var result = await _context.ExcuteFunction<List<ModelPermission>>("fn_permission_getbyrole", parameters);
+            return result;
+        }
+
+        public bool UpdatePermissions(UpdatePermissionsRequest request)
+        {
+            foreach (var item in request.Permissions)
+            {
+                var resultUpdate = _context.Permissions.Find(item.Id);
+                if (resultUpdate == null)
+                {
+                    var add = _mapper.Map<Entities.Permission>(item);
+                    _context.Add(add);
+                }
+                else
+                {
+                    _mapper.Map(item, resultUpdate);
+                    _context.Update(resultUpdate);
+                }
+
+                var roleUpdate = _context.Roles.Find(item.RoleId);
+                roleUpdate.UpdatedAt = DateTime.Now;
+                roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                _context.Update(roleUpdate);
+            }
+
+
+            _context.SaveChanges();
+
+            return true;
+        }
+    }
+}

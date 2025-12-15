@@ -1,6 +1,0 @@
-@AUN_QA.IdentityService_HostAddress = http://localhost:5130
-
-GET {{AUN_QA.IdentityService_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

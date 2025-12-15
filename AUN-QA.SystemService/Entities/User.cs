@@ -26,4 +26,6 @@ public partial class User
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public Guid RoleId { get; set; }
 }

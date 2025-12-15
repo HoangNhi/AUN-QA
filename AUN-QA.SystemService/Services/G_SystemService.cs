@@ -1,18 +1,32 @@
 using AUN_QA.SystemService.Protos;
+using AUN_QA.SystemService.Services.User;
 using Grpc.Core;
-using Newtonsoft.Json;
 
 namespace AUN_QA.SystemService.Services
 {
     public class G_SystemService : SystemProto.SystemProtoBase
     {
-        public override Task<CheckActionResponse> CheckAction(CheckActionRequest request, ServerCallContext context)
+        private readonly IUserService _userService;
+
+        public G_SystemService(IUserService userService)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(request));
-            return Task.FromResult(new CheckActionResponse
+            _userService = userService;
+        }
+
+        public override async Task<CheckActionResponse> CheckPermission(CheckPermissionRequest request, ServerCallContext context)
+        {
+
+            var permission = await _userService.CheckPermission(new DTOs.CoreFeature.User.Requests.CheckPermissionRequest
             {
-                Result = true
+                UserId = Guid.Parse(request.UserId),
+                Controller = request.Controller,
+                Action = request.Action
             });
+
+            return new CheckActionResponse
+            {
+                Success = permission.HasPermission
+            };
         }
     }
 }

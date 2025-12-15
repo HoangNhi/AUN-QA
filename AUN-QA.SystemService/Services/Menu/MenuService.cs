@@ -51,6 +51,7 @@ namespace AUN_QA.SystemService.Services.Menu
 
             var add = _mapper.Map<Entities.Menu>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            add.Controller = add.Controller.ToLower();
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
@@ -79,6 +80,7 @@ namespace AUN_QA.SystemService.Services.Menu
 
             _mapper.Map(request, update);
 
+            update.Controller = update.Controller.ToLower();
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
             _context.Menus.Update(update);

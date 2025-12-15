@@ -11,5 +11,7 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos
         public string Fullname { get; set; } = null!;
 
         public string Password { get; set; } = null!;
+
+        public Guid RoleId { get; set; }
     }
 }

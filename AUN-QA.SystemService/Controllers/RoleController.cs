@@ -70,6 +70,13 @@ namespace AUN_QA.SystemService.Controllers
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
+        [HttpGet, Route("get-all-combobox")]
+        public IActionResult GetAllForCombobox()
+        {
+            var result = _service.GetAllForCombobox();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
+
         [HttpGet, Route("get-permissions-by-role")]
         public async Task<IActionResult> GetPermissionsByRole([FromQuery] GetByIdRequest request)
         {

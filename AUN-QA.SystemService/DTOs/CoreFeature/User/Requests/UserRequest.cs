@@ -12,6 +12,8 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
         public string Fullname { get; set; } = null!;
 
         public string Password { get; set; } = null!;
+
+        public Guid RoleId { get; set; }
     }
 
     public class UserRequestValidator : AbstractValidator<UserRequest>
@@ -24,6 +26,8 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
                 .NotEmpty().WithMessage("Họ và tên không được để trống");
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Mật khẩu không được để trống");
+            RuleFor(x => x.RoleId)
+                .NotEmpty().WithMessage("Vai trò không được để trống");
         }
     }
 }

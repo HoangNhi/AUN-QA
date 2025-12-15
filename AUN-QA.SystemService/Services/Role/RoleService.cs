@@ -124,6 +124,18 @@ namespace AUN_QA.SystemService.Services.Role
             return result;
         }
 
+        public List<ModelCombobox> GetAllForCombobox()
+        {
+            var data = _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var result = data.Select(x => new ModelCombobox
+            {
+                Text = x.Name,
+                Value = x.Id.ToString(),
+            }).OrderBy(x => x.Text).ToList();
+
+            return result;
+        }
+
         public async Task<List<ModelPermission>> GetPermissionsByRole(GetByIdRequest request)
         {
             var parameters = new[]

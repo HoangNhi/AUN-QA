@@ -31,6 +31,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public IActionResult GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -41,6 +42,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpPost("insert")]
+        [AttributePermission(Action = ActionType.ADD)]
         public IActionResult Insert([FromBody] FacultyRequest request)
         {
             if (!ModelState.IsValid)
@@ -51,6 +53,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpPut, Route("update")]
+        [AttributePermission(Action = ActionType.UPDATE)]
         public IActionResult Update(FacultyRequest request)
         {
             if (!ModelState.IsValid)
@@ -61,6 +64,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpDelete, Route("delete-list")]
+        [AttributePermission(Action = ActionType.DELETE)]
         public IActionResult DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
@@ -71,6 +75,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpGet, Route("get-all-combobox")]
+        [AttributePermission(Action = ActionType.NONE)]
         public IActionResult GetAllForCombobox()
         {
             var result = _service.GetAllForCombobox();

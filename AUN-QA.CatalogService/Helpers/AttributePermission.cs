@@ -29,14 +29,14 @@ namespace AUN_QA.CatalogService.Helpers
                 var client = context.HttpContext.RequestServices.GetRequiredService<SystemProto.SystemProtoClient>();
 
                 // 3. Call gRPC
-                var response = await client.CheckActionAsync(new CheckActionRequest
+                var response = await client.CheckPermissionAsync(new CheckPermissionRequest
                 {
                     UserId = userId,
                     Controller = controllerName,
                     Action = ((int)Action)
                 });
 
-                if (!response.Result)
+                if (!response.Success)
                 {
                     context.Result = new ForbidResult();
                 }

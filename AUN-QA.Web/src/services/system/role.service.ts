@@ -1,6 +1,6 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type { Permission, PermissionRequest, Role } from "@/types/system/role.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type { GetListPagingRequest, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 
@@ -33,6 +33,10 @@ export const roleService = {
       data: { ids },
     });
   },
+
+  getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+      return api.get<ModelCombobox[]>(API_ENDPOINTS.System.Role.GET_ALL_COMBOBOX);
+    },
 
   getPermissionsByRole: async (id: string): Promise<ApiResponse<Permission[]>> => {
     return api.get<Permission[]>(API_ENDPOINTS.System.Role.GET_PERMISSIONS_BY_ROLE, {

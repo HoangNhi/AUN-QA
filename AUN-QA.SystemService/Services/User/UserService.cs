@@ -35,7 +35,7 @@ namespace AUN_QA.SystemService.Services.User
             }
 
             var result = _mapper.Map<ModelUser>(data);
-            result.Password = "Abc@123";
+            result.Password = "b86e09fa-0751";
 
             return result;
         }
@@ -84,7 +84,7 @@ namespace AUN_QA.SystemService.Services.User
 
             _mapper.Map(request, update);
 
-            if (request.Password != "Abc@123")
+            if (request.Password != "b86e09fa-0751")
             {
                 update.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, update.PasswordSalt);
             }
@@ -128,6 +128,19 @@ namespace AUN_QA.SystemService.Services.User
             };
 
             var result = await _context.ExcuteFunction<GetListPagingResponse<ModelUser>>("fn_user_getlistpaging", parameters);
+            return result;
+        }
+
+        public async Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request)
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_user_id", request.UserId),
+                new NpgsqlParameter("i_controller", request.Controller),
+                new NpgsqlParameter("i_action", ((int)request.Action))
+            };
+
+            var result = await _context.ExcuteFunction<CheckPermissionReponse>("fn_user_checkpermission", parameters);
             return result;
         }
     }

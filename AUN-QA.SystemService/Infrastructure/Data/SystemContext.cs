@@ -195,6 +195,7 @@ public partial class SystemContext : DbContext
                 .HasColumnName("is_deleted");
             entity.Property(e => e.Password).HasColumnName("password");
             entity.Property(e => e.PasswordSalt).HasColumnName("password_salt");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("updated_at");

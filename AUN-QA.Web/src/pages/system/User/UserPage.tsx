@@ -30,16 +30,17 @@ const UserPage = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const showPopupDetail = async (id: string, isEdit: boolean) => {
-    setIsOpen(true);
     if (isEdit) {
       const response = await userService.getById(id);
       if (response?.Success) {
         setUser({ ...response.Data, IsEdit: isEdit });
+        setIsOpen(true);
       } else {
         toast.error(response?.Message);
       }
     } else {
       setUser({ Id: id, Username: "", Fullname: "", IsEdit: isEdit });
+      setIsOpen(true);
     }
   };
 

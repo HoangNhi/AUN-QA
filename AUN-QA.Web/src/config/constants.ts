@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
             INSERT: `${SYSTEM_BASE}/Role/insert`,
             UPDATE: `${SYSTEM_BASE}/Role/update`,
             DELETE_LIST: `${SYSTEM_BASE}/Role/delete-list`,
+            GET_ALL_COMBOBOX: `${SYSTEM_BASE}/Role/get-all-combobox`,
             GET_PERMISSIONS_BY_ROLE: `${SYSTEM_BASE}/Role/get-permissions-by-role`,
             UPDATE_PERMISSIONS: `${SYSTEM_BASE}/Role/update-permissions`,
         },

@@ -9,6 +9,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { roleService } from "@/services/system/role.service";
+import type { ModelCombobox } from "@/types/base/base.types";
 import type { User } from "@/types/system/user.types";
 import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -28,6 +38,8 @@ const PopupDetail = ({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [roleId, setRoleId] = useState("");
+  const [roles, setRoles] = useState<ModelCombobox[]>([]);
 
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
@@ -36,6 +48,7 @@ const PopupDetail = ({
         Username: username,
         Password: password,
         Fullname: fullName,
+        RoleId: roleId,
         IsEdit: user?.IsEdit || false,
       },
       isAddMore
@@ -43,18 +56,32 @@ const PopupDetail = ({
   };
 
   useEffect(() => {
+    const fetchRoles = async () => {
+      // Fetch all system groups for dropdown (page index 1, large page size)
+      const res = await roleService.getAllCombobox();
+      if (res?.Success && res.Data) {
+        setRoles(res.Data);
+      }
+    };
+
+    if (isOpen) {
+      fetchRoles();
+    }
+
     if (user?.Id) {
       setId(user.Id);
       setUsername(user.Username);
-      setPassword("Abc@123");
+      setPassword(user.Password);
       setFullName(user.Fullname);
+      setRoleId(user.RoleId);
     } else {
       setId(uuidv4());
       setUsername("");
       setPassword("");
       setFullName("");
+      setRoleId("");
     }
-  }, [user]);
+  }, [isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -96,6 +123,29 @@ const PopupDetail = ({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
+            </div>
+            <div className="grid gap-3">
+              <Label>Vai trò</Label>
+              <Select
+                value={roleId || "no-value"}
+                onValueChange={(value) =>
+                  setRoleId(value === "no-value" ? "" : value)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn vai trò" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="no-value">Chọn vai trò</SelectItem>
+                    {roles.map((item) => (
+                      <SelectItem key={item.Value} value={item.Value}>
+                        {item.Text}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

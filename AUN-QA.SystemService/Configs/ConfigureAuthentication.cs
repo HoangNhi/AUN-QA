@@ -50,7 +50,7 @@ namespace AUN_QA.SystemService.Configs
                             context.Response.StatusCode = StatusCodes.Status200OK;
                             context.Response.ContentType = "application/json";
 
-                            var response = new BaseResponse(false, 403, "Bạn không có quyền truy cập tài nguyên này");
+                            var response = new BaseResponse(false, 403, "Bạn không có quyền truy cập");
                             var json = JsonConvert.SerializeObject(response);
 
                             await context.Response.WriteAsync(json);

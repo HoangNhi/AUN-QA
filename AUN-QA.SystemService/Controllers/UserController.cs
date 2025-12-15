@@ -2,6 +2,7 @@
 using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
+using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Services.User;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPost, Route("get-list")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(GetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -29,6 +31,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public IActionResult GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -39,6 +42,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPost("insert")]
+        [AttributePermission(Action = ActionType.ADD)]
         public IActionResult Insert([FromBody] UserRequest request)
         {
             if (!ModelState.IsValid)
@@ -49,6 +53,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPut, Route("update")]
+        [AttributePermission(Action = ActionType.UPDATE)]
         public IActionResult Update(UserRequest request)
         {
             if (!ModelState.IsValid)
@@ -59,6 +64,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpDelete, Route("delete-list")]
+        [AttributePermission(Action = ActionType.DELETE)]
         public IActionResult DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)

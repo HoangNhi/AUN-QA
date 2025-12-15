@@ -100,6 +100,9 @@ const UserPage = () => {
   const getList = async (request: GetListPagingRequest) => {
     try {
       const response = await userService.getList(request);
+      if (!response?.Success) {
+        throw new Error(response?.Message);
+      }
       setData(
         response?.Data || {
           Data: [],
@@ -109,7 +112,13 @@ const UserPage = () => {
         }
       );
     } catch (error) {
-      toast.error("Lỗi khi tải dữ liệu");
+      setData({
+        Data: [],
+        TotalRow: 0,
+        PageIndex: 1,
+        PageSize: 10,
+      });
+      toast.error(error?.message || "Lỗi khi tải dữ liệu");
     } finally {
       setRowSelection({});
     }

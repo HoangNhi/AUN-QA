@@ -6,11 +6,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
 {
     public interface IFacultyService
     {
-        ModelFaculty GetById(GetByIdRequest request);
-        ModelFaculty Insert(FacultyRequest request);
-        ModelFaculty Update(FacultyRequest request);
-        string DeleteList(DeleteListRequest request);
+        Task<ModelFaculty> GetById(GetByIdRequest request);
+        Task<ModelFaculty> Insert(FacultyRequest request);
+        Task<ModelFaculty> Update(FacultyRequest request);
+        Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelFaculty>> GetList(GetListPagingRequest request);
-        List<ModelCombobox> GetAllForCombobox();
+        Task<List<ModelCombobox>> GetAllForCombobox();
     }
 }

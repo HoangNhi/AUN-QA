@@ -32,53 +32,53 @@ namespace AUN_QA.CatalogService.Controllers
 
         [HttpGet, Route("get-by-id")]
         [AttributePermission(Action = ActionType.VIEW)]
-        public IActionResult GetById([FromQuery] GetByIdRequest request)
+        public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.GetById(request);
+            var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
         [AttributePermission(Action = ActionType.ADD)]
-        public IActionResult Insert([FromBody] FacultyRequest request)
+        public async Task<IActionResult> Insert([FromBody] FacultyRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Insert(request);
+            var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
         [AttributePermission(Action = ActionType.UPDATE)]
-        public IActionResult Update(FacultyRequest request)
+        public async Task<IActionResult> Update(FacultyRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Update(request);
+            var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelFaculty> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]
         [AttributePermission(Action = ActionType.DELETE)]
-        public IActionResult DeleteList([FromBody] DeleteListRequest request)
+        public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.DeleteList(request);
+            var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-all-combobox")]
         [AttributePermission(Action = ActionType.NONE)]
-        public IActionResult GetAllForCombobox()
+        public async Task<IActionResult> GetAllForCombobox()
         {
-            var result = _service.GetAllForCombobox();
+            var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
     }

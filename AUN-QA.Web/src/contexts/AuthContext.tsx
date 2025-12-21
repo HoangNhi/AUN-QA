@@ -310,6 +310,18 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
+    if (pathname === "") {
+      return {
+        Controller: "Home",
+        IsViewed: true,
+        IsAdded: true,
+        IsUpdated: true,
+        IsDeleted: true,
+        IsApproved: true,
+        IsAnalyzed: true,
+      };
+    }
+
     const result = currentPermissions?.find(
       (item) => item.Controller === pathname
     );

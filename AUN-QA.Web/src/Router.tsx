@@ -29,7 +29,7 @@ const Router: FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<UserPage />} />
           <Route path="/faculty" element={<FacultyPage />} />
-          <Route path="/system-group" element={<SystemGroupPage />} />
+          <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />
         </Route>

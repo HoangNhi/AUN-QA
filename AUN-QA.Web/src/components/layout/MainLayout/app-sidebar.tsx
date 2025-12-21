@@ -52,55 +52,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {systemGroup?.map((group) => (
-              <SidebarMenuItem key={group.Id}>
-                <SidebarMenuButton asChild>
-                  <a className="font-medium">{group.Name}</a>
-                </SidebarMenuButton>
-                {menu?.filter((item) => item.SystemGroupId === group.Id)
-                  .length ? (
+            {systemGroup?.map((group) => {
+              const groupMenu = menu?.filter(
+                (item) => item.SystemGroupId === group.Id
+              );
+
+              if (!groupMenu?.length) return null;
+
+              return (
+                <SidebarMenuItem key={group.Id}>
+                  <SidebarMenuButton asChild>
+                    <a className="font-medium">{group.Name}</a>
+                  </SidebarMenuButton>
                   <SidebarMenuSub>
-                    {menu
-                      ?.filter((item) => item.SystemGroupId === group.Id)
-                      .map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.Id}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={pathname === subItem.Controller}
-                          >
-                            <a href={subItem.Controller}>{subItem.Name}</a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                    {groupMenu.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.Id}>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={pathname === subItem.Controller}
+                        >
+                          <a href={subItem.Controller}>{subItem.Name}</a>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
                   </SidebarMenuSub>
-                ) : null}
-              </SidebarMenuItem>
-            ))}
-            {user?.Username === "admin" ? (
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a className="font-medium">Administator</a>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      asChild
-                      isActive={pathname === "/system-group"}
-                    >
-                      <a href="/system-group">Nhóm quyền</a>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      asChild
-                      isActive={pathname === "/menu"}
-                    >
-                      <a href="/menu">Menu</a>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              </SidebarMenuItem>
-            ) : null}
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

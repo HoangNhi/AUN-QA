@@ -15,8 +15,13 @@ import {
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation } from "react-router-dom";
 import { data } from "./nav-data";
+import type { GetPermissionByUser } from "@/types/system/role.types";
 
-export default function MainLayout() {
+interface MainLayoutProps {
+  permission?: GetPermissionByUser | null;
+}
+
+export default function MainLayout({ permission }: MainLayoutProps) {
   const location = useLocation();
   const pathname = location.pathname;
 
@@ -63,7 +68,7 @@ export default function MainLayout() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          <Outlet />
+          <Outlet context={{ permission }} />
         </div>
       </SidebarInset>
     </SidebarProvider>

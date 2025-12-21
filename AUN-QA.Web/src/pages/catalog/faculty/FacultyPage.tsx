@@ -12,8 +12,8 @@ import PopupFaculty from "./PopupFaculty";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
-import { useAuth } from "@/contexts/AuthContext";
 import type { GetPermissionByUser } from "@/types/system/role.types";
+import { useOutletContext } from "react-router-dom";
 
 const FacultyPage = () => {
   const [data, setData] = useState<GetListPagingResponse<Faculty>>({
@@ -30,6 +30,9 @@ const FacultyPage = () => {
     TextSearch: "",
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const { permission } = useOutletContext<{
+    permission: GetPermissionByUser | null;
+  }>();
 
   const showPopupDetail = async (id: string, isEdit: boolean) => {
     if (isEdit) {

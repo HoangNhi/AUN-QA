@@ -1,4 +1,11 @@
-import { useEffect, useState, type FC, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  type FC,
+  type ReactNode,
+  isValidElement,
+  cloneElement,
+} from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
@@ -38,8 +45,12 @@ const ProtectedRoute: FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (permission?.IsViewed === false) {
+  if (!permission?.IsViewed) {
     return <Navigate to="/unauthorized" replace />;
+  }
+
+  if (isValidElement(children)) {
+    return cloneElement(children as React.ReactElement<any>, { permission });
   }
 
   return <>{children}</>;

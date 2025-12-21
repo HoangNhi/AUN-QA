@@ -8,6 +8,8 @@ import type {
   GetListPagingRequest,
   GetListPagingResponse,
 } from "@/types/base/base.types";
+import { useOutletContext } from "react-router-dom";
+import type { GetPermissionByUser } from "@/types/system/role.types";
 import PopupDetail from "./PopupDetail";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -28,6 +30,9 @@ const MenuPage = () => {
     TextSearch: "",
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const { permission } = useOutletContext<{
+    permission: GetPermissionByUser | null;
+  }>();
 
   const showPopupDetail = async (id: string, isEdit: boolean) => {
     if (isEdit) {
@@ -139,7 +144,16 @@ const MenuPage = () => {
     getList(pageRequest);
   }, [pageRequest]);
 
-  const columns = useMemo(() => getColumns(showPopupDetail, deleteList), []);
+  const columns = useMemo(
+    () =>
+      getColumns(
+        showPopupDetail,
+        deleteList,
+        permission?.IsUpdated,
+        permission?.IsDeleted
+      ),
+    [permission, deleteList]
+  );
 
   return (
     <div className="container mx-auto ">
@@ -154,6 +168,8 @@ const MenuPage = () => {
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
         getList={getList}
+        canAdd={permission?.IsAdded}
+        canDelete={permission?.IsDeleted}
       />
       <PopupDetail
         data={selectedItem}

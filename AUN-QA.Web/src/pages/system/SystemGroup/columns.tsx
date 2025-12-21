@@ -15,7 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
-  deleteList: (ids: string[]) => void
+  deleteList: (ids: string[]) => void,
+  isUpdated?: boolean,
+  isDeleted?: boolean
 ): ColumnDef<SystemGroup>[] => [
   {
     id: "select",
@@ -51,7 +53,9 @@ export const getColumns = (
   },
   {
     id: "actions",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <DropdownMenu>
@@ -63,14 +67,18 @@ export const getColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
-              Xóa
-            </DropdownMenuItem>
+            {isUpdated && (
+              <DropdownMenuItem
+                onClick={() => showPopupDetail(row.original.Id, true)}
+              >
+                Cập nhật
+              </DropdownMenuItem>
+            )}
+            {isDeleted && (
+              <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
+                Xóa
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

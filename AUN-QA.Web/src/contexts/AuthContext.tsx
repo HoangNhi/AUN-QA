@@ -57,6 +57,69 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("user");
   };
 
+  const fetchUserData = useCallback(async (currentUser: User) => {
+    let currentSystemGroup: SystemGroup[] = [];
+    let currentMenu: MenuGetListPaging[] = [];
+    let currentPermissions: GetPermissionByUser[] = [];
+
+    // 1. Ensure System Group is available
+    const systemGroupJson = localStorage.getItem("systemGroup");
+    if (systemGroupJson) {
+      try {
+        currentSystemGroup = JSON.parse(systemGroupJson);
+      } catch (e) {
+        console.error("Error parsing systemGroup", e);
+      }
+    }
+
+    if (!currentSystemGroup || currentSystemGroup.length === 0) {
+      const response = await systemGroupService.getAll();
+      if (response.Success) {
+        currentSystemGroup = response.Data || [];
+        localStorage.setItem("systemGroup", JSON.stringify(currentSystemGroup));
+      }
+    }
+    setSystemGroup(currentSystemGroup || []);
+
+    // 2. Ensure Menu is available
+    const menuJson = localStorage.getItem("menu");
+    if (menuJson) {
+      try {
+        currentMenu = JSON.parse(menuJson);
+      } catch (e) {
+        console.error("Error parsing menu", e);
+      }
+    }
+
+    if (!currentMenu || currentMenu.length === 0) {
+      const response = await menuService.getListByUser(currentUser.Id);
+      if (response.Success) {
+        currentMenu = response.Data || [];
+        localStorage.setItem("menu", JSON.stringify(currentMenu));
+      }
+    }
+    setMenu(currentMenu || []);
+
+    // 3. Ensure Permissions are available
+    const permissionsJson = localStorage.getItem("permissions");
+    if (permissionsJson) {
+      try {
+        currentPermissions = JSON.parse(permissionsJson);
+      } catch (e) {
+        console.error("Error parsing permissions", e);
+      }
+    }
+
+    if (!currentPermissions || currentPermissions.length === 0) {
+      const response = await roleService.getPermissionsByUser(currentUser.Id);
+      if (response.Success) {
+        currentPermissions = response.Data || [];
+        localStorage.setItem("permissions", JSON.stringify(currentPermissions));
+      }
+    }
+    setPermissions(currentPermissions || []);
+  }, []);
+
   const initAuth = useCallback(async () => {
     try {
       setLoading(true);
@@ -65,11 +128,12 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           const decoded: { [key: string]: any } = jwtDecode(token);
           const userJson = localStorage.getItem("user");
-          let currentUser = user;
+          let currentUser: User | null = null;
           if (decoded.exp * 1000 > Date.now()) {
             if (userJson) {
-              setUser(JSON.parse(userJson));
-              currentUser = JSON.parse(userJson);
+              const userData = JSON.parse(userJson);
+              setUser(userData);
+              currentUser = userData;
             } else {
               const response = await userService.getCurrentUser();
               if (response.Success) {
@@ -78,115 +142,14 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
                 currentUser = response.Data;
               }
             }
-            let currentSystemGroup = systemGroup;
-            let currentMenu = menu;
-            let currentPermissions = permissions;
 
-            // 1. Ensure System Group is available
-            if (!currentSystemGroup || currentSystemGroup.length === 0) {
-              const systemGroupJson = localStorage.getItem("systemGroup");
-              if (systemGroupJson) {
-                try {
-                  currentSystemGroup = JSON.parse(systemGroupJson);
-                  setSystemGroup(currentSystemGroup || []);
-                } catch (e) {
-                  console.error("Error parsing systemGroup", e);
-                }
-              }
-
-              // If still empty (e.g. not in method storage), try API
-              if (!currentSystemGroup || currentSystemGroup.length === 0) {
-                const response = await systemGroupService.getAll();
-                if (response.Success) {
-                  currentSystemGroup = response.Data || [];
-                  setSystemGroup(currentSystemGroup);
-                  localStorage.setItem(
-                    "systemGroup",
-                    JSON.stringify(currentSystemGroup)
-                  );
-                }
-              }
-            }
-
-            // 2. Ensure Menu is available
-            if (!currentMenu || currentMenu.length === 0) {
-              const menuJson = localStorage.getItem("menu");
-              if (menuJson) {
-                try {
-                  currentMenu = JSON.parse(menuJson);
-                  setMenu(currentMenu || []);
-                } catch (e) {
-                  console.error("Error parsing menu", e);
-                }
-              }
-
-              if (!currentMenu || currentMenu.length === 0) {
-                const response = await menuService.getListByUser(
-                  currentUser?.Id
-                );
-                if (response.Success) {
-                  currentMenu = response.Data || [];
-                  setMenu(currentMenu);
-                  localStorage.setItem("menu", JSON.stringify(currentMenu));
-                }
-              }
-            }
-
-            // 3. Ensure Permissions are available
-            if (!currentPermissions || currentPermissions.length === 0) {
-              const permissionsJson = localStorage.getItem("permissions");
-              if (permissionsJson) {
-                try {
-                  currentPermissions = JSON.parse(permissionsJson);
-                  setPermissions(currentPermissions || []);
-                } catch (e) {
-                  console.error("Error parsing permissions", e);
-                }
-              }
-
-              if (!currentPermissions || currentPermissions.length === 0) {
-                // Fallback to API. user.Id might be undefined if initAuth hasn't finished user load
-                // But we rely on localStorage primarily for reload persistence.
-                const response = await roleService.getPermissionsByUser(
-                  currentUser?.Id
-                );
-                if (response.Success) {
-                  currentPermissions = response.Data || [];
-                  setPermissions(currentPermissions);
-                  localStorage.setItem(
-                    "permissions",
-                    JSON.stringify(currentPermissions)
-                  );
-                }
-              }
+            if (currentUser) {
+              await fetchUserData(currentUser);
             }
           } else {
             const refreshToken = getRefreshToken();
             if (refreshToken) {
-              //   const response = (await authService.refreshToken(
-              //     refreshToken
-              //   )) as any;
-              //   const AccessToken =
-              //     response.AccessToken || response.Token || response.accessToken;
-              //   const NewRefreshToken =
-              //     response.RefreshToken || response.refreshToken;
-              //   const Id = response.Id || response.id;
-              //   const Email = response.Email || response.email;
-              //   const FullName = response.FullName || response.fullName;
-              //   const Role = response.Role || response.role || "User";
-              //   if (AccessToken) {
-              //     saveTokens(AccessToken, NewRefreshToken);
-              //     if (Id && Email) {
-              //       const userData: User = { Id, Email, FullName, Role };
-              //       setUser(userData);
-              //       localStorage.setItem(
-              //         STORAGE_KEYS.USER,
-              //         JSON.stringify(userData)
-              //       );
-              //     }
-              //   } else {
-              //     throw new Error("Không nhận được AccessToken mới");
-              //   }
+              // Implementation for refresh token if needed
             } else {
               await performLogout();
             }
@@ -204,7 +167,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUserData]);
 
   useEffect(() => {
     initAuth();
@@ -240,6 +203,10 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         };
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
+
+        // Fetch user data immediately after login
+        await fetchUserData(userData);
+
         return response;
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
@@ -247,7 +214,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
       }
     },
-    []
+    [fetchUserData]
   );
 
   const logout = useCallback(async (): Promise<void> => {
@@ -265,6 +232,18 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     pathname: string
   ): Promise<GetPermissionByUser | undefined> => {
     // setLoading(true); // Don't block UI for this check? keeping inconsistent with original for now but might remove later
+
+    if (pathname === "") {
+      return {
+        Controller: "Home",
+        IsViewed: true,
+        IsAdded: true,
+        IsUpdated: true,
+        IsDeleted: true,
+        IsApproved: true,
+        IsAnalyzed: true,
+      };
+    }
 
     let currentSystemGroup = systemGroup;
     let currentMenu = menu;
@@ -343,18 +322,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           );
         }
       }
-    }
-
-    if (pathname === "") {
-      return {
-        Controller: "Home",
-        IsViewed: true,
-        IsAdded: true,
-        IsUpdated: true,
-        IsDeleted: true,
-        IsApproved: true,
-        IsAnalyzed: true,
-      };
     }
 
     const result = currentPermissions?.find(

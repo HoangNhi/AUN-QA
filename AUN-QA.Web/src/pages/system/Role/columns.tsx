@@ -30,7 +30,9 @@ const formatDate = (dateString: string) => {
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  showPopupPermission: (id: string) => void
+  showPopupPermission: (id: string) => void,
+  isUpdated?: boolean,
+  isDeleted?: boolean
 ): ColumnDef<Role>[] => [
   {
     id: "select",
@@ -82,19 +84,25 @@ export const getColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => showPopupPermission(row.original.Id)}
-            >
-              Phân quyền
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
-              Xóa
-            </DropdownMenuItem>
+            {isUpdated && (
+              <DropdownMenuItem
+                onClick={() => showPopupDetail(row.original.Id, true)}
+              >
+                Cập nhật
+              </DropdownMenuItem>
+            )}
+            {isUpdated && (
+              <DropdownMenuItem
+                onClick={() => showPopupPermission(row.original.Id)}
+              >
+                Phân quyền
+              </DropdownMenuItem>
+            )}
+            {isDeleted && (
+              <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
+                Xóa
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

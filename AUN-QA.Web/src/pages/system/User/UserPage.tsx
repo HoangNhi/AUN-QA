@@ -4,6 +4,7 @@ import { DataTable } from "./data-table";
 import { userService } from "@/services/system/user.service";
 import type { User } from "@/types/system/user.types";
 import { toast } from "sonner";
+import type { GetPermissionByUser } from "@/types/system/role.types";
 import type {
   GetListPagingRequest,
   GetListPagingResponse,
@@ -12,6 +13,7 @@ import PopupDetail from "./PopupDetail";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
+import { useOutletContext } from "react-router-dom";
 
 const UserPage = () => {
   const [data, setData] = useState<GetListPagingResponse<User>>({
@@ -28,6 +30,9 @@ const UserPage = () => {
     TextSearch: "",
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const { permission } = useOutletContext<{
+    permission: GetPermissionByUser | null;
+  }>();
 
   const showPopupDetail = async (id: string, isEdit: boolean) => {
     if (isEdit) {
@@ -128,7 +133,16 @@ const UserPage = () => {
     getList(pageRequest);
   }, [pageRequest]);
 
-  const columns = useMemo(() => getColumns(showPopupDetail, deleteList), []);
+  const columns = useMemo(
+    () =>
+      getColumns(
+        showPopupDetail,
+        deleteList,
+        permission?.IsUpdated,
+        permission?.IsDeleted
+      ),
+    [permission, deleteList]
+  );
 
   return (
     <div className="container mx-auto ">
@@ -143,6 +157,8 @@ const UserPage = () => {
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
         getList={getList}
+        canAdd={permission?.IsAdded}
+        canDelete={permission?.IsDeleted}
       />
       <PopupDetail
         user={user}

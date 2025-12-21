@@ -15,7 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
-  deleteList: (ids: string[]) => void
+  deleteList: (ids: string[]) => void,
+  isUpdated?: boolean,
+  isDeleted?: boolean
 ): ColumnDef<Menu>[] => [
   {
     id: "select",
@@ -52,12 +54,15 @@ export const getColumns = (
   {
     accessorKey: "CanView",
     header: "Xem",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanView}
           onCheckedChange={(value) => (row.original.CanView = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
@@ -65,12 +70,15 @@ export const getColumns = (
   {
     accessorKey: "CanAdd",
     header: "Thêm",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanAdd}
           onCheckedChange={(value) => (row.original.CanAdd = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
@@ -78,12 +86,15 @@ export const getColumns = (
   {
     accessorKey: "CanUpdate",
     header: "Cập nhật",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanUpdate}
           onCheckedChange={(value) => (row.original.CanUpdate = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
@@ -91,12 +102,15 @@ export const getColumns = (
   {
     accessorKey: "CanDelete",
     header: "Xóa",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanDelete}
           onCheckedChange={(value) => (row.original.CanDelete = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
@@ -104,12 +118,15 @@ export const getColumns = (
   {
     accessorKey: "CanApprove",
     header: "Duyệt",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanApprove}
           onCheckedChange={(value) => (row.original.CanApprove = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
@@ -117,19 +134,24 @@ export const getColumns = (
   {
     accessorKey: "CanAnalyze",
     header: "Thống kê",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <Checkbox
           checked={row.original.CanAnalyze}
           onCheckedChange={(value) => (row.original.CanAnalyze = !!value)}
+          disabled={!isUpdated}
         />
       );
     },
   },
   {
     id: "actions",
-    className: "text-center",
+    meta: {
+      className: "text-center",
+    },
     cell: ({ row }) => {
       return (
         <DropdownMenu>
@@ -141,14 +163,18 @@ export const getColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
-              Xóa
-            </DropdownMenuItem>
+            {isUpdated && (
+              <DropdownMenuItem
+                onClick={() => showPopupDetail(row.original.Id, true)}
+              >
+                Cập nhật
+              </DropdownMenuItem>
+            )}
+            {isDeleted && (
+              <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
+                Xóa
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

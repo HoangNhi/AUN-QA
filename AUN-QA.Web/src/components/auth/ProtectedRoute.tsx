@@ -20,20 +20,24 @@ const ProtectedRoute: FC<ProtectedRouteProps> = ({ children }) => {
   const [permission, setPermission] = useState<GetPermissionByUser | null>(
     null
   );
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
   const pathname = useLocation().pathname.split("/")[1];
 
-  const getPermissionByPathname = async () => {
-    const permission = await getPermission(pathname);
-    if (permission) {
-      setPermission(permission);
-    }
-  };
-
   useEffect(() => {
+    const getPermissionByPathname = async () => {
+      try {
+        const permission = await getPermission(pathname);
+        if (permission) {
+          setPermission(permission);
+        }
+      } finally {
+        setIsCheckingPermission(false);
+      }
+    };
     getPermissionByPathname();
-  }, [pathname]);
+  }, [pathname, getPermission]);
 
-  if (loading) {
+  if (loading || isCheckingPermission) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

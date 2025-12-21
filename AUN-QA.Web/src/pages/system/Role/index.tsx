@@ -12,6 +12,8 @@ import type {
   GetListPagingRequest,
   GetListPagingResponse,
 } from "@/types/base/base.types";
+import { useOutletContext } from "react-router-dom";
+import type { GetPermissionByUser } from "@/types/system/role.types";
 import PopupDetail from "./PopupDetail";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -35,6 +37,9 @@ const RolePage = () => {
     TextSearch: "",
   });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const { permission } = useOutletContext<{
+    permission: GetPermissionByUser | null;
+  }>();
 
   const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
     if (isEdit) {
@@ -162,8 +167,15 @@ const RolePage = () => {
   }, [pageRequest, getList]);
 
   const columns = useMemo(
-    () => getColumns(showPopupDetail, deleteList, showPopupPermission),
-    [showPopupDetail, deleteList, showPopupPermission]
+    () =>
+      getColumns(
+        showPopupDetail,
+        deleteList,
+        showPopupPermission,
+        permission?.IsUpdated,
+        permission?.IsDeleted
+      ),
+    [showPopupDetail, deleteList, showPopupPermission, permission]
   );
 
   return (
@@ -179,6 +191,8 @@ const RolePage = () => {
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
         getList={getList}
+        canAdd={permission?.IsAdded}
+        canDelete={permission?.IsDeleted}
       />
       {isOpen && (
         <PopupDetail

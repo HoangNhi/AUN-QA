@@ -31,12 +31,28 @@ namespace AUN_QA.SystemService.Services.User
             var data = _context.Users.Find(request.Id);
             if (data == null)
             {
-                throw new Exception("Not found");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelUser>(data);
             result.Password = "b86e09fa-0751";
 
+            return result;
+        }
+
+        public ModelUser GetCurrentUser()
+        {
+            var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new Exception("Người dùng chưa xác thực");
+            }
+            var data = _context.Users.FirstOrDefault(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
+            if (data == null)
+            {
+                throw new Exception("Không tìm thấy dữ liệu");
+            }
+            var result = _mapper.Map<ModelUser>(data);
             return result;
         }
 

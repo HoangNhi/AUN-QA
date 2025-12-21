@@ -12,5 +12,6 @@ namespace AUN_QA.SystemService.Services.User
         string DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request);
         Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request);
+        ModelUser GetCurrentUser();
     }
 }

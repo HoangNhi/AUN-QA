@@ -125,7 +125,16 @@ const FacultyPage = () => {
     getList(pageRequest);
   }, [pageRequest]);
 
-  const columns = useMemo(() => getColumns(showPopupDetail, deleteList), []);
+  const columns = useMemo(
+    () =>
+      getColumns(
+        showPopupDetail,
+        deleteList,
+        permission?.IsUpdated,
+        permission?.IsDeleted
+      ),
+    [permission]
+  );
 
   return (
     <div className="container mx-auto ">
@@ -140,6 +149,8 @@ const FacultyPage = () => {
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
         getList={getList}
+        canAdd={permission?.IsAdded}
+        canDelete={permission?.IsDeleted}
       />
       <PopupFaculty
         faculty={faculty}

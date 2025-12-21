@@ -13,7 +13,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
-  deleteList: (ids: string[]) => void
+  deleteList: (ids: string[]) => void,
+  canUpdate: boolean = true,
+  canDelete: boolean = true
 ): ColumnDef<Faculty>[] => [
   {
     id: "select",
@@ -43,6 +45,7 @@ export const getColumns = (
     id: "actions",
     className: "text-center",
     cell: ({ row }) => {
+      if (!canUpdate && !canDelete) return null;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -53,14 +56,18 @@ export const getColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
-              Xóa
-            </DropdownMenuItem>
+            {canUpdate && (
+              <DropdownMenuItem
+                onClick={() => showPopupDetail(row.original.Id, true)}
+              >
+                Cập nhật
+              </DropdownMenuItem>
+            )}
+            {canDelete && (
+              <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
+                Xóa
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

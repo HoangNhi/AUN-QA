@@ -24,4 +24,8 @@ export const userService = {
   deleteList: async (ids: string[]): Promise<ApiResponse<User[]>> => {
     return api.delete<User[]>(API_ENDPOINTS.System.User.DELETE_LIST, { data: { ids } });
   },
+
+  getCurrentUser: async (): Promise<ApiResponse<User>> => {
+    return api.get<User>(API_ENDPOINTS.System.User.GET_CURRENT_USER);
+  },
 };

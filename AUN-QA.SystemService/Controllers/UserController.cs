@@ -73,5 +73,13 @@ namespace AUN_QA.SystemService.Controllers
             var result = _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
+
+        [HttpGet, Route("get-current-user")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public IActionResult GetCurrentUser()
+        {
+            var result = _service.GetCurrentUser();
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+        }
     }
 }

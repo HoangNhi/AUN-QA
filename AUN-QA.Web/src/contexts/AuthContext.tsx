@@ -65,64 +65,99 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           const decoded: { [key: string]: any } = jwtDecode(token);
           const userJson = localStorage.getItem("user");
-
+          let currentUser = user;
           if (decoded.exp * 1000 > Date.now()) {
             if (userJson) {
               setUser(JSON.parse(userJson));
+              currentUser = JSON.parse(userJson);
             } else {
-              const response = await userService.getById(
-                decoded.name || decoded.Id || ""
-              );
+              const response = await userService.getCurrentUser();
               if (response.Success) {
                 setUser(response.Data);
                 localStorage.setItem("user", JSON.stringify(response.Data));
+                currentUser = response.Data;
               }
             }
-            const systemGroupJson = localStorage.getItem("systemGroup");
-            const menuJson = localStorage.getItem("menu");
-            const permissionsJson = localStorage.getItem("permissions");
-            if (systemGroupJson) {
-              setSystemGroup(JSON.parse(systemGroupJson));
-            } else {
-              const response = await systemGroupService.getAll();
-              if (response.Success) {
-                setSystemGroup(response.Data || []);
-                localStorage.setItem(
-                  "systemGroup",
-                  JSON.stringify(response.Data || [])
-                );
-              } else {
-                throw new Error("Lỗi hệ thống");
+            let currentSystemGroup = systemGroup;
+            let currentMenu = menu;
+            let currentPermissions = permissions;
+
+            // 1. Ensure System Group is available
+            if (!currentSystemGroup || currentSystemGroup.length === 0) {
+              const systemGroupJson = localStorage.getItem("systemGroup");
+              if (systemGroupJson) {
+                try {
+                  currentSystemGroup = JSON.parse(systemGroupJson);
+                  setSystemGroup(currentSystemGroup || []);
+                } catch (e) {
+                  console.error("Error parsing systemGroup", e);
+                }
+              }
+
+              // If still empty (e.g. not in method storage), try API
+              if (!currentSystemGroup || currentSystemGroup.length === 0) {
+                const response = await systemGroupService.getAll();
+                if (response.Success) {
+                  currentSystemGroup = response.Data || [];
+                  setSystemGroup(currentSystemGroup);
+                  localStorage.setItem(
+                    "systemGroup",
+                    JSON.stringify(currentSystemGroup)
+                  );
+                }
               }
             }
-            if (menuJson) {
-              setMenu(JSON.parse(menuJson));
-            } else {
-              const response = await menuService.getListByUser(decoded.name);
-              if (response.Success) {
-                setMenu(response.Data || []);
-                localStorage.setItem(
-                  "menu",
-                  JSON.stringify(response.Data || [])
+
+            // 2. Ensure Menu is available
+            if (!currentMenu || currentMenu.length === 0) {
+              const menuJson = localStorage.getItem("menu");
+              if (menuJson) {
+                try {
+                  currentMenu = JSON.parse(menuJson);
+                  setMenu(currentMenu || []);
+                } catch (e) {
+                  console.error("Error parsing menu", e);
+                }
+              }
+
+              if (!currentMenu || currentMenu.length === 0) {
+                const response = await menuService.getListByUser(
+                  currentUser?.Id
                 );
-              } else {
-                throw new Error("Lỗi hệ thống");
+                if (response.Success) {
+                  currentMenu = response.Data || [];
+                  setMenu(currentMenu);
+                  localStorage.setItem("menu", JSON.stringify(currentMenu));
+                }
               }
             }
-            if (permissionsJson) {
-              setPermissions(JSON.parse(permissionsJson));
-            } else {
-              const response = await roleService.getPermissionsByUser(
-                decoded.name
-              );
-              if (response.Success) {
-                setPermissions(response.Data || []);
-                localStorage.setItem(
-                  "permissions",
-                  JSON.stringify(response.Data || [])
+
+            // 3. Ensure Permissions are available
+            if (!currentPermissions || currentPermissions.length === 0) {
+              const permissionsJson = localStorage.getItem("permissions");
+              if (permissionsJson) {
+                try {
+                  currentPermissions = JSON.parse(permissionsJson);
+                  setPermissions(currentPermissions || []);
+                } catch (e) {
+                  console.error("Error parsing permissions", e);
+                }
+              }
+
+              if (!currentPermissions || currentPermissions.length === 0) {
+                // Fallback to API. user.Id might be undefined if initAuth hasn't finished user load
+                // But we rely on localStorage primarily for reload persistence.
+                const response = await roleService.getPermissionsByUser(
+                  currentUser?.Id
                 );
-              } else {
-                throw new Error("Lỗi hệ thống");
+                if (response.Success) {
+                  currentPermissions = response.Data || [];
+                  setPermissions(currentPermissions);
+                  localStorage.setItem(
+                    "permissions",
+                    JSON.stringify(currentPermissions)
+                  );
+                }
               }
             }
           } else {

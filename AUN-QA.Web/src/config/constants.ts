@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
             INSERT: `${SYSTEM_BASE}/User/insert`,
             UPDATE: `${SYSTEM_BASE}/User/update`,
             DELETE_LIST: `${SYSTEM_BASE}/User/delete-list`,
+            GET_CURRENT_USER: `${SYSTEM_BASE}/User/get-current-user`,
         },
         SystemGroup: {
             GET_LIST: `${SYSTEM_BASE}/SystemGroup/get-list`,

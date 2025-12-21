@@ -42,6 +42,8 @@ interface DataTableProps<TData, TValue> {
   pageRequest: GetListPagingRequest;
   setPageRequest?: (pageRequest: GetListPagingRequest) => void;
   getList?: (pageRequest: GetListPagingRequest) => void;
+  canAdd?: boolean;
+  canDelete?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -55,6 +57,8 @@ export function DataTable<TData, TValue>({
   pageRequest,
   setPageRequest,
   getList,
+  canAdd = true,
+  canDelete = true,
 }: DataTableProps<TData, TValue>) {
   const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -83,20 +87,24 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() =>
-              deleteList?.(
-                table.getSelectedRowModel().rows.map((row) => row.original.Id)
-              )
-            }
-          >
-            Xóa
-          </Button>
+          {canAdd && (
+            <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+              Thêm
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() =>
+                deleteList?.(
+                  table.getSelectedRowModel().rows.map((row) => row.original.Id)
+                )
+              }
+            >
+              Xóa
+            </Button>
+          )}
         </div>
         <InputGroup className="col-span-1">
           <InputGroupInput

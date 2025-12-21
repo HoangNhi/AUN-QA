@@ -4,6 +4,7 @@ export interface Role {
     CreatedAt: string;
     UpdatedAt: string;
     IsEdit: boolean;
+    IsActived: boolean;
 }
 
 export type RoleGetListPaging = Role;

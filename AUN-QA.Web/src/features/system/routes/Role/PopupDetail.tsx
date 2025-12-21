@@ -9,6 +9,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import type { Role } from "@/features/system/types/role.types";
 import { useState } from "react";
@@ -27,6 +35,7 @@ const PopupDetail = ({
 }) => {
   const [id] = useState<string>(data?.Id || uuidv4());
   const [name, setName] = useState(data?.Name || "");
+  const [isActived, setIsActived] = useState<boolean>(data?.IsActived ?? true);
 
   const onSubmit = (isAddMore: boolean) => {
     if (!name) {
@@ -40,6 +49,7 @@ const PopupDetail = ({
         IsEdit: data?.IsEdit || false,
         CreatedAt: data?.CreatedAt || "",
         UpdatedAt: data?.UpdatedAt || "",
+        IsActived: isActived,
       },
       isAddMore
     );
@@ -64,8 +74,8 @@ const PopupDetail = ({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
+          <div className="grid gap-4">
+            <div className="grid gap-3">
               <Label htmlFor="name" className="text-right">
                 Tên gọi
               </Label>
@@ -73,8 +83,26 @@ const PopupDetail = ({
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
               />
+            </div>
+            <div className="grid gap-3">
+              <Label>Trạng thái</Label>
+              <Select
+                value={isActived ? "true" : "false"}
+                onValueChange={(value) =>
+                  setIsActived(value === "true" ? true : false)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="true">Hoạt động</SelectItem>
+                    <SelectItem value="false">Không hoạt động</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

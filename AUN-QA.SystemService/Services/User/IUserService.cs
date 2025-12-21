@@ -10,7 +10,7 @@ namespace AUN_QA.SystemService.Services.User
         Task<ModelUser> Insert(UserRequest request);
         Task<ModelUser> Update(UserRequest request);
         Task<string> DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelUserGetListPaging>> GetList(GetListPagingRequest request);
         Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request);
         Task<ModelUser> GetCurrentUser();
     }

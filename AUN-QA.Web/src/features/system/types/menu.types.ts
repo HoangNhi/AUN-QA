@@ -10,7 +10,9 @@ export interface Menu {
   CanDelete: boolean;
   CanApprove: boolean;
   CanAnalyze: boolean;
+  IsShowMenu: boolean;
   IsEdit: boolean;
+  IsActived: boolean;
 }
 
 export interface MenuGetListPaging extends Menu {

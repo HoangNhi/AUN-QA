@@ -36,10 +36,11 @@ const PopupDetail = ({
 }) => {
   const [id] = useState<string | null>(user?.Id || uuidv4());
   const [username, setUsername] = useState(user?.Username || "");
-  const [password, setPassword] = useState(user?.Password || "");
+  const [password, setPassword] = useState(user?.Password || "b86e09fa-0751");
   const [fullName, setFullName] = useState(user?.Fullname || "");
   const [roleId, setRoleId] = useState(user?.RoleId || "");
   const [roles, setRoles] = useState<ModelCombobox[]>([]);
+  const [isActived, setIsActived] = useState<boolean>(user?.IsActived ?? true);
 
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
@@ -50,6 +51,7 @@ const PopupDetail = ({
         Fullname: fullName,
         RoleId: roleId,
         IsEdit: user?.IsEdit || false,
+        IsActived: isActived,
       },
       isAddMore
     );
@@ -68,7 +70,7 @@ const PopupDetail = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[425px]"
+        className="sm:max-w-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <form
@@ -83,7 +85,7 @@ const PopupDetail = ({
               {user?.IsEdit ? "Cập nhật Tài khoản" : "Thêm mới Tài khoản"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-3">
               <Label>Tên đăng nhập</Label>
               <Input
@@ -125,6 +127,25 @@ const PopupDetail = ({
                         {item.Text}
                       </SelectItem>
                     ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-3">
+              <Label>Trạng thái</Label>
+              <Select
+                value={isActived ? "true" : "false"}
+                onValueChange={(value) =>
+                  setIsActived(value === "true" ? true : false)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="true">Hoạt động</SelectItem>
+                    <SelectItem value="false">Không hoạt động</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

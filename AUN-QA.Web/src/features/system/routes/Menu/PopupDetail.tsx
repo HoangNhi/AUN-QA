@@ -55,6 +55,10 @@ const PopupDetail = ({
     setCanAnalyze,
     systemGroups,
     onSubmit,
+    isActived,
+    setIsActived,
+    isShowMenu,
+    setIsShowMenu,
   } = useMenuForm(data, saveChange);
 
   return (
@@ -116,6 +120,33 @@ const PopupDetail = ({
                 type="number"
                 value={sort}
                 onChange={(e) => setSort(parseInt(e.target.value) || 0)}
+              />
+            </div>
+            <div className="grid gap-3">
+              <Label>Trạng thái</Label>
+              <Select
+                value={isActived ? "true" : "false"}
+                onValueChange={(value) =>
+                  setIsActived(value === "true" ? true : false)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="true">Hoạt động</SelectItem>
+                    <SelectItem value="false">Không hoạt động</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-3">
+              <Label>Hiển thị Menu</Label>
+              <Checkbox
+                id="isShowMenu"
+                checked={isShowMenu}
+                onCheckedChange={(c) => setIsShowMenu(!!c)}
               />
             </div>
           </div>

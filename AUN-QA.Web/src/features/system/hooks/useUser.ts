@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { userService } from "@/features/system/api/user.api";
 import type { User } from "@/features/system/types/user.types";
@@ -25,6 +25,12 @@ export const useUser = () => {
     queryFn: () => userService.getList(pageRequest),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (listResponse && !listResponse.Success) {
+      toast.error(listResponse.Message);
+    }
+  }, [listResponse]);
 
   const data = listResponse?.Data || {
     Data: [],
@@ -95,6 +101,7 @@ export const useUser = () => {
         Fullname: "",
         RoleId: "",
         IsEdit: isEdit,
+        IsActived: true,
       });
       setIsOpen(true);
     }
@@ -116,6 +123,7 @@ export const useUser = () => {
              Password: "",
              RoleId: "",
              IsEdit: false,
+             IsActived: true,
            });
         } else {
            setIsOpen(false);

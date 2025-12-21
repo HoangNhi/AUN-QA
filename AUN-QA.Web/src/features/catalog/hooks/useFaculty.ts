@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { facultyService } from "@/features/catalog/api/faculty.api";
 import type { Faculty } from "@/features/catalog/types/faculty.types";
@@ -25,6 +25,12 @@ export const useFaculty = () => {
     queryFn: () => facultyService.getList(pageRequest),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (listResponse && !listResponse.Success) {
+      toast.error(listResponse.Message);
+    }
+  }, [listResponse]);
 
   const data = listResponse?.Data || {
     Data: [],

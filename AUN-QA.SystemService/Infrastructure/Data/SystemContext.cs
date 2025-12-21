@@ -55,6 +55,9 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.IsDeleted)
                 .HasDefaultValue(false)
                 .HasColumnName("is_deleted");
+            entity.Property(e => e.IsShowMenu)
+                .HasDefaultValue(true)
+                .HasColumnName("is_show_menu");
             entity.Property(e => e.Name).HasColumnName("name");
             entity.Property(e => e.Sort)
                 .HasDefaultValue(0)

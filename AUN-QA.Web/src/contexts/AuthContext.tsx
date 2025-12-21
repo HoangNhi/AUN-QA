@@ -215,7 +215,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
 
         return response;
       } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
         return {
           Success: false,
           Message: err instanceof Error ? err.message : "Đăng nhập thất bại",

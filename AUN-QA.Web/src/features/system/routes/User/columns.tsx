@@ -48,8 +48,19 @@ export const getColumns = (
     header: "Họ và tên",
   },
   {
-    accessorKey: "Email",
-    header: "Email",
+    accessorKey: "Role",
+    header: "Vai trò",
+  },
+  {
+    accessorKey: "IsActived",
+    header: "Trạng thái",
+    cell: ({ row }) => {
+      return (
+        <span className="text-center">
+          {row.original.IsActived ? "Hoạt động" : "Không hoạt động"}
+        </span>
+      );
+    },
   },
   {
     id: "actions",

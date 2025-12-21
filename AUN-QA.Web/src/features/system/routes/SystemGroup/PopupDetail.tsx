@@ -41,6 +41,7 @@ const PopupDetail = ({
   const [parentId, setParentId] = useState<string | null>(
     data?.ParentId || null
   );
+  const [isActived, setIsActived] = useState<boolean>(data?.IsActived || true);
   const [comboboxSystemGroup, setComboboxSystemGroup] = useState<
     ModelCombobox[]
   >([]);
@@ -53,6 +54,7 @@ const PopupDetail = ({
         Sort: sort,
         ParentId: parentId || undefined,
         IsEdit: data?.IsEdit || false,
+        IsActived: isActived,
       },
       isAddMore
     );
@@ -124,6 +126,25 @@ const PopupDetail = ({
                 value={sort}
                 onChange={(e) => setSort(parseInt(e.target.value) || 0)}
               />
+            </div>
+            <div className="grid gap-3">
+              <Label>Trạng thái</Label>
+              <Select
+                value={isActived ? "true" : "false"}
+                onValueChange={(value) =>
+                  setIsActived(value === "true" ? true : false)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="true">Hoạt động</SelectItem>
+                    <SelectItem value="false">Không hoạt động</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

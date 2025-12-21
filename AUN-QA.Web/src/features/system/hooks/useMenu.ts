@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { menuService } from "@/features/system/api/menu.api";
 import type { Menu } from "@/features/system/types/menu.types";
@@ -25,6 +25,12 @@ export const useMenu = () => {
     queryFn: () => menuService.getList(pageRequest),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (listResponse && !listResponse.Success) {
+      toast.error(listResponse.Message);
+    }
+  }, [listResponse]);
 
   const data = listResponse?.Data || {
     Data: [],
@@ -97,6 +103,8 @@ export const useMenu = () => {
         CanApprove: false,
         CanAnalyze: false,
         IsEdit: isEdit,
+        IsActived: true,
+        IsShowMenu: true,
       });
       setIsOpen(true);
     }
@@ -124,6 +132,8 @@ export const useMenu = () => {
              CanApprove: false,
              CanAnalyze: false,
              IsEdit: false,
+             IsActived: true,
+             IsShowMenu: true,
            });
         } else {
            setIsOpen(false);

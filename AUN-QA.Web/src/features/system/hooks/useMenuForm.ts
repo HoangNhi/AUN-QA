@@ -13,6 +13,8 @@ export const useMenuForm = (
   const [controller, setController] = useState(data?.Controller || "");
   const [sort, setSort] = useState(data?.Sort || 0);
   const [systemGroupId, setSystemGroupId] = useState(data?.SystemGroupId || "");
+  const [isActived, setIsActived] = useState<boolean>(data?.IsActived ?? true);
+  const [isShowMenu, setIsShowMenu] = useState<boolean>(data?.IsShowMenu ?? true);
 
   // Permissions
   const [canView, setCanView] = useState(data?.CanView || false);
@@ -55,6 +57,8 @@ export const useMenuForm = (
         CanApprove: canApprove,
         CanAnalyze: canAnalyze,
         IsEdit: data?.IsEdit || false,
+        IsActived: isActived,
+        IsShowMenu: isShowMenu,
       },
       isAddMore
     );
@@ -83,5 +87,9 @@ export const useMenuForm = (
     setCanAnalyze,
     systemGroups,
     onSubmit,
+    isActived,
+    setIsActived,
+    isShowMenu,
+    setIsShowMenu,
   };
 };

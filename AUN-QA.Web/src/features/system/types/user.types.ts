@@ -5,4 +5,10 @@ export interface User {
     RoleId: string;
     IsEdit: boolean;
     Password?: string;
+    IsActived: boolean;
 }
+
+export interface UserGetList extends User {
+    Role: string;
+}
+

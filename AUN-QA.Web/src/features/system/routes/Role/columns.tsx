@@ -69,6 +69,12 @@ export const getColumns = (
     cell: ({ row }) => formatDate(row.original.UpdatedAt),
   },
   {
+    accessorKey: "IsActived",
+    header: "Trạng thái",
+    cell: ({ row }) =>
+      row.original.IsActived ? "Hoạt động" : "Không hoạt động",
+  },
+  {
     id: "actions",
     meta: {
       className: "text-center",

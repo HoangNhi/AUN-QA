@@ -13,10 +13,13 @@ const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      login(username, password);
+      const result = await login(username, password);
+      if (!result.Success) {
+        toast.error(result.Message || "Đăng nhập thất bại");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
     }

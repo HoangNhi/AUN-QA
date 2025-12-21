@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { systemGroupService } from "@/features/system/api/systemGroup.api";
 import type {
@@ -27,6 +27,12 @@ export const useSystemGroup = () => {
     queryFn: () => systemGroupService.getList(pageRequest),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    if (listResponse && !listResponse.Success) {
+      toast.error(listResponse.Message);
+    }
+  }, [listResponse]);
 
   const data = listResponse?.Data || {
     Data: [],
@@ -86,7 +92,7 @@ export const useSystemGroup = () => {
         toast.error(response?.Message);
       }
     } else {
-      setSelectedItem({ Id: id, Name: "", Sort: 0, IsEdit: isEdit });
+      setSelectedItem({ Id: id, Name: "", Sort: 0, IsEdit: isEdit, IsActived: true });
       setIsOpen(true);
     }
   }, []);
@@ -105,6 +111,7 @@ export const useSystemGroup = () => {
              Name: "",
              Sort: 0,
              IsEdit: false,
+             IsActived: true,
            });
         } else {
            setIsOpen(false);

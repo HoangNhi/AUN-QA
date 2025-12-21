@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { roleService } from "@/features/system/api/role.api";
 import type {
@@ -33,6 +33,12 @@ export const useRole = () => {
     placeholderData: keepPreviousData,
   });
 
+  useEffect(() => {
+    if (listResponse && !listResponse.Success) {
+      toast.error(listResponse.Message);
+    }
+  }, [listResponse]);
+
   const data = listResponse?.Data || {
     Data: [],
     TotalRow: 0,
@@ -45,6 +51,12 @@ export const useRole = () => {
     queryFn: () => roleService.getPermissionsByRole(permissionRoleId!),
     enabled: !!permissionRoleId && isOpenPermission,
   });
+
+  useEffect(() => {
+    if (permissionResponse && !permissionResponse.Success) {
+      toast.error(permissionResponse.Message);
+    }
+  }, [permissionResponse]);
 
   const permissionData = permissionResponse?.Data || [];
 
@@ -121,6 +133,7 @@ export const useRole = () => {
         IsEdit: isEdit,
         CreatedAt: "",
         UpdatedAt: "",
+        IsActived: true,
       });
       setIsOpen(true);
     }
@@ -151,6 +164,7 @@ export const useRole = () => {
              IsEdit: false,
              CreatedAt: "",
              UpdatedAt: "",
+             IsActived: true,
            });
         } else {
            setIsOpen(false);

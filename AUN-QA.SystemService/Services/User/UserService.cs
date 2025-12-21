@@ -5,8 +5,8 @@ using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
-using Npgsql;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AUN_QA.SystemService.Services.User
 {
@@ -136,7 +136,7 @@ namespace AUN_QA.SystemService.Services.User
             return String.Join(',', request.Ids);
         }
 
-        public async Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelUserGetListPaging>> GetList(GetListPagingRequest request)
         {
             var parameters = new[]
             {
@@ -145,7 +145,7 @@ namespace AUN_QA.SystemService.Services.User
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelUser>>("fn_user_getlistpaging", parameters);
+            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelUserGetListPaging>>("fn_user_getlistpaging", parameters);
             return result;
         }
 

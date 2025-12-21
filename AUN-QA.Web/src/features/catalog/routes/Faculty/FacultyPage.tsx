@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import { getColumns } from "./columns";
-import { DataTable } from "./data-table";
-import PopupFaculty from "./PopupFaculty";
 import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { useOutletContext } from "react-router-dom";
 import { useFaculty } from "@/features/catalog/hooks/useFaculty";
+import { getColumns } from "./columns";
+import { DataTable } from "./data-table";
+import PopupFaculty from "./PopupFaculty";
 
 const FacultyPage = () => {
   const {

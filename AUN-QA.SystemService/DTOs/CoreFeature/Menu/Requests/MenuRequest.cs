@@ -26,6 +26,8 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.Menu.Requests
         public bool CanApprove { get; set; }
 
         public bool CanAnalyze { get; set; }
+
+        public bool IsShowMenu { get; set; } = true;
     }
 
     public class MenuRequestValidator : AbstractValidator<MenuRequest>

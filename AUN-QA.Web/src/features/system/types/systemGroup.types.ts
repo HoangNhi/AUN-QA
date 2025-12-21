@@ -4,6 +4,7 @@ export interface SystemGroup {
     Sort: number;
     ParentId?: string;
     IsEdit: boolean;
+    IsActived: boolean;
 }
 
 export interface SystemGroupGetListPaging extends SystemGroup {

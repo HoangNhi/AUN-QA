@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { SystemGroup } from "@/features/system/types/systemGroup.types";
+import type { SystemGroupGetListPaging } from "@/features/system/types/systemGroup.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
@@ -18,7 +18,7 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   isUpdated?: boolean,
   isDeleted?: boolean
-): ColumnDef<SystemGroup>[] => [
+): ColumnDef<SystemGroupGetListPaging>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -50,6 +50,12 @@ export const getColumns = (
   {
     accessorKey: "Sort",
     header: "Thứ tự",
+  },
+  {
+    accessorKey: "IsActived",
+    header: "Trạng thái",
+    cell: ({ row }) =>
+      row.original.IsActived ? "Hoạt động" : "Không hoạt động",
   },
   {
     id: "actions",

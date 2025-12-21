@@ -6,7 +6,6 @@ using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
-using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Services.Menu
 {
@@ -32,7 +31,7 @@ namespace AUN_QA.SystemService.Services.Menu
             var data = await _context.Menus.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Not found");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelMenu>(data);

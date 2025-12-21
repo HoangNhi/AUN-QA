@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/Home/HomePage";
+import HomePage from "./pages/home/HomePage";
 import UserPage from "./pages/system/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./pages/catalog/faculty/FacultyPage";
@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./pages/system/SystemGroup/SystemGroupPage";
 import MenuPage from "./pages/system/Menu/MenuPage";
 import RolePage from "./pages/system/Role";
+import UnauthorizedPage from "./pages/common/UnauthorizedPage";
 
 const Router: FC = () => {
   return (
@@ -31,6 +32,10 @@ const Router: FC = () => {
           <Route path="/system-group" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />
+        </Route>
+
+        <Route element={<MainLayout />}>
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

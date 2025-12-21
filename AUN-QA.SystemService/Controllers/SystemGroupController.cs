@@ -74,5 +74,12 @@ namespace AUN_QA.SystemService.Controllers
             var result = _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
+
+        [HttpGet, Route("get-all")]
+        public IActionResult GetAll()
+        {
+            var result = _service.GetAll();
+            return Ok(new BaseResponse<List<ModelSystemGroup>> { Data = result, Success = true });
+        }
     }
 }

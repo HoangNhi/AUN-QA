@@ -113,11 +113,18 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             var parameters = new[]
             {
                 new NpgsqlParameter("i_textsearch", request.TextSearch),
-                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pageindex", request.PageIndex == -1 ? -1 : request.PageIndex - 1),
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
             var result = await _context.ExcuteFunction<GetListPagingResponse<ModelSystemGroupGetListPaging>>("fn_system_group_getlistpaging", parameters);
+            return result;
+        }
+
+        public List<ModelSystemGroup> GetAll()
+        {
+            var data = _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var result = _mapper.Map<List<ModelSystemGroup>>(data).OrderBy(x => x.Sort).ToList();
             return result;
         }
 
@@ -129,7 +136,7 @@ namespace AUN_QA.SystemService.Services.SystemGroup
                 Text = x.Name,
                 Value = x.Id.ToString(),
                 Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
-            }).OrderBy(x => x.Text).ToList();
+            }).OrderBy(x => x.Sort).ToList();
 
             return result;
         }

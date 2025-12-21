@@ -67,5 +67,15 @@ namespace AUN_QA.SystemService.Controllers
             var result = _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
+
+        [HttpGet, Route("get-list-by-user")]
+        public async Task<IActionResult> GetListByUser([FromQuery] GetByIdRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetListByUser(request);
+            return Ok(new BaseResponse<List<ModelMenuGetListPaging>> { Data = result, Success = true });
+        }
     }
 }

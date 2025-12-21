@@ -174,5 +174,16 @@ namespace AUN_QA.SystemService.Services.Role
 
             return true;
         }
+
+        public async Task<List<ModelGetPermissionByUser>> GetPermissionsByUser(GetByIdRequest request)
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_user_id", request.Id)
+            };
+
+            var result = await _context.ExcuteFunction<List<ModelGetPermissionByUser>>("fn_permission_getbyuser", parameters);
+            return result;
+        }
     }
 }

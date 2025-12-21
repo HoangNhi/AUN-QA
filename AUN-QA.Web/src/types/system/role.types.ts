@@ -43,3 +43,14 @@ export interface PermissionRequest {
     IsApproved: boolean;
     IsAnalyzed: boolean;
 }
+
+export interface GetPermissionByUser {
+    Controller: string;
+    IsViewed: boolean;
+    IsAdded: boolean;
+    IsUpdated: boolean;
+    IsDeleted: boolean;
+    IsApproved: boolean;
+    IsAnalyzed: boolean;
+}
+

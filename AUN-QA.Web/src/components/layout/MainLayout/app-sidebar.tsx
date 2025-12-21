@@ -15,13 +15,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-import { data } from "./nav-data";
-
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const pathname = location.pathname;
+  const { systemGroup, menu, user } = useAuth();
 
   return (
     <Sidebar {...props}>
@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Documentation</span>
+                  <span className="font-medium">AUN-QA</span>
                   <span className="">v1.0.0</span>
                 </div>
               </a>
@@ -45,29 +45,62 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {data.navMain.map((item) => (
-              <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <a className="font-medium" href="/">
+                  Trang chủ
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {systemGroup?.map((group) => (
+              <SidebarMenuItem key={group.Id}>
                 <SidebarMenuButton asChild>
-                  <a href={item.url} className="font-medium">
-                    {item.title}
-                  </a>
+                  <a className="font-medium">{group.Name}</a>
                 </SidebarMenuButton>
-                {item.items?.length ? (
+                {menu?.filter((item) => item.SystemGroupId === group.Id)
+                  .length ? (
                   <SidebarMenuSub>
-                    {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          isActive={pathname === subItem.url}
-                        >
-                          <a href={subItem.url}>{subItem.title}</a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                    {menu
+                      ?.filter((item) => item.SystemGroupId === group.Id)
+                      .map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.Id}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={pathname === subItem.Controller}
+                          >
+                            <a href={subItem.Controller}>{subItem.Name}</a>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
                   </SidebarMenuSub>
                 ) : null}
               </SidebarMenuItem>
             ))}
+            {user?.Username === "admin" ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a className="font-medium">Administator</a>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={pathname === "/system-group"}
+                    >
+                      <a href="/system-group">Nhóm quyền</a>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={pathname === "/menu"}
+                    >
+                      <a href="/menu">Menu</a>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            ) : null}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

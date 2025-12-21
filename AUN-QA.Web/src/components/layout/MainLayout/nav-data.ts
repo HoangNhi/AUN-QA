@@ -1,20 +1,8 @@
-import { Title } from "@radix-ui/react-dialog";
-
 export const data = {
   navMain: [
     {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
+      title: "Trang chủ",
+      url: "/",
     },
     {
       title: "Danh mục",
@@ -48,5 +36,6 @@ export const data = {
         }
       ],
     },
+    
   ],
 };

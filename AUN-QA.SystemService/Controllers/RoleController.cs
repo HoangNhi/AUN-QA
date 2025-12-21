@@ -96,5 +96,15 @@ namespace AUN_QA.SystemService.Controllers
             var result = _service.UpdatePermissions(request);
             return Ok(new BaseResponse<bool> { Success = true });
         }
+
+        [HttpGet, Route("get-permissions-by-user")]
+        public async Task<IActionResult> GetPermissionsByUser([FromQuery] GetByIdRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetPermissionsByUser(request);
+            return Ok(new BaseResponse<List<ModelGetPermissionByUser>> { Data = result, Success = true });
+        }
     }
 }

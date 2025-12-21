@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
             UPDATE: `${SYSTEM_BASE}/SystemGroup/update`,
             DELETE_LIST: `${SYSTEM_BASE}/SystemGroup/delete-list`,
             GET_ALL_COMBOBOX: `${SYSTEM_BASE}/SystemGroup/get-all-combobox`,
+            GET_ALL: `${SYSTEM_BASE}/SystemGroup/get-all`,
         },
         Menu: {
             GET_LIST: `${SYSTEM_BASE}/Menu/get-list`,
@@ -23,6 +24,7 @@ export const API_ENDPOINTS = {
             INSERT: `${SYSTEM_BASE}/Menu/insert`,
             UPDATE: `${SYSTEM_BASE}/Menu/update`,
             DELETE_LIST: `${SYSTEM_BASE}/Menu/delete-list`,
+            GET_LIST_BY_USER: `${SYSTEM_BASE}/Menu/get-list-by-user`,
         },
         Role: {
             GET_LIST: `${SYSTEM_BASE}/Role/get-list`,
@@ -33,6 +35,7 @@ export const API_ENDPOINTS = {
             GET_ALL_COMBOBOX: `${SYSTEM_BASE}/Role/get-all-combobox`,
             GET_PERMISSIONS_BY_ROLE: `${SYSTEM_BASE}/Role/get-permissions-by-role`,
             UPDATE_PERMISSIONS: `${SYSTEM_BASE}/Role/update-permissions`,
+            GET_PERMISSIONS_BY_USER: `${SYSTEM_BASE}/Role/get-permissions-by-user`,
         },
         Auth: {
             LOGIN: `${SYSTEM_BASE}/Auth/login`,

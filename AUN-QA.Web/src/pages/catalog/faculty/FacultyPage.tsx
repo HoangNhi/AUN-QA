@@ -12,6 +12,8 @@ import PopupFaculty from "./PopupFaculty";
 import type { ApiResponse } from "@/lib/api";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "@/contexts/AuthContext";
+import type { GetPermissionByUser } from "@/types/system/role.types";
 
 const FacultyPage = () => {
   const [data, setData] = useState<GetListPagingResponse<Faculty>>({

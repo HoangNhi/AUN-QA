@@ -122,5 +122,16 @@ namespace AUN_QA.SystemService.Services.Menu
             var result = await _context.ExcuteFunction<GetListPagingResponse<ModelMenuGetListPaging>>("fn_menu_getlistpaging", parameters);
             return result;
         }
+
+        public async Task<List<ModelMenuGetListPaging>> GetListByUser(GetByIdRequest request)
+        {
+            var parameters = new[]
+            {
+                new NpgsqlParameter("i_user_id", request.Id),
+            };
+
+            var result = await _context.ExcuteFunction<List<ModelMenuGetListPaging>>("fn_menu_getbyuser", parameters);
+            return result;
+        }
     }
 }

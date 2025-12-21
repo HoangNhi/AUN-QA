@@ -16,5 +16,6 @@ namespace AUN_QA.SystemService.Services.Role
         Task<List<ModelPermission>> GetPermissionsByRole(GetByIdRequest request);
         bool UpdatePermissions(UpdatePermissionsRequest request);
         List<ModelCombobox> GetAllForCombobox();
+        Task<List<ModelGetPermissionByUser>> GetPermissionsByUser(GetByIdRequest request);
     }
 }

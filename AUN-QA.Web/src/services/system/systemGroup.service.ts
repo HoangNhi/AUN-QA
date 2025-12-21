@@ -28,4 +28,7 @@ export const systemGroupService = {
   getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
     return api.get<ModelCombobox[]>(API_ENDPOINTS.System.SystemGroup.GET_ALL_COMBOBOX);
   },
+  getAll: async (): Promise<ApiResponse<SystemGroup[]>> => {
+    return api.get<SystemGroup[]>(API_ENDPOINTS.System.SystemGroup.GET_ALL);
+  },
 };

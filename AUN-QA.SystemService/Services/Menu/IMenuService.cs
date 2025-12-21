@@ -11,5 +11,6 @@ namespace AUN_QA.SystemService.Services.Menu
         ModelMenu Update(MenuRequest request);
         string DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelMenuGetListPaging>> GetList(GetListPagingRequest request);
+        Task<List<ModelMenuGetListPaging>> GetListByUser(GetByIdRequest request);
     }
 }

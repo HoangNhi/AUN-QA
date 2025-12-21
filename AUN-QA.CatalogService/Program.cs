@@ -1,5 +1,6 @@
 using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
+using AUN_QA.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 

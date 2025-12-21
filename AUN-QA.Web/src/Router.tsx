@@ -1,14 +1,14 @@
 import type { FC } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/home/HomePage";
-import UserPage from "./pages/system/User/UserPage";
+import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
-import FacultyPage from "./pages/catalog/faculty/FacultyPage";
-import LoginPage from "./pages/system/Auth/LoginPage";
+import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
+import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import SystemGroupPage from "./pages/system/SystemGroup/SystemGroupPage";
-import MenuPage from "./pages/system/Menu/MenuPage";
-import RolePage from "./pages/system/Role";
+import SystemGroupPage from "./features/system/routes/SystemGroup/SystemGroupPage";
+import MenuPage from "./features/system/routes/Menu/MenuPage";
+import RolePage from "./features/system/routes/Role";
 import UnauthorizedPage from "./pages/common/UnauthorizedPage";
 
 const Router: FC = () => {

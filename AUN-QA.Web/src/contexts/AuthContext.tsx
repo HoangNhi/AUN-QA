@@ -1,8 +1,6 @@
 import {
   type FC,
   type ReactNode,
-  createContext,
-  useContext,
   useState,
   useCallback,
   useEffect,
@@ -13,29 +11,25 @@ import {
   clearTokens,
   getRefreshToken,
 } from "@/lib/cookies";
-import { authService } from "@/services/system/auth.service";
-import { jwtDecode } from "jwt-decode";
-import type { User } from "@/types/system/user.types";
-import type { AuthContextType } from "@/types/system/auth.types";
+import { authService } from "@/features/system/api/auth.api";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
+import type { User } from "@/features/system/types/user.types";
+import type {
+  AuthContextType,
+  LoginResponse,
+} from "@/features/system/types/auth.types";
 import { toast } from "sonner";
-import type { SystemGroup } from "@/types/system/systemGroup.types";
-import type { GetPermissionByUser } from "@/types/system/role.types";
-import { systemGroupService } from "@/services/system/systemGroup.service";
-import { menuService } from "@/services/system/menu.service";
-import { roleService } from "@/services/system/role.service";
-import { userService } from "@/services/system/user.service";
-import type { MenuGetListPaging } from "@/types/system/menu.types";
-import { useLocation } from "react-router-dom";
+import type { ApiResponse } from "@/lib/api";
+import type { SystemGroup } from "@/features/system/types/systemGroup.types";
+import type { GetPermissionByUser } from "@/features/system/types/role.types";
+import { systemGroupService } from "@/features/system/api/systemGroup.api";
+import { menuService } from "@/features/system/api/menu.api";
+import { roleService } from "@/features/system/api/role.api";
+import { userService } from "@/features/system/api/user.api";
+import type { MenuGetListPaging } from "@/features/system/types/menu.types";
+// import { useLocation } from "react-router-dom";
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth phải được sử dụng bên trong AuthProvider");
-  }
-  return context;
-};
+import { AuthContext } from "./auth-context-definition";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -126,10 +120,10 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       const token = getAccessToken();
       if (token) {
         try {
-          const decoded: { [key: string]: any } = jwtDecode(token);
+          const decoded = jwtDecode<JwtPayload>(token);
           const userJson = localStorage.getItem("user");
           let currentUser: User | null = null;
-          if (decoded.exp * 1000 > Date.now()) {
+          if (decoded.exp && decoded.exp * 1000 > Date.now()) {
             if (userJson) {
               const userData = JSON.parse(userJson);
               setUser(userData);
@@ -137,9 +131,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
             } else {
               const response = await userService.getCurrentUser();
               if (response.Success) {
-                setUser(response.Data);
+                setUser(response.Data || null);
                 localStorage.setItem("user", JSON.stringify(response.Data));
-                currentUser = response.Data;
+                currentUser = response.Data || null;
               }
             }
 
@@ -174,7 +168,10 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   }, [initAuth]);
 
   const login = useCallback(
-    async (username: string, password: string): Promise<any> => {
+    async (
+      username: string,
+      password: string
+    ): Promise<ApiResponse<LoginResponse>> => {
       try {
         setLoading(true);
         const response = await authService.login({
@@ -183,7 +180,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         });
 
         if (!response.Success) {
-          throw new Error(response.Message);
+          // We still return response so the caller can check Success/Message
+          return response;
         }
 
         const AccessToken = response.Data?.AccessToken;
@@ -192,14 +190,22 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         const Fullname = response.Data?.Fullname;
         const Username = response.Data?.Username;
 
-        if (!AccessToken)
-          throw new Error("Phản hồi từ server không chứa AccessToken");
+        if (!AccessToken) {
+          return {
+            ...response,
+            Success: false,
+            Message: "Phản hồi từ server không chứa AccessToken",
+          };
+        }
 
         saveTokens(AccessToken, "");
+        const RoleId = response.Data?.RoleId;
         const userData: User = {
-          Id: Id,
-          Fullname: Fullname,
-          Username: Username,
+          Id: Id || "",
+          Fullname: Fullname || "",
+          Username: Username || "",
+          RoleId: RoleId || "",
+          IsEdit: false,
         };
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
@@ -208,8 +214,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         await fetchUserData(userData);
 
         return response;
-      } catch (err) {
+      } catch (err: unknown) {
         toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
+        return {
+          Success: false,
+          Message: err instanceof Error ? err.message : "Đăng nhập thất bại",
+          StatusCode: 500,
+        };
       } finally {
         setLoading(false);
       }
@@ -288,7 +299,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (!currentMenu || currentMenu.length === 0) {
-        const response = await menuService.getListByUser(user?.Id);
+        const response = await menuService.getListByUser(user?.Id || "");
         if (response.Success) {
           currentMenu = response.Data || [];
           setMenu(currentMenu);
@@ -312,7 +323,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       if (!currentPermissions || currentPermissions.length === 0) {
         // Fallback to API. user.Id might be undefined if initAuth hasn't finished user load
         // But we rely on localStorage primarily for reload persistence.
-        const response = await roleService.getPermissionsByUser(user?.Id);
+        const response = await roleService.getPermissionsByUser(user?.Id || "");
         if (response.Success) {
           currentPermissions = response.Data || [];
           setPermissions(currentPermissions);
@@ -337,6 +348,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     permissions,
     isAuthenticated: !!user,
     loading,
+    error: null,
     login,
     logout,
     getPermission,

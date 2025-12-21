@@ -1,8 +1,8 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import { API_ENDPOINTS } from '@/config/constants';
+// import { API_ENDPOINTS } from '@/config/constants';
 import { getAccessToken } from './cookies';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   Data?: T;
   Message?: string;
   Success: boolean;
@@ -37,7 +37,7 @@ class ApiClient {
     this.axiosInstance.interceptors.response.use(
       (response) => response,
       async (error: AxiosError) => {
-        const original = error.config;
+        // const original = error.config;
 
         // if (error.response?.status === 401 && original && !(original as any)._retry) {
         //   (original as any)._retry = true;
@@ -82,12 +82,12 @@ class ApiClient {
     return response.data;
   }
 
-  async post<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.post(endpoint, data, config);
     return response.data;
   }
 
-  async put<T>(endpoint: string, data?: any, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.put(endpoint, data, config);
     return response.data;
   }

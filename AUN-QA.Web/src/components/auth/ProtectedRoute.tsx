@@ -7,9 +7,9 @@ import {
   cloneElement,
 } from "react";
 import { Navigate, useLocation } from "react-router";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import type { GetPermissionByUser } from "@/types/system/role.types";
+import type { GetPermissionByUser } from "@/features/system/types/role.types";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -54,7 +54,14 @@ const ProtectedRoute: FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (isValidElement(children)) {
-    return cloneElement(children as React.ReactElement<any>, { permission });
+    return cloneElement(
+      children as React.ReactElement<{
+        permission: GetPermissionByUser | null;
+      }>,
+      {
+        permission,
+      }
+    );
   }
 
   return <>{children}</>;

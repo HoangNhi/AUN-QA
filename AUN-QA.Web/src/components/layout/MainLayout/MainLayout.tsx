@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation } from "react-router-dom";
 import { data } from "./nav-data";
-import type { GetPermissionByUser } from "@/types/system/role.types";
+import type { GetPermissionByUser } from "@/features/system/types/role.types";
 
 interface MainLayoutProps {
   permission?: GetPermissionByUser | null;

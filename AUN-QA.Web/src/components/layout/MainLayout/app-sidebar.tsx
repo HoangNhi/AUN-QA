@@ -16,12 +16,12 @@ import {
 } from "@/components/ui/sidebar";
 
 import { useLocation, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const pathname = location.pathname;
-  const { systemGroup, menu, user } = useAuth();
+  const { systemGroup, menu } = useAuth();
 
   return (
     <Sidebar {...props}>

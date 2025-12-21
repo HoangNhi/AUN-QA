@@ -10,10 +10,10 @@
                 options.AddDefaultPolicy(
                     policy =>
                     {
-                        var origin = builder.Configuration.GetSection("Cors:Origins").Get<string[]>();
-                        if (origin != null && origin.Length > 0)
+                        var origins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>();
+                        if (origins != null && origins.Length > 0)
                         {
-                            policy.WithOrigins(origin)
+                            policy.WithOrigins(origins)
                                   .AllowAnyHeader()
                                   .AllowAnyMethod();
                         }

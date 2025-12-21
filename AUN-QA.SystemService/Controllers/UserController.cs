@@ -32,53 +32,58 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpGet, Route("get-by-id")]
         [AttributePermission(Action = ActionType.VIEW)]
-        public IActionResult GetById([FromQuery] GetByIdRequest request)
+
+        public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.GetById(request);
+            var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
         [AttributePermission(Action = ActionType.ADD)]
-        public IActionResult Insert([FromBody] UserRequest request)
+
+        public async Task<IActionResult> Insert([FromBody] UserRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Insert(request);
+            var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
         [AttributePermission(Action = ActionType.UPDATE)]
-        public IActionResult Update(UserRequest request)
+
+        public async Task<IActionResult> Update(UserRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Update(request);
+            var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]
         [AttributePermission(Action = ActionType.DELETE)]
-        public IActionResult DeleteList([FromBody] DeleteListRequest request)
+
+        public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.DeleteList(request);
+            var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-current-user")]
         [AttributePermission(Action = ActionType.NONE)]
-        public IActionResult GetCurrentUser()
+
+        public async Task<IActionResult> GetCurrentUser()
         {
-            var result = _service.GetCurrentUser();
+            var result = await _service.GetCurrentUser();
             return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
         }
     }

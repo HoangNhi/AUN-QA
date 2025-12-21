@@ -6,12 +6,12 @@ namespace AUN_QA.SystemService.Services.SystemGroup
 {
     public interface ISystemGroupService
     {
-        ModelSystemGroup GetById(GetByIdRequest request);
-        ModelSystemGroup Insert(SystemGroupRequest request);
-        ModelSystemGroup Update(SystemGroupRequest request);
-        string DeleteList(DeleteListRequest request);
+        Task<ModelSystemGroup> GetById(GetByIdRequest request);
+        Task<ModelSystemGroup> Insert(SystemGroupRequest request);
+        Task<ModelSystemGroup> Update(SystemGroupRequest request);
+        Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelSystemGroupGetListPaging>> GetList(GetListPagingRequest request);
-        List<ModelCombobox> GetAllForCombobox();
-        List<ModelSystemGroup> GetAll();
+        Task<List<ModelCombobox>> GetAllForCombobox();
+        Task<List<ModelSystemGroup>> GetAll();
     }
 }

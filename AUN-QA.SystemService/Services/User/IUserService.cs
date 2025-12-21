@@ -6,12 +6,12 @@ namespace AUN_QA.SystemService.Services.User
 {
     public interface IUserService
     {
-        ModelUser GetById(GetByIdRequest request);
-        ModelUser Insert(UserRequest request);
-        ModelUser Update(UserRequest request);
-        string DeleteList(DeleteListRequest request);
+        Task<ModelUser> GetById(GetByIdRequest request);
+        Task<ModelUser> Insert(UserRequest request);
+        Task<ModelUser> Update(UserRequest request);
+        Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelUser>> GetList(GetListPagingRequest request);
         Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request);
-        ModelUser GetCurrentUser();
+        Task<ModelUser> GetCurrentUser();
     }
 }

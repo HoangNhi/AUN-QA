@@ -6,6 +6,7 @@ using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
+using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Services.Menu
 {
@@ -26,9 +27,9 @@ namespace AUN_QA.SystemService.Services.Menu
             _contextAccessor = contextAccessor;
         }
 
-        public ModelMenu GetById(GetByIdRequest request)
+        public async Task<ModelMenu> GetById(GetByIdRequest request)
         {
-            var data = _context.Menus.Find(request.Id);
+            var data = await _context.Menus.FindAsync(request.Id);
             if (data == null)
             {
                 throw new Exception("Not found");
@@ -37,7 +38,7 @@ namespace AUN_QA.SystemService.Services.Menu
             return _mapper.Map<ModelMenu>(data);
         }
 
-        public ModelMenu Insert(MenuRequest request)
+        public async Task<ModelMenu> Insert(MenuRequest request)
         {
             var data = _context.Menus.Where(x =>
                 x.Name == request.Name && x.SystemGroupId == request.SystemGroupId
@@ -55,13 +56,13 @@ namespace AUN_QA.SystemService.Services.Menu
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
-            _context.Menus.Add(add);
-            _context.SaveChanges();
+            await _context.Menus.AddAsync(add);
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelMenu>(add);
         }
 
-        public ModelMenu Update(MenuRequest request)
+        public async Task<ModelMenu> Update(MenuRequest request)
         {
             var data = _context.Menus.Where(x =>
                 x.Name == request.Name && x.SystemGroupId == request.SystemGroupId
@@ -72,7 +73,7 @@ namespace AUN_QA.SystemService.Services.Menu
                 throw new Exception("Tên menu đã tồn tại trong nhóm này");
             }
 
-            var update = _context.Menus.Find(request.Id);
+            var update = await _context.Menus.FindAsync(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -84,16 +85,16 @@ namespace AUN_QA.SystemService.Services.Menu
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
             _context.Menus.Update(update);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelMenu>(update);
         }
 
-        public string DeleteList(DeleteListRequest request)
+        public async Task<string> DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.Menus.Find(id);
+                var delete = await _context.Menus.FindAsync(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -106,7 +107,7 @@ namespace AUN_QA.SystemService.Services.Menu
                 _context.Menus.Update(delete);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
         }
 
@@ -119,7 +120,7 @@ namespace AUN_QA.SystemService.Services.Menu
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelMenuGetListPaging>>("fn_menu_getlistpaging", parameters);
+            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelMenuGetListPaging>>("fn_menu_getlistpaging", parameters);
             return result;
         }
 
@@ -130,7 +131,7 @@ namespace AUN_QA.SystemService.Services.Menu
                 new NpgsqlParameter("i_user_id", request.Id),
             };
 
-            var result = await _context.ExcuteFunction<List<ModelMenuGetListPaging>>("fn_menu_getbyuser", parameters);
+            var result = await _context.ExecuteFunction<List<ModelMenuGetListPaging>>("fn_menu_getbyuser", parameters);
             return result;
         }
     }

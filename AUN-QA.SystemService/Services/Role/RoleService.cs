@@ -8,6 +8,7 @@ using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
+using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Services.Role
 {
@@ -28,9 +29,9 @@ namespace AUN_QA.SystemService.Services.Role
             _contextAccessor = contextAccessor;
         }
 
-        public ModelRole GetById(GetByIdRequest request)
+        public async Task<ModelRole> GetById(GetByIdRequest request)
         {
-            var data = _context.Roles.Find(request.Id);
+            var data = await _context.Roles.FindAsync(request.Id);
             if (data == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -39,7 +40,7 @@ namespace AUN_QA.SystemService.Services.Role
             return _mapper.Map<ModelRole>(data);
         }
 
-        public ModelRole Insert(RoleRequest request)
+        public async Task<ModelRole> Insert(RoleRequest request)
         {
             var data = _context.Roles.Where(x =>
                 x.Name == request.Name
@@ -57,13 +58,13 @@ namespace AUN_QA.SystemService.Services.Role
             add.CreatedAt = DateTime.Now;
             add.IsActived = true;
 
-            _context.Roles.Add(add);
-            _context.SaveChanges();
+            await _context.Roles.AddAsync(add);
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelRole>(add);
         }
 
-        public ModelRole Update(RoleRequest request)
+        public async Task<ModelRole> Update(RoleRequest request)
         {
             var data = _context.Roles.Where(x =>
                 x.Name == request.Name
@@ -74,7 +75,7 @@ namespace AUN_QA.SystemService.Services.Role
                 throw new Exception("Tên gọi đã tồn tại");
             }
 
-            var update = _context.Roles.Find(request.Id);
+            var update = await _context.Roles.FindAsync(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -85,16 +86,16 @@ namespace AUN_QA.SystemService.Services.Role
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
             _context.Roles.Update(update);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelRole>(update);
         }
 
-        public string DeleteList(DeleteListRequest request)
+        public async Task<string> DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.Roles.Find(id);
+                var delete = await _context.Roles.FindAsync(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -107,7 +108,7 @@ namespace AUN_QA.SystemService.Services.Role
                 _context.Roles.Update(delete);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
         }
 
@@ -120,13 +121,13 @@ namespace AUN_QA.SystemService.Services.Role
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelRoleGetListPaging>>("fn_role_getlistpaging", parameters);
+            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelRoleGetListPaging>>("fn_role_getlistpaging", parameters);
             return result;
         }
 
-        public List<ModelCombobox> GetAllForCombobox()
+        public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var data = await _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
             var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,
@@ -143,15 +144,15 @@ namespace AUN_QA.SystemService.Services.Role
                 new NpgsqlParameter("i_role_id", request.Id)
             };
 
-            var result = await _context.ExcuteFunction<List<ModelPermission>>("fn_permission_getbyrole", parameters);
+            var result = await _context.ExecuteFunction<List<ModelPermission>>("fn_permission_getbyrole", parameters);
             return result;
         }
 
-        public bool UpdatePermissions(UpdatePermissionsRequest request)
+        public async Task<bool> UpdatePermissions(UpdatePermissionsRequest request)
         {
             foreach (var item in request.Permissions)
             {
-                var resultUpdate = _context.Permissions.Find(item.Id);
+                var resultUpdate = await _context.Permissions.FindAsync(item.Id);
                 if (resultUpdate == null)
                 {
                     var add = _mapper.Map<Entities.Permission>(item);
@@ -163,14 +164,17 @@ namespace AUN_QA.SystemService.Services.Role
                     _context.Update(resultUpdate);
                 }
 
-                var roleUpdate = _context.Roles.Find(item.RoleId);
-                roleUpdate.UpdatedAt = DateTime.Now;
-                roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                _context.Update(roleUpdate);
+                var roleUpdate = await _context.Roles.FindAsync(item.RoleId);
+                if (roleUpdate != null)
+                {
+                    roleUpdate.UpdatedAt = DateTime.Now;
+                    roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    _context.Update(roleUpdate);
+                }
             }
 
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return true;
         }
@@ -182,7 +186,7 @@ namespace AUN_QA.SystemService.Services.Role
                 new NpgsqlParameter("i_user_id", request.Id)
             };
 
-            var result = await _context.ExcuteFunction<List<ModelGetPermissionByUser>>("fn_permission_getbyuser", parameters);
+            var result = await _context.ExecuteFunction<List<ModelGetPermissionByUser>>("fn_permission_getbyuser", parameters);
             return result;
         }
     }

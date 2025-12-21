@@ -2,6 +2,7 @@ using AUN_QA.SystemService.DTOs.Base;
 using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Requests;
+using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Services.Menu;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPost, Route("get-list")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(GetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -29,46 +31,51 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        public IActionResult GetById([FromQuery] GetByIdRequest request)
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.GetById(request);
+            var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelMenu> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
-        public IActionResult Insert([FromBody] MenuRequest request)
+        [AttributePermission(Action = ActionType.ADD)]
+        public async Task<IActionResult> Insert([FromBody] MenuRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Insert(request);
+            var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelMenu> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
-        public IActionResult Update(MenuRequest request)
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> Update(MenuRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Update(request);
+            var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelMenu> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]
-        public IActionResult DeleteList([FromBody] DeleteListRequest request)
+        [AttributePermission(Action = ActionType.DELETE)]
+        public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.DeleteList(request);
+            var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-list-by-user")]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetListByUser([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)

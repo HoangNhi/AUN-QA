@@ -2,13 +2,13 @@ using AUN_QA.SystemService.Protos;
 using AUN_QA.SystemService.Services.User;
 using Grpc.Core;
 
-namespace AUN_QA.SystemService.Services
+namespace AUN_QA.SystemService.Services.SystemGrpc
 {
-    public class G_SystemService : SystemProto.SystemProtoBase
+    public class SystemGrpcService : SystemProto.SystemProtoBase
     {
         private readonly IUserService _userService;
 
-        public G_SystemService(IUserService userService)
+        public SystemGrpcService(IUserService userService)
         {
             _userService = userService;
         }

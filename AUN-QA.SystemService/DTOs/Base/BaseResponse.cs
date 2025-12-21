@@ -14,10 +14,10 @@ namespace AUN_QA.SystemService.DTOs.Base
             Data = default(T);
         }
 
-        public BaseResponse(bool success, int statuscode, T? data, string message = null)
+        public BaseResponse(bool success, int statusCode, T? data, string? message = null)
         {
             Success = success;
-            StatusCode = statuscode;
+            StatusCode = statusCode;
             Data = data;
             Message = message;
         }
@@ -37,10 +37,10 @@ namespace AUN_QA.SystemService.DTOs.Base
         public int StatusCode { get; set; } = 200;
         public string? Message { get; set; }
 
-        public BaseResponse(bool success, int statuscode, string message = null)
+        public BaseResponse(bool success, int statusCode, string? message = null)
         {
             Success = success;
-            StatusCode = statuscode;
+            StatusCode = statusCode;
             Message = message;
         }
     }

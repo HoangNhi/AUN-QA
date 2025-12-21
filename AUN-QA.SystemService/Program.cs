@@ -1,6 +1,7 @@
 using AUN_QA.SystemService.Configs;
 using AUN_QA.SystemService.Middlewares;
 using AUN_QA.ServiceDefaults;
+using AUN_QA.SystemService.Services.SystemGrpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,6 @@ app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGrpcService<AUN_QA.SystemService.Services.G_SystemService>();
+app.MapGrpcService<SystemGrpcService>();
 
 app.Run();

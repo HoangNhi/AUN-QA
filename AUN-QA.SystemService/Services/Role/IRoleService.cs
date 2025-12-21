@@ -8,14 +8,14 @@ namespace AUN_QA.SystemService.Services.Role
 {
     public interface IRoleService
     {
-        ModelRole GetById(GetByIdRequest request);
-        ModelRole Insert(RoleRequest request);
-        ModelRole Update(RoleRequest request);
-        string DeleteList(DeleteListRequest request);
+        Task<ModelRole> GetById(GetByIdRequest request);
+        Task<ModelRole> Insert(RoleRequest request);
+        Task<ModelRole> Update(RoleRequest request);
+        Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelRoleGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelPermission>> GetPermissionsByRole(GetByIdRequest request);
-        bool UpdatePermissions(UpdatePermissionsRequest request);
-        List<ModelCombobox> GetAllForCombobox();
+        Task<bool> UpdatePermissions(UpdatePermissionsRequest request);
+        Task<List<ModelCombobox>> GetAllForCombobox();
         Task<List<ModelGetPermissionByUser>> GetPermissionsByUser(GetByIdRequest request);
     }
 }

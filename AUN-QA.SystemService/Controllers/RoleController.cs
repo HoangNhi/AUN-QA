@@ -4,6 +4,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Requests;
+using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Services.Role;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +22,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPost, Route("get-list")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(GetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -31,53 +33,59 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        public IActionResult GetById([FromQuery] GetByIdRequest request)
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.GetById(request);
+            var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelRole> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]
-        public IActionResult Insert([FromBody] RoleRequest request)
+        [AttributePermission(Action = ActionType.ADD)]
+        public async Task<IActionResult> Insert([FromBody] RoleRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Insert(request);
+            var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelRole> { Data = result, Success = true });
         }
 
         [HttpPut, Route("update")]
-        public IActionResult Update(RoleRequest request)
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> Update(RoleRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Update(request);
+            var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelRole> { Data = result, Success = true });
         }
 
         [HttpDelete, Route("delete-list")]
-        public IActionResult DeleteList([FromBody] DeleteListRequest request)
+        [AttributePermission(Action = ActionType.DELETE)]
+        public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.DeleteList(request);
+            var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-all-combobox")]
-        public IActionResult GetAllForCombobox()
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAllForCombobox()
         {
-            var result = _service.GetAllForCombobox();
+            var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-permissions-by-role")]
+        [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetPermissionsByRole([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -88,16 +96,18 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpPut, Route("update-permissions")]
-        public IActionResult UpdatePermissions(UpdatePermissionsRequest request)
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> UpdatePermissions(UpdatePermissionsRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.UpdatePermissions(request);
+            var result = await _service.UpdatePermissions(request);
             return Ok(new BaseResponse<bool> { Success = true });
         }
 
         [HttpGet, Route("get-permissions-by-user")]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetPermissionsByUser([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)

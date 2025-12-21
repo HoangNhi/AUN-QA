@@ -38,7 +38,7 @@ namespace AUN_QA.SystemService.Helpers
                     context.Result = new ForbidResult();
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 var response = new BaseResponse<string>
                 {

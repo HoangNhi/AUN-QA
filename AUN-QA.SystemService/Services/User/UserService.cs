@@ -6,12 +6,14 @@ using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
+using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Services.User
 {
     [RegisterClassAsTransient]
     public class UserService : IUserService
     {
+        private const string DefaultPassword = "b86e09fa-0751";
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -26,28 +28,28 @@ namespace AUN_QA.SystemService.Services.User
             _contextAccessor = contextAccessor;
         }
 
-        public ModelUser GetById(GetByIdRequest request)
+        public async Task<ModelUser> GetById(GetByIdRequest request)
         {
-            var data = _context.Users.Find(request.Id);
+            var data = await _context.Users.FindAsync(request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelUser>(data);
-            result.Password = "b86e09fa-0751";
+            result.Password = DefaultPassword;
 
             return result;
         }
 
-        public ModelUser GetCurrentUser()
+        public async Task<ModelUser> GetCurrentUser()
         {
             var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
             if (string.IsNullOrEmpty(userId))
             {
                 throw new Exception("Người dùng chưa xác thực");
             }
-            var data = _context.Users.FirstOrDefault(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
+            var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -56,7 +58,7 @@ namespace AUN_QA.SystemService.Services.User
             return result;
         }
 
-        public ModelUser Insert(UserRequest request)
+        public async Task<ModelUser> Insert(UserRequest request)
         {
             var data = _context.Users.Where(x =>
                 x.Username == request.Username
@@ -75,13 +77,13 @@ namespace AUN_QA.SystemService.Services.User
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
-            _context.Users.Add(add);
-            _context.SaveChanges();
+            await _context.Users.AddAsync(add);
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelUser>(add);
         }
 
-        public ModelUser Update(UserRequest request)
+        public async Task<ModelUser> Update(UserRequest request)
         {
             var data = _context.Users.Where(x =>
                 x.Username == request.Username
@@ -92,7 +94,7 @@ namespace AUN_QA.SystemService.Services.User
                 throw new Exception("Tên đăng nhập đã tồn tại");
             }
 
-            var update = _context.Users.Find(request.Id);
+            var update = await _context.Users.FindAsync(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -100,7 +102,7 @@ namespace AUN_QA.SystemService.Services.User
 
             _mapper.Map(request, update);
 
-            if (request.Password != "b86e09fa-0751")
+            if (request.Password != DefaultPassword)
             {
                 update.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, update.PasswordSalt);
             }
@@ -108,16 +110,16 @@ namespace AUN_QA.SystemService.Services.User
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
             _context.Users.Update(update);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelUser>(update);
         }
 
-        public string DeleteList(DeleteListRequest request)
+        public async Task<string> DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.Users.Find(id);
+                var delete = await _context.Users.FindAsync(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -130,7 +132,7 @@ namespace AUN_QA.SystemService.Services.User
                 _context.Users.Update(delete);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
         }
 
@@ -143,7 +145,7 @@ namespace AUN_QA.SystemService.Services.User
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelUser>>("fn_user_getlistpaging", parameters);
+            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelUser>>("fn_user_getlistpaging", parameters);
             return result;
         }
 
@@ -156,7 +158,7 @@ namespace AUN_QA.SystemService.Services.User
                 new NpgsqlParameter("i_action", ((int)request.Action))
             };
 
-            var result = await _context.ExcuteFunction<CheckPermissionReponse>("fn_user_checkpermission", parameters);
+            var result = await _context.ExecuteFunction<CheckPermissionReponse>("fn_user_checkpermission", parameters);
             return result;
         }
     }

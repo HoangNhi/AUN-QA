@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 {
     [RegisterClassAsTransient]
-    public class EvidenceService
+    public class EvidenceService : IEvidenceService
     {
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;

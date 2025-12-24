@@ -51,5 +51,15 @@ export const API_ENDPOINTS = {
             DELETE_LIST: `/Catalog/Faculty/delete-list`,
             GET_ALL_COMBOBOX: `/Catalog/Faculty/get-all-combobox`,
         }
+    },
+    Business: {
+        Evidence: {
+            GET_LIST: `/Business/Evidence/get-list`,
+            GET_BY_ID: `/Business/Evidence/get-by-id`,
+            INSERT: `/Business/Evidence/insert`,
+            UPDATE: `/Business/Evidence/update`,
+            DELETE_LIST: `/Business/Evidence/delete-list`,
+            GET_ALL_COMBOBOX: `/Business/Evidence/get-all-combobox`,
+        }
     }
 }

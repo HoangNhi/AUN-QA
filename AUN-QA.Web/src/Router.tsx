@@ -4,6 +4,7 @@ import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
+import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
 import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./features/system/routes/SystemGroup/SystemGroupPage";
@@ -29,6 +30,7 @@ const Router: FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<UserPage />} />
           <Route path="/faculty" element={<FacultyPage />} />
+          <Route path="/evidence" element={<EvidencePage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />

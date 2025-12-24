@@ -1,5 +1,5 @@
-﻿using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
-using AUN_QA.CatalogService.Infrastructure.Data;
+﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
 using AutoMapper;
@@ -7,7 +7,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace AUN_QA.CatalogService.Configs
+namespace AUN_QA.BusinessService.Configs
 {
     public static class ConfigService
     {
@@ -19,11 +19,8 @@ namespace AUN_QA.CatalogService.Configs
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             //DATABASE
-            builder.Services.AddDbContext<CatalogContext>(options =>
-                options.UseMySql(builder.Configuration.GetConnectionString("Catalog"),
-                ServerVersion.AutoDetect(
-                    builder.Configuration.GetConnectionString("Catalog")
-                )
+            builder.Services.AddDbContext<BusinessContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Business")
             ));
 
             //MAPPER
@@ -49,7 +46,7 @@ namespace AUN_QA.CatalogService.Configs
                 {
                     config.ImplicitlyValidateChildProperties = true;
                     config.DisableDataAnnotationsValidation = true;
-                    config.RegisterValidatorsFromAssemblyContaining<FacultyRequestValidator>();
+                    config.RegisterValidatorsFromAssemblyContaining<GetByIdDeleteRequestValidator>();
                 })
                 .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 
@@ -77,20 +74,21 @@ namespace AUN_QA.CatalogService.Configs
                 o.Address = new Uri("http://SystemService");
             });
         }
-    }
-    public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>
-    {
-        public DateTime? Convert(DateOnly? source, DateTime? destination, ResolutionContext context)
-        {
-            return source.HasValue ? source.Value.ToDateTime(TimeOnly.Parse("00:00:00")) : null;
-        }
-    }
 
-    public class DateOnlyTypeConverter : ITypeConverter<DateTime?, DateOnly?>
-    {
-        public DateOnly? Convert(DateTime? source, DateOnly? destination, ResolutionContext context)
+        public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>
         {
-            return source.HasValue ? DateOnly.FromDateTime(source.Value) : null;
+            public DateTime? Convert(DateOnly? source, DateTime? destination, ResolutionContext context)
+            {
+                return source.HasValue ? source.Value.ToDateTime(TimeOnly.Parse("00:00:00")) : null;
+            }
+        }
+
+        public class DateOnlyTypeConverter : ITypeConverter<DateTime?, DateOnly?>
+        {
+            public DateOnly? Convert(DateTime? source, DateOnly? destination, ResolutionContext context)
+            {
+                return source.HasValue ? DateOnly.FromDateTime(source.Value) : null;
+            }
         }
     }
 }

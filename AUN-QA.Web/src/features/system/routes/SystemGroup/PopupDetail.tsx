@@ -41,7 +41,7 @@ const PopupDetail = ({
   const [parentId, setParentId] = useState<string | null>(
     data?.ParentId || null
   );
-  const [isActived, setIsActived] = useState<boolean>(data?.IsActived || true);
+  const [isActived, setIsActived] = useState<boolean>(data?.IsActived ?? true);
   const [comboboxSystemGroup, setComboboxSystemGroup] = useState<
     ModelCombobox[]
   >([]);

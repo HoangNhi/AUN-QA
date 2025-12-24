@@ -1,8 +1,18 @@
+using AUN_QA.BusinessService.Configs;
+using AUN_QA.BusinessService.Middlewares;
 using AUN_QA.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigureEndpointDefaults(defaults =>
+    {
+        defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+    });
+});
 
 // Add services to the container.
 
@@ -11,7 +21,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.ExecuteConfigService();
+builder.ExecuteConfigAuthentication();
+
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionHandler>();
 
 app.MapDefaultEndpoints();
 
@@ -23,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthorization();
 

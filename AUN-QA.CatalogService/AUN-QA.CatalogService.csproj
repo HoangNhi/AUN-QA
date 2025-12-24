@@ -38,9 +38,9 @@
     <ProjectReference Include="..\AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj" />
   </ItemGroup>
 	
-<ItemGroup>
-  <Protobuf Include="..\AUN-QA.SystemService\Protos\system.proto" GrpcServices="Client" Link="Protos\system.proto" />
-</ItemGroup>
+    <ItemGroup>
+      <Protobuf Include="..\AUN-QA.SystemService\Protos\system.proto" GrpcServices="Client" Link="Protos\system.proto" />
+    </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Controllers\" />

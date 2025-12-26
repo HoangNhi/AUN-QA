@@ -1,0 +1,6 @@
+@AUN_QA.FileService_HostAddress = http://localhost:5251
+
+GET {{AUN_QA.FileService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

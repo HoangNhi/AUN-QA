@@ -1,4 +1,5 @@
-﻿using AutoDependencyRegistration.Attributes;
+﻿using AUN_QA.FileService.DTOs.Common;
+using AutoDependencyRegistration.Attributes;
 
 namespace AUN_QA.FileService.Services.UploadFile
 {
@@ -18,9 +19,15 @@ namespace AUN_QA.FileService.Services.UploadFile
             if (!Directory.Exists(folderPath))
                 Directory.CreateDirectory(folderPath);
 
+            string[] _fileValid = CommonConst._fileHinhAnhValid
+                .Concat(CommonConst._fileVideoValid)
+                .Concat(CommonConst._fileAudioValid)
+                .Concat(CommonConst._fileTaiLieuValid)
+                .ToArray();
+
             foreach (var file in files)
             {
-                if (file.Length > 0 && DTOs.Common.CommonConst._fileValid.Contains(Path.GetExtension(file.FileName).ToLower()))
+                if (file.Length > 0 && _fileValid.Contains(Path.GetExtension(file.FileName).ToLower()))
                 {
                     using (var stream = new FileStream(folderPath + "/" + file.FileName, FileMode.Create))
                     {

@@ -61,5 +61,10 @@ export const API_ENDPOINTS = {
             DELETE_LIST: `/Business/Evidence/delete-list`,
             GET_ALL_COMBOBOX: `/Business/Evidence/get-all-combobox`,
         }
+    },
+    File: {
+        UploadFile: {
+            POST: `/File/UploadFile`
+        },   
     }
 }

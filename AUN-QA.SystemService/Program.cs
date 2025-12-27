@@ -1,6 +1,6 @@
+using AUN_QA.ServiceDefaults;
 using AUN_QA.SystemService.Configs;
 using AUN_QA.SystemService.Middlewares;
-using AUN_QA.ServiceDefaults;
 using AUN_QA.SystemService.Services.SystemGrpc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,10 +39,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

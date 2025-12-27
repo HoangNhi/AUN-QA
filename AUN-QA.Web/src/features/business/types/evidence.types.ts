@@ -1,17 +1,6 @@
-export interface Evidence {
-    Id: string;
-    Name: string;
-    CreatedBy?: string;
-    CreatedAt?: string;
-    UpdatedBy?: string;
-    UpdatedAt?: string;
-    IsActived?: boolean;
-    IsDeleted?: boolean;
-    IsEdit?: boolean;
-}
+import type { BaseRequest } from "@/types/base/base.types";
 
-export interface EvidenceRequest {
+export interface Evidence extends BaseRequest {
     Id: string;
     Name: string;
-    IsActived?: boolean;
 }

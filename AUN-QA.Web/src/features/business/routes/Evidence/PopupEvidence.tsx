@@ -17,8 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Evidence } from "@/features/business/types/evidence.types";
-import { useState } from "react";
+import { fileService } from "@/features/file/api/uploadfile.api";
+import { useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 const PopupEvidence = ({
@@ -37,6 +39,18 @@ const PopupEvidence = ({
   const [isActived, setIsActived] = useState<boolean>(
     evidence?.IsActived ?? true
   );
+  const uploadRef = useRef<UploadFileRef>(null);
+  const [folderName, setFolderName] = useState<string>(
+    evidence?.FolderName || uuidv4()
+  );
+
+  const handleSaveData = async () => {
+    const success = await uploadRef.current?.upload();
+
+    if (success) {
+      console.log("Files uploaded successfully!");
+    }
+  };
 
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
@@ -45,6 +59,7 @@ const PopupEvidence = ({
         Name: name,
         IsEdit: evidence?.IsEdit || false,
         IsActived: isActived,
+        FolderName: folderName,
       },
       isAddMore
     );
@@ -53,7 +68,7 @@ const PopupEvidence = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[425px]"
+        className="sm:max-w-3xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <form
@@ -92,6 +107,10 @@ const PopupEvidence = ({
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid gap-3">
+              <Label>File</Label>
+              <UploadFile ref={uploadRef} folderName={folderName} />
+            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
@@ -103,6 +122,9 @@ const PopupEvidence = ({
                 Lưu và thêm tiếp
               </Button>
             )}
+            <Button type="button" onClick={handleSaveData}>
+              Upload
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

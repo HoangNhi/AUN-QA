@@ -2,8 +2,6 @@
 {
     public static class CommonConst
     {
-        public static string[] _fileValid = _fileHinhAnhValid.Concat(_fileVideoValid).Concat(_fileAudioValid).Concat(_fileTaiLieuValid).ToArray();
-
         public static string[] _fileHinhAnhValid = new string[] { ".jpg", ".png", ".jpeg" };
         public static string _fileHinhAnhValidString = "Ảnh (jpg, png, jpeg)";
 

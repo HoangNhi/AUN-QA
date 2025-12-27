@@ -18,3 +18,14 @@ export interface ModelCombobox {
     Parent?: string;
     IsSelected?: boolean;
 }
+
+export interface BaseRequest {
+    IsActived: boolean;
+    IsEdit: boolean;
+    Sort?: number;
+    FolderName: string;
+    CreatedBy?: string;
+    CreatedAt?: string;
+    UpdatedBy?: string;
+    UpdatedAt?: string;
+}

@@ -14,6 +14,8 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<Evidence> Evidences { get; set; }
 
+    public virtual DbSet<EvidenceAttachment> EvidenceAttachments { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Evidence>(entity =>
@@ -27,6 +29,24 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<EvidenceAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Evidence_Attachment_pk");
+
+            entity.ToTable("Evidence_Attachment");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)

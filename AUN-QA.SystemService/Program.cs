@@ -7,18 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ConfigureEndpointDefaults(defaults =>
-    {
-        defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
-    });
-});
-
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddGrpc();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

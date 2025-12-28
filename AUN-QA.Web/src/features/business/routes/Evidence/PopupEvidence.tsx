@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Evidence } from "@/features/business/types/evidence.types";
-import { fileService } from "@/features/file/api/uploadfile.api";
 import { useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -40,26 +39,17 @@ const PopupEvidence = ({
     evidence?.IsActived ?? true
   );
   const uploadRef = useRef<UploadFileRef>(null);
-  const [folderName, setFolderName] = useState<string>(
-    evidence?.FolderName || uuidv4()
-  );
+  const folderUpload = evidence?.FolderUpload || uuidv4();
 
-  const handleSaveData = async () => {
-    const success = await uploadRef.current?.upload();
-
-    if (success) {
-      console.log("Files uploaded successfully!");
-    }
-  };
-
-  const onSubmit = (isAddMore: boolean) => {
+  const onSubmit = async (isAddMore: boolean) => {
+    await uploadRef.current?.upload();
     saveChange(
       {
         Id: id || uuidv4(),
         Name: name,
         IsEdit: evidence?.IsEdit || false,
         IsActived: isActived,
-        FolderName: folderName,
+        FolderUpload: folderUpload,
       },
       isAddMore
     );
@@ -109,7 +99,7 @@ const PopupEvidence = ({
             </div>
             <div className="grid gap-3">
               <Label>File</Label>
-              <UploadFile ref={uploadRef} folderName={folderName} />
+              <UploadFile ref={uploadRef} folderUpload={folderUpload} />
             </div>
           </div>
           <DialogFooter>
@@ -122,9 +112,6 @@ const PopupEvidence = ({
                 Lưu và thêm tiếp
               </Button>
             )}
-            <Button type="button" onClick={handleSaveData}>
-              Upload
-            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

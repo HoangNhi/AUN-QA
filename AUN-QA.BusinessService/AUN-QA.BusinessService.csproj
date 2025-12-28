@@ -41,6 +41,7 @@
 
 	<ItemGroup>
 		<Protobuf Include="..\AUN-QA.SystemService\Protos\system.proto" GrpcServices="Client" Link="Protos\system.proto" />
+		<Protobuf Include="..\AUN-QA.FileService\Protos\file.proto" GrpcServices="Client" Link="Protos\file.proto" />
 	</ItemGroup>
 
 </Project>

@@ -19,7 +19,7 @@ interface Attachment {
 
 export interface UploadFileRequest {
   files: File[];
-  folderName: string;
+  folderUpload: string;
 }
 
 export interface UploadFileProps {
@@ -29,7 +29,7 @@ export interface UploadFileProps {
   fileValidate?: string[];
   fileValidateText?: string;
   fileSizeLimit?: number;
-  folderName?: string;
+  folderUpload?: string;
   onAttachmentsChange?: (ids: number[]) => void;
   onSuccess?: () => void;
 }
@@ -49,7 +49,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       fileValidate = [".jpg", ".png", ".pdf", ".doc", ".docx", ".xls", ".xlsx"],
       fileValidateText = ".jpg, .png, .pdf, .doc, .docx, .xls, .xlsx",
       fileSizeLimit = 10,
-      folderName = "DefaultFolder",
+      folderUpload = "DefaultFolder",
       onAttachmentsChange,
       onSuccess,
     },
@@ -141,7 +141,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       try {
         const response = await fileService.uploadFile({
           files: selectedFiles,
-          folderName: folderName,
+          folderUpload: folderUpload,
         });
 
         if (response.Success) {

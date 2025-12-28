@@ -2,6 +2,7 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.Services.Commons;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -14,15 +15,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IUploadFileService _uploadFileService;
 
         public EvidenceService(
             BusinessContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            IUploadFileService uploadFileService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _uploadFileService = uploadFileService;
         }
 
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
@@ -52,10 +56,25 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
-
             await _context.Evidences.AddAsync(add);
-            await _context.SaveChangesAsync();
 
+            #region Thêm tài liệu đính kèm
+            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
+            lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
+            foreach (var attachment in lstAttachment)
+            {
+                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                addAttachment.CreatedAt = DateTime.Now;
+                addAttachment.IsActived = true;
+                addAttachment.IsDeleted = false;
+
+                await _context.EvidenceAttachments.AddAsync(addAttachment);
+            }
+            #endregion
+
+            await _context.SaveChangesAsync();
             return _mapper.Map<ModelEvidence>(add);
         }
 

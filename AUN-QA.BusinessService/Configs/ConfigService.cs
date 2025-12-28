@@ -1,5 +1,6 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.FileService.Protos;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
 using AutoMapper;
@@ -14,6 +15,13 @@ namespace AUN_QA.BusinessService.Configs
         public static void ExecuteConfigService(this WebApplicationBuilder builder)
         {
             //SYSTEM
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ConfigureEndpointDefaults(defaults =>
+                {
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+                });
+            });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -69,9 +77,15 @@ namespace AUN_QA.BusinessService.Configs
                     });
             });
 
+            //GRPC CLIENT
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");
+            });
+
+            builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
+            {
+                o.Address = new Uri("http://FileService");
             });
         }
 

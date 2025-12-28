@@ -12,7 +12,7 @@ export const fileService = {
       formData.append("files", file);
     });
 
-    formData.append("FolderName", request.folderName);
+    formData.append("FolderName", request.folderUpload);
 
     return api.post<boolean>(API_ENDPOINTS.File.UploadFile.POST, formData, {
       headers: {

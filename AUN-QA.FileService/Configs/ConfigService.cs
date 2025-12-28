@@ -7,6 +7,13 @@ namespace AUN_QA.FileService.Configs
         public static void ExecuteConfigService(this WebApplicationBuilder builder)
         {
             //SYSTEM
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ConfigureEndpointDefaults(defaults =>
+                {
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                });
+            });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -29,6 +36,8 @@ namespace AUN_QA.FileService.Configs
                         }
                     });
             });
+
+            builder.Services.AddGrpc();
         }
     }
 }

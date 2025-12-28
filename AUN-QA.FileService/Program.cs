@@ -1,5 +1,6 @@
 using AUN_QA.FileService.Configs;
 using AUN_QA.FileService.Middlewares;
+using AUN_QA.FileService.Services.Grpc;
 using AUN_QA.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGrpcService<FileGrpcService>();
 
 app.Run();
 

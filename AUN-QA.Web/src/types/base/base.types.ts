@@ -23,7 +23,7 @@ export interface BaseRequest {
     IsActived: boolean;
     IsEdit: boolean;
     Sort?: number;
-    FolderName: string;
+    FolderUpload: string;
     CreatedBy?: string;
     CreatedAt?: string;
     UpdatedBy?: string;

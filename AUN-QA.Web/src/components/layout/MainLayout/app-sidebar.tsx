@@ -15,13 +15,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 
-import { data } from "./nav-data";
-
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const pathname = location.pathname;
+  const { systemGroup, menu } = useAuth();
 
   return (
     <Sidebar {...props}>
@@ -29,15 +29,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link to="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">Documentation</span>
+                  <span className="font-medium">AUN-QA</span>
                   <span className="">v1.0.0</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -45,29 +45,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>
-            {data.navMain.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild>
-                  <a href={item.url} className="font-medium">
-                    {item.title}
-                  </a>
-                </SidebarMenuButton>
-                {item.items?.length ? (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link className="font-medium" to="/">
+                  Trang chủ
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            {systemGroup?.map((group) => {
+              const groupMenu = menu?.filter(
+                (item) => item.SystemGroupId === group.Id
+              );
+
+              if (!groupMenu?.length) return null;
+
+              return (
+                <SidebarMenuItem key={group.Id}>
+                  <SidebarMenuButton asChild>
+                    <a className="font-medium">{group.Name}</a>
+                  </SidebarMenuButton>
                   <SidebarMenuSub>
-                    {item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.title}>
+                    {groupMenu.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.Id}>
                         <SidebarMenuSubButton
                           asChild
-                          isActive={pathname === subItem.url}
+                          isActive={pathname === subItem.Controller}
                         >
-                          <a href={subItem.url}>{subItem.title}</a>
+                          <Link to={subItem.Controller}>{subItem.Name}</Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
                   </SidebarMenuSub>
-                ) : null}
-              </SidebarMenuItem>
-            ))}
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

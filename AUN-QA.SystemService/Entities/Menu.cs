@@ -39,5 +39,7 @@ public partial class Menu
 
     public bool IsDeleted { get; set; }
 
+    public bool IsShowMenu { get; set; }
+
     public virtual SystemGroup SystemGroup { get; set; } = null!;
 }

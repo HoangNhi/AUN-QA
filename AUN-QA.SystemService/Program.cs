@@ -1,22 +1,15 @@
+using AUN_QA.ServiceDefaults;
 using AUN_QA.SystemService.Configs;
 using AUN_QA.SystemService.Middlewares;
+using AUN_QA.SystemService.Services.SystemGrpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.WebHost.ConfigureKestrel(options =>
-{
-    options.ConfigureEndpointDefaults(defaults =>
-    {
-        defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
-    });
-});
-
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddGrpc();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -37,13 +30,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGrpcService<AUN_QA.SystemService.Services.G_SystemService>();
+app.MapGrpcService<SystemGrpcService>();
 
 app.Run();

@@ -25,5 +25,6 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.Menu.Dtos
         public bool CanApprove { get; set; }
 
         public bool CanAnalyze { get; set; }
+        public bool IsShowMenu { get; set; }
     }
 }

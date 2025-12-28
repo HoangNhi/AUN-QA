@@ -9,7 +9,7 @@ namespace AUN_QA.SystemService.Helpers
 {
     public static class DBContextHelper
     {
-        public static async Task<TModel> ExcuteFunction<TModel>(this SystemContext _context, string functionName, NpgsqlParameter[]? parameters) where TModel : new()
+        public static async Task<TModel> ExecuteFunction<TModel>(this SystemContext _context, string functionName, NpgsqlParameter[]? parameters) where TModel : new()
         {
             if (_context.Database.GetDbConnection().State != ConnectionState.Open)
             {

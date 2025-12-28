@@ -6,6 +6,7 @@ using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
+using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Services.SystemGroup
 {
@@ -26,9 +27,9 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             _contextAccessor = contextAccessor;
         }
 
-        public ModelSystemGroup GetById(GetByIdRequest request)
+        public async Task<ModelSystemGroup> GetById(GetByIdRequest request)
         {
-            var data = _context.SystemGroups.Find(request.Id);
+            var data = await _context.SystemGroups.FindAsync(request.Id);
             if (data == null)
             {
                 throw new Exception("Not found");
@@ -37,7 +38,7 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             return _mapper.Map<ModelSystemGroup>(data);
         }
 
-        public ModelSystemGroup Insert(SystemGroupRequest request)
+        public async Task<ModelSystemGroup> Insert(SystemGroupRequest request)
         {
             var data = _context.SystemGroups.Where(x =>
                 x.Name == request.Name
@@ -54,13 +55,13 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
-            _context.SystemGroups.Add(add);
-            _context.SaveChanges();
+            await _context.SystemGroups.AddAsync(add);
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelSystemGroup>(add);
         }
 
-        public ModelSystemGroup Update(SystemGroupRequest request)
+        public async Task<ModelSystemGroup> Update(SystemGroupRequest request)
         {
             var data = _context.SystemGroups.Where(x =>
                 x.Name == request.Name
@@ -71,7 +72,7 @@ namespace AUN_QA.SystemService.Services.SystemGroup
                 throw new Exception("Tên nhóm đã tồn tại");
             }
 
-            var update = _context.SystemGroups.Find(request.Id);
+            var update = await _context.SystemGroups.FindAsync(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -82,16 +83,16 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
             _context.SystemGroups.Update(update);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelSystemGroup>(update);
         }
 
-        public string DeleteList(DeleteListRequest request)
+        public async Task<string> DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.SystemGroups.Find(id);
+                var delete = await _context.SystemGroups.FindAsync(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -104,7 +105,7 @@ namespace AUN_QA.SystemService.Services.SystemGroup
                 _context.SystemGroups.Update(delete);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
         }
 
@@ -113,23 +114,30 @@ namespace AUN_QA.SystemService.Services.SystemGroup
             var parameters = new[]
             {
                 new NpgsqlParameter("i_textsearch", request.TextSearch),
-                new NpgsqlParameter("i_pageindex", request.PageIndex - 1),
+                new NpgsqlParameter("i_pageindex", request.PageIndex == -1 ? -1 : request.PageIndex - 1),
                 new NpgsqlParameter("i_pagesize", request.PageSize),
             };
 
-            var result = await _context.ExcuteFunction<GetListPagingResponse<ModelSystemGroupGetListPaging>>("fn_system_group_getlistpaging", parameters);
+            var result = await _context.ExecuteFunction<GetListPagingResponse<ModelSystemGroupGetListPaging>>("fn_system_group_getlistpaging", parameters);
             return result;
         }
 
-        public List<ModelCombobox> GetAllForCombobox()
+        public async Task<List<ModelSystemGroup>> GetAll()
         {
-            var data = _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToList();
+            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
+            var result = _mapper.Map<List<ModelSystemGroup>>(data).OrderBy(x => x.Sort).ToList();
+            return result;
+        }
+
+        public async Task<List<ModelCombobox>> GetAllForCombobox()
+        {
+            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
             var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),
                 Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
-            }).OrderBy(x => x.Text).ToList();
+            }).OrderBy(x => x.Sort).ToList();
 
             return result;
         }

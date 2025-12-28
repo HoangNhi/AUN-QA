@@ -20,6 +20,7 @@
     <ProjectReference Include="..\AUN-QA.ApiGateway\AUN-QA.ApiGateway.csproj" />
     <ProjectReference Include="..\AUN-QA.BusinessService\AUN-QA.BusinessService.csproj" />
     <ProjectReference Include="..\AUN-QA.CatalogService\AUN-QA.CatalogService.csproj" />
+    <ProjectReference Include="..\AUN-QA.FileService\AUN-QA.FileService.csproj" />
     <ProjectReference Include="..\AUN-QA.SystemService\AUN-QA.SystemService.csproj" />
   </ItemGroup>
 

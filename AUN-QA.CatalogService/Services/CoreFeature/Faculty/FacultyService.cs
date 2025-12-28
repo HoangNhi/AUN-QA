@@ -25,9 +25,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             _contextAccessor = contextAccessor;
         }
 
-        public ModelFaculty GetById(GetByIdRequest request)
+        public async Task<ModelFaculty> GetById(GetByIdRequest request)
         {
-            var data = _context.Faculties.Find(request.Id);
+            var data = await _context.Faculties.FindAsync(request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -36,7 +36,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             return _mapper.Map<ModelFaculty>(data);
         }
 
-        public ModelFaculty Insert(FacultyRequest request)
+        public async Task<ModelFaculty> Insert(FacultyRequest request)
         {
             var data = _context.Faculties.Where(x =>
                 x.Name == request.Name
@@ -53,13 +53,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
 
-            _context.Faculties.Add(add);
-            _context.SaveChanges();
+            await _context.Faculties.AddAsync(add);
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelFaculty>(add);
         }
 
-        public ModelFaculty Update(FacultyRequest request)
+        public async Task<ModelFaculty> Update(FacultyRequest request)
         {
             var data = _context.Faculties.Where(x =>
                 x.Name == request.Name
@@ -70,7 +70,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
                 throw new Exception("Tên khoa đã tồn tại");
             }
 
-            var update = _context.Faculties.Find(request.Id);
+            var update = await _context.Faculties.FindAsync(request.Id);
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -82,16 +82,16 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             update.UpdatedAt = DateTime.Now;
 
             _context.Faculties.Update(update);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelFaculty>(update);
         }
 
-        public string DeleteList(DeleteListRequest request)
+        public async Task<string> DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
-                var delete = _context.Faculties.Find(id);
+                var delete = await _context.Faculties.FindAsync(id);
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
@@ -103,7 +103,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
                 _context.Faculties.Update(delete);
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
         }
 
@@ -133,9 +133,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             };
         }
 
-        public List<ModelCombobox> GetAllForCombobox()
+        public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = _context.Faculties.Where(x => !x.IsDeleted && x.IsActived.Value).ToList();
+            var data = await _context.Faculties.Where(x => !x.IsDeleted && x.IsActived == true).ToListAsync();
             return data.Select(x => new ModelCombobox
             {
                 Text = x.Name,

@@ -14,25 +14,27 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation } from "react-router-dom";
-import { data } from "./nav-data";
+import type { GetPermissionByUser } from "@/features/system/types/role.types";
+import { useAuth } from "@/hooks/useAuth";
 
-export default function MainLayout() {
+interface MainLayoutProps {
+  permission?: GetPermissionByUser | null;
+}
+
+export default function MainLayout({ permission }: MainLayoutProps) {
   const location = useLocation();
-  const pathname = location.pathname;
-
+  const pathname = location.pathname.replace("/", "");
+  const { systemGroup, menu } = useAuth();
   // Find the current active item and its parent group
   let breadcrumbGroup = "";
   let breadcrumbPage = "";
 
-  for (const group of data.navMain) {
-    if (group.items) {
-      const activeItem = group.items.find((item) => item.url === pathname);
-      if (activeItem) {
-        breadcrumbGroup = group.title;
-        breadcrumbPage = activeItem.title;
-        break;
-      }
-    }
+  const activeItem = menu?.find((item) => item.Controller === pathname);
+  if (activeItem) {
+    breadcrumbGroup = systemGroup?.find(
+      (group) => group.Id === activeItem.SystemGroupId
+    )?.Name;
+    breadcrumbPage = activeItem.Name;
   }
 
   return (
@@ -63,7 +65,7 @@ export default function MainLayout() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4">
-          <Outlet />
+          <Outlet context={{ permission }} />
         </div>
       </SidebarInset>
     </SidebarProvider>

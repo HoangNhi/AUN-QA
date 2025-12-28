@@ -1,4 +1,5 @@
-﻿using AUN_QA.CatalogService.Infrastructure.Data;
+﻿using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.CatalogService.Infrastructure.Data;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
 using AutoMapper;
@@ -13,6 +14,13 @@ namespace AUN_QA.CatalogService.Configs
         public static void ExecuteConfigService(this WebApplicationBuilder builder)
         {
             //SYSTEM
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ConfigureEndpointDefaults(defaults =>
+                {
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+                });
+            });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -48,7 +56,7 @@ namespace AUN_QA.CatalogService.Configs
                 {
                     config.ImplicitlyValidateChildProperties = true;
                     config.DisableDataAnnotationsValidation = true;
-                    //config.RegisterValidatorsFromAssemblyContaining<UserRequestValidator>();
+                    config.RegisterValidatorsFromAssemblyContaining<FacultyRequestValidator>();
                 })
                 .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
 

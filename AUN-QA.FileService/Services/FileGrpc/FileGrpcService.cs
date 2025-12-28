@@ -44,5 +44,18 @@ namespace AUN_QA.FileService.Services.Grpc
 
             return Task.FromResult(response);
         }
+
+        public override Task<DeleteDataResponse> DeleteData(DeleteDataRequest request, ServerCallContext context)
+        {
+            var result = _uploadFileService.DeleteData(
+                request.FilePaths
+            );
+
+            var response = new DeleteDataResponse
+            {
+                Success = result
+            };
+            return Task.FromResult(response);
+        }
     }
 }

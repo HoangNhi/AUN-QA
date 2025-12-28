@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Evidence } from "@/features/business/types/evidence.types";
-import { useRef, useState } from "react";
+import type { Attachment } from "@/features/file/types/uploadfile.types";
+import React, { useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 const PopupEvidence = ({
@@ -39,7 +40,12 @@ const PopupEvidence = ({
     evidence?.IsActived ?? true
   );
   const uploadRef = useRef<UploadFileRef>(null);
-  const folderUpload = evidence?.FolderUpload || uuidv4();
+  const [folderUpload, setFolderUpload] = useState<string>(
+    evidence?.FolderUpload || uuidv4()
+  );
+  const [listAttachment, setListAttachment] = useState<Attachment[]>(
+    evidence?.ListAttachment || []
+  );
 
   const onSubmit = async (isAddMore: boolean) => {
     await uploadRef.current?.upload();
@@ -50,6 +56,7 @@ const PopupEvidence = ({
         IsEdit: evidence?.IsEdit || false,
         IsActived: isActived,
         FolderUpload: folderUpload,
+        AttachmentIds: listAttachment.map((a) => a.Id),
       },
       isAddMore
     );
@@ -98,8 +105,13 @@ const PopupEvidence = ({
               </Select>
             </div>
             <div className="grid gap-3">
-              <Label>File</Label>
-              <UploadFile ref={uploadRef} folderUpload={folderUpload} />
+              <Label>Tệp đính kèm</Label>
+              <UploadFile
+                ref={uploadRef}
+                listAttachment={listAttachment}
+                folderUpload={folderUpload}
+                setListAttachment={setListAttachment}
+              />
             </div>
           </div>
           <DialogFooter>

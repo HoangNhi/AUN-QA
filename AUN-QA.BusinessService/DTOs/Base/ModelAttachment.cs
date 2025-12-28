@@ -16,6 +16,6 @@
 
         public string FileUrl { get; set; }
 
-        public string FullFileName { get; set; }
+        public string FullFileName { get => FileName + FileExtension; }
     }
 }

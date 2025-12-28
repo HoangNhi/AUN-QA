@@ -20,4 +20,7 @@ export const fileService = {
       },
     });
   },
+  downloadFile: (url: string) => {
+    return api.downloadFile(API_ENDPOINTS.File.UploadFile.GET + url);
+  },
 };

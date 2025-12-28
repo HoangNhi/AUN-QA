@@ -6,5 +6,6 @@ namespace AUN_QA.FileService.Services.UploadFile
     {
         Task Insert(List<IFormFile> files, string FolderName);
         List<ModelAttachment> UploadData(object lienKetId, string servicePath, string folderName, string tempFolder);
+        bool DeleteData(IEnumerable<string> filePaths);
     }
 }

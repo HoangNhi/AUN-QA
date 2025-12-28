@@ -1,42 +1,36 @@
 import { fileService } from "@/features/file/api/uploadfile.api";
-import { Paperclip, Trash, UploadCloud, X, FileIcon } from "lucide-react";
+import type { Attachment } from "@/features/file/types/uploadfile.types";
+import {
+  Paperclip,
+  Trash,
+  UploadCloud,
+  X,
+  FileIcon,
+  Eye,
+  Download,
+} from "lucide-react";
 
 import React, {
   useState,
   useRef,
-  useEffect,
   useImperativeHandle,
   forwardRef,
 } from "react";
 
-// --- Types ---
-interface Attachment {
-  Id: number;
-  Url: string;
-  TenTapTinFull: string;
-  TenMoRong: string;
-}
-
-export interface UploadFileRequest {
-  files: File[];
-  folderUpload: string;
-}
-
 export interface UploadFileProps {
   noUpload?: boolean;
-  listTepDinhKem?: Attachment[];
+  listAttachment?: Attachment[];
+  setListAttachment?: (attachments: Attachment[]) => void;
   multiFile?: boolean;
   fileValidate?: string[];
   fileValidateText?: string;
   fileSizeLimit?: number;
   folderUpload?: string;
-  onAttachmentsChange?: (ids: number[]) => void;
   onSuccess?: () => void;
 }
 
 export interface UploadFileRef {
   upload: () => Promise<boolean>;
-  clear: () => void;
   getPendingFiles: () => File[];
 }
 
@@ -44,58 +38,22 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
   (
     {
       noUpload = false,
-      listTepDinhKem = [],
+      listAttachment = [],
+      setListAttachment,
       multiFile = true,
       fileValidate = [".jpg", ".png", ".pdf", ".doc", ".docx", ".xls", ".xlsx"],
       fileValidateText = ".jpg, .png, .pdf, .doc, .docx, .xls, .xlsx",
       fileSizeLimit = 10,
       folderUpload = "DefaultFolder",
-      onAttachmentsChange,
       onSuccess,
     },
     ref
   ) => {
-    const [attachments, setAttachments] =
-      useState<Attachment[]>(listTepDinhKem);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadMessage, setUploadMessage] = useState<{
-      type: "success" | "error" | "info";
-      text: string;
-    } | null>(null);
-
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const lastEmittedIds = useRef<string>("");
-
-    // --- FIX 1: Prevent Prop-to-State Infinite Loop ---
-    // Only update internal state if the incoming IDs have actually changed
-    useEffect(() => {
-      const currentIdsJson = JSON.stringify(listTepDinhKem.map((a) => a.Id));
-      const internalIdsJson = JSON.stringify(attachments.map((a) => a.Id));
-
-      if (currentIdsJson !== internalIdsJson) {
-        setAttachments(listTepDinhKem);
-      }
-    }, [listTepDinhKem]);
-
-    // --- FIX 2: Prevent Callback Loop ---
-    // We use a separate effect for notification and track the stringified IDs
-    useEffect(() => {
-      const ids = attachments.map((a) => a.Id);
-      const idsString = JSON.stringify(ids);
-
-      if (onAttachmentsChange && idsString !== lastEmittedIds.current) {
-        lastEmittedIds.current = idsString;
-        onAttachmentsChange(ids);
-      }
-    }, [attachments, onAttachmentsChange]);
 
     useImperativeHandle(ref, () => ({
       getPendingFiles: () => selectedFiles,
-      clear: () => {
-        setSelectedFiles([]);
-        setUploadMessage(null);
-      },
       upload: async () => {
         if (selectedFiles.length === 0) return true; // Nothing to upload is technically success
         return await performUpload();
@@ -122,12 +80,6 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         validFiles.push(file);
       });
 
-      if (errors.length > 0) {
-        setUploadMessage({ type: "error", text: errors.join(" ") });
-      } else {
-        setUploadMessage(null);
-      }
-
       setSelectedFiles((prev) =>
         multiFile ? [...prev, ...validFiles] : validFiles
       );
@@ -135,9 +87,6 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     const performUpload = async (): Promise<boolean> => {
-      setIsUploading(true);
-      setUploadMessage({ type: "info", text: "Đang tải lên..." });
-
       try {
         const response = await fileService.uploadFile({
           files: selectedFiles,
@@ -145,51 +94,76 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         });
 
         if (response.Success) {
-          setUploadMessage({ type: "success", text: "Tải lên thành công" });
-          setSelectedFiles([]);
           onSuccess?.();
-          setTimeout(() => setUploadMessage(null), 3000);
           return true;
         } else {
           throw new Error(response.Message);
         }
       } catch (error) {
-        console.error("Upload Error Details:", error);
-        setUploadMessage({
-          type: "error",
-          text: "Lỗi tải lên: Không thể kết nối đến máy chủ (404/Network Error)",
-        });
         return false; // Crucial: Stop the process here
-      } finally {
-        setIsUploading(false);
       }
     };
 
-    const handleDeleteAttachment = (id: number) => {
-      if (window.confirm("Xóa tệp này?")) {
-        setAttachments((prev) => prev.filter((a) => a.Id !== id));
+    const handleDeleteAttachment = (id: string) => {
+      if (window.confirm("Xóa tệp này?") && setListAttachment) {
+        const newList = listAttachment.filter((a) => a.Id !== id);
+        setListAttachment(newList);
       }
+    };
+
+    const handlePreview = (file: Attachment) => {
+      // TODO: Add preview logic here
+      console.log("Visual preview", file);
+    };
+
+    const handleDownload = (file: Attachment) => {
+      fileService.downloadFile(encodeURI(file.FileUrl)).then((response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", file.FullFileName);
+        document.body.appendChild(link);
+        link.click();
+      });
     };
 
     return (
       <div className="w-full text-sm">
         {/* Attachment Table */}
-        {attachments.length > 0 && (
+        {listAttachment.length > 0 && (
           <div className="mb-3 border rounded-lg bg-white overflow-hidden shadow-sm">
             <div className="bg-gray-50 px-3 py-2 border-b flex items-center gap-2 font-semibold text-gray-700">
               <Paperclip size={14} className="text-blue-500" /> TỆP ĐÃ TẢI LÊN
             </div>
             <table className="w-full">
               <tbody className="divide-y">
-                {attachments.map((file) => (
+                {listAttachment.map((file) => (
                   <tr key={file.Id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 text-blue-600 truncate">
-                      {file.TenTapTinFull}
+                      {file.FullFileName}
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3 py-2 text-right flex items-center justify-end gap-2">
                       <button
+                        type="button"
+                        onClick={() => handlePreview(file)}
+                        className="text-gray-400 hover:text-blue-500"
+                        title="Xem trước"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(file)}
+                        className="text-gray-400 hover:text-green-500"
+                        title="Tải xuống"
+                      >
+                        <Download size={16} />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteAttachment(file.Id)}
                         className="text-gray-400 hover:text-red-500"
+                        title="Xóa"
                       >
                         <Trash size={16} />
                       </button>
@@ -211,18 +185,13 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
               onChange={handleFileSelect}
               className="hidden"
               id="file-up"
-              disabled={isUploading}
               accept={fileValidate.join(",")}
             />
             <label
               htmlFor="file-up"
               className="flex flex-col items-center cursor-pointer"
             >
-              <UploadCloud
-                className={`mb-2 ${
-                  isUploading ? "text-gray-300" : "text-blue-500"
-                }`}
-              />
+              <UploadCloud className="mb-2 text-blue-500" />
               <span className="font-medium">Chọn tệp tin...</span>
               <span className="text-xs text-gray-400">
                 ({fileValidateText})
@@ -250,21 +219,6 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                     />
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Error/Success Messages */}
-            {uploadMessage && (
-              <div
-                className={`mt-3 p-2 rounded text-center text-xs border ${
-                  uploadMessage.type === "error"
-                    ? "bg-red-50 text-red-600 border-red-100"
-                    : uploadMessage.type === "success"
-                    ? "bg-green-50 text-green-600 border-green-100"
-                    : "bg-blue-50 text-blue-600 border-blue-100"
-                }`}
-              >
-                {uploadMessage.text}
               </div>
             )}
           </div>

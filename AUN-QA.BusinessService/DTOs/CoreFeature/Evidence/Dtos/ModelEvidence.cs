@@ -7,5 +7,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos
         public Guid Id { get; set; }
 
         public string Name { get; set; } = null!;
+
+        #region Attachment
+        public List<Guid> AttachmentIds { get; set; } = new List<Guid>();
+        public List<ModelAttachment> ListAttachment { get; set; } = new List<ModelAttachment>();
+        #endregion
     }
 }

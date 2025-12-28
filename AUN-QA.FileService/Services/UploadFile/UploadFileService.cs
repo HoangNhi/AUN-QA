@@ -17,8 +17,12 @@ namespace AUN_QA.FileService.Services.UploadFile
         public async Task Insert(List<IFormFile> files, string FolderName)
         {
             var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files/Temp/" + FolderName);
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
+            if (Directory.Exists(folderPath))
+            {
+                Directory.Delete(folderPath, recursive: true);
+            }
+
+            Directory.CreateDirectory(folderPath);
 
             string[] _fileValid = CommonConst._fileHinhAnhValid
                 .Concat(CommonConst._fileVideoValid)
@@ -40,7 +44,6 @@ namespace AUN_QA.FileService.Services.UploadFile
                     throw new Exception("Upload file không thành công");
                 }
             }
-
         }
 
         public List<ModelAttachment> UploadData(object lienKetId, string servicePath, string folderName, string tempFolder)
@@ -48,11 +51,74 @@ namespace AUN_QA.FileService.Services.UploadFile
             List<ModelAttachment> result = new List<ModelAttachment>();
             string sourceDirPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files\\Temp\\" + tempFolder);
             string destinationDirPath = Path.Combine(_webHostEnvironment.WebRootPath, servicePath, folderName + "\\" + lienKetId.ToString());
-            string relativeDirPath = "Files/" + folderName + "/" + lienKetId.ToString();
+            string relativeDirPath = servicePath + "/" + folderName + "/" + lienKetId.ToString();
 
             result = SyncUploadFile(sourceDirPath, destinationDirPath, relativeDirPath);
 
             return result;
+        }
+
+        public bool DeleteData(IEnumerable<string> filePaths)
+        {
+            if (filePaths == null || !filePaths.Any())
+            {
+                return true;
+            }
+
+            bool allSuccess = true;
+            foreach (var filePath in filePaths)
+            {
+                try
+                {
+                    // Construct absolute source path
+                    string sourcePath = Path.Combine(_webHostEnvironment.WebRootPath, filePath);
+
+                    // Check if source file exists
+                    if (!File.Exists(sourcePath))
+                    {
+                        allSuccess = false;
+                        continue;
+                    }
+
+                    var pathSegments = filePath.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                    string serviceName = pathSegments.FirstOrDefault() ?? "Common";
+
+                    // Assumes filePath format like "Service/Module/Id/File.ext"
+                    string relateId = pathSegments.Length >= 2 ? pathSegments[pathSegments.Length - 2] : "Common";
+
+                    // Construct absolute destination path
+                    string destinationDirPath = Path.Combine(_webHostEnvironment.WebRootPath, "Deleted", serviceName, relateId);
+
+                    // Create destination directory if it doesn't exist
+                    if (!Directory.Exists(destinationDirPath))
+                    {
+                        Directory.CreateDirectory(destinationDirPath);
+                    }
+
+                    // Get file info
+                    FileInfo info = new FileInfo(sourcePath);
+                    string fileName = Path.GetFileNameWithoutExtension(sourcePath);
+                    string extension = info.Extension;
+
+                    // Handle file name collisions
+                    string destFilePath = Path.Combine(destinationDirPath, fileName + extension);
+                    int counter = 1;
+                    while (File.Exists(destFilePath))
+                    {
+                        destFilePath = Path.Combine(destinationDirPath, $"{fileName}({counter}){extension}");
+                        counter++;
+                    }
+
+                    // Move file
+                    File.Move(sourcePath, destFilePath);
+                }
+                catch (Exception)
+                {
+                    allSuccess = false;
+                }
+            }
+
+            return allSuccess;
         }
 
         List<ModelAttachment> SyncUploadFile(string sourceDirPath, string destinationDirPath, string relativeDirPath = "")

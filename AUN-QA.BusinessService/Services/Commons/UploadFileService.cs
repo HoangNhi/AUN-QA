@@ -34,9 +34,16 @@ namespace AUN_QA.BusinessService.Services.Commons
                 FileName = x.FileName,
                 FileExtension = x.FileExtension,
                 FileSize = x.FileSize,
-                FileUrl = x.FileUrl,
-                FullFileName = x.FullFileName
+                FileUrl = x.FileUrl
             }).ToList();
+        }
+
+        public async Task<bool> DeleteDataAsync(List<string> filePaths)
+        {
+            var request = new DeleteDataRequest();
+            request.FilePaths.AddRange(filePaths);
+            var response = await _fileProtoClient.DeleteDataAsync(request);
+            return response.Success;
         }
     }
 }

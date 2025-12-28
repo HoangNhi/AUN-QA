@@ -37,7 +37,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            return _mapper.Map<ModelEvidence>(data);
+            var result = _mapper.Map<ModelEvidence>(data);
+            result.ListAttachment = GetAllAttachment(data.Id);
+
+            return result;
         }
 
         public async Task<ModelEvidence> Insert(EvidenceRequest request)
@@ -101,6 +104,37 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             update.UpdatedAt = DateTime.Now;
 
             _context.Evidences.Update(update);
+
+            #region Thêm tài liệu đính kèm
+            var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                && !request.AttachmentIds.Any(y => y == x.Id)).ToList();
+
+            // Xóa các file không còn trong danh sách
+            await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
+            foreach (var attachment in ListDinhKemCanXoa)
+            {
+                attachment.UpdatedAt = DateTime.Now;
+                attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                attachment.IsDeleted = true;
+
+                _context.EvidenceAttachments.Update(attachment);
+            }
+            // Thêm mới các file trong danh sách
+            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
+            lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+            foreach (var attachment in lstAttachment)
+            {
+                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                addAttachment.CreatedAt = DateTime.Now;
+                addAttachment.IsActived = true;
+                addAttachment.IsDeleted = false;
+
+                await _context.EvidenceAttachments.AddAsync(addAttachment);
+            }
+            #endregion
+
             await _context.SaveChangesAsync();
 
             return _mapper.Map<ModelEvidence>(update);
@@ -161,5 +195,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+
+        private List<ModelAttachment> GetAllAttachment(Guid Id)
+        {
+            var result = _context.EvidenceAttachments.Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
+                .Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
+            return result;
+        }
+
     }
 }

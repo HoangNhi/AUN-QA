@@ -64,7 +64,8 @@ export const API_ENDPOINTS = {
     },
     File: {
         UploadFile: {
-            POST: `/File/UploadFile`
+            POST: `/File/api/UploadFile`,
+            GET: `/File/`
         },   
     }
 }

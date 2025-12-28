@@ -96,6 +96,12 @@ class ApiClient {
     const response = await this.axiosInstance.delete(endpoint, config);
     return response.data;
   }
+
+  downloadFile(url: string) {
+    return this.axiosInstance.get(url, {
+      responseType: 'blob',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL);

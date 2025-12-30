@@ -65,7 +65,7 @@ const PopupEvidence = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-3xl"
+        className="sm:max-w-6xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <form
@@ -80,40 +80,49 @@ const PopupEvidence = ({
               {evidence?.IsEdit ? "Cập nhật Minh chứng" : "Thêm mới Minh chứng"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-3">
-              <Label>Tên minh chứng</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="flex-1 overflow-hidden grid grid-cols-12">
+            <div className="col-span-5">
+              <div className="grid gap-3">
+                <div className="grid gap-3">
+                  <Label>Tên minh chứng</Label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label>Trạng thái</Label>
+                  <Select
+                    value={isActived ? "true" : "false"}
+                    onValueChange={(value) =>
+                      setIsActived(value === "true" ? true : false)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="true">Hoạt động</SelectItem>
+                        <SelectItem value="false">Không hoạt động</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-3">
+                  <Label>Tệp đính kèm</Label>
+                  <UploadFile
+                    ref={uploadRef}
+                    listAttachment={listAttachment}
+                    folderUpload={folderUpload}
+                    setListAttachment={setListAttachment}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid gap-3">
-              <Label>Trạng thái</Label>
-              <Select
-                value={isActived ? "true" : "false"}
-                onValueChange={(value) =>
-                  setIsActived(value === "true" ? true : false)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="true">Hoạt động</SelectItem>
-                    <SelectItem value="false">Không hoạt động</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-3">
-              <Label>Tệp đính kèm</Label>
-              <UploadFile
-                ref={uploadRef}
-                listAttachment={listAttachment}
-                folderUpload={folderUpload}
-                setListAttachment={setListAttachment}
-              />
-            </div>
+            <div className="col-span-7">Test</div>
           </div>
+
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Hủy</Button>

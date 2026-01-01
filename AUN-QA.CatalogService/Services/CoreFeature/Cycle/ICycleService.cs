@@ -10,6 +10,6 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         Task<ModelCycle> Insert(CycleRequest request);
         Task<ModelCycle> Update(CycleRequest request);
         Task<string> DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request);
     }
 }

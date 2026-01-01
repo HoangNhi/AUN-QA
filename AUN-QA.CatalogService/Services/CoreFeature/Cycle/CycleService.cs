@@ -248,13 +248,23 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             return String.Join(',', request.Ids);
         }
 
-        public async Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request)
         {
             var query = _context.Cycles.AsQueryable().Where(x => !x.IsDeleted);
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
                 query = query.Where(x => x.Name.Contains(request.TextSearch.Trim()));
+            }
+
+            if (request.Status.HasValue)
+            {
+                query = query.Where(x => x.Status == request.Status.Value);
+            }
+
+            if (request.Year.HasValue)
+            {
+                query = query.Where(x => x.Year == request.Year.Value);
             }
 
             var totalRow = await query.CountAsync();

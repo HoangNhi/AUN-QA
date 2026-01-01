@@ -24,12 +24,22 @@ import {
   RotateCw,
   SearchIcon,
 } from "lucide-react";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { CycleGetListPagingRequest } from "../../types/cycle.types";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -39,9 +49,9 @@ interface DataTableProps<TData, TValue> {
   deleteList?: (ids: string[]) => void;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
-  pageRequest: GetListPagingRequest;
-  setPageRequest?: (pageRequest: GetListPagingRequest) => void;
-  getList?: (pageRequest: GetListPagingRequest) => void;
+  pageRequest: CycleGetListPagingRequest;
+  setPageRequest?: (pageRequest: CycleGetListPagingRequest) => void;
+  getList?: (pageRequest: CycleGetListPagingRequest) => void;
   canAdd?: boolean;
   canDelete?: boolean;
 }
@@ -60,18 +70,47 @@ export function DataTable<TData, TValue>({
   canAdd = true,
   canDelete = true,
 }: DataTableProps<TData, TValue>) {
-  const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
+  const [searchTerm, setSearchTerm] = useState<string>(
+    pageRequest.TextSearch || ""
+  );
+  const [scopeTerm, setScopeTerm] = useState<string>(pageRequest.Scope || "");
+  const [statusTerm, setStatusTerm] = useState<string>(
+    pageRequest.Status || ""
+  );
+  const [yearTerm, setYearTerm] = useState<number>(pageRequest.Year || 0);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    if (debouncedSearchTerm !== pageRequest.TextSearch) {
+    const normalize = (value: string | number) =>
+      value === "null" || value === 0 || value === "" ? undefined : value;
+
+    const normalizedScope = normalize(scopeTerm) as string | undefined;
+    const normalizedStatus = normalize(statusTerm) as string | undefined;
+    const normalizedYear = normalize(yearTerm) as number | undefined;
+
+    if (
+      debouncedSearchTerm !== pageRequest.TextSearch ||
+      normalizedScope !== pageRequest.Scope ||
+      normalizedStatus !== pageRequest.Status ||
+      normalizedYear !== pageRequest.Year
+    ) {
       setPageRequest?.({
         ...pageRequest,
         TextSearch: debouncedSearchTerm,
         PageIndex: 1,
+        Scope: normalizedScope,
+        Status: normalizedStatus,
+        Year: normalizedYear,
       });
     }
-  }, [debouncedSearchTerm, pageRequest, setPageRequest]);
+  }, [
+    debouncedSearchTerm,
+    pageRequest,
+    setPageRequest,
+    scopeTerm,
+    statusTerm,
+    yearTerm,
+  ]);
 
   const table = useReactTable({
     data,
@@ -85,6 +124,73 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
+      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-medium">Lọc danh sách</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={() => {
+              setPageRequest?.({
+                ...pageRequest,
+                TextSearch: "",
+                Scope: undefined,
+                Status: undefined,
+                Year: undefined,
+              });
+              setSearchTerm("");
+              setScopeTerm("");
+              setStatusTerm("");
+              setYearTerm(0);
+            }}
+          >
+            Đặt lại bộ lọc
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <Select value={statusTerm} onValueChange={setStatusTerm}>
+            <SelectTrigger className="w-full bg-background">
+              <SelectValue placeholder="-- Tất cả trạng thái --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="null">-- Tất cả trạng thái --</SelectItem>
+              <SelectItem value="1">Lập kế hoạch</SelectItem>
+              <SelectItem value="2">Đang diễn ra</SelectItem>
+              <SelectItem value="3">Đã kết thúc</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={scopeTerm} onValueChange={setScopeTerm}>
+            <SelectTrigger className="w-full bg-background">
+              <SelectValue placeholder="-- Tất cả phạm vi --" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="null">-- Tất cả phạm vi --</SelectItem>
+              <SelectItem value="1">Cấp chương trình</SelectItem>
+              <SelectItem value="2">Cấp cơ sở</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            placeholder="Năm"
+            value={yearTerm || ""}
+            onChange={(e) => setYearTerm(Number(e.target.value))}
+            className="bg-background"
+          />
+          <InputGroup className="col-span-1 bg-background">
+            <InputGroupInput
+              placeholder="Tìm kiếm..."
+              value={searchTerm || ""}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="!pl-10"
+            />
+            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
+              <SearchIcon className="h-4 w-4 text-muted-foreground" />
+            </InputGroupAddon>
+          </InputGroup>
+        </div>
+      </div>
+
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
           {canAdd && (
@@ -108,16 +214,6 @@ export function DataTable<TData, TValue>({
             </Button>
           )}
         </div>
-        <InputGroup className="col-span-1">
-          <InputGroupInput
-            placeholder="Tìm kiếm..."
-            value={searchTerm || ""}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <InputGroupAddon>
-            <SearchIcon />
-          </InputGroupAddon>
-        </InputGroup>
       </div>
       <div className="overflow-hidden rounded-md border">
         <Table>

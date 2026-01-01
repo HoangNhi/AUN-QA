@@ -5,6 +5,12 @@ import { useCycle } from "@/features/catalog/hooks/useCycle";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import PopupCycle from "./PopupCycle";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const CyclePage = () => {
   const {

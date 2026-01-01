@@ -21,7 +21,7 @@ namespace AUN_QA.CatalogService.Controllers
 
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.VIEW)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        public async Task<IActionResult> GetList(CycleGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));

@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ModelCycleGetListPaging } from "@/features/catalog/types/cycle.types";
+import type { CycleGetListPaging } from "@/features/catalog/types/cycle.types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 
@@ -17,7 +17,7 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
   canDelete: boolean = true
-): ColumnDef<ModelCycleGetListPaging>[] => [
+): ColumnDef<CycleGetListPaging>[] => [
   {
     id: "select",
     header: ({ table }) => (

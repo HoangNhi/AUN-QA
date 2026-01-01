@@ -52,6 +52,7 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.EndDate).HasColumnType("timestamp");
             entity.Property(e => e.EvaluationPurpose).HasColumnType("text");
+            entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.StartDate).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace AUN_QA.CatalogService.Entities;
+﻿namespace AUN_QA.CatalogService.Entities;
 
 public partial class Cycle
 {
     public Guid Id { get; set; }
 
-    public int Name { get; set; }
+    public string Name { get; set; } = null!;
 
     public int Year { get; set; }
 

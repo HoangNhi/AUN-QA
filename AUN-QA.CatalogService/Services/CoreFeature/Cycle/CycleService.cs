@@ -1,0 +1,258 @@
+using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
+using AUN_QA.CatalogService.Infrastructure.Data;
+using AutoDependencyRegistration.Attributes;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+
+namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
+{
+    [RegisterClassAsTransient]
+    public class CycleService : ICycleService
+    {
+        private readonly CatalogContext _context;
+        private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _contextAccessor;
+
+        public CycleService(
+            CatalogContext context,
+            IMapper mapper,
+            IHttpContextAccessor contextAccessor)
+        {
+            _context = context;
+            _mapper = mapper;
+            _contextAccessor = contextAccessor;
+        }
+
+        public async Task<ModelCycle> GetById(GetByIdRequest request)
+        {
+            var data = await _context.Cycles.FindAsync(request.Id);
+            if (data == null)
+            {
+                throw new Exception("Không tìm thấy dữ liệu");
+            }
+
+            return _mapper.Map<ModelCycle>(data);
+        }
+
+        public async Task<ModelCycle> Insert(CycleRequest request)
+        {
+            var data = _context.Cycles.Where(x =>
+                x.Name == request.Name
+                && !x.IsDeleted
+            );
+
+            if (data.Any())
+            {
+                throw new Exception("Tên chu kỳ đã tồn tại");
+            }
+
+            var add = _mapper.Map<Entities.Cycle>(request);
+            add.Id = Guid.NewGuid();
+            add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+            add.CreatedAt = DateTime.Now;
+            add.IsActived = request.IsActived;
+
+            await _context.Cycles.AddAsync(add);
+
+            #region Council
+            if (request.ListCouncil != null && request.ListCouncil.Count > 0)
+            {
+                foreach (var council in request.ListCouncil)
+                {
+                    var addCouncil = _mapper.Map<Entities.Council>(council);
+                    addCouncil.Id = Guid.NewGuid();
+                    addCouncil.CycleId = add.Id;
+                    addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addCouncil.CreatedAt = DateTime.Now;
+                    addCouncil.IsActived = true;
+                    await _context.Councils.AddAsync(addCouncil);
+                }
+            }
+            #endregion
+
+            #region EvaluationSchedule
+            if (request.ListEvaluationSchedule != null && request.ListEvaluationSchedule.Count > 0)
+            {
+                foreach (var schedule in request.ListEvaluationSchedule)
+                {
+                    var addSchedule = _mapper.Map<Entities.EvaluationSchedule>(schedule);
+                    addSchedule.Id = Guid.NewGuid();
+                    addSchedule.CycleId = add.Id;
+                    addSchedule.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addSchedule.CreatedAt = DateTime.Now;
+                    addSchedule.IsActived = true;
+                    await _context.EvaluationSchedules.AddAsync(addSchedule);
+                }
+            }
+            #endregion
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ModelCycle>(add);
+        }
+
+        public async Task<ModelCycle> Update(CycleRequest request)
+        {
+            var data = _context.Cycles.Where(x =>
+                x.Name == request.Name
+                && !x.IsDeleted && x.Id != request.Id);
+
+            if (data.Any())
+            {
+                throw new Exception("Tên chu kỳ đã tồn tại");
+            }
+
+            var update = await _context.Cycles.FindAsync(request.Id);
+            if (update == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            _mapper.Map(request, update);
+
+            update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+            update.UpdatedAt = DateTime.Now;
+
+            _context.Cycles.Update(update);
+
+            #region Council
+            var ListCouncilHienTai = _context.Councils.Where(x => x.CycleId == update.Id && !x.IsDeleted).ToList();
+            var ListCouncilId = request.ListCouncil.Select(x => x.Id).ToList();
+            var ListCouncilCanXoa = ListCouncilHienTai.Where(x => !ListCouncilId.Contains(x.CycleId)).ToList();
+            if (ListCouncilCanXoa.Count() > 0)
+            {
+                foreach (var item in ListCouncilCanXoa)
+                {
+                    item.IsDeleted = true;
+                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.Councils.Update(item);
+                }
+            }
+
+            foreach (var item in request.ListCouncil)
+            {
+                var updateCouncil = ListCouncilHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
+                if (updateCouncil != null)
+                {
+                    updateCouncil.UpdatedAt = DateTime.Now;
+                    updateCouncil.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.Councils.Update(updateCouncil);
+                }
+                else
+                {
+                    var addCouncil = _mapper.Map<Entities.Council>(item);
+                    addCouncil.Id = Guid.NewGuid();
+                    addCouncil.CycleId = update.Id;
+                    addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addCouncil.CreatedAt = DateTime.Now;
+                    addCouncil.IsActived = true;
+                    await _context.Councils.AddAsync(addCouncil);
+                }
+            }
+            #endregion
+
+            #region EvaluationSchedule
+            var ListScheduleHienTai = _context.EvaluationSchedules.Where(x => x.CycleId == update.Id && !x.IsDeleted).ToList();
+            var ListScheduleId = request.ListEvaluationSchedule.Select(x => x.Id).ToList();
+            var ListScheduleCanXoa = ListScheduleHienTai.Where(x => !ListScheduleId.Contains(x.CycleId)).ToList();
+            if (ListScheduleCanXoa.Count() > 0)
+            {
+                foreach (var item in ListScheduleCanXoa)
+                {
+                    item.IsDeleted = true;
+                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.EvaluationSchedules.Update(item);
+                }
+            }
+            foreach (var item in request.ListEvaluationSchedule)
+            {
+                var updateSchedule = ListScheduleHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
+                if (updateSchedule != null)
+                {
+                    updateSchedule.UpdatedAt = DateTime.Now;
+                    updateSchedule.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.EvaluationSchedules.Update(updateSchedule);
+                }
+                else
+                {
+                    var addSchedule = _mapper.Map<Entities.EvaluationSchedule>(item);
+                    addSchedule.Id = Guid.NewGuid();
+                    addSchedule.CycleId = update.Id;
+                    addSchedule.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addSchedule.CreatedAt = DateTime.Now;
+                    addSchedule.IsActived = true;
+                    await _context.EvaluationSchedules.AddAsync(addSchedule);
+                }
+            }
+            #endregion
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ModelCycle>(update);
+        }
+
+        public async Task<string> DeleteList(DeleteListRequest request)
+        {
+            foreach (var id in request.Ids)
+            {
+                var delete = await _context.Cycles.FindAsync(id);
+                if (delete == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                delete.IsDeleted = true;
+                delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+
+                _context.Cycles.Update(delete);
+            }
+
+            await _context.SaveChangesAsync();
+            return String.Join(',', request.Ids);
+        }
+
+        public async Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(GetListPagingRequest request)
+        {
+            var query = _context.Cycles.AsQueryable().Where(x => !x.IsDeleted);
+
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                query = query.Where(x => x.Name.Contains(request.TextSearch));
+            }
+
+            var totalRow = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(x => x.UpdatedAt.HasValue ? x.UpdatedAt : x.CreatedAt)
+                .Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            var result = data.Select(x =>
+            {
+                var res = _mapper.Map<ModelCycleGetListPaging>(x);
+                res.StatusName = x.Status switch
+                {
+                    1 => "Lập kế hoạch",
+                    2 => "Đang diễn ra",
+                    3 => "Đã kết thúc",
+                    _ => "Không xác định"
+                };
+
+                return res;
+            }).ToList();
+
+            return new GetListPagingResponse<ModelCycleGetListPaging>
+            {
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                TotalRow = totalRow,
+                Data = result
+            };
+        }
+    }
+}

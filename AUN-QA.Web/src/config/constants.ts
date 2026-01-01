@@ -50,6 +50,27 @@ export const API_ENDPOINTS = {
             UPDATE: `/Catalog/Faculty/update`,
             DELETE_LIST: `/Catalog/Faculty/delete-list`,
             GET_ALL_COMBOBOX: `/Catalog/Faculty/get-all-combobox`,
+        },
+        Cycle: {
+            GET_LIST: `/Catalog/Cycle/get-list`,
+            GET_BY_ID: `/Catalog/Cycle/get-by-id`,
+            INSERT: `/Catalog/Cycle/insert`,
+            UPDATE: `/Catalog/Cycle/update`,
+            DELETE_LIST: `/Catalog/Cycle/delete-list`,
+        },
+        Council: {
+            GET_LIST: `/Catalog/Council/get-list`,
+            GET_BY_ID: `/Catalog/Council/get-by-id`,
+            INSERT: `/Catalog/Council/insert`,
+            UPDATE: `/Catalog/Council/update`,
+            DELETE_LIST: `/Catalog/Council/delete-list`,
+        },
+        EvaluationSchedule: {
+            GET_LIST: `/Catalog/EvaluationSchedule/get-list`,
+            GET_BY_ID: `/Catalog/EvaluationSchedule/get-by-id`,
+            INSERT: `/Catalog/EvaluationSchedule/insert`,
+            UPDATE: `/Catalog/EvaluationSchedule/update`,
+            DELETE_LIST: `/Catalog/EvaluationSchedule/delete-list`,
         }
     },
     Business: {

@@ -28,7 +28,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { Council, Cycle } from "@/features/catalog/types/cycle.types";
+import type {
+  Council,
+  Cycle,
+  EvaluationSchedule,
+} from "@/features/catalog/types/cycle.types";
 import { userService } from "@/features/system/api/user.api";
 import type { ModelCombobox } from "@/types/base/base.types";
 import { format } from "date-fns";
@@ -70,6 +74,9 @@ const PopupCycle = ({
   const [listCouncil, setListCouncil] = useState<Council[]>(
     cycle?.ListCouncil || []
   );
+  const [listEvaluationSchedule, setListEvaluationSchedule] = useState<
+    EvaluationSchedule[]
+  >(cycle?.ListEvaluationSchedule || []);
 
   const [userOptions, setUserOptions] = useState<ModelCombobox[]>([]);
   useEffect(() => {
@@ -115,6 +122,41 @@ const PopupCycle = ({
     );
   };
 
+  const handleAddEvaluationSchedule = () => {
+    setListEvaluationSchedule([
+      ...listEvaluationSchedule,
+      {
+        Id: uuidv4(),
+        CycleId: id || "",
+        ActivityName: "",
+        StartTime: format(new Date(), "yyyy-MM-dd"),
+        EndTime: format(new Date(), "yyyy-MM-dd"),
+        LeadId: "",
+        IsActived: true,
+        IsEdit: false,
+        FolderUpload: "",
+      },
+    ]);
+  };
+
+  const handleDeleteEvaluationSchedule = (id: string) => {
+    setListEvaluationSchedule(
+      listEvaluationSchedule.filter((x) => x.Id !== id)
+    );
+  };
+
+  const handleChangeEvaluationSchedule = (
+    id: string,
+    field: keyof EvaluationSchedule,
+    value: string
+  ) => {
+    setListEvaluationSchedule(
+      listEvaluationSchedule.map((c) =>
+        c.Id === id ? { ...c, [field]: value } : c
+      )
+    );
+  };
+
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
       {
@@ -130,7 +172,7 @@ const PopupCycle = ({
         IsActived: isActived,
         FolderUpload: cycle?.FolderUpload || "",
         ListCouncil: listCouncil,
-        ListEvaluationSchedule: [],
+        ListEvaluationSchedule: listEvaluationSchedule,
       },
       isAddMore
     );
@@ -177,6 +219,7 @@ const PopupCycle = ({
               <DatePicker
                 className="w-full"
                 value={startDate ? new Date(startDate) : undefined}
+                required
                 onChange={(date) =>
                   setStartDate(date ? format(date, "yyyy-MM-dd") : "")
                 }
@@ -187,6 +230,7 @@ const PopupCycle = ({
               <DatePicker
                 className="w-full"
                 value={endDate ? new Date(endDate) : undefined}
+                required
                 onChange={(date) =>
                   setEndDate(date ? format(date, "yyyy-MM-dd") : "")
                 }
@@ -329,7 +373,134 @@ const PopupCycle = ({
                 </div>
               </TabsContent>
               <TabsContent value="schedule">
-                Change your password here.
+                <div className="grid gap-2 col-span-12">
+                  <div className="flex justify-between items-center">
+                    <Label>Thời gian biểu đánh giá</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddEvaluationSchedule}
+                      className="flex gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Thêm hoạt động
+                    </Button>
+                  </div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Hoạt động</TableHead>
+                          <TableHead className="w-[180px]">Bắt đầu</TableHead>
+                          <TableHead className="w-[180px]">Kết thúc</TableHead>
+                          <TableHead className="w-[200px]">Phụ trách</TableHead>
+                          <TableHead className="w-[80px] text-center">
+                            Thao tác
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {listEvaluationSchedule.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center h-24">
+                              Chưa có dữ liệu
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          listEvaluationSchedule.map((item) => (
+                            <TableRow key={item.Id}>
+                              <TableCell>
+                                <Input
+                                  value={item.ActivityName}
+                                  onChange={(e) =>
+                                    handleChangeEvaluationSchedule(
+                                      item.Id,
+                                      "ActivityName",
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <DatePicker
+                                  className="w-full"
+                                  value={
+                                    item.StartTime
+                                      ? new Date(item.StartTime)
+                                      : undefined
+                                  }
+                                  required
+                                  onChange={(date) =>
+                                    handleChangeEvaluationSchedule(
+                                      item.Id,
+                                      "StartTime",
+                                      date ? format(date, "yyyy-MM-dd") : ""
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <DatePicker
+                                  className="w-full"
+                                  value={
+                                    item.EndTime
+                                      ? new Date(item.EndTime)
+                                      : undefined
+                                  }
+                                  required
+                                  onChange={(date) =>
+                                    handleChangeEvaluationSchedule(
+                                      item.Id,
+                                      "EndTime",
+                                      date ? format(date, "yyyy-MM-dd") : ""
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={item.LeadId}
+                                  onValueChange={(value) =>
+                                    handleChangeEvaluationSchedule(
+                                      item.Id,
+                                      "LeadId",
+                                      value
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Chọn người phụ trách" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {userOptions.map((user) => (
+                                      <SelectItem
+                                        key={user.Value}
+                                        value={user.Value || ""}
+                                      >
+                                        {user.Text}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleDeleteEvaluationSchedule(item.Id)
+                                  }
+                                >
+                                  <Trash className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>

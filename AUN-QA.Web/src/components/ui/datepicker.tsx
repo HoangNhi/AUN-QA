@@ -13,11 +13,17 @@ export function DatePicker({
   value,
   onChange,
   className,
+  required,
+  fromYear = 1900,
+  toYear = 2100,
 }: {
   optionLabel?: string;
   value: Date | undefined;
   onChange: (date: Date | undefined) => void;
   className?: string;
+  required?: boolean;
+  fromYear?: number;
+  toYear?: number;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -38,8 +44,11 @@ export function DatePicker({
             mode="single"
             selected={value}
             defaultMonth={value}
+            required={required}
             captionLayout="dropdown"
-            onSelect={(date) => {
+            fromYear={fromYear}
+            toYear={toYear}
+            onSelect={(date: Date | undefined) => {
               setOpen(false);
               onChange(date);
             }}

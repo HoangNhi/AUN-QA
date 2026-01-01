@@ -2,6 +2,7 @@ using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
+using AUN_QA.CatalogService.DTOs.CoreFeature.EvaluationSchedule.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
@@ -35,8 +36,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             }
 
             var result = _mapper.Map<ModelCycle>(data);
+            // List Council
             var listCouncil = _context.Councils.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived);
             result.ListCouncil = _mapper.Map<List<CouncilRequest>>(listCouncil);
+            // List 
+            var listEvaluationSchedule = _context.EvaluationSchedules.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived);
+            result.ListEvaluationSchedule = _mapper.Map<List<EvaluationScheduleRequest>>(listEvaluationSchedule);
+
             return result;
         }
 

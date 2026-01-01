@@ -161,5 +161,17 @@ namespace AUN_QA.SystemService.Services.User
             var result = await _context.ExecuteFunction<CheckPermissionReponse>("fn_user_checkpermission", parameters);
             return result;
         }
+
+        public async Task<List<ModelCombobox>> GetAllForCombobox()
+        {
+            var data = await _context.Users.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
+            var result = data.Select(x => new ModelCombobox
+            {
+                Text = $"[{x.Username}] - {x.Fullname}",
+                Value = x.Id.ToString(),
+            }).OrderBy(x => x.Sort).ToList();
+
+            return result;
+        }
     }
 }

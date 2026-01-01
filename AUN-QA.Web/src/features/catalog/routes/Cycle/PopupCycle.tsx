@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/datepicker";
 import {
   Dialog,
@@ -17,11 +18,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { Cycle } from "@/features/catalog/types/cycle.types";
+import type { Council, Cycle } from "@/features/catalog/types/cycle.types";
+import { userService } from "@/features/system/api/user.api";
+import type { ModelCombobox } from "@/types/base/base.types";
 import { format } from "date-fns";
-import { useState } from "react";
+import { Plus, Trash } from "lucide-react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 const PopupCycle = ({
@@ -50,13 +62,58 @@ const PopupCycle = ({
       ? format(new Date(cycle.EndDate), "yyyy-MM-dd")
       : format(new Date(), "yyyy-MM-dd")
   );
-  const [status, setStatus] = useState(cycle?.Status || "1");
+  const [status, setStatus] = useState(cycle?.Status.toString() || "1");
   const [evaluationPurpose, setEvaluationPurpose] = useState(
     cycle?.EvaluationPurpose || ""
   );
   const [scope, setScope] = useState(cycle?.Scope?.toString() || "1");
+  const [listCouncil, setListCouncil] = useState<Council[]>(
+    cycle?.ListCouncil || []
+  );
 
-  const [isActived, setIsActived] = useState<boolean>(cycle?.IsActived ?? true);
+  const [userOptions, setUserOptions] = useState<ModelCombobox[]>([]);
+  useEffect(() => {
+    if (isOpen) {
+      const fetchUserOptions = async () => {
+        const res = await userService.getAllCombobox();
+        if (res.Success && res.Data) {
+          setUserOptions(res.Data);
+        }
+      };
+      fetchUserOptions();
+    }
+  }, [isOpen]);
+
+  const [isActived] = useState<boolean>(cycle?.IsActived ?? true);
+
+  const handleAddCouncil = () => {
+    setListCouncil([
+      ...listCouncil,
+      {
+        Id: uuidv4(),
+        CycleId: id || "",
+        UserId: "",
+        IsLeader: false,
+        IsActived: true,
+        IsEdit: false,
+        FolderUpload: "",
+      },
+    ]);
+  };
+
+  const handleDeleteCouncil = (id: string) => {
+    setListCouncil(listCouncil.filter((x) => x.Id !== id));
+  };
+
+  const handleChangeCouncil = (
+    id: string,
+    field: keyof Council,
+    value: string | boolean
+  ) => {
+    setListCouncil(
+      listCouncil.map((c) => (c.Id === id ? { ...c, [field]: value } : c))
+    );
+  };
 
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
@@ -71,7 +128,8 @@ const PopupCycle = ({
         Scope: parseInt(scope),
         IsEdit: cycle?.IsEdit || false,
         IsActived: isActived,
-        ListCouncil: [],
+        FolderUpload: cycle?.FolderUpload || "",
+        ListCouncil: listCouncil,
         ListEvaluationSchedule: [],
       },
       isAddMore
@@ -93,12 +151,12 @@ const PopupCycle = ({
         >
           <DialogHeader>
             <DialogTitle>
-              {cycle?.IsEdit ? "Cập nhật Chu kỳ" : "Thêm mới Chu kỳ"}
+              {cycle?.IsEdit ? "Cập nhật kế hoạch" : "Thêm mới kế hoạch"}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-6 grid gap-2">
-              <Label>Tên chu kỳ</Label>
+              <Label>Kế hoạch</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -177,7 +235,98 @@ const PopupCycle = ({
                 </div>
               </TabsContent>
               <TabsContent value="council">
-                Change your password here.
+                <div className="grid gap-2 col-span-12">
+                  <div className="flex justify-between items-center">
+                    <Label>Danh sách hội đồng</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddCouncil}
+                      className="flex gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Thêm thành viên
+                    </Button>
+                  </div>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Thành viên</TableHead>
+                          <TableHead className="w-[150px] text-center">
+                            Là trưởng nhóm
+                          </TableHead>
+                          <TableHead className="w-[80px] text-center">
+                            Thao tác
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {listCouncil.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center h-24">
+                              Chưa có dữ liệu
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          listCouncil.map((council) => (
+                            <TableRow key={council.Id}>
+                              <TableCell>
+                                <Select
+                                  value={council.UserId}
+                                  onValueChange={(value) =>
+                                    handleChangeCouncil(
+                                      council.Id,
+                                      "UserId",
+                                      value
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Chọn thành viên" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {userOptions.map((user) => (
+                                      <SelectItem
+                                        key={user.Value}
+                                        value={user.Value || ""}
+                                      >
+                                        {user.Text}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={council.IsLeader}
+                                  onCheckedChange={(checked) =>
+                                    handleChangeCouncil(
+                                      council.Id,
+                                      "IsLeader",
+                                      !!checked
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleDeleteCouncil(council.Id)
+                                  }
+                                >
+                                  <Trash className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </TabsContent>
               <TabsContent value="schedule">
                 Change your password here.

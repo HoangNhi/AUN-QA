@@ -13,5 +13,6 @@ namespace AUN_QA.SystemService.Services.User
         Task<GetListPagingResponse<ModelUserGetListPaging>> GetList(GetListPagingRequest request);
         Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request);
         Task<ModelUser> GetCurrentUser();
+        Task<List<ModelCombobox>> GetAllForCombobox();
     }
 }

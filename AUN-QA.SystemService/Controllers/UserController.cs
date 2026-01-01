@@ -32,7 +32,6 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpGet, Route("get-by-id")]
         [AttributePermission(Action = ActionType.VIEW)]
-
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -44,7 +43,6 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpPost("insert")]
         [AttributePermission(Action = ActionType.ADD)]
-
         public async Task<IActionResult> Insert([FromBody] UserRequest request)
         {
             if (!ModelState.IsValid)
@@ -56,7 +54,6 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpPut, Route("update")]
         [AttributePermission(Action = ActionType.UPDATE)]
-
         public async Task<IActionResult> Update(UserRequest request)
         {
             if (!ModelState.IsValid)
@@ -68,7 +65,6 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpDelete, Route("delete-list")]
         [AttributePermission(Action = ActionType.DELETE)]
-
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
@@ -80,11 +76,18 @@ namespace AUN_QA.SystemService.Controllers
 
         [HttpGet, Route("get-current-user")]
         [AttributePermission(Action = ActionType.NONE)]
-
         public async Task<IActionResult> GetCurrentUser()
         {
             var result = await _service.GetCurrentUser();
             return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+        }
+
+        [HttpGet, Route("get-all-combobox")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAllForCombobox()
+        {
+            var result = await _service.GetAllForCombobox();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
     }
 }

@@ -1,6 +1,6 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type { User } from "@/features/system/types/user.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type { GetListPagingRequest, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 
@@ -27,5 +27,9 @@ export const userService = {
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
     return api.get<User>(API_ENDPOINTS.System.User.GET_CURRENT_USER);
+  },
+
+  getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+    return api.get<ModelCombobox[]>(API_ENDPOINTS.System.User.GET_ALL_COMBOBOX);
   },
 };

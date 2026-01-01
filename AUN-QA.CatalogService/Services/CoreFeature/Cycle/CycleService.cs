@@ -1,4 +1,5 @@
 using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -33,7 +34,10 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            return _mapper.Map<ModelCycle>(data);
+            var result = _mapper.Map<ModelCycle>(data);
+            var listCouncil = _context.Councils.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived);
+            result.ListCouncil = _mapper.Map<List<CouncilRequest>>(listCouncil);
+            return result;
         }
 
         public async Task<ModelCycle> Insert(CycleRequest request)
@@ -59,6 +63,16 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             #region Council
             if (request.ListCouncil != null && request.ListCouncil.Count > 0)
             {
+                if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
+                {
+                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
+                }
+
+                if (request.ListCouncil.Count(x => x.IsLeader) != 1)
+                {
+                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
                 foreach (var council in request.ListCouncil)
                 {
                     var addCouncil = _mapper.Map<Entities.Council>(council);
@@ -132,24 +146,37 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 }
             }
 
-            foreach (var item in request.ListCouncil)
+            if (request.ListCouncil != null && request.ListCouncil.Count > 0)
             {
-                var updateCouncil = ListCouncilHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
-                if (updateCouncil != null)
+                if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
                 {
-                    updateCouncil.UpdatedAt = DateTime.Now;
-                    updateCouncil.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    _context.Councils.Update(updateCouncil);
+                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
-                else
+
+                if (request.ListCouncil.Count(x => x.IsLeader) != 1)
                 {
-                    var addCouncil = _mapper.Map<Entities.Council>(item);
-                    addCouncil.Id = Guid.NewGuid();
-                    addCouncil.CycleId = update.Id;
-                    addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addCouncil.CreatedAt = DateTime.Now;
-                    addCouncil.IsActived = true;
-                    await _context.Councils.AddAsync(addCouncil);
+                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
+                foreach (var item in request.ListCouncil)
+                {
+                    var updateCouncil = ListCouncilHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
+                    if (updateCouncil != null)
+                    {
+                        updateCouncil.UpdatedAt = DateTime.Now;
+                        updateCouncil.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        _context.Councils.Update(updateCouncil);
+                    }
+                    else
+                    {
+                        var addCouncil = _mapper.Map<Entities.Council>(item);
+                        addCouncil.Id = Guid.NewGuid();
+                        addCouncil.CycleId = update.Id;
+                        addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        addCouncil.CreatedAt = DateTime.Now;
+                        addCouncil.IsActived = true;
+                        await _context.Councils.AddAsync(addCouncil);
+                    }
                 }
             }
             #endregion
@@ -221,7 +248,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch));
+                query = query.Where(x => x.Name.Contains(request.TextSearch.Trim()));
             }
 
             var totalRow = await query.CountAsync();

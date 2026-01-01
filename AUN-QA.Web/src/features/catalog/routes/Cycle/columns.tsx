@@ -40,7 +40,7 @@ export const getColumns = (
   },
   {
     accessorKey: "Name",
-    header: "Tên chu kỳ",
+    header: "Kế hoạch",
   },
   {
     accessorKey: "Year",

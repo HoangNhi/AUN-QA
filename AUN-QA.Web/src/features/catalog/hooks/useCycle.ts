@@ -96,7 +96,7 @@ export const useCycle = () => {
           Year: new Date().getFullYear(),
           StartDate: new Date().toISOString(),
           EndDate: new Date().toISOString(),
-          Status: "Planning",
+          Status: "1",
           EvaluationPurpose: "",
           Scope: 1,
           IsEdit: isEdit 
@@ -120,7 +120,7 @@ export const useCycle = () => {
              Year: new Date().getFullYear(),
              StartDate: new Date().toISOString(),
              EndDate: new Date().toISOString(),
-             Status: "Planning",
+             Status: "1",
              EvaluationPurpose: "",
              Scope: 1,
              IsEdit: false,

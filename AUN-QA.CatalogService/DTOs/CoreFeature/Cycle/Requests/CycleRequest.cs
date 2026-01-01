@@ -33,7 +33,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
     {
         public CycleRequestValidator()
         {
-            RuleFor(x => x.Name).NotEmpty().WithMessage("Tên chu kỳ không được để trống");
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Kế hoạch không được để trống");
             RuleFor(x => x.Year).NotEmpty().WithMessage("Năm không được để trống");
             RuleFor(x => x.StartDate).NotEmpty().WithMessage("Ngày bắt đầu không được để trống");
             RuleFor(x => x.EndDate).NotEmpty().WithMessage("Ngày kết thúc không được để trống");

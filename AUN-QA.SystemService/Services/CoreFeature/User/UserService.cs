@@ -105,11 +105,16 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            var oldPassword = update.Password;
             _mapper.Map(request, update);
 
             if (request.Password != DefaultPassword)
             {
                 update.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, update.PasswordSalt);
+            }
+            else
+            {
+                update.Password = oldPassword;
             }
 
             update.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, update.Avatar);
@@ -179,6 +184,78 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             }).OrderBy(x => x.Sort).ToList();
 
             return result;
+        }
+
+        public async Task<ModelUser> EditProfile(EditProfileRequest request)
+        {
+            var currentUserId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                throw new Exception("Người dùng không có quyền thực hiện hành động này");
+            }
+
+            var userId = Guid.Parse(currentUserId);
+
+            var data = _context.Users.Where(x =>
+                 x.Email == request.Email
+                && !x.IsDeleted && x.Id != userId);
+
+            if (data.Any())
+            {
+                throw new Exception("Email đã tồn tại");
+            }
+
+            var update = await _context.Users.FindAsync(userId);
+            if (update == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            _mapper.Map(request, update);
+            update.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, update.Avatar);
+            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            update.UpdatedAt = DateTime.Now;
+
+            _context.Users.Update(update);
+            await _context.SaveChangesAsync();
+
+            var response = _mapper.Map<ModelUser>(update);
+            response.Password = DefaultPassword;
+            return response;
+        }
+
+        public async Task<ModelUser> ChangePassword(ChangePasswordRequest request)
+        {
+            //GET USER ID
+            Guid id = Guid.NewGuid();
+            Guid.TryParse(_contextAccessor.HttpContext.User.Claims.Where(c => c.Type == "name")
+               .Select(c => c.Value).SingleOrDefault(), out id);
+
+            var update = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.Username == _contextAccessor.HttpContext.User.Identity.Name && x.IsDeleted == false);
+            if (update == null)
+            {
+                throw new Exception("Không tìm thấy dữ liệu");
+            }
+
+            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("Xác nhận mật khẩu mới không đúng");
+
+            // Nếu đổi mật khẩu thì cập nhật lại mật khẩu mới
+            var pass = Encrypt_DecryptHelper.EncodePassword(request.OldPassword, update.PasswordSalt);
+            if (!pass.Equals(update.Password)) throw new Exception("Mật khẩu cũ không đúng");
+
+            var salt = Encrypt_DecryptHelper.GenerateSalt();
+            update.PasswordSalt = salt;
+            update.Password = Encrypt_DecryptHelper.EncodePassword(request.NewPassword, salt);
+            update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+            update.UpdatedAt = DateTime.Now;
+
+            _context.Users.Update(update);
+            await _context.SaveChangesAsync();
+
+            var response = _mapper.Map<ModelUser>(update);
+            response.Password = DefaultPassword;
+            return response;
         }
     }
 }

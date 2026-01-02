@@ -46,7 +46,6 @@ const PopupDetail = ({
   const [roles, setRoles] = useState<ModelCombobox[]>([]);
   const [isActived, setIsActived] = useState<boolean>(user?.IsActived ?? true);
   const [email, setEmail] = useState(user?.Email || "");
-  const [avatar, setAvatar] = useState<string | null>(user?.Avatar || null);
   const [folderUpload, setFolderUpload] = useState<string>(
     user?.FolderUpload || uuidv4()
   );

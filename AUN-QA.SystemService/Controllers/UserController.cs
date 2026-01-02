@@ -89,5 +89,27 @@ namespace AUN_QA.SystemService.Controllers
             var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
+
+        [HttpPut("edit-profile")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> EditProfile(EditProfileRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.EditProfile(request);
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+        }
+
+        [HttpPut("change-password")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.ChangePassword(request);
+            return Ok(new BaseResponse<ModelUser> { Data = result, Success = true });
+        }
     }
 }

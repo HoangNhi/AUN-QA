@@ -14,5 +14,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         Task<CheckPermissionReponse> CheckPermission(CheckPermissionRequest request);
         Task<ModelUser> GetCurrentUser();
         Task<List<ModelCombobox>> GetAllForCombobox();
+        Task<ModelUser> EditProfile(EditProfileRequest request);
+        Task<ModelUser> ChangePassword(ChangePasswordRequest request);
     }
 }

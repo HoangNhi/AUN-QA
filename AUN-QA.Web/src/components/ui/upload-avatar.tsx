@@ -135,6 +135,7 @@ const UploadAvatar = forwardRef<UploadAvatarRef, UploadAvatarProps>(
           {/* Remove Button (Only if has image) */}
           {preview && (
             <button
+              type="button"
               onClick={handleRemove}
               className="absolute right-1 top-1 z-10 rounded-full bg-white p-1 text-gray-500 shadow-sm hover:text-red-500 hidden group-hover:block"
               title="Xóa ảnh"

@@ -4,14 +4,14 @@ import type { SystemGroup } from "./systemGroup.types";
 import type { User } from "./user.types";
 
 export interface LoginRequest {
-    Username: string;
-    Password: string;
+  Username: string;
+  Password: string;
 }
 
 import { type ApiResponse } from "@/lib/api";
 
 export interface LoginResponse extends User {
-    AccessToken: string;
+  AccessToken: string;
 }
 
 export interface AuthContextType {
@@ -22,7 +22,11 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<ApiResponse<LoginResponse>>;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<ApiResponse<LoginResponse>>;
   logout: () => Promise<void>;
   getPermission: (pathname: string) => Promise<GetPermissionByUser | undefined>;
+  refreshProfile: () => Promise<void>;
 }

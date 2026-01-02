@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${SYSTEM_BASE}/User/delete-list`,
       GET_CURRENT_USER: `${SYSTEM_BASE}/User/get-current-user`,
       GET_ALL_COMBOBOX: `${SYSTEM_BASE}/User/get-all-combobox`,
+      EDIT_PROFILE: `${SYSTEM_BASE}/User/edit-profile`,
+      CHANGE_PASSWORD: `${SYSTEM_BASE}/User/change-password`,
     },
     SystemGroup: {
       GET_LIST: `${SYSTEM_BASE}/SystemGroup/get-list`,

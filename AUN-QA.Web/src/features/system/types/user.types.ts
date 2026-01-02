@@ -13,3 +13,15 @@ export interface User extends BaseRequest {
 export interface UserGetList extends User {
   Role: string;
 }
+
+export interface EditProfileRequest extends BaseRequest {
+  Fullname: string;
+  Email: string;
+  Avatar?: string;
+}
+
+export interface ChangePasswordRequest {
+  OldPassword: string;
+  NewPassword: string;
+  ConfirmNewPassword: string;
+}

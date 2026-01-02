@@ -10,6 +10,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         {
             CreateMap<Entities.User, ModelUser>().ReverseMap();
             CreateMap<Entities.User, UserRequest>().ReverseMap();
+            CreateMap<Entities.User, EditProfileRequest>().ReverseMap();
         }
     }
 }

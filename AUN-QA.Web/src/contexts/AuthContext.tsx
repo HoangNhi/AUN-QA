@@ -209,7 +209,11 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           Fullname: Fullname || "",
           Username: Username || "",
           RoleId: RoleId || "",
+          Avatar: response.Data?.Avatar || "",
+          Email: response.Data?.Email || "",
           IsEdit: false,
+          IsActived: true,
+          FolderUpload: "",
         };
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
@@ -355,6 +359,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     getPermission,
+    refreshProfile: async () => {
+      const response = await userService.getCurrentUser();
+      if (response.Success && response.Data) {
+        setUser(response.Data);
+        localStorage.setItem("user", JSON.stringify(response.Data));
+      }
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

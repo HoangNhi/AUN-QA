@@ -6,6 +6,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
     {
         public int? Status { get; set; }
 
+        public int? Scope { get; set; }
+
         public int? Year { get; set; }
     }
 }

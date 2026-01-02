@@ -1,4 +1,5 @@
 using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.Common;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
@@ -36,9 +37,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             }
 
             var result = _mapper.Map<ModelCycle>(data);
+
             // List Council
-            var listCouncil = _context.Councils.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived);
+            var listCouncil = _context.Councils.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived).OrderBy(x => x.RoleId);
             result.ListCouncil = _mapper.Map<List<CouncilRequest>>(listCouncil);
+
             // List 
             var listEvaluationSchedule = _context.EvaluationSchedules.Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived);
             result.ListEvaluationSchedule = _mapper.Map<List<EvaluationScheduleRequest>>(listEvaluationSchedule);
@@ -74,7 +77,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
-                if (request.ListCouncil.Count(x => x.IsLeader) != 1)
+                if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
                 }
@@ -159,7 +162,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
-                if (request.ListCouncil.Count(x => x.IsLeader) != 1)
+                if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
                 }
@@ -265,6 +268,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (request.Year.HasValue)
             {
                 query = query.Where(x => x.Year == request.Year.Value);
+            }
+
+            if (request.Scope.HasValue)
+            {
+                query = query.Where(x => x.Scope == request.Scope.Value);
             }
 
             var totalRow = await query.CountAsync();

@@ -1,4 +1,7 @@
-﻿namespace AUN_QA.CatalogService.Entities;
+﻿using System;
+using System.Collections.Generic;
+
+namespace AUN_QA.CatalogService.Entities;
 
 public partial class Cycle
 {

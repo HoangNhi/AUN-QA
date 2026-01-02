@@ -6,9 +6,15 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests
     public class CouncilRequest : BaseRequest
     {
         public Guid Id { get; set; }
+
         public Guid CycleId { get; set; }
+
         public Guid UserId { get; set; }
-        public bool IsLeader { get; set; } = false;
+
+        /// <summary>
+        /// 1. Trưởng hội đồng, 2. Thành viên đánh giá, 3. Người cung cấp minh chứng
+        /// </summary>
+        public int RoleId { get; set; } = 3;
     }
 
     public class CouncilRequestValidator : AbstractValidator<CouncilRequest>

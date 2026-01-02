@@ -31,7 +31,7 @@ export interface Council extends BaseRequest {
   Id: string;
   CycleId: string;
   UserId: string;
-  IsLeader: boolean;
+  RoleId: number;
 }
 
 export interface EvaluationSchedule extends BaseRequest {

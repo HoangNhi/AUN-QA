@@ -100,7 +100,7 @@ const PopupCycle = ({
         Id: uuidv4(),
         CycleId: id || "",
         UserId: "",
-        IsLeader: false,
+        RoleId: 1,
         IsActived: true,
         IsEdit: false,
         FolderUpload: "",
@@ -191,12 +191,12 @@ const PopupCycle = ({
             onSubmit(false);
           }}
         >
-          <DialogHeader>
+          <DialogHeader className="border-b pb-2">
             <DialogTitle>
               {cycle?.IsEdit ? "Cập nhật kế hoạch" : "Thêm mới kế hoạch"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-12 gap-4">
+          <div className="grid grid-cols-12 gap-4 max-h-[60vh] overflow-y-auto px-2">
             <div className="col-span-6 grid gap-2">
               <Label>Kế hoạch</Label>
               <Input
@@ -210,7 +210,25 @@ const PopupCycle = ({
               <Input
                 type="number"
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => {
+                  const newYear = e.target.value;
+                  setYear(newYear);
+                  if (newYear && newYear.length === 4) {
+                    const y = parseInt(newYear);
+                    if (!isNaN(y)) {
+                      if (startDate) {
+                        const d = new Date(startDate);
+                        d.setFullYear(y);
+                        setStartDate(format(d, "yyyy-MM-dd"));
+                      }
+                      if (endDate) {
+                        const d = new Date(endDate);
+                        d.setFullYear(y);
+                        setEndDate(format(d, "yyyy-MM-dd"));
+                      }
+                    }
+                  }
+                }}
                 required
               />
             </div>
@@ -295,9 +313,11 @@ const PopupCycle = ({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Thành viên</TableHead>
+                          <TableHead className="w-[300px]">
+                            Thành viên
+                          </TableHead>
                           <TableHead className="w-[150px] text-center">
-                            Là trưởng nhóm
+                            Vai trò
                           </TableHead>
                           <TableHead className="w-[80px] text-center">
                             Thao tác
@@ -341,16 +361,31 @@ const PopupCycle = ({
                                 </Select>
                               </TableCell>
                               <TableCell className="text-center">
-                                <Checkbox
-                                  checked={council.IsLeader}
-                                  onCheckedChange={(checked) =>
+                                <Select
+                                  value={council.RoleId.toString()}
+                                  onValueChange={(value) =>
                                     handleChangeCouncil(
                                       council.Id,
-                                      "IsLeader",
-                                      !!checked
+                                      "RoleId",
+                                      value
                                     )
                                   }
-                                />
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Chọn vai trò" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">
+                                      Trưởng nhóm hội đồng
+                                    </SelectItem>
+                                    <SelectItem value="2">
+                                      Thành viên đánh giá
+                                    </SelectItem>
+                                    <SelectItem value="3">
+                                      Người cung cấp minh chứng
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </TableCell>
                               <TableCell className="text-center">
                                 <Button
@@ -504,7 +539,7 @@ const PopupCycle = ({
               </TabsContent>
             </Tabs>
           </div>
-          <DialogFooter>
+          <DialogFooter className="border-t pt-2">
             <DialogClose asChild>
               <Button variant="outline">Hủy</Button>
             </DialogClose>

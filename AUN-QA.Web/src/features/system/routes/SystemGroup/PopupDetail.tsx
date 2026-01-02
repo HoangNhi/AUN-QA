@@ -62,7 +62,7 @@ const PopupDetail = ({
 
   useEffect(() => {
     const fetchComboboxSystemGroup = async () => {
-      const response = await systemGroupService.getAllCombobox();
+      const response = await systemGroupService.getAllNotParentCombobox();
       if (response.Success) {
         setComboboxSystemGroup(response.Data || []);
       } else {

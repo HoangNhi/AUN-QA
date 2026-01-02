@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${SYSTEM_BASE}/SystemGroup/update`,
       DELETE_LIST: `${SYSTEM_BASE}/SystemGroup/delete-list`,
       GET_ALL_COMBOBOX: `${SYSTEM_BASE}/SystemGroup/get-all-combobox`,
+      GET_ALL_NOT_PARENT_COMBOBOX: `${SYSTEM_BASE}/SystemGroup/get-all-not-parent-combobox`,
       GET_ALL: `${SYSTEM_BASE}/SystemGroup/get-all`,
     },
     Menu: {

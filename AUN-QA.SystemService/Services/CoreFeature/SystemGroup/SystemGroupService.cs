@@ -5,8 +5,8 @@ using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
-using Npgsql;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 {
@@ -32,7 +32,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             var data = await _context.SystemGroups.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Not found");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelSystemGroup>(data);
@@ -132,6 +132,19 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
             var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
+            var result = data.Select(x => new ModelCombobox
+            {
+                Text = x.Name,
+                Value = x.Id.ToString(),
+                Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
+            }).OrderBy(x => x.Sort).ToList();
+
+            return result;
+        }
+
+        public async Task<List<ModelCombobox>> GetAllNotParentForCombobox()
+        {
+            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived && !x.ParentId.HasValue).ToListAsync();
             var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,

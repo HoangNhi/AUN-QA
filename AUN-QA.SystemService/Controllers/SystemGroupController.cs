@@ -82,6 +82,14 @@ namespace AUN_QA.SystemService.Controllers
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 
+        [HttpGet, Route("get-all-not-parent-combobox")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAllNotParentForCombobox()
+        {
+            var result = await _service.GetAllNotParentForCombobox();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
+
         [HttpGet, Route("get-all")]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetAll()

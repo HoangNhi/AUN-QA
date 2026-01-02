@@ -13,5 +13,6 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
         Task<GetListPagingResponse<ModelSystemGroupGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task<List<ModelSystemGroup>> GetAll();
+        Task<List<ModelCombobox>> GetAllNotParentForCombobox();
     }
 }

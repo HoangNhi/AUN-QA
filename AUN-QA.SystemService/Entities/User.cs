@@ -28,4 +28,8 @@ public partial class User
     public bool IsDeleted { get; set; }
 
     public Guid RoleId { get; set; }
+
+    public string Email { get; set; } = null!;
+
+    public string? Avatar { get; set; }
 }

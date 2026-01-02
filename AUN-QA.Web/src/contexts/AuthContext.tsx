@@ -43,12 +43,16 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [permissions, setPermissions] = useState<GetPermissionByUser[]>([]);
 
   const performLogout = async () => {
+    console.log("Logout");
     setUser(null);
     setSystemGroup([]);
     setMenu([]);
     setPermissions([]);
     clearTokens();
     localStorage.removeItem("user");
+    localStorage.removeItem("systemGroup");
+    localStorage.removeItem("menu");
+    localStorage.removeItem("permissions");
   };
 
   const fetchUserData = useCallback(async (currentUser: User) => {

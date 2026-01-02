@@ -2,7 +2,7 @@
 using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Requests;
-using AUN_QA.SystemService.Services.Auth;
+using AUN_QA.SystemService.Services.CoreFeature.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

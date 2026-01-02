@@ -3,7 +3,7 @@ using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Requests;
 using AUN_QA.SystemService.Helpers;
-using AUN_QA.SystemService.Services.SystemGroup;
+using AUN_QA.SystemService.Services.CoreFeature.SystemGroup;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.SystemService.Controllers

@@ -20,8 +20,11 @@ import {
 import { roleService } from "@/features/system/api/role.api";
 import type { ModelCombobox } from "@/types/base/base.types";
 import type { User } from "@/features/system/types/user.types";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import UploadAvatar, {
+  type UploadAvatarRef,
+} from "@/components/ui/upload-avatar";
 
 const PopupDetail = ({
   user,
@@ -41,8 +44,17 @@ const PopupDetail = ({
   const [roleId, setRoleId] = useState(user?.RoleId || "");
   const [roles, setRoles] = useState<ModelCombobox[]>([]);
   const [isActived, setIsActived] = useState<boolean>(user?.IsActived ?? true);
+  const [email, setEmail] = useState(user?.Email || "");
+  const [avatar, setAvatar] = useState<string | null>(user?.Avatar || null);
+  const [folderUpload, setFolderUpload] = useState<string>(
+    user?.FolderUpload || uuidv4()
+  );
 
-  const onSubmit = (isAddMore: boolean) => {
+  const avatarRef = useRef<UploadAvatarRef>(null);
+
+  const onSubmit = async (isAddMore: boolean) => {
+    const avatarUrl = await avatarRef.current?.upload();
+
     saveChange(
       {
         Id: id ?? uuidv4(),
@@ -52,6 +64,9 @@ const PopupDetail = ({
         RoleId: roleId,
         IsEdit: user?.IsEdit || false,
         IsActived: isActived,
+        Email: email,
+        Avatar: avatarUrl === null ? user?.Avatar : avatarUrl,
+        FolderUpload: folderUpload,
       },
       isAddMore
     );
@@ -85,6 +100,15 @@ const PopupDetail = ({
               {user?.IsEdit ? "Cập nhật Tài khoản" : "Thêm mới Tài khoản"}
             </DialogTitle>
           </DialogHeader>
+
+          <div className="flex justify-center mb-4">
+            <UploadAvatar
+              ref={avatarRef}
+              defaultImage={user?.Avatar}
+              folderUpload={folderUpload}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-3">
               <Label>Tên đăng nhập</Label>
@@ -107,6 +131,10 @@ const PopupDetail = ({
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
+            </div>
+            <div className="grid gap-3">
+              <Label>Email</Label>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="grid gap-3">
               <Label>Vai trò</Label>

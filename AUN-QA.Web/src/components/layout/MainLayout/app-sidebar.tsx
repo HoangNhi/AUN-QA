@@ -4,6 +4,7 @@ import { GalleryVerticalEnd } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
@@ -17,11 +18,12 @@ import {
 
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { NavUser } from "./NavUser";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const location = useLocation();
   const pathname = location.pathname;
-  const { systemGroup, menu } = useAuth();
+  const { systemGroup, menu, user } = useAuth();
 
   return (
     <Sidebar {...props}>
@@ -82,6 +84,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={user} />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

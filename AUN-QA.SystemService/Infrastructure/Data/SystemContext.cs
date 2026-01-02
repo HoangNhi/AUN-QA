@@ -16,6 +16,8 @@ public partial class SystemContext : DbContext
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
+    public virtual DbSet<Result> Results { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<SystemGroup> SystemGroups { get; set; }
@@ -109,6 +111,17 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.RoleId).HasColumnName("role_id");
         });
 
+        modelBuilder.Entity<Result>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("result");
+
+            entity.Property(e => e.JsonbAgg)
+                .HasColumnType("jsonb")
+                .HasColumnName("jsonb_agg");
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("role_pk");
@@ -182,6 +195,7 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
+            entity.Property(e => e.Avatar).HasColumnName("avatar");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone")
@@ -189,6 +203,7 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("created_by");
+            entity.Property(e => e.Email).HasColumnName("email");
             entity.Property(e => e.Fullname).HasColumnName("fullname");
             entity.Property(e => e.IsActived)
                 .HasDefaultValue(true)

@@ -1,5 +1,5 @@
 ﻿using AUN_QA.FileService.DTOs.Base;
-using AUN_QA.FileService.Services.UploadFile;
+using AUN_QA.FileService.Services.CoreFeature.UploadFile;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.FileService.Controllers

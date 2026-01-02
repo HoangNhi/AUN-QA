@@ -133,7 +133,6 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         link.remove();
         window.URL.revokeObjectURL(downloadUrl);
       } catch (error) {
-        console.error("Download failed", error);
         window.open(url, "_blank");
       }
     };

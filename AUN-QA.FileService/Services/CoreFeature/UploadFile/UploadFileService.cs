@@ -149,6 +149,9 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                     File.Move(arrFiles[0], avataPath + "\\" + fileName, true);
                     path = "System\\Avatar\\" + fileName;
                 }
+
+                //Xóa thư mục tạm.
+                Directory.Delete(folderUploadPath, true);
             }
 
             return path;

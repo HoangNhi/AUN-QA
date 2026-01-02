@@ -12,6 +12,16 @@ import { type ApiResponse } from "@/lib/api";
 
 export interface LoginResponse extends User {
   AccessToken: string;
+  RefreshToken: string;
+}
+
+export interface RefreshTokenRequest {
+  RefreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  AccessToken: string;
+  RefreshToken: string;
 }
 
 export interface AuthContextType {

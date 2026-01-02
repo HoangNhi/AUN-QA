@@ -55,7 +55,6 @@ export function NavUser({ user }: { user: User }) {
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi cập nhật hồ sơ");
-      console.error(error);
     }
   };
 
@@ -70,7 +69,6 @@ export function NavUser({ user }: { user: User }) {
       }
     } catch (error) {
       toast.error("Đã xảy ra lỗi khi đổi mật khẩu");
-      console.error(error);
     }
   };
 

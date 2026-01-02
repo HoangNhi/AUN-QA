@@ -49,7 +49,6 @@ const UploadAvatar = forwardRef<UploadAvatarRef, UploadAvatarProps>(
             }
             return null; // Upload failed
           } catch (error) {
-            console.error("Upload failed", error);
             return null;
           }
         }

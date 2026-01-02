@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     },
     Auth: {
       LOGIN: `${SYSTEM_BASE}/Auth/login`,
+      REFRESH_TOKEN: `${SYSTEM_BASE}/Auth/refresh-token`,
     },
   },
   Catalog: {

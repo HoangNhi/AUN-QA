@@ -2,6 +2,8 @@
 using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Requests;
+using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Dtos;
+using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Requests;
 using AUN_QA.SystemService.Services.CoreFeature.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,8 +28,19 @@ namespace AUN_QA.SystemService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = _service.Login(request);
+            var result = _service.Login(request, GetClientIpAddress());
             return Ok(new BaseResponse<LoginResponse> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("refresh-token")]
+        [AllowAnonymous]
+        public IActionResult RefreshToken(RefreshTokenRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = _service.RefreshToken(request, GetClientIpAddress());
+            return Ok(new BaseResponse<ModelToken> { Data = result, Success = true });
         }
     }
 }

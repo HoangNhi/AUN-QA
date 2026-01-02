@@ -32,4 +32,6 @@ public partial class User
     public string Email { get; set; } = null!;
 
     public string? Avatar { get; set; }
+
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

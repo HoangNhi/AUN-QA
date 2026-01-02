@@ -16,7 +16,7 @@ public partial class SystemContext : DbContext
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
-    public virtual DbSet<Result> Results { get; set; }
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -111,15 +111,35 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.RoleId).HasColumnName("role_id");
         });
 
-        modelBuilder.Entity<Result>(entity =>
+        modelBuilder.Entity<RefreshToken>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("result");
+            entity.HasKey(e => e.Id).HasName("refresh_token_pk");
 
-            entity.Property(e => e.JsonbAgg)
-                .HasColumnType("jsonb")
-                .HasColumnName("jsonb_agg");
+            entity.ToTable("refresh_token");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedByIp).HasColumnName("created_by_ip");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("expires_at");
+            entity.Property(e => e.ReasonRevoked).HasColumnName("reason_revoked");
+            entity.Property(e => e.ReplacedByToken).HasColumnName("replaced_by_token");
+            entity.Property(e => e.RevokedAt)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("revoked_at");
+            entity.Property(e => e.RevokedByIp).HasColumnName("revoked_by_ip");
+            entity.Property(e => e.Token).HasColumnName("token");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("refresh_token_user_id_fk");
         });
 
         modelBuilder.Entity<Role>(entity =>

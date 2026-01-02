@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { cn } from "@/lib/utils";
+import { cn, getFileUrl } from "@/lib/utils";
 
 export interface UploadAvatarProps {
   defaultImage?: string;
@@ -21,7 +21,15 @@ export interface UploadAvatarRef {
 }
 
 const UploadAvatar = forwardRef<UploadAvatarRef, UploadAvatarProps>(
-  ({ defaultImage, folderUpload = "Avatars", className, onChange }, ref) => {
+  (
+    {
+      defaultImage = getFileUrl("Files/Commons/NoPicture.png"),
+      folderUpload = "Avatars",
+      className,
+      onChange,
+    },
+    ref
+  ) => {
     const [preview, setPreview] = useState<string | null>(defaultImage || null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);

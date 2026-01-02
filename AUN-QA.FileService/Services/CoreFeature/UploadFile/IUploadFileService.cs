@@ -7,5 +7,6 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         Task Insert(List<IFormFile> files, string FolderName);
         List<ModelAttachment> UploadData(object lienKetId, string servicePath, string folderName, string tempFolder);
         bool DeleteData(IEnumerable<string> filePaths);
+        string UploadAvatar(string folderUploadId, string oldImage);
     }
 }

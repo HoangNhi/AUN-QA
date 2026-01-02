@@ -57,5 +57,19 @@ namespace AUN_QA.FileService.Services.Grpc
             };
             return Task.FromResult(response);
         }
+
+        public override Task<UploadAvatarResponse> UploadAvatar(UploadAvatarRequest request, ServerCallContext context)
+        {
+            var result = _uploadFileService.UploadAvatar(
+                request.FolderUploadId, request.OldImage
+            );
+
+            var response = new UploadAvatarResponse
+            {
+                NewImage = result
+            };
+
+            return Task.FromResult(response);
+        }
     }
 }

@@ -371,4 +371,8 @@ FodyWeavers.xsd
 /AUN-QA.CatalogService/appsettings.Development.json
 /AUN-QA.BusinessService/appsettings.Development.json
 /AUN-QA.FileService/appsettings.Development.json
-/AUN-QA.FileService/wwwroot/
+/AUN-QA.FileService/wwwroot/Business
+/AUN-QA.FileService/wwwroot/System
+/AUN-QA.FileService/wwwroot/Catalog
+/AUN-QA.FileService/wwwroot/Files/Temp
+

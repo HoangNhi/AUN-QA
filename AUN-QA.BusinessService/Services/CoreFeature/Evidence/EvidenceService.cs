@@ -62,8 +62,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             await _context.Evidences.AddAsync(add);
 
             #region Thêm tài liệu đính kèm
-            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
-            lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
+            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
             foreach (var attachment in lstAttachment)
             {
                 Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
@@ -120,8 +119,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 _context.EvidenceAttachments.Update(attachment);
             }
             // Thêm mới các file trong danh sách
-            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
-            lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
             foreach (var attachment in lstAttachment)
             {
                 Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);

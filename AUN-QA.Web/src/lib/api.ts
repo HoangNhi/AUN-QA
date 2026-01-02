@@ -1,6 +1,10 @@
-import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosError,
+  type AxiosInstance,
+  type AxiosRequestConfig,
+} from "axios";
 // import { API_ENDPOINTS } from '@/config/constants';
-import { getAccessToken } from './cookies';
+import { getAccessToken } from "./cookies";
 
 export interface ApiResponse<T = unknown> {
   Data?: T;
@@ -9,7 +13,8 @@ export interface ApiResponse<T = unknown> {
   StatusCode: number;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7213';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://localhost:7213";
 
 class ApiClient {
   private axiosInstance: AxiosInstance;
@@ -19,7 +24,7 @@ class ApiClient {
       baseURL: baseUrl,
       timeout: 30000,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -77,29 +82,43 @@ class ApiClient {
     );
   }
 
-  async get<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async get<T>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.get(endpoint, config);
     return response.data;
   }
 
-  async post<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async post<T>(
+    endpoint: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.post(endpoint, data, config);
     return response.data;
   }
 
-  async put<T>(endpoint: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async put<T>(
+    endpoint: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.put(endpoint, data, config);
     return response.data;
   }
 
-  async delete<T>(endpoint: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+  async delete<T>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<ApiResponse<T>> {
     const response = await this.axiosInstance.delete(endpoint, config);
     return response.data;
   }
 
   downloadFile(url: string) {
     return this.axiosInstance.get(url, {
-      responseType: 'blob',
+      responseType: "blob",
     });
   }
 }

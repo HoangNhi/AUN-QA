@@ -9,6 +9,7 @@ import "google/protobuf/wrappers.proto";
 service FileProto {
   rpc UploadData (UploadDataRequest) returns (UploadDataResponse);
   rpc DeleteData (DeleteDataRequest) returns (DeleteDataResponse);
+  rpc UploadAvatar (UploadAvatarRequest) returns (UploadAvatarResponse);
 }
 
 message UploadDataRequest {
@@ -39,4 +40,13 @@ message DeleteDataRequest {
 
 message DeleteDataResponse {
   bool success = 1;
+}
+
+message UploadAvatarRequest{
+	string folderUploadId = 1;
+	string oldImage = 2;
+}
+
+message UploadAvatarResponse{
+	string newImage = 1;
 }

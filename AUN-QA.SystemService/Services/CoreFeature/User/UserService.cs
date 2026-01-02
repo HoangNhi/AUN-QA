@@ -3,6 +3,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Services.Commons.UploadFile;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +18,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IUploadFileService _uploadFileService;
 
         public UserService(
             SystemContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            IUploadFileService uploadFileService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _uploadFileService = uploadFileService;
         }
 
         public async Task<ModelUser> GetById(GetByIdRequest request)
@@ -76,6 +80,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             add.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, add.PasswordSalt);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
+            add.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, "");
 
             await _context.Users.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -107,8 +112,10 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 update.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, update.PasswordSalt);
             }
 
+            update.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, update.Avatar);
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
+
             _context.Users.Update(update);
             await _context.SaveChangesAsync();
 

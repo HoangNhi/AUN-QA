@@ -1,3 +1,4 @@
+using AUN_QA.FileService.Protos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration;
@@ -76,6 +77,10 @@ namespace AUN_QA.SystemService.Configs
 
             //GRPC
             builder.Services.AddGrpc();
+            builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
+            {
+                o.Address = new Uri("http://FileService");
+            });
         }
     }
 

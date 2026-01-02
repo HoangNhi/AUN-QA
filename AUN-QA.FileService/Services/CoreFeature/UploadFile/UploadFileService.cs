@@ -121,6 +121,40 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             return allSuccess;
         }
 
+        public string UploadAvatar(string folderUploadId, string oldImage)
+        {
+            string path = oldImage;
+            string folderUploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files\\Temp\\" + folderUploadId);
+            if (Directory.Exists(folderUploadPath))
+            {
+                string[] arrFiles = Directory.GetFiles(folderUploadPath);
+                if (arrFiles.Count() > 0) //có đính kèm
+                {
+                    FileInfo info = new FileInfo(arrFiles[0]);
+                    string fileName = Guid.NewGuid().ToString() + info.Extension;
+                    string avataPath = Path.Combine(_webHostEnvironment.WebRootPath, "System\\Avatar");
+                    //Kiểm tra nếu thư mục chưa tồn tại thì tạo mới.
+                    if (!Directory.Exists(avataPath))
+                    {
+                        Directory.CreateDirectory(avataPath);
+                    }
+
+                    //Xóa ảnh cũ nếu tồn tại
+                    if (File.Exists(avataPath + "\\" + oldImage))
+                    {
+                        File.Delete(avataPath + "\\" + oldImage);
+                    }
+
+                    //Copy ảnh mới
+                    File.Move(arrFiles[0], avataPath + "\\" + fileName, true);
+                    path = "System\\Avatar\\" + fileName;
+                }
+            }
+
+            return path;
+        }
+
+        #region Private methods
         List<ModelAttachment> SyncUploadFile(string sourceDirPath, string destinationDirPath, string relativeDirPath = "")
         {
             try
@@ -263,5 +297,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 
             return input;
         }
+
+        #endregion
     }
 }

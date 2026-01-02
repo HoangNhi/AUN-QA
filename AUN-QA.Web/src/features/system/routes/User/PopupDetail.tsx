@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from "uuid";
 import UploadAvatar, {
   type UploadAvatarRef,
 } from "@/components/ui/upload-avatar";
+import { getFileUrl } from "@/lib/utils";
 
 const PopupDetail = ({
   user,
@@ -104,7 +105,7 @@ const PopupDetail = ({
           <div className="flex justify-center mb-4">
             <UploadAvatar
               ref={avatarRef}
-              defaultImage={user?.Avatar}
+              defaultImage={getFileUrl(user?.Avatar)}
               folderUpload={folderUpload}
             />
           </div>

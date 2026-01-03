@@ -20,6 +20,7 @@ const UserPage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    isFetching,
   } = useUser();
 
   const { permission } = useOutletContext<{
@@ -52,6 +53,7 @@ const UserPage = () => {
         getList={getList}
         canAdd={permission?.IsAdded}
         canDelete={permission?.IsDeleted}
+        isLoading={isFetching}
       />
       {isOpen && (
         <PopupDetail

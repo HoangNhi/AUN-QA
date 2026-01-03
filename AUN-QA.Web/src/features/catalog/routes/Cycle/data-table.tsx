@@ -23,7 +23,17 @@ import {
   ChevronRightIcon,
   RotateCw,
   SearchIcon,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 import {
   InputGroup,
@@ -54,6 +64,7 @@ interface DataTableProps<TData, TValue> {
   getList?: (pageRequest: CycleGetListPagingRequest) => void;
   canAdd?: boolean;
   canDelete?: boolean;
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -69,7 +80,9 @@ export function DataTable<TData, TValue>({
   getList,
   canAdd = true,
   canDelete = true,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || ""
   );
@@ -123,7 +136,12 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
       <div className="mb-4 rounded-lg border bg-muted/40 p-4">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium">Lọc danh sách</h3>
@@ -202,13 +220,7 @@ export function DataTable<TData, TValue>({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() =>
-                deleteList?.(
-                  table
-                    .getSelectedRowModel()
-                    .rows.map((row) => (row.original as { Id: string }).Id)
-                )
-              }
+              onClick={() => setShowDeleteConfirm(true)}
             >
               Xóa
             </Button>
@@ -335,6 +347,37 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa{" "}
+              {table.getSelectedRowModel().rows.length} mục đã chọn không? Hành
+              động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteList?.(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id)
+                );
+                setShowDeleteConfirm(false);
+                table.resetRowSelection();
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

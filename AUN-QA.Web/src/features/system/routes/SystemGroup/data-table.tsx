@@ -23,6 +23,7 @@ import {
   ChevronRightIcon,
   RotateCw,
   SearchIcon,
+  Loader2,
 } from "lucide-react";
 import type { GetListPagingRequest } from "@/types/base/base.types";
 import {
@@ -30,6 +31,15 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -44,6 +54,7 @@ interface DataTableProps<TData, TValue> {
   getList?: (pageRequest: GetListPagingRequest) => void;
   canAdd?: boolean;
   canDelete?: boolean;
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,7 +70,9 @@ export function DataTable<TData, TValue>({
   getList,
   canAdd = true,
   canDelete = true,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -96,13 +109,8 @@ export function DataTable<TData, TValue>({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() =>
-                deleteList?.(
-                  table
-                    .getSelectedRowModel()
-                    .rows.map((row) => (row.original as { Id: string }).Id)
-                )
-              }
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={table.getSelectedRowModel().rows.length === 0}
             >
               Xóa
             </Button>
@@ -119,7 +127,12 @@ export function DataTable<TData, TValue>({
           </InputGroupAddon>
         </InputGroup>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="relative overflow-hidden rounded-md border">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -192,7 +205,7 @@ export function DataTable<TData, TValue>({
           </Button>
           <span>
             Trang {pageRequest.PageIndex} /{" "}
-            {Math.ceil(totalRow / pageRequest.PageSize)}
+            {Math.ceil(totalRow / pageRequest.PageSize) || 1}
           </span>
           <Button
             variant="outline"
@@ -205,7 +218,7 @@ export function DataTable<TData, TValue>({
             }
             disabled={
               pageRequest.PageIndex ===
-              Math.ceil(totalRow / pageRequest.PageSize)
+              (Math.ceil(totalRow / pageRequest.PageSize) || 1)
             }
           >
             <ChevronRightIcon className="h-4 w-4" />
@@ -213,21 +226,14 @@ export function DataTable<TData, TValue>({
         </div>
         <div className="space-x-2 text-muted-foreground">
           <span>
-            {data.length < pageRequest.PageSize
-              ? pageRequest.PageIndex * pageRequest.PageSize -
-                pageRequest.PageSize +
-                1 +
-                " - " +
-                (pageRequest.PageIndex * pageRequest.PageSize -
-                  pageRequest.PageSize +
-                  data.length) +
-                " "
-              : pageRequest.PageIndex * pageRequest.PageSize -
-                pageRequest.PageSize +
-                1 +
-                " - " +
-                pageRequest.PageIndex * pageRequest.PageSize +
-                " "}
+            {data.length > 0
+              ? `${
+                  (pageRequest.PageIndex - 1) * pageRequest.PageSize + 1
+                } - ${Math.min(
+                  pageRequest.PageIndex * pageRequest.PageSize,
+                  totalRow
+                )}`
+              : "0 - 0"}{" "}
             trong {totalRow} mục
           </span>
           <Button
@@ -239,6 +245,38 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa{" "}
+              {table.getSelectedRowModel().rows.length} mục đã chọn không? Hành
+              động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteList?.(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id)
+                );
+                setShowDeleteConfirm(false);
+                table.resetRowSelection();
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

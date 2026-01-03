@@ -1,10 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { userService } from "@/features/system/api/user.api";
 import type { User } from "@/features/system/types/user.types";
-import type {
-  GetListPagingRequest,
-} from "@/types/base/base.types";
+import type { GetListPagingRequest } from "@/types/base/base.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -20,7 +23,11 @@ export const useUser = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List
-  const { data: listResponse, refetch } = useQuery({
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["users", pageRequest],
     queryFn: () => userService.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -48,31 +55,37 @@ export const useUser = () => {
     },
     onSuccess: (response, variables) => {
       if (response.Success) {
-        toast.success(variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công");
+        toast.success(
+          variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+        );
         queryClient.invalidateQueries({ queryKey: ["users"] });
       } else {
         toast.error(response.Message);
       }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu"
+      );
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (ids: string[]) => userService.deleteList(ids),
     onSuccess: (response) => {
-       if (response.Success) {
-         toast.success("Xóa dữ liệu thành công");
-         queryClient.invalidateQueries({ queryKey: ["users"] });
-         setRowSelection({});
-       } else {
-         toast.error(response.Message);
-       }
+      if (response.Success) {
+        toast.success("Xóa dữ liệu thành công");
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
+      );
+    },
   });
 
   // 3. Handlers
@@ -113,27 +126,27 @@ export const useUser = () => {
   }, []);
 
   const saveChange = async (saveUser: User, isAddMore: boolean) => {
-     const result = await saveMutation.mutateAsync(saveUser);
-     if (result.Success) {
-        if (isAddMore) {
-           setUser({
-             Id: uuidv4(),
-             Username: "",
-             Fullname: "",
-             Password: "",
-             RoleId: "",
-             IsEdit: false,
-             IsActived: true,
-           });
-        } else {
-           setIsOpen(false);
-           setUser(null);
-        }
-     }
+    const result = await saveMutation.mutateAsync(saveUser);
+    if (result.Success) {
+      if (isAddMore) {
+        setUser({
+          Id: uuidv4(),
+          Username: "",
+          Fullname: "",
+          Password: "",
+          RoleId: "",
+          IsEdit: false,
+          IsActived: true,
+        });
+      } else {
+        setIsOpen(false);
+        setUser(null);
+      }
+    }
   };
 
   const deleteList = async (ids: string[]) => {
-      await deleteMutation.mutateAsync(ids);
+    await deleteMutation.mutateAsync(ids);
   };
 
   return {
@@ -149,6 +162,7 @@ export const useUser = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading: saveMutation.isPending || deleteMutation.isPending
+    isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isFetching,
   };
 };

@@ -25,7 +25,11 @@ export const useCycle = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List
-  const { data: listResponse, refetch } = useQuery({
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["cycles", pageRequest],
     queryFn: () => cycleService.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -163,5 +167,6 @@ export const useCycle = () => {
     saveChange,
     deleteList,
     isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isFetching,
   };
 };

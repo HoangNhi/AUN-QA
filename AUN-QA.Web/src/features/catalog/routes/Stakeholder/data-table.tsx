@@ -23,6 +23,7 @@ import {
   ChevronRightIcon,
   RotateCw,
   SearchIcon,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -39,6 +40,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -53,6 +63,7 @@ interface DataTableProps<TData, TValue> {
   getList?: (pageRequest: StakeholderGetListPagingRequest) => void;
   canAdd?: boolean;
   canDelete?: boolean;
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -68,15 +79,18 @@ export function DataTable<TData, TValue>({
   getList,
   canAdd = true,
   canDelete = true,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || ""
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const [typeTerm, setTypeTerm] = useState<string>(
-    pageRequest.Type?.toString() || "6"
+  const [typeTerm, setTypeTerm] = useState<string | undefined>(
+    pageRequest.Type?.toString()
   );
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (debouncedSearchTerm !== pageRequest.TextSearch) {
@@ -119,7 +133,18 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Select value={typeTerm} onValueChange={setTypeTerm}>
+          <Select
+            value={typeTerm ?? "null"}
+            onValueChange={(value) => {
+              const newValue = value === "null" ? undefined : value;
+              setTypeTerm(newValue);
+              setPageRequest?.({
+                ...pageRequest,
+                Type: newValue ? Number(newValue) : undefined,
+                PageIndex: 1,
+              });
+            }}
+          >
             <SelectTrigger className="w-full bg-background">
               <SelectValue placeholder="-- Tất cả loại đối tượng --" />
             </SelectTrigger>
@@ -154,20 +179,20 @@ export function DataTable<TData, TValue>({
             <Button
               size="sm"
               variant="destructive"
-              onClick={() =>
-                deleteList?.(
-                  table
-                    .getSelectedRowModel()
-                    .rows.map((row) => (row.original as { Id: string }).Id)
-                )
-              }
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={table.getSelectedRowModel().rows.length === 0}
             >
               Xóa
             </Button>
           )}
         </div>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="relative overflow-hidden rounded-md border">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -280,6 +305,38 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa{" "}
+              {table.getSelectedRowModel().rows.length} mục đã chọn không? Hành
+              động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteList?.(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id)
+                );
+                setShowDeleteConfirm(false);
+                table.resetRowSelection();
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

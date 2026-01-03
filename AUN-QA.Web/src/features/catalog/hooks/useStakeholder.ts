@@ -25,7 +25,11 @@ export const useStakeholder = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List
-  const { data: listResponse, refetch } = useQuery({
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["stakeholders", pageRequest],
     queryFn: () => stakeholderApi.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -161,5 +165,6 @@ export const useStakeholder = () => {
     saveChange,
     deleteList,
     isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isFetching,
   };
 };

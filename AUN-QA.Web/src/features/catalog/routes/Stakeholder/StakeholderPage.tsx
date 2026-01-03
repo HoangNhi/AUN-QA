@@ -20,6 +20,8 @@ const StakeholderPage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    isFetching,
+    isLoading,
   } = useStakeholder();
 
   const { permission } = useOutletContext<{
@@ -52,6 +54,7 @@ const StakeholderPage = () => {
         getList={getList}
         canAdd={permission?.IsAdded}
         canDelete={permission?.IsDeleted}
+        isLoading={isFetching}
       />
       {isOpen && (
         <PopupStakeholder
@@ -60,6 +63,7 @@ const StakeholderPage = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           saveChange={saveChange}
+          isLoading={isLoading}
         />
       )}
     </div>

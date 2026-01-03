@@ -20,17 +20,20 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Stakeholder } from "@/features/catalog/types/stakeholder.types";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { Loader2 } from "lucide-react";
 
 const PopupStakeholder = ({
   stakeholder,
   isOpen,
   onOpenChange,
   saveChange,
+  isLoading,
 }: {
   stakeholder: Stakeholder | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   saveChange: (stakeholder: Stakeholder, isAddMore: boolean) => void;
+  isLoading?: boolean;
 }) => {
   const [id, setId] = useState<string>(stakeholder?.Id || uuidv4());
   const [fullName, setFullName] = useState(stakeholder?.FullName || "");
@@ -151,9 +154,17 @@ const PopupStakeholder = ({
             <DialogClose asChild>
               <Button variant="outline">Hủy</Button>
             </DialogClose>
-            <Button type="submit">Lưu</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Lưu
+            </Button>
             {!stakeholder?.IsEdit && (
-              <Button type="button" onClick={() => onSubmit(true)}>
+              <Button
+                type="button"
+                onClick={() => onSubmit(true)}
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Lưu và thêm tiếp
               </Button>
             )}

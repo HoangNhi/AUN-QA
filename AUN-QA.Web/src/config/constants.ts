@@ -1,4 +1,7 @@
 const SYSTEM_BASE = "/System";
+const CATALOG_BASE = "/Catalog";
+const BUSINESS_BASE = "/Business";
+const FILE_BASE = "/File";
 
 export const API_ENDPOINTS = {
   System: {
@@ -49,49 +52,43 @@ export const API_ENDPOINTS = {
   },
   Catalog: {
     Faculty: {
-      GET_LIST: `/Catalog/Faculty/get-list`,
-      GET_BY_ID: `/Catalog/Faculty/get-by-id`,
-      INSERT: `/Catalog/Faculty/insert`,
-      UPDATE: `/Catalog/Faculty/update`,
-      DELETE_LIST: `/Catalog/Faculty/delete-list`,
-      GET_ALL_COMBOBOX: `/Catalog/Faculty/get-all-combobox`,
+      GET_LIST: `${CATALOG_BASE}/Faculty/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/Faculty/get-by-id`,
+      INSERT: `${CATALOG_BASE}/Faculty/insert`,
+      UPDATE: `${CATALOG_BASE}/Faculty/update`,
+      DELETE_LIST: `${CATALOG_BASE}/Faculty/delete-list`,
+      GET_ALL_COMBOBOX: `${CATALOG_BASE}/Faculty/get-all-combobox`,
     },
     Cycle: {
-      GET_LIST: `/Catalog/Cycle/get-list`,
-      GET_BY_ID: `/Catalog/Cycle/get-by-id`,
-      INSERT: `/Catalog/Cycle/insert`,
-      UPDATE: `/Catalog/Cycle/update`,
-      DELETE_LIST: `/Catalog/Cycle/delete-list`,
+      GET_LIST: `${CATALOG_BASE}/Cycle/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/Cycle/get-by-id`,
+      INSERT: `${CATALOG_BASE}/Cycle/insert`,
+      UPDATE: `${CATALOG_BASE}/Cycle/update`,
+      DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
     },
-    Council: {
-      GET_LIST: `/Catalog/Council/get-list`,
-      GET_BY_ID: `/Catalog/Council/get-by-id`,
-      INSERT: `/Catalog/Council/insert`,
-      UPDATE: `/Catalog/Council/update`,
-      DELETE_LIST: `/Catalog/Council/delete-list`,
-    },
-    EvaluationSchedule: {
-      GET_LIST: `/Catalog/EvaluationSchedule/get-list`,
-      GET_BY_ID: `/Catalog/EvaluationSchedule/get-by-id`,
-      INSERT: `/Catalog/EvaluationSchedule/insert`,
-      UPDATE: `/Catalog/EvaluationSchedule/update`,
-      DELETE_LIST: `/Catalog/EvaluationSchedule/delete-list`,
+    Stakeholder: {
+      GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/Stakeholder/get-by-id`,
+      INSERT: `${CATALOG_BASE}/Stakeholder/insert`,
+      UPDATE: `${CATALOG_BASE}/Stakeholder/update`,
+      DELETE_LIST: `${CATALOG_BASE}/Stakeholder/delete-list`,
+      GET_ALL_COMBOBOX: `${CATALOG_BASE}/Stakeholder/get-all-combobox`,
     },
   },
   Business: {
     Evidence: {
-      GET_LIST: `/Business/Evidence/get-list`,
-      GET_BY_ID: `/Business/Evidence/get-by-id`,
-      INSERT: `/Business/Evidence/insert`,
-      UPDATE: `/Business/Evidence/update`,
-      DELETE_LIST: `/Business/Evidence/delete-list`,
-      GET_ALL_COMBOBOX: `/Business/Evidence/get-all-combobox`,
+      GET_LIST: `${BUSINESS_BASE}/Evidence/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/Evidence/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/Evidence/insert`,
+      UPDATE: `${BUSINESS_BASE}/Evidence/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/Evidence/delete-list`,
+      GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
     },
   },
   File: {
     UploadFile: {
-      POST: `/File/api/UploadFile`,
-      GET: `/File/`,
+      POST: `${FILE_BASE}/api/UploadFile`,
+      GET: `${FILE_BASE}/`,
     },
   },
 };

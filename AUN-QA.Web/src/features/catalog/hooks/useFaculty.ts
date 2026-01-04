@@ -1,10 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { facultyService } from "@/features/catalog/api/faculty.api";
 import type { Faculty } from "@/features/catalog/types/faculty.types";
-import type {
-  GetListPagingRequest,
-} from "@/types/base/base.types";
+import type { GetListPagingRequest } from "@/types/base/base.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -20,7 +23,11 @@ export const useFaculty = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List
-  const { data: listResponse, refetch } = useQuery({
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["faculties", pageRequest],
     queryFn: () => facultyService.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -44,39 +51,47 @@ export const useFaculty = () => {
 
   const saveMutation = useMutation({
     mutationFn: (data: Faculty) => {
-      return data.IsEdit ? facultyService.update(data) : facultyService.insert(data);
+      return data.IsEdit
+        ? facultyService.update(data)
+        : facultyService.insert(data);
     },
     onSuccess: (response, variables) => {
       if (response.Success) {
-        toast.success(variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công");
+        toast.success(
+          variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+        );
         queryClient.invalidateQueries({ queryKey: ["faculties"] });
         // Handle "Add More" logic typically handled in component or specialized flow
         // But here we rely on callback injection or specialized state if needed.
-        // For simplicity in this refactor, we close pure "save". 
+        // For simplicity in this refactor, we close pure "save".
         // We will adapt saveChange signature below.
       } else {
         toast.error(response.Message);
       }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu"
+      );
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (ids: string[]) => facultyService.deleteList(ids),
     onSuccess: (response) => {
-       if (response.Success) {
-         toast.success("Xóa dữ liệu thành công");
-         queryClient.invalidateQueries({ queryKey: ["faculties"] });
-         setRowSelection({});
-       } else {
-         toast.error(response.Message);
-       }
+      if (response.Success) {
+        toast.success("Xóa dữ liệu thành công");
+        queryClient.invalidateQueries({ queryKey: ["faculties"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
+      );
+    },
   });
 
   // 3. Handlers
@@ -105,23 +120,23 @@ export const useFaculty = () => {
   }, []);
 
   const saveChange = async (saveFaculty: Faculty, isAddMore: boolean) => {
-     const result = await saveMutation.mutateAsync(saveFaculty);
-     if (result.Success) {
-        if (isAddMore) {
-           setFaculty({
-             Id: uuidv4(),
-             Name: "",
-             IsEdit: false,
-           });
-        } else {
-           setIsOpen(false);
-           setFaculty(null);
-        }
-     }
+    const result = await saveMutation.mutateAsync(saveFaculty);
+    if (result.Success) {
+      if (isAddMore) {
+        setFaculty({
+          Id: uuidv4(),
+          Name: "",
+          IsEdit: false,
+        });
+      } else {
+        setIsOpen(false);
+        setFaculty(null);
+      }
+    }
   };
 
   const deleteList = async (ids: string[]) => {
-      await deleteMutation.mutateAsync(ids);
+    await deleteMutation.mutateAsync(ids);
   };
 
   return {
@@ -137,6 +152,7 @@ export const useFaculty = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading: saveMutation.isPending || deleteMutation.isPending
+    isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isFetching,
   };
 };

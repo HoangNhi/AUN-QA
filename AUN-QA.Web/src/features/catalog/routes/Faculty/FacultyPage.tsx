@@ -20,6 +20,7 @@ const FacultyPage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    isFetching,
   } = useFaculty();
 
   const { permission } = useOutletContext<{
@@ -52,6 +53,7 @@ const FacultyPage = () => {
         getList={getList}
         canAdd={permission?.IsAdded}
         canDelete={permission?.IsDeleted}
+        isLoading={isFetching}
       />
       {isOpen && (
         <PopupFaculty

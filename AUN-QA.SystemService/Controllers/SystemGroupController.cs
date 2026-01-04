@@ -3,7 +3,7 @@ using AUN_QA.SystemService.DTOs.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Requests;
 using AUN_QA.SystemService.Helpers;
-using AUN_QA.SystemService.Services.SystemGroup;
+using AUN_QA.SystemService.Services.CoreFeature.SystemGroup;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.SystemService.Controllers
@@ -79,6 +79,14 @@ namespace AUN_QA.SystemService.Controllers
         public async Task<IActionResult> GetAllForCombobox()
         {
             var result = await _service.GetAllForCombobox();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
+
+        [HttpGet, Route("get-all-not-parent-combobox")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAllNotParentForCombobox()
+        {
+            var result = await _service.GetAllNotParentForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 

@@ -18,7 +18,7 @@ namespace AUN_QA.CatalogService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);
@@ -79,6 +79,8 @@ namespace AUN_QA.CatalogService.Configs
                     });
             });
 
+            // gRPC
+            builder.Services.AddGrpc();
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");

@@ -5,7 +5,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Requests;
 using AUN_QA.SystemService.Helpers;
-using AUN_QA.SystemService.Services.Role;
+using AUN_QA.SystemService.Services.CoreFeature.Role;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.SystemService.Controllers

@@ -1,10 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { menuService } from "@/features/system/api/menu.api";
 import type { Menu } from "@/features/system/types/menu.types";
-import type {
-  GetListPagingRequest,
-} from "@/types/base/base.types";
+import type { GetListPagingRequest } from "@/types/base/base.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -20,7 +23,11 @@ export const useMenu = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List
-  const { data: listResponse, refetch } = useQuery({
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["menus", pageRequest],
     queryFn: () => menuService.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -48,31 +55,37 @@ export const useMenu = () => {
     },
     onSuccess: (response, variables) => {
       if (response.Success) {
-        toast.success(variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công");
+        toast.success(
+          variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+        );
         queryClient.invalidateQueries({ queryKey: ["menus"] });
       } else {
         toast.error(response.Message);
       }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu"
+      );
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (ids: string[]) => menuService.deleteList(ids),
     onSuccess: (response) => {
-       if (response.Success) {
-         toast.success("Xóa dữ liệu thành công");
-         queryClient.invalidateQueries({ queryKey: ["menus"] });
-         setRowSelection({});
-       } else {
-         toast.error(response.Message);
-       }
+      if (response.Success) {
+        toast.success("Xóa dữ liệu thành công");
+        queryClient.invalidateQueries({ queryKey: ["menus"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
     },
     onError: (error) => {
-       toast.error(error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu");
-    }
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
+      );
+    },
   });
 
   // 3. Handlers
@@ -116,34 +129,34 @@ export const useMenu = () => {
   }, []);
 
   const saveChange = async (item: Menu, isAddMore: boolean) => {
-     const result = await saveMutation.mutateAsync(item);
-     if (result.Success) {
-        if (isAddMore) {
-           setSelectedItem({
-             Id: uuidv4(),
-             Name: "",
-             Controller: "",
-             Sort: 0,
-             SystemGroupId: "",
-             CanView: false,
-             CanAdd: false,
-             CanUpdate: false,
-             CanDelete: false,
-             CanApprove: false,
-             CanAnalyze: false,
-             IsEdit: false,
-             IsActived: true,
-             IsShowMenu: true,
-           });
-        } else {
-           setIsOpen(false);
-           setSelectedItem(null);
-        }
-     }
+    const result = await saveMutation.mutateAsync(item);
+    if (result.Success) {
+      if (isAddMore) {
+        setSelectedItem({
+          Id: uuidv4(),
+          Name: "",
+          Controller: "",
+          Sort: 0,
+          SystemGroupId: "",
+          CanView: false,
+          CanAdd: false,
+          CanUpdate: false,
+          CanDelete: false,
+          CanApprove: false,
+          CanAnalyze: false,
+          IsEdit: false,
+          IsActived: true,
+          IsShowMenu: true,
+        });
+      } else {
+        setIsOpen(false);
+        setSelectedItem(null);
+      }
+    }
   };
 
   const deleteList = async (ids: string[]) => {
-      await deleteMutation.mutateAsync(ids);
+    await deleteMutation.mutateAsync(ids);
   };
 
   return {
@@ -159,6 +172,7 @@ export const useMenu = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading: saveMutation.isPending || deleteMutation.isPending
+    isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isFetching,
   };
 };

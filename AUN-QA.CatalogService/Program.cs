@@ -1,5 +1,6 @@
 using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
+using AUN_QA.CatalogService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,5 +38,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGrpcService<CatalogGrpcService>();
 
 app.Run();

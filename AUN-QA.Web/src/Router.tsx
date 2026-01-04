@@ -4,6 +4,7 @@ import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
+import CyclePage from "./features/catalog/routes/Cycle/CyclePage"; // Import statement added at top
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
 import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -11,6 +12,7 @@ import SystemGroupPage from "./features/system/routes/SystemGroup/SystemGroupPag
 import MenuPage from "./features/system/routes/Menu/MenuPage";
 import RolePage from "./features/system/routes/Role";
 import UnauthorizedPage from "./pages/common/UnauthorizedPage";
+import StakeholderPage from "./features/catalog/routes/Stakeholder/StakeholderPage";
 
 const Router: FC = () => {
   return (
@@ -30,10 +32,12 @@ const Router: FC = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/user" element={<UserPage />} />
           <Route path="/faculty" element={<FacultyPage />} />
+          <Route path="/cycle" element={<CyclePage />} />
           <Route path="/evidence" element={<EvidencePage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />
+          <Route path="/stakeholder" element={<StakeholderPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

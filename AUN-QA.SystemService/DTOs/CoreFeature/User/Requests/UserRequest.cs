@@ -14,6 +14,10 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
         public string Password { get; set; } = null!;
 
         public Guid RoleId { get; set; }
+
+        public string Email { get; set; } = null!;
+
+        public string? Avatar { get; set; }
     }
 
     public class UserRequestValidator : AbstractValidator<UserRequest>
@@ -28,6 +32,9 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
                 .NotEmpty().WithMessage("Mật khẩu không được để trống");
             RuleFor(x => x.RoleId)
                 .NotEmpty().WithMessage("Vai trò không được để trống");
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email không được để trống")
+                .EmailAddress().WithMessage("Email không hợp lệ");
         }
     }
 }

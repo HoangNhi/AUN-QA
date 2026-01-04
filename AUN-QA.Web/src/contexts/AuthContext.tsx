@@ -49,6 +49,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     setPermissions([]);
     clearTokens();
     localStorage.removeItem("user");
+    localStorage.removeItem("systemGroup");
+    localStorage.removeItem("menu");
+    localStorage.removeItem("permissions");
   };
 
   const fetchUserData = useCallback(async (currentUser: User) => {
@@ -61,9 +64,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (systemGroupJson) {
       try {
         currentSystemGroup = JSON.parse(systemGroupJson);
-      } catch (e) {
-        console.error("Error parsing systemGroup", e);
-      }
+      } catch (e) {}
     }
 
     if (!currentSystemGroup || currentSystemGroup.length === 0) {
@@ -80,9 +81,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (menuJson) {
       try {
         currentMenu = JSON.parse(menuJson);
-      } catch (e) {
-        console.error("Error parsing menu", e);
-      }
+      } catch (e) {}
     }
 
     if (!currentMenu || currentMenu.length === 0) {
@@ -99,9 +98,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (permissionsJson) {
       try {
         currentPermissions = JSON.parse(permissionsJson);
-      } catch (e) {
-        console.error("Error parsing permissions", e);
-      }
+      } catch (e) {}
     }
 
     if (!currentPermissions || currentPermissions.length === 0) {
@@ -143,17 +140,62 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           } else {
             const refreshToken = getRefreshToken();
             if (refreshToken) {
-              // Implementation for refresh token if needed
+              const response = await authService.refreshToken({
+                RefreshToken: refreshToken,
+              });
+              if (response.Success) {
+                const accessToken = response.Data?.AccessToken;
+                const refreshToken = response.Data?.RefreshToken;
+                saveTokens(accessToken, refreshToken);
+                localStorage.setItem("user", JSON.stringify(response.Data));
+              }
             } else {
               await performLogout();
             }
           }
         } catch (e) {
-          console.error("Lỗi xác thực token:", e);
           await performLogout();
         }
       } else {
-        await performLogout();
+        // Access token missing, check for refresh token
+        const refreshToken = getRefreshToken();
+        if (refreshToken) {
+          try {
+            const response = await authService.refreshToken({
+              RefreshToken: refreshToken,
+            });
+            if (response.Success && response.Data) {
+              const accessToken = response.Data.AccessToken;
+              const newRefreshToken = response.Data.RefreshToken;
+              saveTokens(accessToken, newRefreshToken);
+
+              // After refresh, we need to set the user
+              // We can rely on the fact that we have a valid token now
+              const userJson = localStorage.getItem("user");
+
+              if (userJson) {
+                setUser(JSON.parse(userJson));
+                await fetchUserData(JSON.parse(userJson));
+              } else {
+                const userResponse = await userService.getCurrentUser();
+                if (userResponse.Success && userResponse.Data) {
+                  setUser(userResponse.Data);
+                  localStorage.setItem(
+                    "user",
+                    JSON.stringify(userResponse.Data)
+                  );
+                  await fetchUserData(userResponse.Data);
+                }
+              }
+            } else {
+              await performLogout();
+            }
+          } catch (e) {
+            await performLogout();
+          }
+        } else {
+          await performLogout();
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
@@ -185,7 +227,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         }
 
         const AccessToken = response.Data?.AccessToken;
-        // const RefreshToken = response.Data?.RefreshToken;
+        const RefreshToken = response.Data?.RefreshToken;
         const Id = response.Data?.Id;
         const Fullname = response.Data?.Fullname;
         const Username = response.Data?.Username;
@@ -198,14 +240,18 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           };
         }
 
-        saveTokens(AccessToken, "");
+        saveTokens(AccessToken, RefreshToken);
         const RoleId = response.Data?.RoleId;
         const userData: User = {
           Id: Id || "",
           Fullname: Fullname || "",
           Username: Username || "",
           RoleId: RoleId || "",
+          Avatar: response.Data?.Avatar || "",
+          Email: response.Data?.Email || "",
           IsEdit: false,
+          IsActived: true,
+          FolderUpload: "",
         };
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
@@ -241,8 +287,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const getPermission = async (
     pathname: string
   ): Promise<GetPermissionByUser | undefined> => {
-    // setLoading(true); // Don't block UI for this check? keeping inconsistent with original for now but might remove later
-
     if (pathname === "") {
       return {
         Controller: "Home",
@@ -266,9 +310,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentSystemGroup = JSON.parse(systemGroupJson);
           setSystemGroup(currentSystemGroup || []);
-        } catch (e) {
-          console.error("Error parsing systemGroup", e);
-        }
+        } catch (e) {}
       }
 
       // If still empty (e.g. not in method storage), try API
@@ -292,9 +334,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentMenu = JSON.parse(menuJson);
           setMenu(currentMenu || []);
-        } catch (e) {
-          console.error("Error parsing menu", e);
-        }
+        } catch (e) {}
       }
 
       if (!currentMenu || currentMenu.length === 0) {
@@ -314,9 +354,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentPermissions = JSON.parse(permissionsJson);
           setPermissions(currentPermissions || []);
-        } catch (e) {
-          console.error("Error parsing permissions", e);
-        }
+        } catch (e) {}
       }
 
       if (!currentPermissions || currentPermissions.length === 0) {
@@ -351,6 +389,13 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     getPermission,
+    refreshProfile: async () => {
+      const response = await userService.getCurrentUser();
+      if (response.Success && response.Data) {
+        setUser(response.Data);
+        localStorage.setItem("user", JSON.stringify(response.Data));
+      }
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

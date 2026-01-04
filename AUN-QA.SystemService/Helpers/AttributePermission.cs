@@ -1,6 +1,6 @@
 ﻿using AUN_QA.SystemService.DTOs.Base;
 using AUN_QA.SystemService.DTOs.Common;
-using AUN_QA.SystemService.Services.User;
+using AUN_QA.SystemService.Services.CoreFeature.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 

@@ -1,5 +1,6 @@
 import { fileService } from "@/features/file/api/uploadfile.api";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
+import { getFileUrl } from "@/lib/utils";
 import {
   Paperclip,
   Trash,
@@ -116,15 +117,24 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       console.log("Visual preview", file);
     };
 
-    const handleDownload = (file: Attachment) => {
-      fileService.downloadFile(encodeURI(file.FileUrl)).then((response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
+    const handleDownload = async (file: Attachment) => {
+      const url = getFileUrl(file.FileUrl);
+      if (!url) return;
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", file.FullFileName);
+        link.href = downloadUrl;
+        link.download =
+          file.FullFileName || file.FileUrl.split("/").pop() || "download";
         document.body.appendChild(link);
         link.click();
-      });
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+      } catch (error) {
+        window.open(url, "_blank");
+      }
     };
 
     return (

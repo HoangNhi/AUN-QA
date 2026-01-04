@@ -1,14 +1,16 @@
 ﻿using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
+using AUN_QA.SystemService.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace AUN_QA.SystemService.Helpers
 {
     public static class JWTHelper
     {
-        public static string GenerateJwtToken(ModelUser User, IConfiguration Config)
+        public static string GenerateJwtToken(this IConfiguration Config, ModelUser User)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Config["Jwt:Key"]));
@@ -31,5 +33,16 @@ namespace AUN_QA.SystemService.Helpers
             return tokenHandler.WriteToken(token);
         }
 
+        public static RefreshToken GenerateRefreshToken(this IConfiguration Config, string ipAddress)
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                ExpiresAt = DateTime.Now.AddHours(double.Parse(Config["Jwt:ExpireRefreshToken"])),
+                CreatedAt = DateTime.Now,
+                CreatedByIp = ipAddress
+            };
+            return refreshToken;
+        }
     }
 }

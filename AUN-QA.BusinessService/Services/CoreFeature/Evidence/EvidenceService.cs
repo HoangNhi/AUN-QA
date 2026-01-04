@@ -2,7 +2,7 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
-using AUN_QA.BusinessService.Services.Commons;
+using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -62,8 +62,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             await _context.Evidences.AddAsync(add);
 
             #region Thêm tài liệu đính kèm
-            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
-            lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
+            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
             foreach (var attachment in lstAttachment)
             {
                 Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
@@ -120,8 +119,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 _context.EvidenceAttachments.Update(attachment);
             }
             // Thêm mới các file trong danh sách
-            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
-            lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
             foreach (var attachment in lstAttachment)
             {
                 Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);

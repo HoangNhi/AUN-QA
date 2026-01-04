@@ -1,4 +1,4 @@
-import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type Row } from "@tanstack/react-table";
 
 import { MoreHorizontal } from "lucide-react";
 
@@ -10,6 +10,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 import type { SystemGroupGetListPaging } from "@/features/system/types/systemGroup.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -62,32 +72,84 @@ export const getColumns = (
     meta: {
       className: "text-center",
     },
-    cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Chức năng</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-            {isUpdated && (
-              <DropdownMenuItem
-                onClick={() => showPopupDetail(row.original.Id, true)}
-              >
-                Cập nhật
-              </DropdownMenuItem>
-            )}
-            {isDeleted && (
-              <DropdownMenuItem onClick={() => deleteList([row.original.Id])}>
-                Xóa
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => (
+      <ActionCell
+        row={row}
+        showPopupDetail={showPopupDetail}
+        deleteList={deleteList}
+        isUpdated={isUpdated}
+        isDeleted={isDeleted}
+      />
+    ),
   },
 ];
+
+const ActionCell = ({
+  row,
+  showPopupDetail,
+  deleteList,
+  isUpdated,
+  isDeleted,
+}: {
+  row: Row<SystemGroupGetListPaging>;
+  showPopupDetail: (id: string, isEdit: boolean) => void;
+  deleteList: (ids: string[]) => void;
+  isUpdated?: boolean;
+  isDeleted?: boolean;
+}) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Chức năng</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+          {isUpdated && (
+            <DropdownMenuItem
+              onClick={() => showPopupDetail(row.original.Id, true)}
+            >
+              Cập nhật
+            </DropdownMenuItem>
+          )}
+          {isDeleted && (
+            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+              Xóa
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa bản ghi này không? Hành động này không
+              thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteList([row.original.Id]);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};

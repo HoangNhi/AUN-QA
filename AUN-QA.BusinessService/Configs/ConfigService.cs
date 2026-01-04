@@ -1,5 +1,6 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AUN_QA.FileService.Protos;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
@@ -86,6 +87,11 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
                 o.Address = new Uri("http://FileService");
+            });
+
+            builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>
+            {
+                o.Address = new Uri("http://CatalogService");
             });
         }
 

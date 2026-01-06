@@ -4,7 +4,8 @@ import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
-import CyclePage from "./features/catalog/routes/Cycle/CyclePage"; // Import statement added at top
+import CyclePage from "./features/catalog/routes/Cycle/CyclePage";
+import FileTypePage from "./features/catalog/routes/FileType/FileTypePage";
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
 import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -33,6 +34,7 @@ const Router: FC = () => {
           <Route path="/user" element={<UserPage />} />
           <Route path="/faculty" element={<FacultyPage />} />
           <Route path="/cycle" element={<CyclePage />} />
+          <Route path="/filetype" element={<FileTypePage />} />
           <Route path="/evidence" element={<EvidencePage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />

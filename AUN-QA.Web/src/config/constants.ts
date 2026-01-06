@@ -74,6 +74,14 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${CATALOG_BASE}/Stakeholder/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Stakeholder/get-all-combobox`,
     },
+    FileType: {
+      GET_LIST: `${CATALOG_BASE}/FileType/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/FileType/get-by-id`,
+      INSERT: `${CATALOG_BASE}/FileType/insert`,
+      UPDATE: `${CATALOG_BASE}/FileType/update`,
+      DELETE_LIST: `${CATALOG_BASE}/FileType/delete-list`,
+      GET_ALL_COMBOBOX: `${CATALOG_BASE}/FileType/get-all-combobox`,
+    },
   },
   Business: {
     Evidence: {

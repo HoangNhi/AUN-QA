@@ -20,6 +20,8 @@ public partial class CatalogContext : DbContext
 
     public virtual DbSet<Faculty> Faculties { get; set; }
 
+    public virtual DbSet<FileType> FileTypes { get; set; }
+
     public virtual DbSet<Stakeholder> Stakeholders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -106,6 +108,20 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
+        });
+
+        modelBuilder.Entity<FileType>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("FileType");
+
+            entity.Property(e => e.Code).HasColumnType("text");
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Name).HasColumnType("text");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });
 
         modelBuilder.Entity<Stakeholder>(entity =>

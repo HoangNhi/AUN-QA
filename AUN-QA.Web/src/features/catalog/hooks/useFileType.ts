@@ -90,17 +90,30 @@ export const useFileType = () => {
     },
   });
 
-  // 3. Handlers
+  // 3. Fetch Detail Query
+  const { data: detailResponse } = useQuery({
+    queryKey: ["fileType", fileType?.Id],
+    queryFn: () => fileTypeService.getById(fileType?.Id || ""),
+    enabled: fileType?.IsEdit && !!fileType?.Id,
+  });
+
+  useEffect(() => {
+    if (detailResponse?.Success && detailResponse?.Data) {
+      setFileType({
+        ...detailResponse.Data,
+        IsEdit: true,
+      });
+    }
+  }, [detailResponse]);
+
+  // 4. Handlers
   const getList = useCallback(() => {
     refetch();
   }, [refetch]);
 
   const showPopupDetail = useCallback((id: string, isEdit: boolean) => {
-    if (isEdit) {
-      // Fetch detail if needed
-    }
     setFileType({
-      Id: id,
+      Id: id || uuidv4(),
       Code: "",
       Name: "",
       IsEdit: isEdit,

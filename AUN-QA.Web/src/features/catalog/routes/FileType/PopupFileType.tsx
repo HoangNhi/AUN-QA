@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { FileType } from "@/features/catalog/types/filetype.types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 const PopupFileType = ({
@@ -32,17 +32,30 @@ const PopupFileType = ({
   onOpenChange: (open: boolean) => void;
   saveChange: (fileType: FileType, isAddMore: boolean) => void;
 }) => {
-  const [id] = useState<string | null>(fileType?.Id || uuidv4());
-  const [code, setCode] = useState(fileType?.Code || "");
-  const [name, setName] = useState(fileType?.Name || "");
+  const [id, setId] = useState<string>(fileType?.Id || uuidv4());
+  const [code, setCode] = useState<string>(fileType?.Code || "");
+  const [name, setName] = useState<string>(fileType?.Name || "");
   const [isActived, setIsActived] = useState<boolean>(
     fileType?.IsActived ?? true
   );
 
+  // Update form when fileType changes
+  useEffect(() => {
+    if (fileType) {
+      setId(fileType.Id);
+      setCode(fileType.Code || "");
+      setName(fileType.Name || "");
+      setIsActived(fileType.IsActived ?? true);
+    }
+  }, [fileType, isOpen]);
+
   const onSubmit = (isAddMore: boolean) => {
+    if (!code.trim() || !name.trim()) {
+      return;
+    }
     saveChange(
       {
-        Id: id || uuidv4(),
+        Id: id,
         Code: code,
         Name: name,
         IsEdit: fileType?.IsEdit || false,

@@ -90,36 +90,24 @@ export const useFileType = () => {
     },
   });
 
-  // 3. Fetch Detail Query
-  const { data: detailResponse } = useQuery({
-    queryKey: ["fileType", fileType?.Id],
-    queryFn: () => fileTypeService.getById(fileType?.Id || ""),
-    enabled: fileType?.IsEdit && !!fileType?.Id,
-  });
-
-  useEffect(() => {
-    if (detailResponse?.Success && detailResponse?.Data) {
-      setFileType({
-        ...detailResponse.Data,
-        IsEdit: true,
-      });
-    }
-  }, [detailResponse]);
-
-  // 4. Handlers
+  // 3. Handlers
   const getList = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  const showPopupDetail = useCallback((id: string, isEdit: boolean) => {
-    setFileType({
-      Id: id || uuidv4(),
-      Code: "",
-      Name: "",
-      IsEdit: isEdit,
-      IsActived: true,
-    });
-    setIsOpen(true);
+  const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
+    if (isEdit) {
+      const response = await fileTypeService.getById(id);
+      if (response?.Success && response?.Data) {
+        setFileType({ ...response.Data, IsEdit: isEdit });
+        setIsOpen(true);
+      } else {
+        toast.error(response?.Message);
+      }
+    } else {
+      setFileType({ Id: id, Code: "", Name: "", IsEdit: isEdit });
+      setIsOpen(true);
+    }
   }, []);
 
   const onOpenChange = useCallback((open: boolean) => {
@@ -129,30 +117,26 @@ export const useFileType = () => {
     }
   }, []);
 
-  const saveChange = useCallback(
-    (data: FileType, isAddMore: boolean = false) => {
-      saveMutation.mutate(data, {
-        onSuccess: () => {
-          if (!isAddMore) {
-            onOpenChange(false);
-          } else {
-            setFileType({
-              Id: uuidv4(),
-              Code: "",
-              Name: "",
-              IsEdit: false,
-              IsActived: true,
-            });
-          }
-        },
-      });
-    },
-    [saveMutation, onOpenChange]
-  );
+  const saveChange = async (saveFileType: FileType, isAddMore: boolean) => {
+    const result = await saveMutation.mutateAsync(saveFileType);
+    if (result.Success) {
+      if (isAddMore) {
+        setFileType({
+          Id: uuidv4(),
+          Code: "",
+          Name: "",
+          IsEdit: false,
+        });
+      } else {
+        setIsOpen(false);
+        setFileType(null);
+      }
+    }
+  };
 
-  const deleteList = useCallback((ids: string[]) => {
-    deleteMutation.mutate(ids);
-  }, [deleteMutation]);
+  const deleteList = async (ids: string[]) => {
+    await deleteMutation.mutateAsync(ids);
+  };
 
   return {
     data,
@@ -167,6 +151,7 @@ export const useFileType = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    isLoading: saveMutation.isPending || deleteMutation.isPending,
     isFetching,
   };
 };

@@ -1,15 +1,14 @@
 import {
+  type ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
   type RowSelectionState,
   type OnChangeFn,
-  type ColumnDef,
 } from "@tanstack/react-table";
 import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Button } from "@/components/ui/Button";
-import { Loader2, Plus, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -18,11 +17,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/Button";
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  RotateCw,
+  SearchIcon,
+  Loader2,
+} from "lucide-react";
+import type { GetListPagingRequest } from "@/types/base/base.types";
 import {
   Dialog,
   DialogContent,
@@ -32,23 +35,29 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import type { FileType } from "@/features/catalog/types/filetype.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   totalRow: number;
-  showPopupDetail: (id: string, isEdit: boolean) => void;
-  deleteList: (ids: string[]) => void;
-  rowSelection: RowSelectionState;
-  setRowSelection: OnChangeFn<RowSelectionState>;
+  showPopupDetail?: (id: string, isEdit: boolean) => void;
+  deleteList?: (ids: string[]) => void;
+  rowSelection?: RowSelectionState;
+  setRowSelection?: OnChangeFn<RowSelectionState>;
   pageRequest: GetListPagingRequest;
-  setPageRequest: (request: GetListPagingRequest) => void;
-  isFetching: boolean;
+  setPageRequest?: (pageRequest: GetListPagingRequest) => void;
+  getList?: (pageRequest: GetListPagingRequest) => void;
+  canAdd?: boolean;
+  canDelete?: boolean;
+  isLoading?: boolean;
 }
 
-export function DataTable<TData extends FileType, TValue>({
+export function DataTable<TData, TValue>({
   columns,
   data,
   totalRow,
@@ -58,15 +67,18 @@ export function DataTable<TData extends FileType, TValue>({
   setRowSelection,
   pageRequest,
   setPageRequest,
-  isFetching,
+  getList,
+  canAdd = true,
+  canDelete = true,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
-  const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch || "");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   useEffect(() => {
     if (debouncedSearchTerm !== pageRequest.TextSearch) {
-      setPageRequest({
+      setPageRequest?.({
         ...pageRequest,
         TextSearch: debouncedSearchTerm,
         PageIndex: 1,
@@ -78,43 +90,37 @@ export function DataTable<TData extends FileType, TValue>({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
     state: {
       rowSelection,
     },
-    onRowSelectionChange: setRowSelection,
   });
-
-  const selectedIds = Object.keys(rowSelection).map((index) => {
-    const rowIndex = parseInt(index);
-    return data[rowIndex]?.Id || "";
-  });
-
-  const pageCount = Math.ceil(totalRow / pageRequest.PageSize);
-  const hasNextPage = pageRequest.PageIndex < pageCount;
-  const hasPrevPage = pageRequest.PageIndex > 1;
 
   return (
     <div className="space-y-4 relative">
-      {isFetching && (
+      {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       )}
-      <div className="flex gap-2">
-        <Button onClick={() => showPopupDetail("", false)} size="sm">
-          <Plus className="mr-2 h-4 w-4" />
-          Thêm mới
-        </Button>
-        {selectedIds.length > 0 && (
-          <Button
-            onClick={() => setShowDeleteConfirm(true)}
-            variant="destructive"
-            size="sm"
-          >
-            Xóa ({selectedIds.length})
-          </Button>
-        )}
-        <InputGroup className="flex-1">
+      <div className="grid grid-cols-3 items-center justify-between">
+        <div className="col-span-2 flex items-center gap-2">
+          {canAdd && (
+            <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+              Thêm
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Xóa
+            </Button>
+          )}
+        </div>
+        <InputGroup className="col-span-1">
           <InputGroupInput
             placeholder="Tìm kiếm..."
             value={searchTerm || ""}
@@ -125,8 +131,7 @@ export function DataTable<TData extends FileType, TValue>({
           </InputGroupAddon>
         </InputGroup>
       </div>
-
-      <div className="rounded-md border overflow-hidden">
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -149,7 +154,10 @@ export function DataTable<TData extends FileType, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
@@ -170,7 +178,7 @@ export function DataTable<TData extends FileType, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center"
+                  className="h-96 text-center"
                 >
                   Không có dữ liệu
                 </TableCell>
@@ -179,61 +187,95 @@ export function DataTable<TData extends FileType, TValue>({
           </TableBody>
         </Table>
       </div>
-
       <div className="flex items-center justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            setPageRequest({
-              ...pageRequest,
-              PageIndex: pageRequest.PageIndex - 1,
-            })
-          }
-          disabled={!hasPrevPage}
-        >
-          <ChevronLeftIcon className="h-4 w-4" />
-        </Button>
-        <span className="text-sm">
-          Trang {pageRequest.PageIndex} / {pageCount}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            setPageRequest({
-              ...pageRequest,
-              PageIndex: pageRequest.PageIndex + 1,
-            })
-          }
-          disabled={!hasNextPage}
-        >
-          <ChevronRightIcon className="h-4 w-4" />
-        </Button>
+        <div className=" flex-1 text-sm flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setPageRequest?.({
+                ...pageRequest,
+                PageIndex: pageRequest.PageIndex - 1,
+              })
+            }
+            disabled={pageRequest.PageIndex === 1}
+          >
+            <ChevronLeftIcon className="h-4 w-4" />
+          </Button>
+          <span>
+            Trang {pageRequest.PageIndex} /{" "}
+            {Math.ceil(totalRow / pageRequest.PageSize)}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setPageRequest?.({
+                ...pageRequest,
+                PageIndex: pageRequest.PageIndex + 1,
+              })
+            }
+            disabled={
+              pageRequest.PageIndex ===
+              Math.ceil(totalRow / pageRequest.PageSize)
+            }
+          >
+            <ChevronRightIcon className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="space-x-2 text-muted-foreground">
+          <span>
+            {data.length < pageRequest.PageSize
+              ? pageRequest.PageIndex * pageRequest.PageSize -
+                pageRequest.PageSize +
+                1 +
+                " - " +
+                (pageRequest.PageIndex * pageRequest.PageSize -
+                  pageRequest.PageSize +
+                  data.length) +
+                " "
+              : pageRequest.PageIndex * pageRequest.PageSize -
+                pageRequest.PageSize +
+                1 +
+                " - " +
+                pageRequest.PageIndex * pageRequest.PageSize +
+                " "}
+            trong {totalRow} mục
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => getList?.(pageRequest)}
+          >
+            <RotateCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa {selectedIds.length} loại tệp? Hành động này không
-              thể được hoàn tác.
+              Bạn có chắc chắn muốn xóa{" "}
+              {table.getSelectedRowModel().rows.length} mục đã chọn không? Hành
+              động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Hủy
-              </Button>
+              <Button variant="outline">Hủy</Button>
             </DialogClose>
             <Button
-              type="button"
-              onClick={() => {
-                deleteList(selectedIds);
-                setShowDeleteConfirm(false);
-              }}
               variant="destructive"
+              onClick={() => {
+                deleteList?.(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id)
+                );
+                setShowDeleteConfirm(false);
+                table.resetRowSelection();
+              }}
             >
               Xóa
             </Button>

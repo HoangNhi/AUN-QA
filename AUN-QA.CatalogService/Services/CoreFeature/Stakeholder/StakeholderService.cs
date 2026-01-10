@@ -55,6 +55,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                     1 => "Sinh viên",
                     2 => "Cựu sinh viên",
                     3 => "Nhà tuyển dụng",
+                    4 => "Giảng viên",
                     _ => "Khác"
                 };
                 return res;

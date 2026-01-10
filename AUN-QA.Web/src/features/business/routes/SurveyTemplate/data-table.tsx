@@ -32,7 +32,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
-import type { StakeholderGetListPagingRequest } from "../../types/stakeholder.types";
+import type {
+  SurveyTemplate,
+  SurveyTemplateGetListPagingRequest,
+} from "../../types/survey-template.types";
 import {
   Select,
   SelectContent,
@@ -58,9 +61,9 @@ interface DataTableProps<TData, TValue> {
   deleteList?: (ids: string[]) => void;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
-  pageRequest: StakeholderGetListPagingRequest;
-  setPageRequest?: (pageRequest: StakeholderGetListPagingRequest) => void;
-  getList?: (pageRequest: StakeholderGetListPagingRequest) => void;
+  pageRequest: SurveyTemplateGetListPagingRequest;
+  setPageRequest?: (pageRequest: SurveyTemplateGetListPagingRequest) => void;
+  getList?: (pageRequest: SurveyTemplateGetListPagingRequest) => void;
   canAdd?: boolean;
   canDelete?: boolean;
   isLoading?: boolean;
@@ -86,9 +89,9 @@ export function DataTable<TData, TValue>({
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const [typeTerm, setTypeTerm] = useState<string | undefined>(
-    pageRequest.Type?.toString()
-  );
+  const [stakeholderTypeTerm, setStakeholderTypeTerm] = useState<
+    string | undefined
+  >(pageRequest.StakeholderType?.toString());
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -125,8 +128,10 @@ export function DataTable<TData, TValue>({
               setPageRequest?.({
                 ...pageRequest,
                 TextSearch: "",
+                StakeholderType: undefined,
               });
               setSearchTerm("");
+              setStakeholderTypeTerm(undefined);
             }}
           >
             Đặt lại bộ lọc
@@ -134,13 +139,13 @@ export function DataTable<TData, TValue>({
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Select
-            value={typeTerm ?? "null"}
+            value={stakeholderTypeTerm ?? "null"}
             onValueChange={(value) => {
               const newValue = value === "null" ? undefined : value;
-              setTypeTerm(newValue);
+              setStakeholderTypeTerm(newValue);
               setPageRequest?.({
                 ...pageRequest,
-                Type: newValue ? Number(newValue) : undefined,
+                StakeholderType: newValue ? Number(newValue) : undefined,
                 PageIndex: 1,
               });
             }}
@@ -152,8 +157,8 @@ export function DataTable<TData, TValue>({
               <SelectItem value="null">-- Tất cả loại đối tượng --</SelectItem>
               <SelectItem value="1">Sinh viên</SelectItem>
               <SelectItem value="2">Cựu sinh viên</SelectItem>
-              <SelectItem value="4">Giảng viên</SelectItem>
               <SelectItem value="3">Nhà tuyển dụng</SelectItem>
+              <SelectItem value="4">Giảng viên</SelectItem>
             </SelectContent>
           </Select>
           <InputGroup className="col-span-1 bg-background">

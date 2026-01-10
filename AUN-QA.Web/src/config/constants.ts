@@ -92,6 +92,14 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${BUSINESS_BASE}/Evidence/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
     },
+    SurveyTemplate: {
+      GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/SurveyTemplate/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/SurveyTemplate/insert`,
+      UPDATE: `${BUSINESS_BASE}/SurveyTemplate/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/SurveyTemplate/delete-list`,
+      GET_ALL_COMBOBOX: `${BUSINESS_BASE}/SurveyTemplate/get-all-combobox`,
+    },
   },
   File: {
     UploadFile: {

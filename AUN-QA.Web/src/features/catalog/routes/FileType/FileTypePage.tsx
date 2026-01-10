@@ -15,6 +15,7 @@ const FileTypePage = () => {
     rowSelection,
     setPageRequest,
     setRowSelection,
+    getList,
     showPopupDetail,
     onOpenChange,
     saveChange,
@@ -49,14 +50,20 @@ const FileTypePage = () => {
         setRowSelection={setRowSelection}
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
-        isFetching={isFetching}
+        getList={getList}
+        canAdd={permission?.IsAdded}
+        canDelete={permission?.IsDeleted}
+        isLoading={isFetching}
       />
-      <PopupFileType
-        fileType={fileType}
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        saveChange={saveChange}
-      />
+      {isOpen && (
+        <PopupFileType
+          key={fileType?.Id || "new"}
+          fileType={fileType}
+          isOpen={isOpen}
+          onOpenChange={onOpenChange}
+          saveChange={saveChange}
+        />
+      )}
     </div>
   );
 };

@@ -104,7 +104,7 @@ const ActionCell = ({
             <DropdownMenuItem
               onClick={() => showPopupDetail(row.original.Id, true)}
             >
-              Sửa
+              Cập nhật
             </DropdownMenuItem>
           )}
           {canDelete && (

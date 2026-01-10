@@ -136,6 +136,7 @@ const PopupStakeholder = ({
                 <SelectContent>
                   <SelectItem value="1">Sinh viên</SelectItem>
                   <SelectItem value="2">Cựu sinh viên</SelectItem>
+                  <SelectItem value="4">Giảng viên</SelectItem>
                   <SelectItem value="3">Nhà tuyển dụng</SelectItem>
                 </SelectContent>
               </Select>

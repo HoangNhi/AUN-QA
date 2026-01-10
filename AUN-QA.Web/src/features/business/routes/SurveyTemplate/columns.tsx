@@ -56,12 +56,12 @@ export const getColumns = (
     header: "Loại đối tượng",
     cell: ({ row }) => {
       const type = row.original.StakeholderType;
-      const map = {
+      const map: Record<number, string> = {
         1: "Sinh viên",
         2: "Cựu sinh viên",
         3: "Nhà tuyển dụng",
         4: "Giảng viên",
-      } as any;
+      };
       return map[type] || "Khác";
     },
   },

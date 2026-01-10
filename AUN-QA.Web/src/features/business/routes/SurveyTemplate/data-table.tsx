@@ -166,7 +166,7 @@ export function DataTable<TData, TValue>({
               placeholder="Tìm kiếm..."
               value={searchTerm || ""}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10!"
+              className="!pl-10"
             />
             <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
               <SearchIcon className="h-4 w-4 text-muted-foreground" />

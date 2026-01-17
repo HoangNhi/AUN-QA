@@ -3,17 +3,19 @@ using System.Collections.Generic;
 
 namespace AUN_QA.BusinessService.Entities;
 
-public partial class TemplateTopic
+public partial class SurveyCampaign
 {
     public Guid Id { get; set; }
 
-    public string Title { get; set; } = null!;
+    public Guid CycleId { get; set; }
 
-    public bool HasTextQuestionPart { get; set; }
+    public Guid TemplateId { get; set; }
 
-    public string? TextQuestionTitle { get; set; }
+    public int StakeholderType { get; set; }
 
-    public int Sort { get; set; }
+    public string Name { get; set; } = null!;
+
+    public int Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -26,8 +28,4 @@ public partial class TemplateTopic
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
-
-    public Guid? TemplateId { get; set; }
-
-    public Guid? CampaignId { get; set; }
 }

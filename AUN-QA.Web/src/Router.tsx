@@ -15,6 +15,7 @@ import RolePage from "./features/system/routes/Role";
 import UnauthorizedPage from "./pages/common/UnauthorizedPage";
 import StakeholderPage from "./features/catalog/routes/Stakeholder/StakeholderPage";
 import SurveyTemplatePage from "./features/business/routes/SurveyTemplate/SurveyTemplatePage";
+import SurveyCampaignPage from "./features/business/routes/SurveyCampaign/SurveyCampaignPage";
 
 const Router: FC = () => {
   return (
@@ -42,6 +43,7 @@ const Router: FC = () => {
           <Route path="/role" element={<RolePage />} />
           <Route path="/stakeholder" element={<StakeholderPage />} />
           <Route path="/surveytemplate" element={<SurveyTemplatePage />} />
+          <Route path="/surveycampaign" element={<SurveyCampaignPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

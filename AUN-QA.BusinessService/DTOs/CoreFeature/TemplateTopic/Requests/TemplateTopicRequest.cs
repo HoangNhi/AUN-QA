@@ -17,6 +17,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests
 
         public int Sort { get; set; }
 
+        public Guid? TemplateId { get; set; }
+
+        public Guid? CampaignId { get; set; }
+
         public List<TemplateCategoryRequest> ListCategory { get; set; } = new();
         public List<TemplateTextQuestionRequest> ListTextQuestion { get; set; } = new();
     }

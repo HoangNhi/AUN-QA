@@ -100,6 +100,13 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${BUSINESS_BASE}/SurveyTemplate/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/SurveyTemplate/get-all-combobox`,
     },
+    SurveyCampaign: {
+      GET_LIST: `${BUSINESS_BASE}/SurveyCampaign/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/SurveyCampaign/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/SurveyCampaign/insert`,
+      UPDATE: `${BUSINESS_BASE}/SurveyCampaign/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/SurveyCampaign/delete-list`,
+    },
   },
   File: {
     UploadFile: {

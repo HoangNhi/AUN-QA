@@ -3,17 +3,15 @@ using System.Collections.Generic;
 
 namespace AUN_QA.BusinessService.Entities;
 
-public partial class TemplateTopic
+public partial class SurveyScore
 {
     public Guid Id { get; set; }
 
-    public string Title { get; set; } = null!;
+    public Guid SessionId { get; set; }
 
-    public bool HasTextQuestionPart { get; set; }
+    public Guid QuestionId { get; set; }
 
-    public string? TextQuestionTitle { get; set; }
-
-    public int Sort { get; set; }
+    public int Score { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -21,13 +19,9 @@ public partial class TemplateTopic
 
     public DateTime? UpdatedAt { get; set; }
 
-    public string? UpdatedBy { get; set; }
+    public int? UpdatedBy { get; set; }
 
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
-
-    public Guid? TemplateId { get; set; }
-
-    public Guid? CampaignId { get; set; }
 }

@@ -13,5 +13,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Dtos
         public string? TextQuestionTitle { get; set; }
 
         public int Sort { get; set; }
+
+        public Guid? TemplateId { get; set; }
+
+        public Guid? CampaignId { get; set; }
     }
 }

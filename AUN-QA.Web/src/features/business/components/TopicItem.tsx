@@ -14,7 +14,7 @@ import {
 import type {
   TemplateTopic,
   TemplateTextQuestion,
-} from "../../../types/survey-template.types";
+} from "../types/survey-template.types";
 import { CategoryItem } from "./CategoryItem";
 import { TextQuestionItem } from "./TextQuestionItem";
 
@@ -27,7 +27,7 @@ interface TopicItemProps {
   onUpdateTopic: <K extends keyof TemplateTopic>(
     id: string,
     field: K,
-    value: TemplateTopic[K]
+    value: TemplateTopic[K],
   ) => void;
   onAddCategory: (topicId: string) => void;
   onUpdateCategory: (topicId: string, catId: string, value: string) => void;
@@ -37,7 +37,7 @@ interface TopicItemProps {
     topicId: string,
     catId: string,
     qId: string,
-    value: string
+    value: string,
   ) => void;
   onDeleteQuestion: (topicId: string, catId: string, qId: string) => void;
   onAddTextQuestion: (topicId: string) => void;
@@ -45,7 +45,7 @@ interface TopicItemProps {
     topicId: string,
     qId: string,
     field: K,
-    value: TemplateTextQuestion[K]
+    value: TemplateTextQuestion[K],
   ) => void;
   onDeleteTextQuestion: (topicId: string, qId: string) => void;
 }
@@ -164,7 +164,7 @@ export const TopicItem = ({
                     onUpdateTopic(
                       topic.Id,
                       "HasTextQuestionPart",
-                      checked === true
+                      checked === true,
                     )
                   }
                   className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
@@ -185,7 +185,7 @@ export const TopicItem = ({
                       onUpdateTopic(
                         topic.Id,
                         "TextQuestionTitle",
-                        e.target.value
+                        e.target.value,
                       )
                     }
                     className="w-full font-semibold text-gray-700 bg-white focus-visible:ring-orange-400"

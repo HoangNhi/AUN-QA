@@ -22,14 +22,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Plus, Loader2, Edit3, Eye } from "lucide-react";
+import { Loader2, Edit3, Eye } from "lucide-react";
 import { SurveyPreview } from "./components/SurveyPreview";
-import type {
-  SurveyTemplate,
   TemplateTopic,
-  TemplateTextQuestion,
 } from "../../types/survey-template.types";
-import { TopicItem } from "./components/TopicItem";
+import { TopicListEditor } from "../../components/TopicListEditor";
+import { useSurveyTopics } from "../../hooks/useSurveyTopics";
 
 const PopupSurveyTemplate = ({
   surveyTemplate,
@@ -57,234 +55,10 @@ const PopupSurveyTemplate = ({
   );
   const [isActived, setIsActived] = useState(surveyTemplate?.IsActived ?? true);
 
-  const [listTopic, setListTopic] = useState<TemplateTopic[]>(
-    surveyTemplate?.ListTopic || []
-  );
-
-  // State quản lý việc đóng/mở các Topic trong Editor
-  const [collapsedTopics, setCollapsedTopics] = useState<
-    Record<string, boolean>
-  >({});
-
+  const { listTopic, setListTopic, collapsedTopics, handlers } =
+    useSurveyTopics(surveyTemplate?.ListTopic || []);
+    
   const [mode, setMode] = useState<"edit" | "preview">("edit");
-
-  // --- HANDLERS ---
-
-  // Topic Handlers
-  const handleAddTopic = () => {
-    const newTopic: TemplateTopic = {
-      Id: uuidv4(),
-      Title: "Chủ đề mới (VD: Cơ sở vật chất)",
-      Sort: listTopic.length + 1,
-      ListCategory: [],
-      HasTextQuestionPart: true,
-      TextQuestionTitle: "Ý kiến khác",
-      ListTextQuestion: [],
-    };
-    setListTopic((prev) => [...prev, newTopic]);
-  };
-
-  const toggleTopicCollapse = (id: string) => {
-    setCollapsedTopics((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleDeleteTopic = (id: string) => {
-    setListTopic((prev) => prev.filter((t) => t.Id !== id));
-  };
-
-  // Category Handlers
-  const handleAddCategory = (topicId: string) => {
-    setListTopic((prev) =>
-      prev.map((t) => {
-        if (t.Id !== topicId) return t;
-        return {
-          ...t,
-          ListCategory: [
-            ...t.ListCategory,
-            {
-              Id: uuidv4(),
-              TopicId: topicId,
-              Name: "Nhóm tiêu chí mới (VD: 1. Nội dung môn học)",
-              Sort: t.ListCategory.length + 1,
-              ListQuestion: [],
-            },
-          ],
-        };
-      })
-    );
-  };
-
-  const handleDeleteCategory = (topicId: string, catId: string) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListCategory: t.ListCategory.filter((c) => c.Id !== catId),
-            }
-          : t
-      )
-    );
-  };
-
-  // Scale Question Handlers
-  const handleAddScaleQuestion = (topicId: string, catId: string) => {
-    setListTopic((prev) =>
-      prev.map((t) => {
-        if (t.Id !== topicId) return t;
-        return {
-          ...t,
-          ListCategory: t.ListCategory.map((c) => {
-            if (c.Id !== catId) return c;
-            return {
-              ...c,
-              ListQuestion: [
-                ...c.ListQuestion,
-                {
-                  Id: uuidv4(),
-                  CategoryId: catId,
-                  Content: "",
-                  Sort: c.ListQuestion.length + 1,
-                },
-              ],
-            };
-          }),
-        };
-      })
-    );
-  };
-
-  const handleDeleteQuestion = (
-    topicId: string,
-    catId: string,
-    qId: string
-  ) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListCategory: t.ListCategory.map((c) =>
-                c.Id === catId
-                  ? {
-                      ...c,
-                      ListQuestion: c.ListQuestion.filter((q) => q.Id !== qId),
-                    }
-                  : c
-              ),
-            }
-          : t
-      )
-    );
-  };
-
-  // Open Ended (Text) Question Handlers
-  const handleAddTextQuestion = (topicId: string) => {
-    setListTopic((prev) =>
-      prev.map((t) => {
-        if (t.Id !== topicId) return t;
-        return {
-          ...t,
-          ListTextQuestion: [
-            ...t.ListTextQuestion,
-            {
-              Id: uuidv4(),
-              TopicId: topicId,
-              Content: "",
-              Sort: t.ListTextQuestion.length + 1,
-              IsRequired: false,
-            },
-          ],
-        };
-      })
-    );
-  };
-
-  const handleDeleteTextQuestion = (topicId: string, qId: string) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListTextQuestion: t.ListTextQuestion.filter((q) => q.Id !== qId),
-            }
-          : t
-      )
-    );
-  };
-
-  // Helper Handlers
-  const updateTopic = <K extends keyof TemplateTopic>(
-    id: string,
-    field: K,
-    value: TemplateTopic[K]
-  ) => {
-    setListTopic((prev) =>
-      prev.map((t) => (t.Id === id ? { ...t, [field]: value } : t))
-    );
-  };
-
-  const updateCategory = (topicId: string, catId: string, val: string) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListCategory: t.ListCategory.map((c) =>
-                c.Id === catId ? { ...c, Name: val } : c
-              ),
-            }
-          : t
-      )
-    );
-  };
-
-  const updateScaleQuestion = (
-    topicId: string,
-    catId: string,
-    qId: string,
-    val: string
-  ) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListCategory: t.ListCategory.map((c) =>
-                c.Id === catId
-                  ? {
-                      ...c,
-                      ListQuestion: c.ListQuestion.map((q) =>
-                        q.Id === qId ? { ...q, Content: val } : q
-                      ),
-                    }
-                  : c
-              ),
-            }
-          : t
-      )
-    );
-  };
-
-  const updateTextQuestion = <K extends keyof TemplateTextQuestion>(
-    topicId: string,
-    qId: string,
-    field: K,
-    val: TemplateTextQuestion[K]
-  ) => {
-    setListTopic((prev) =>
-      prev.map((t) =>
-        t.Id === topicId
-          ? {
-              ...t,
-              ListTextQuestion: t.ListTextQuestion.map((q) =>
-                q.Id === qId ? { ...q, [field]: val } : q
-              ),
-            }
-          : t
-      )
-    );
-  };
 
   const handleSave = (isAddMore: boolean) => {
     const payload = {
@@ -387,36 +161,12 @@ const PopupSurveyTemplate = ({
             </div>
           </div>
           {/* 2. Topics List */}
-          <div className="space-y-6">
-            {listTopic.map((topic, tIndex) => (
-              <TopicItem
-                key={topic.Id}
-                topic={topic}
-                index={tIndex}
-                isCollapsed={!!collapsedTopics[topic.Id]}
-                onToggleCollapse={toggleTopicCollapse}
-                onDeleteTopic={handleDeleteTopic}
-                onUpdateTopic={updateTopic}
-                onAddCategory={handleAddCategory}
-                onUpdateCategory={updateCategory}
-                onDeleteCategory={handleDeleteCategory}
-                onAddQuestion={handleAddScaleQuestion}
-                onUpdateQuestion={updateScaleQuestion}
-                onDeleteQuestion={handleDeleteQuestion}
-                onAddTextQuestion={handleAddTextQuestion}
-                onUpdateTextQuestion={updateTextQuestion}
-                onDeleteTextQuestion={handleDeleteTextQuestion}
-              />
-            ))}
-            <Button
-              type="button"
-              onClick={handleAddTopic}
-              variant="outline"
-              className="w-full py-6 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 font-semibold"
-            >
-              <Plus size={20} className="mr-2" /> Thêm chủ đề mới
-            </Button>
-          </div>
+          {/* 2. Topics List */}
+          <TopicListEditor
+            listTopic={listTopic}
+            collapsedTopics={collapsedTopics}
+            handlers={handlers}
+          />
         </div>
       </div>
     );

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Trash2, GripVertical, Plus } from "lucide-react";
-import type { TemplateCategory } from "../../../types/survey-template.types";
+import type { TemplateCategory } from "../types/survey-template.types";
 import { ScaleQuestionItem } from "./ScaleQuestionItem";
 
 interface CategoryItemProps {
@@ -15,7 +15,7 @@ interface CategoryItemProps {
     topicId: string,
     catId: string,
     qId: string,
-    value: string
+    value: string,
   ) => void;
   onDeleteQuestion: (topicId: string, catId: string, qId: string) => void;
 }

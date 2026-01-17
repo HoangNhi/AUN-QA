@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
-import type { TemplateTextQuestion } from "../../../types/survey-template.types";
+import type { TemplateTextQuestion } from "../types/survey-template.types";
 
 interface TextQuestionItemProps {
   question: TemplateTextQuestion;
@@ -11,7 +11,7 @@ interface TextQuestionItemProps {
   onUpdate: <K extends keyof TemplateTextQuestion>(
     id: string,
     field: K,
-    value: TemplateTextQuestion[K]
+    value: TemplateTextQuestion[K],
   ) => void;
   onDelete: (id: string) => void;
 }

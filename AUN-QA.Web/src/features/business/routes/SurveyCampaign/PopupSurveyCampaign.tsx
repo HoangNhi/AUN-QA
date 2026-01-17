@@ -16,6 +16,9 @@ import { v4 as uuidv4 } from "uuid";
 import type { SurveyCampaign } from "../../types/survey-campaign.types";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TopicListEditor } from "../../components/TopicListEditor";
+import { useSurveyTopics } from "../../hooks/useSurveyTopics";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -46,27 +49,10 @@ const PopupSurveyCampaign = ({
     surveyCampaign?.TemplateId || "",
   );
   const [isActived, setIsActived] = useState(surveyCampaign?.IsActived ?? true);
+  const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
-  useEffect(() => {
-    if (surveyCampaign) {
-      setId(surveyCampaign.Id || uuidv4());
-      setName(surveyCampaign.Name || "");
-      setStakeholderType(surveyCampaign.StakeholderType?.toString() || "1");
-      setStatus(surveyCampaign.Status?.toString() || "0");
-      setCycleId(surveyCampaign.CycleId || "");
-      setTemplateId(surveyCampaign.TemplateId || "");
-      setIsActived(surveyCampaign.IsActived ?? true);
-    } else {
-      // Reset form
-      setId(uuidv4());
-      setName("");
-      setStakeholderType("");
-      setStatus("0");
-      setCycleId("");
-      setTemplateId("");
-      setIsActived(true);
-    }
-  }, [surveyCampaign, isOpen]);
+  const { listTopic, setListTopic, collapsedTopics, handlers } =
+    useSurveyTopics(surveyCampaign?.ListTopic || []);
 
   const handleSave = (isAddMore: boolean) => {
     const payload = {
@@ -77,6 +63,7 @@ const PopupSurveyCampaign = ({
       CycleId: cycleId,
       TemplateId: templateId,
       IsActived: isActived,
+      ListTopic: listTopic,
       ListSession: [], // Should probably handle these if editing existing ones, but likely handled by backend or separate tab
       ListScore: [],
       ListTextAnswer: [],
@@ -88,6 +75,29 @@ const PopupSurveyCampaign = ({
 
     saveChange(payload as any, isAddMore);
   };
+
+  useEffect(() => {
+    if (surveyCampaign) {
+      setId(surveyCampaign.Id || uuidv4());
+      setName(surveyCampaign.Name || "");
+      setStakeholderType(surveyCampaign.StakeholderType?.toString() || "1");
+      setStatus(surveyCampaign.Status?.toString() || "0");
+      setCycleId(surveyCampaign.CycleId || "");
+      setTemplateId(surveyCampaign.TemplateId || "");
+      setIsActived(surveyCampaign.IsActived ?? true);
+      setListTopic(surveyCampaign?.ListTopic || []);
+    } else {
+      // Reset form
+      setId(uuidv4());
+      setName("");
+      setStakeholderType("");
+      setStatus("0");
+      setCycleId("");
+      setTemplateId("");
+      setIsActived(true);
+      setListTopic([]);
+    }
+  }, [surveyCampaign, isOpen, setListTopic]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -105,117 +115,193 @@ const PopupSurveyCampaign = ({
           <DialogHeader className="p-6 pb-4 border-b shrink-0 bg-white z-10">
             <DialogTitle>
               {(surveyCampaign as any)?.IsEdit
-                ? "Cập nhật chiến dịch khảo sát"
-                : "Thêm mới chiến dịch khảo sát"}
+                ? "Cập nhật khảo sát"
+                : "Thêm mới khảo sát"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0">
-            <div className="grid gap-4 py-4">
-              {/* Name */}
-              <div className="grid gap-2">
-                <Label
-                  htmlFor="name"
-                  className="after:content-['*'] after:ml-0.5 after:text-red-500"
+            {/* General Info Section */}
+            <div className="bg-white rounded-lg border shadow-sm p-4 mb-6 space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b">
+                <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
+                <h3 className="font-semibold text-gray-700">Thông tin chung</h3>
+              </div>
+
+              <div className="grid gap-4">
+                {/* Name */}
+                <div className="grid gap-2">
+                  <Label
+                    htmlFor="name"
+                    className="after:content-['*'] after:ml-0.5 after:text-red-500"
+                  >
+                    Tên khảo sát
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="Nhập tên khảo sát"
+                    className="bg-white"
+                  />
+                </div>
+
+                {/* Cycle & Stakeholder */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                      Chu kỳ đánh giá
+                    </Label>
+                    <Combobox
+                      fetchOptions={async () => {
+                        const res = await cycleService.getComboboxByUser();
+                        return res.Data.map((t) => ({
+                          value: t.Value ?? "",
+                          label: t.Text ?? "",
+                        }));
+                      }}
+                      value={cycleId}
+                      onValueChange={setCycleId}
+                      placeholder="Chọn chu kỳ"
+                      searchPlaceholder="Tìm kiếm chu kỳ..."
+                      emptyText="Không tìm thấy chu kỳ."
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                      Loại đối tượng
+                    </Label>
+                    <Combobox
+                      options={[
+                        { Value: "1", Text: "Sinh viên" },
+                        { Value: "2", Text: "Cựu sinh viên" },
+                        { Value: "3", Text: "Nhà tuyển dụng" },
+                        { Value: "4", Text: "Giảng viên" },
+                      ]}
+                      value={stakeholderType}
+                      onValueChange={(val) => {
+                        setStakeholderType(val);
+                        setTemplateId(""); // Reset template when stakeholder changes
+                      }}
+                      placeholder="Chọn đối tượng"
+                      searchPlaceholder="Tìm kiếm đối tượng..."
+                      emptyText="Không tìm thấy đối tượng."
+                    />
+                  </div>
+                </div>
+
+                {/* Template & Status */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                      Mẫu khảo sát
+                    </Label>
+                    <Combobox
+                      key={stakeholderType} // Force re-mount when stakeholder changes to fetch new options
+                      fetchOptions={async () => {
+                        const res = await surveyTemplateService.getAllCombobox({
+                          StakeholderType: parseInt(stakeholderType),
+                        });
+                        return res.Data.map((t) => ({
+                          Value: t.Value ?? "",
+                          Text: t.Text ?? "",
+                        }));
+                      }}
+                      value={templateId}
+                      onValueChange={async (val) => {
+                        setTemplateId(val);
+                        if (val) {
+                          setIsLoadingTemplate(true);
+                          try {
+                            const res =
+                              await surveyTemplateService.getById(val);
+                            if (res.Success) {
+                              setListTopic(res.Data.ListTopic);
+                            } else {
+                              setListTopic([]);
+                            }
+                          } finally {
+                            setIsLoadingTemplate(false);
+                          }
+                        } else {
+                          setListTopic([]);
+                        }
+                      }}
+                      placeholder="Chọn mẫu khảo sát"
+                      searchPlaceholder="Tìm kiếm mẫu khảo sát..."
+                      emptyText="Không tìm thấy mẫu khảo sát."
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Trạng thái</Label>
+                    <Combobox
+                      options={[
+                        { Value: "0", Text: "Chưa bắt đầu" },
+                        { Value: "1", Text: "Đang diễn ra" },
+                        { Value: "2", Text: "Đã kết thúc" },
+                      ]}
+                      value={status}
+                      onValueChange={setStatus}
+                      placeholder="Chọn trạng thái"
+                      searchPlaceholder="Tìm kiếm trạng thái..."
+                      emptyText="Không tìm thấy trạng thái."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Tabs defaultValue="survey" className="w-full">
+                <div className="flex items-center justify-between mb-2">
+                  <TabsList className="bg-white border text-gray-500">
+                    <TabsTrigger
+                      value="survey"
+                      className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
+                    >
+                      Khảo sát
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="stakeholder"
+                      className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
+                    >
+                      Người tham gia
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent
+                  value="survey"
+                  className="mt-0 focus-visible:outline-none"
                 >
-                  Tên chiến dịch
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="Nhập tên chiến dịch"
-                  className="bg-white"
-                />
-              </div>
-
-              {/* Cycle & Stakeholder */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                    Chu kỳ đánh giá
-                  </Label>
-                  <Combobox
-                    fetchOptions={async () => {
-                      const res = await cycleService.getComboboxByUser();
-                      return res.Data.map((t) => ({
-                        value: t.Value ?? "",
-                        label: t.Text ?? "",
-                      }));
-                    }}
-                    value={cycleId}
-                    onValueChange={setCycleId}
-                    placeholder="Chọn chu kỳ"
-                    searchPlaceholder="Tìm kiếm chu kỳ..."
-                    emptyText="Không tìm thấy chu kỳ."
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                    Loại đối tượng
-                  </Label>
-                  <Combobox
-                    options={[
-                      { Value: "1", Text: "Sinh viên" },
-                      { Value: "2", Text: "Cựu sinh viên" },
-                      { Value: "3", Text: "Nhà tuyển dụng" },
-                      { Value: "4", Text: "Giảng viên" },
-                    ]}
-                    value={stakeholderType}
-                    onValueChange={(val) => {
-                      setStakeholderType(val);
-                      setTemplateId(""); // Reset template when stakeholder changes
-                    }}
-                    placeholder="Chọn đối tượng"
-                    searchPlaceholder="Tìm kiếm đối tượng..."
-                    emptyText="Không tìm thấy đối tượng."
-                  />
-                </div>
-              </div>
-
-              {/* Template & Status */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                    Mẫu khảo sát
-                  </Label>
-                  <Combobox
-                    key={stakeholderType} // Force re-mount when stakeholder changes to fetch new options
-                    fetchOptions={async () => {
-                      const res = await surveyTemplateService.getAllCombobox({
-                        StakeholderType: parseInt(stakeholderType),
-                      });
-                      return res.Data.map((t) => ({
-                        Value: t.Value ?? "",
-                        Text: t.Text ?? "",
-                      }));
-                    }}
-                    value={templateId}
-                    onValueChange={setTemplateId}
-                    placeholder="Chọn mẫu khảo sát"
-                    searchPlaceholder="Tìm kiếm mẫu khảo sát..."
-                    emptyText="Không tìm thấy mẫu khảo sát."
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Trạng thái</Label>
-                  <Combobox
-                    options={[
-                      { Value: "0", Text: "Chưa bắt đầu" },
-                      { Value: "1", Text: "Đang diễn ra" },
-                      { Value: "2", Text: "Đã kết thúc" },
-                    ]}
-                    value={status}
-                    onValueChange={setStatus}
-                    placeholder="Chọn trạng thái"
-                    searchPlaceholder="Tìm kiếm trạng thái..."
-                    emptyText="Không tìm thấy trạng thái."
-                  />
-                </div>
-              </div>
+                  {/* Removed max-w and overflow to allow parent to scroll */}
+                  <div className="min-h-[200px]">
+                    {isLoadingTemplate ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
+                        <p>Đang tải dữ liệu mẫu khảo sát...</p>
+                      </div>
+                    ) : (
+                      <TopicListEditor
+                        listTopic={listTopic}
+                        collapsedTopics={collapsedTopics}
+                        handlers={handlers}
+                      />
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent
+                  value="stakeholder"
+                  className="mt-0 focus-visible:outline-none"
+                >
+                  <div className="bg-white rounded-lg border p-8 text-center text-gray-500 min-h-[200px] flex items-center justify-center">
+                    Người tham gia (Chưa có nội dung)
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 

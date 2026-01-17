@@ -10,7 +10,10 @@ export interface SurveyCampaign extends BaseRequest {
   ListSession: SurveySession[];
   ListScore: SurveyScore[];
   ListTextAnswer: SurveyTextAnswer[];
+  ListTopic?: TemplateTopic[];
 }
+
+import type { TemplateTopic } from "./survey-template.types";
 
 export interface SurveySession extends BaseRequest {
   Id: string;

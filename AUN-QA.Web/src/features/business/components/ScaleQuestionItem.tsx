@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
-import type { TemplateQuestion } from "../../../types/survey-template.types";
+import type { TemplateQuestion } from "../types/survey-template.types";
 
 interface ScaleQuestionItemProps {
   question: TemplateQuestion;

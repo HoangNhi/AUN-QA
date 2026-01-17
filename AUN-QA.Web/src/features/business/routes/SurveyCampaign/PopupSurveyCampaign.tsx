@@ -19,6 +19,7 @@ import { surveyTemplateService } from "../../api/survey-template.api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
+import { StakeholderSelector } from "./components/StakeholderSelector";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -51,6 +52,10 @@ const PopupSurveyCampaign = ({
   const [isActived, setIsActived] = useState(surveyCampaign?.IsActived ?? true);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
+  const [listSession, setListSession] = useState<any[]>(
+    surveyCampaign?.ListSession || [],
+  );
+
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
@@ -64,7 +69,7 @@ const PopupSurveyCampaign = ({
       TemplateId: templateId,
       IsActived: isActived,
       ListTopic: listTopic,
-      ListSession: [], // Should probably handle these if editing existing ones, but likely handled by backend or separate tab
+      ListSession: listSession,
       ListScore: [],
       ListTextAnswer: [],
       IsEdit: (surveyCampaign as any)?.IsEdit || false,
@@ -86,6 +91,7 @@ const PopupSurveyCampaign = ({
       setTemplateId(surveyCampaign.TemplateId || "");
       setIsActived(surveyCampaign.IsActived ?? true);
       setListTopic(surveyCampaign?.ListTopic || []);
+      setListSession(surveyCampaign?.ListSession || []);
     } else {
       // Reset form
       setId(uuidv4());
@@ -96,6 +102,7 @@ const PopupSurveyCampaign = ({
       setTemplateId("");
       setIsActived(true);
       setListTopic([]);
+      setListSession([]);
     }
   }, [surveyCampaign, isOpen, setListTopic]);
 
@@ -184,6 +191,7 @@ const PopupSurveyCampaign = ({
                       onValueChange={(val) => {
                         setStakeholderType(val);
                         setTemplateId(""); // Reset template when stakeholder changes
+                        setListSession([]); // Reset sessions when type changes
                       }}
                       placeholder="Chọn đối tượng"
                       searchPlaceholder="Tìm kiếm đối tượng..."
@@ -297,8 +305,12 @@ const PopupSurveyCampaign = ({
                   value="stakeholder"
                   className="mt-0 focus-visible:outline-none"
                 >
-                  <div className="bg-white rounded-lg border p-8 text-center text-gray-500 min-h-[200px] flex items-center justify-center">
-                    Người tham gia (Chưa có nội dung)
+                  <div className="bg-white rounded-lg border p-4 min-h-[200px]">
+                    <StakeholderSelector
+                      stakeholderType={stakeholderType}
+                      selectedSessions={listSession}
+                      onSelectionChange={setListSession}
+                    />
                   </div>
                 </TabsContent>
               </Tabs>

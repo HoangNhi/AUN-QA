@@ -24,10 +24,9 @@ import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2, Edit3, Eye } from "lucide-react";
 import { SurveyPreview } from "./components/SurveyPreview";
-  TemplateTopic,
-} from "../../types/survey-template.types";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
+import type { SurveyTemplate } from "../../types/survey-template.types";
 
 const PopupSurveyTemplate = ({
   surveyTemplate,
@@ -41,23 +40,23 @@ const PopupSurveyTemplate = ({
   onOpenChange: (open: boolean) => void;
   saveChange: (
     data: SurveyTemplate & { IsEdit: boolean },
-    isAddMore: boolean
+    isAddMore: boolean,
   ) => void;
   isLoading?: boolean;
 }) => {
   const [id, setId] = useState<string>(surveyTemplate?.Id || uuidv4());
   const [title, setTitle] = useState(surveyTemplate?.Title || "");
   const [stakeholderType, setStakeholderType] = useState(
-    surveyTemplate?.StakeholderType?.toString() || "1"
+    surveyTemplate?.StakeholderType?.toString() || "1",
   );
   const [description, setDescription] = useState(
-    surveyTemplate?.Description || ""
+    surveyTemplate?.Description || "",
   );
   const [isActived, setIsActived] = useState(surveyTemplate?.IsActived ?? true);
 
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyTemplate?.ListTopic || []);
-    
+
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
   const handleSave = (isAddMore: boolean) => {

@@ -18,7 +18,7 @@ import type { TemplateTopic } from "./survey-template.types";
 export interface SurveySession extends BaseRequest {
   Id: string;
   CampaignId: string;
-  StakeholderId: number;
+  StakeholderId: string;
   StakeholderName?: string;
   StakeholderEmail?: string;
   Token?: string;

@@ -55,6 +55,10 @@ const SurveyCampaignPage = () => {
         canAdd={permission?.IsAdded ?? true}
         canDelete={permission?.IsDeleted ?? true}
         isLoading={isFetching}
+        searchTerm={pageRequest.TextSearch}
+        setSearchTerm={(term: string) =>
+          setPageRequest({ ...pageRequest, TextSearch: term })
+        }
       />
       {isOpen && (
         <PopupSurveyCampaign

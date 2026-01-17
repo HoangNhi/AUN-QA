@@ -1,25 +1,25 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type {
-  GetListPagingRequest,
   GetListPagingResponse,
   ModelCombobox,
 } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type {
   SurveyTemplate,
+  SurveyTemplateGetComboboxRequest,
   SurveyTemplateGetListPaging,
   SurveyTemplateGetListPagingRequest,
 } from "../types/survey-template.types";
 
 export const surveyTemplateService = {
   getList: async (
-    request: SurveyTemplateGetListPagingRequest
+    request: SurveyTemplateGetListPagingRequest,
   ): Promise<
     ApiResponse<GetListPagingResponse<SurveyTemplateGetListPaging>>
   > => {
     return api.post<GetListPagingResponse<SurveyTemplateGetListPaging>>(
       API_ENDPOINTS.Business.SurveyTemplate.GET_LIST,
-      request
+      request,
     );
   },
 
@@ -28,25 +28,25 @@ export const surveyTemplateService = {
       API_ENDPOINTS.Business.SurveyTemplate.GET_BY_ID,
       {
         params: { id },
-      }
+      },
     );
   },
 
   insert: async (
-    data: SurveyTemplate
+    data: SurveyTemplate,
   ): Promise<ApiResponse<SurveyTemplate>> => {
     return api.post<SurveyTemplate>(
       API_ENDPOINTS.Business.SurveyTemplate.INSERT,
-      data
+      data,
     );
   },
 
   update: async (
-    data: SurveyTemplate
+    data: SurveyTemplate,
   ): Promise<ApiResponse<SurveyTemplate>> => {
     return api.put<SurveyTemplate>(
       API_ENDPOINTS.Business.SurveyTemplate.UPDATE,
-      data
+      data,
     );
   },
 
@@ -55,13 +55,18 @@ export const surveyTemplateService = {
       API_ENDPOINTS.Business.SurveyTemplate.DELETE_LIST,
       {
         data: { ids },
-      }
+      },
     );
   },
 
-  getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+  getAllCombobox: async (
+    request: SurveyTemplateGetComboboxRequest,
+  ): Promise<ApiResponse<ModelCombobox[]>> => {
     return api.get<ModelCombobox[]>(
-      API_ENDPOINTS.Business.SurveyTemplate.GET_ALL_COMBOBOX
+      API_ENDPOINTS.Business.SurveyTemplate.GET_ALL_COMBOBOX,
+      {
+        params: request,
+      },
     );
   },
 };

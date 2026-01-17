@@ -76,9 +76,9 @@ namespace AUN_QA.BusinessService.Controllers
 
         [HttpGet, Route("get-all-combobox")]
         [AttributePermission(Action = ActionType.NONE)]
-        public async Task<IActionResult> GetAllForCombobox()
+        public async Task<IActionResult> GetAllForCombobox([FromQuery] SurveyTemplateGetComboboxRequest request)
         {
-            var result = await _service.GetAllForCombobox();
+            var result = await _service.GetAllForCombobox(request);
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
     }

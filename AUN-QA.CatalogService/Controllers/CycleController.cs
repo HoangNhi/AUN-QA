@@ -73,5 +73,13 @@ namespace AUN_QA.CatalogService.Controllers
             var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
+
+        [HttpGet, Route("get-combobox-by-user")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAllForCombobox()
+        {
+            var result = await _service.GetComboboxByUser();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
     }
 }

@@ -305,5 +305,28 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 Data = result
             };
         }
+
+        public async Task<List<ModelCombobox>> GetComboboxByUser()
+        {
+            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return new List<ModelCombobox>();
+            }
+            var query = from cycle in _context.Cycles
+                        join council in _context.Councils on cycle.Id equals council.CycleId
+                        where !cycle.IsDeleted && cycle.IsActived
+                           && !council.IsDeleted && council.IsActived
+                           && council.UserId == userId
+                        select new ModelCombobox
+                        {
+                            Text = cycle.Name,
+                            Value = cycle.Id.ToString()
+                        };
+
+            return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
+        }
+
     }
 }

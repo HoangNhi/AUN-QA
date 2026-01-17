@@ -1,15 +1,18 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { GetListPagingResponse } from "@/types/base/base.types";
+import type {
+  GetListPagingResponse,
+  ModelCombobox,
+} from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { Cycle, CycleGetListPagingRequest } from "../types/cycle.types";
 
 export const cycleService = {
   getList: async (
-    request: CycleGetListPagingRequest
+    request: CycleGetListPagingRequest,
   ): Promise<ApiResponse<GetListPagingResponse<Cycle>>> => {
     return api.post<GetListPagingResponse<Cycle>>(
       API_ENDPOINTS.Catalog.Cycle.GET_LIST,
-      request
+      request,
     );
   },
 
@@ -31,5 +34,11 @@ export const cycleService = {
     return api.delete<string>(API_ENDPOINTS.Catalog.Cycle.DELETE_LIST, {
       data: { ids },
     });
+  },
+
+  getComboboxByUser: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+    return api.get<ModelCombobox[]>(
+      API_ENDPOINTS.Catalog.Cycle.GET_COMBBOX_BY_USER,
+    );
   },
 };

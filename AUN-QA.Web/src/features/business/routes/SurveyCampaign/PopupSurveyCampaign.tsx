@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -9,34 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Combobox } from "@/components/ui/combobox";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import type { SurveyCampaign } from "../../types/survey-campaign.types";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { surveyTemplateService } from "../../api/survey-template.api"; // Ensure this exists or adapt
-import type { ModelCombobox } from "@/types/base/base.types";
+import { surveyTemplateService } from "../../api/survey-template.api";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -68,45 +47,6 @@ const PopupSurveyCampaign = ({
   );
   const [isActived, setIsActived] = useState(surveyCampaign?.IsActived ?? true);
 
-  // Dropdown Data
-  const [cycles, setCycles] = useState<ModelCombobox[]>([]);
-  const [openCycle, setOpenCycle] = useState(false);
-  const [templates, setTemplates] = useState<ModelCombobox[]>([]);
-  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchDropdowns();
-    }
-  }, [isOpen]);
-
-  const fetchDropdowns = async () => {
-    setLoadingDropdowns(true);
-    try {
-      // Fetch Cycles (using getList as combobox)
-      const cyclesRes = await cycleService.getList({
-        PageIndex: 1,
-        PageSize: 100,
-        TextSearch: "",
-      });
-      if (cyclesRes.Data?.Data) {
-        setCycles(
-          cyclesRes.Data.Data.map((c: any) => ({ Text: c.Name, Value: c.Id })),
-        );
-      }
-
-      // Fetch Templates
-      const templatesRes = await surveyTemplateService.getAllCombobox();
-      if (templatesRes.Data) {
-        setTemplates(templatesRes.Data);
-      }
-    } catch (e) {
-      console.error("Error fetching dropdowns", e);
-    } finally {
-      setLoadingDropdowns(false);
-    }
-  };
-
   useEffect(() => {
     if (surveyCampaign) {
       setId(surveyCampaign.Id || uuidv4());
@@ -120,7 +60,7 @@ const PopupSurveyCampaign = ({
       // Reset form
       setId(uuidv4());
       setName("");
-      setStakeholderType("1");
+      setStakeholderType("");
       setStatus("0");
       setCycleId("");
       setTemplateId("");
@@ -152,7 +92,7 @@ const PopupSurveyCampaign = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-2xl max-h-[90vh] p-0 gap-0 w-full flex flex-col focus:outline-none overflow-hidden"
+        className="sm:max-w-4xl max-h-[90vh] p-0 gap-0 w-full flex flex-col focus:outline-none overflow-hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <form
@@ -196,73 +136,42 @@ const PopupSurveyCampaign = ({
                   <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
                     Chu kỳ đánh giá
                   </Label>
-                  <Popover open={openCycle} onOpenChange={setOpenCycle}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openCycle}
-                        className="w-full justify-between bg-white font-normal"
-                      >
-                        {cycleId
-                          ? cycles.find((cycle) => cycle.Value === cycleId)
-                              ?.Text
-                          : "Chọn chu kỳ"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                      <Command>
-                        <CommandInput placeholder="Tìm kiếm chu kỳ..." />
-                        <CommandList>
-                          <CommandEmpty>Không tìm thấy chu kỳ.</CommandEmpty>
-                          <CommandGroup>
-                            {cycles.map((cycle) => (
-                              <CommandItem
-                                key={cycle.Value}
-                                value={cycle.Text} // Use Text for search filtering
-                                onSelect={() => {
-                                  setCycleId(cycle.Value);
-                                  setOpenCycle(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    cycleId === cycle.Value
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                                {cycle.Text}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <Combobox
+                    fetchOptions={async () => {
+                      const res = await cycleService.getComboboxByUser();
+                      return res.Data.map((t) => ({
+                        value: t.Value ?? "",
+                        label: t.Text ?? "",
+                      }));
+                    }}
+                    value={cycleId}
+                    onValueChange={setCycleId}
+                    placeholder="Chọn chu kỳ"
+                    searchPlaceholder="Tìm kiếm chu kỳ..."
+                    emptyText="Không tìm thấy chu kỳ."
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
                     Loại đối tượng
                   </Label>
-                  <Select
+                  <Combobox
+                    options={[
+                      { Value: "1", Text: "Sinh viên" },
+                      { Value: "2", Text: "Cựu sinh viên" },
+                      { Value: "3", Text: "Nhà tuyển dụng" },
+                      { Value: "4", Text: "Giảng viên" },
+                    ]}
                     value={stakeholderType}
-                    onValueChange={setStakeholderType}
-                    required
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Chọn đối tượng" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Sinh viên</SelectItem>
-                      <SelectItem value="2">Cựu sinh viên</SelectItem>
-                      <SelectItem value="3">Nhà tuyển dụng</SelectItem>
-                      <SelectItem value="4">Giảng viên</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    onValueChange={(val) => {
+                      setStakeholderType(val);
+                      setTemplateId(""); // Reset template when stakeholder changes
+                    }}
+                    placeholder="Chọn đối tượng"
+                    searchPlaceholder="Tìm kiếm đối tượng..."
+                    emptyText="Không tìm thấy đối tượng."
+                  />
                 </div>
               </div>
 
@@ -272,42 +181,39 @@ const PopupSurveyCampaign = ({
                   <Label className="after:content-['*'] after:ml-0.5 after:text-red-500">
                     Mẫu khảo sát
                   </Label>
-                  <Select
+                  <Combobox
+                    key={stakeholderType} // Force re-mount when stakeholder changes to fetch new options
+                    fetchOptions={async () => {
+                      const res = await surveyTemplateService.getAllCombobox({
+                        StakeholderType: parseInt(stakeholderType),
+                      });
+                      return res.Data.map((t) => ({
+                        Value: t.Value ?? "",
+                        Text: t.Text ?? "",
+                      }));
+                    }}
                     value={templateId}
                     onValueChange={setTemplateId}
-                    required
-                  >
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Chọn mẫu khảo sát" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loadingDropdowns ? (
-                        <div className="flex items-center justify-center p-2">
-                          <Loader2 className="animate-spin h-4 w-4" />
-                        </div>
-                      ) : (
-                        templates.map((item) => (
-                          <SelectItem key={item.Value} value={item.Value}>
-                            {item.Text}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Chọn mẫu khảo sát"
+                    searchPlaceholder="Tìm kiếm mẫu khảo sát..."
+                    emptyText="Không tìm thấy mẫu khảo sát."
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label>Trạng thái</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="bg-white">
-                      <SelectValue placeholder="Chọn trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Chưa bắt đầu</SelectItem>
-                      <SelectItem value="1">Đang diễn ra</SelectItem>
-                      <SelectItem value="2">Đã kết thúc</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={[
+                      { Value: "0", Text: "Chưa bắt đầu" },
+                      { Value: "1", Text: "Đang diễn ra" },
+                      { Value: "2", Text: "Đã kết thúc" },
+                    ]}
+                    value={status}
+                    onValueChange={setStatus}
+                    placeholder="Chọn trạng thái"
+                    searchPlaceholder="Tìm kiếm trạng thái..."
+                    emptyText="Không tìm thấy trạng thái."
+                  />
                 </div>
               </div>
             </div>

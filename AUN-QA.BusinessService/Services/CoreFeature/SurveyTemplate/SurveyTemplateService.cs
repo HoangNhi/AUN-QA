@@ -453,9 +453,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             };
         }
 
-        public async Task<List<ModelCombobox>> GetAllForCombobox()
+        public async Task<List<ModelCombobox>> GetAllForCombobox(SurveyTemplateGetComboboxRequest request)
         {
-            var data = await _context.SurveyTemplates.Where(x => !x.IsDeleted && x.IsActived == true).ToListAsync();
+            var data = await _context.SurveyTemplates.Where(
+                x => !x.IsDeleted && x.IsActived == true
+                && (request.StakeholderType == null || x.StakeholderType == request.StakeholderType)
+            ).ToListAsync();
+
             return data.Select(x => new ModelCombobox
             {
                 Text = x.Title,

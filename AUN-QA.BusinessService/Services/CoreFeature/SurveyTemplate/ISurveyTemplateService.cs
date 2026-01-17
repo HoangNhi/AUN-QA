@@ -11,6 +11,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
         Task<ModelSurveyTemplate> Update(SurveyTemplateRequest request);
         Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelSurveyTemplateGetListPaging>> GetList(SurveyTemplateGetListPagingRequest request);
-        Task<List<ModelCombobox>> GetAllForCombobox();
+        Task<List<ModelCombobox>> GetAllForCombobox(SurveyTemplateGetComboboxRequest request);
     }
 }

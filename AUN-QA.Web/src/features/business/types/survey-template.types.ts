@@ -41,6 +41,11 @@ export interface TemplateTopic extends BaseRequest {
   ListTextQuestion: TemplateTextQuestion[];
 }
 
+export interface SurveyTemplateGetListPaging extends SurveyTemplate {
+  Stakeholder: string;
+}
+
+// Request
 export interface SurveyTemplateGetListPagingRequest extends BaseRequest {
   StakeholderType?: number;
   TextSearch?: string;
@@ -48,6 +53,6 @@ export interface SurveyTemplateGetListPagingRequest extends BaseRequest {
   PageSize: number;
 }
 
-export interface SurveyTemplateGetListPaging extends SurveyTemplate {
-  Stakeholder: string;
+export interface SurveyTemplateGetComboboxRequest {
+  StakeholderType?: number;
 }

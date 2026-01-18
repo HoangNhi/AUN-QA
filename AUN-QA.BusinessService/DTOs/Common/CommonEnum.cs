@@ -11,6 +11,20 @@ namespace AUN_QA.BusinessService.DTOs.Common
         ANALYZE = 6 // EXPORT
     }
 
+    public enum SurveyCampaignStatus
+    {
+        Draft = 1,
+        Sent = 2,
+        Completed = 3
+    }
+
+    public enum SurveySessionStatus
+    {
+        Draft = 1,
+        Sent = 2,
+        Completed = 3
+    }
+
     public enum CouncilRole
     {
         HeadOfCouncil = 1,

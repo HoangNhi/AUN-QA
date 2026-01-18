@@ -1,4 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Requests;
@@ -22,7 +23,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
         /// <summary>
         /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
         /// </summary>
-        public int Status { get; set; }
+        public int? Status { get; set; } = ((int)SurveyCampaignStatus.Draft);
 
         public List<SurveySessionRequest> ListSession { get; set; } = new();
 

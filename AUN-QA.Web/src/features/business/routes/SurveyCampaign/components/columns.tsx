@@ -7,6 +7,7 @@ export const getStakeholderColumns = (
   onToggle: (id: string, checked: boolean) => void,
   onToggleAll: (checked: boolean) => void,
   selectAllState: boolean | "indeterminate",
+  alreadySelectedIds: string[] = [],
 ): ColumnDef<StakeholderGetListPaging>[] => [
   {
     id: "select",
@@ -17,13 +18,18 @@ export const getStakeholderColumns = (
         aria-label="Select all"
       />
     ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={selectedIds.includes(row.original.Id)}
-        onCheckedChange={(value) => onToggle(row.original.Id, !!value)}
-        aria-label="Select row"
-      />
-    ),
+    cell: ({ row }) => {
+      const isAlreadySelected = alreadySelectedIds.includes(row.original.Id);
+      return (
+        <Checkbox
+          checked={isAlreadySelected || selectedIds.includes(row.original.Id)}
+          onCheckedChange={(value) => onToggle(row.original.Id, !!value)}
+          disabled={isAlreadySelected}
+          aria-label="Select row"
+          title={isAlreadySelected ? "Đã được chọn" : undefined}
+        />
+      );
+    },
     enableSorting: false,
     enableHiding: false,
   },

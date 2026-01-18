@@ -7,6 +7,15 @@ import type { SurveySession } from "../../../types/survey-campaign.types";
 import { DataTable } from "@/components/ui/data-table";
 import type { GetListPagingRequest } from "@/types/base/base.types";
 import type { StakeholderGetListPaging } from "@/features/catalog/types/stakeholder.types";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface StakeholderSelectorProps {
   stakeholderType: string;
@@ -28,6 +37,7 @@ export const StakeholderSelector = ({
 }: StakeholderSelectorProps) => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
     PageIndex: 1,
     PageSize: 10,
@@ -72,7 +82,7 @@ export const StakeholderSelector = ({
       onSelectionChange([], { isResultAll: false, excludedIds: [] });
     } else {
       const newSessions = selectedSessions.filter(
-        (_, index) => !rowSelection[parseInt(index.toString())],
+        (s) => !rowSelection[s.StakeholderId],
       );
       onSelectionChange(newSessions, { isResultAll: false, excludedIds: [] });
       setRowSelection({});
@@ -152,7 +162,7 @@ export const StakeholderSelector = ({
           type="button"
           size="sm"
           variant="destructive"
-          onClick={handleDelete}
+          onClick={() => setShowDeleteConfirm(true)}
           disabled={!hasSelection}
         >
           Xóa
@@ -160,60 +170,17 @@ export const StakeholderSelector = ({
       </div>
 
       <div className="rounded-md border bg-white">
-        {selectionMeta?.isResultAll ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-3 bg-blue-50/50">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-blue-600"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="8.5" cy="7" r="4" />
-                <line x1="18" x2="23" y1="8" y2="13" />
-                <line x1="23" x2="18" y1="8" y2="13" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Đã chọn tất cả đối tượng
-              </h3>
-              <p className="text-sm text-gray-500 mt-1 max-w-md">
-                Hệ thống sẽ gửi khảo sát đến tất cả người dùng thuộc nhóm này
-                {selectionMeta.excludedIds.length > 0 &&
-                  ` (trừ ${selectionMeta.excludedIds.length} người bị loại trừ)`}
-                .
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() =>
-                onSelectionChange([], { isResultAll: false, excludedIds: [] })
-              }
-            >
-              Hủy chọn tất cả
-            </Button>
-          </div>
-        ) : (
-          <DataTable
-            columns={columns}
-            data={paginatedData}
-            totalRow={selectedSessions.length}
-            pageRequest={pageRequest}
-            setPageRequest={setPageRequest}
-            rowSelection={rowSelection}
-            setRowSelection={setRowSelection}
-            containerClassName="max-h-[300px] overflow-y-auto"
-            getRowId={(row) => row.StakeholderId}
-          />
-        )}
+        <DataTable
+          columns={columns}
+          data={paginatedData}
+          totalRow={selectedSessions.length}
+          pageRequest={pageRequest}
+          setPageRequest={setPageRequest}
+          rowSelection={rowSelection}
+          setRowSelection={setRowSelection}
+          containerClassName="max-h-[300px] overflow-y-auto"
+          getRowId={(row) => row.StakeholderId}
+        />
       </div>
 
       <PopupStakeholderSelection
@@ -221,12 +188,42 @@ export const StakeholderSelector = ({
         onOpenChange={setIsPopupOpen}
         stakeholderType={stakeholderType}
         onSelect={handleAdd}
-        excludeIds={
+        alreadySelectedIds={
           selectionMeta?.isResultAll
             ? selectionMeta.excludedIds
             : selectedSessions.map((s) => s.StakeholderId)
         }
       />
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa{" "}
+              {
+                Object.keys(rowSelection).filter((key) => rowSelection[key])
+                  .length
+              }{" "}
+              bản ghi đã chọn không? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                handleDelete();
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

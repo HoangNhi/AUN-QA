@@ -25,7 +25,7 @@ interface PopupStakeholderSelectionProps {
   onOpenChange: (open: boolean) => void;
   stakeholderType: string;
   onSelect: (selected: StakeholderGetListPaging[]) => void;
-  excludeIds?: string[];
+  alreadySelectedIds?: string[];
 }
 
 export const PopupStakeholderSelection = ({
@@ -33,7 +33,7 @@ export const PopupStakeholderSelection = ({
   onOpenChange,
   stakeholderType,
   onSelect,
-  excludeIds = [],
+  alreadySelectedIds = [],
 }: PopupStakeholderSelectionProps) => {
   const [selectedItems, setSelectedItems] = useState<
     Map<string, StakeholderGetListPaging>
@@ -68,16 +68,11 @@ export const PopupStakeholderSelection = ({
     placeholderData: keepPreviousData,
   });
 
-  const allData = useMemo(() => listResponse?.Data?.Data || [], [listResponse]);
+  const data = useMemo(() => listResponse?.Data?.Data || [], [listResponse]);
   const totalRow = useMemo(
     () => listResponse?.Data?.TotalRow || 0,
     [listResponse],
   );
-
-  const data = useMemo(() => {
-    if (excludeIds.length === 0) return allData;
-    return allData.filter((s) => !excludeIds.includes(s.Id));
-  }, [allData, excludeIds]);
 
   const selectedIds = useMemo(
     () => Array.from(selectedItems.keys()),
@@ -146,12 +141,23 @@ export const PopupStakeholderSelection = ({
         handleToggle,
         handleToggleAll,
         selectAllState,
+        alreadySelectedIds,
       ),
-    [selectedIds, selectAllState, handleToggle, handleToggleAll], // Re-create columns when selection changes so checkboxes update
+    [
+      selectedIds,
+      selectAllState,
+      handleToggle,
+      handleToggleAll,
+      alreadySelectedIds,
+    ],
   );
 
   const handleSave = () => {
-    onSelect(Array.from(selectedItems.values()));
+    // Only return newly selected items (exclude already-selected ones)
+    const newlySelected = Array.from(selectedItems.values()).filter(
+      (item) => !alreadySelectedIds.includes(item.Id),
+    );
+    onSelect(newlySelected);
     setSelectedItems(new Map());
     onOpenChange(false);
   };

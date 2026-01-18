@@ -101,6 +101,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             #region Người tham gia
             var stakeholderDtos = await _context.SurveySessions
                 .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
+                .OrderBy(x => x.StakeholderName)
                 .ToListAsync();
 
             result.ListSession = _mapper.Map<List<SurveySessionRequest>>(stakeholderDtos);
@@ -130,6 +131,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             var add = _mapper.Map<Entities.SurveyCampaign>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            add.Status = ((int)SurveyCampaignStatus.Draft);
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             await _context.SurveyCampaigns.AddAsync(add);
@@ -243,6 +245,247 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _context.SurveyCampaigns.Update(update);
             await _context.SaveChangesAsync();
 
+            #region Chủ đề khảo sát và nhóm câu hỏi
+            // 1. Fetch existing data
+            var existingTopics = await _context.TemplateTopics
+                .Where(x => x.CampaignId == update.Id && !x.IsDeleted)
+                .ToListAsync();
+            var existingTopicIds = existingTopics.Select(x => x.Id).ToList();
+
+            var existingCategories = await _context.TemplateCategories
+                .Where(x => existingTopicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .ToListAsync();
+            var existingCategoryIds = existingCategories.Select(x => x.Id).ToList();
+
+            var existingQuestions = await _context.TemplateQuestions
+                .Where(x => existingCategoryIds.Contains(x.CategoryId) && !x.IsDeleted)
+                .ToListAsync();
+
+            var existingTextQuestions = await _context.TemplateTextQuestions
+                .Where(x => existingTopicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .ToListAsync();
+
+            // 2. Process Request Data
+            if (!request.ListTopic.Any())
+            {
+                throw new Exception("Khảo sát phải có ít nhất một chủ đề khảo sát");
+            }
+
+            foreach (var topicReq in request.ListTopic)
+            {
+                Entities.TemplateTopic currentTopic;
+                var existingTopic = existingTopics.FirstOrDefault(x => x.Id == topicReq.Id);
+
+                if (existingTopic != null)
+                {
+                    // Update Topic
+                    _mapper.Map(topicReq, existingTopic);
+                    existingTopic.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    existingTopic.UpdatedAt = DateTime.Now;
+                    _context.TemplateTopics.Update(existingTopic);
+                    currentTopic = existingTopic;
+
+                    // Remove from list to track deletion later
+                    existingTopics.Remove(existingTopic);
+                }
+                else
+                {
+                    // Add Topic
+                    var newTopic = _mapper.Map<Entities.TemplateTopic>(topicReq);
+                    newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
+                    newTopic.TemplateId = update.Id;
+                    newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    newTopic.CreatedAt = DateTime.Now;
+                    await _context.TemplateTopics.AddAsync(newTopic);
+                    currentTopic = newTopic;
+                }
+
+                if (!topicReq.ListCategory.Any())
+                {
+                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                }
+
+                foreach (var catReq in topicReq.ListCategory)
+                {
+                    Entities.TemplateCategory currentCategory;
+                    var existingCategory = existingCategories.FirstOrDefault(x => x.Id == catReq.Id);
+
+                    if (existingCategory != null)
+                    {
+                        // Update Category
+                        _mapper.Map(catReq, existingCategory);
+                        existingCategory.TopicId = currentTopic.Id; // Ensure link
+                        existingCategory.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        existingCategory.UpdatedAt = DateTime.Now;
+                        _context.TemplateCategories.Update(existingCategory);
+                        currentCategory = existingCategory;
+
+                        existingCategories.Remove(existingCategory);
+                    }
+                    else
+                    {
+                        // Add Category
+                        var newCategory = _mapper.Map<Entities.TemplateCategory>(catReq);
+                        newCategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
+                        newCategory.TopicId = currentTopic.Id;
+                        newCategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        newCategory.CreatedAt = DateTime.Now;
+                        await _context.TemplateCategories.AddAsync(newCategory);
+                        currentCategory = newCategory;
+                    }
+
+                    if (!catReq.ListQuestion.Any())
+                    {
+                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                    }
+
+                    foreach (var qReq in catReq.ListQuestion)
+                    {
+                        var existingQuestion = existingQuestions.FirstOrDefault(x => x.Id == qReq.Id);
+
+                        if (existingQuestion != null)
+                        {
+                            // Update Question
+                            _mapper.Map(qReq, existingQuestion);
+                            existingQuestion.CategoryId = currentCategory.Id;
+                            existingQuestion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                            existingQuestion.UpdatedAt = DateTime.Now;
+                            _context.TemplateQuestions.Update(existingQuestion);
+
+                            existingQuestions.Remove(existingQuestion);
+                        }
+                        else
+                        {
+                            // Add Question
+                            var newQuestion = _mapper.Map<Entities.TemplateQuestion>(qReq);
+                            newQuestion.Id = qReq.Id == Guid.Empty ? Guid.NewGuid() : qReq.Id;
+                            newQuestion.CategoryId = currentCategory.Id;
+                            newQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                            newQuestion.CreatedAt = DateTime.Now;
+                            await _context.TemplateQuestions.AddAsync(newQuestion);
+                        }
+                    }
+                }
+
+                if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
+                {
+                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                }
+
+                foreach (var txtReq in topicReq.ListTextQuestion)
+                {
+                    var existingTextQ = existingTextQuestions.FirstOrDefault(x => x.Id == txtReq.Id);
+
+                    if (existingTextQ != null)
+                    {
+                        // Update Text Question
+                        _mapper.Map(txtReq, existingTextQ);
+                        existingTextQ.TopicId = currentTopic.Id;
+                        existingTextQ.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        existingTextQ.UpdatedAt = DateTime.Now;
+                        _context.TemplateTextQuestions.Update(existingTextQ);
+
+                        existingTextQuestions.Remove(existingTextQ);
+                    }
+                    else
+                    {
+                        // Add Text Question
+                        var newTextQ = _mapper.Map<Entities.TemplateTextQuestion>(txtReq);
+                        newTextQ.Id = txtReq.Id == Guid.Empty ? Guid.NewGuid() : txtReq.Id;
+                        newTextQ.TopicId = currentTopic.Id;
+                        newTextQ.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        newTextQ.CreatedAt = DateTime.Now;
+                        await _context.TemplateTextQuestions.AddAsync(newTextQ);
+                    }
+                }
+            }
+
+            foreach (var q in existingQuestions)
+            {
+                q.IsDeleted = true;
+                q.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                q.UpdatedAt = DateTime.Now;
+                _context.TemplateQuestions.Update(q);
+            }
+
+            foreach (var c in existingCategories)
+            {
+                c.IsDeleted = true;
+                c.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                c.UpdatedAt = DateTime.Now;
+                _context.TemplateCategories.Update(c);
+            }
+
+            foreach (var tq in existingTextQuestions)
+            {
+                tq.IsDeleted = true;
+                tq.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                tq.UpdatedAt = DateTime.Now;
+                _context.TemplateTextQuestions.Update(tq);
+            }
+
+            foreach (var t in existingTopics)
+            {
+                t.IsDeleted = true;
+                t.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                t.UpdatedAt = DateTime.Now;
+                _context.TemplateTopics.Update(t);
+            }
+            #endregion
+
+            #region Người tham gia
+            // 1. Fetch existing sessions for this campaign
+            var existingSessions = await _context.SurveySessions
+                .Where(x => x.CampaignId == update.Id && !x.IsDeleted)
+                .ToListAsync();
+
+            // 2. Validate that at least one participant exists
+            if (!request.ListSession.Any())
+            {
+                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
+            }
+
+            // 3. Process each session in the request
+            foreach (var sessionReq in request.ListSession)
+            {
+                var existingSession = existingSessions.FirstOrDefault(x => x.Id == sessionReq.Id);
+
+                if (existingSession != null)
+                {
+                    existingSession.StakeholderId = sessionReq.StakeholderId;
+                    existingSession.StakeholderName = sessionReq.StakeholderName;
+                    existingSession.StakeholderEmail = sessionReq.StakeholderEmail;
+                    existingSession.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    existingSession.UpdatedAt = DateTime.Now;
+                    _context.SurveySessions.Update(existingSession);
+
+                    existingSessions.Remove(existingSession);
+                }
+                else
+                {
+                    // Add new session
+                    var newSession = _mapper.Map<Entities.SurveySession>(sessionReq);
+                    newSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
+                    newSession.CampaignId = update.Id;
+                    newSession.Token = Guid.NewGuid().ToString();
+                    newSession.Status = ((int)SurveySessionStatus.Draft);
+                    newSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    newSession.CreatedAt = DateTime.Now;
+                    await _context.SurveySessions.AddAsync(newSession);
+                }
+            }
+
+            // 4. Soft-delete sessions that were removed from the request
+            foreach (var session in existingSessions)
+            {
+                session.IsDeleted = true;
+                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                session.UpdatedAt = DateTime.Now;
+                _context.SurveySessions.Update(session);
+            }
+            #endregion
+
+            await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(update);
         }
 

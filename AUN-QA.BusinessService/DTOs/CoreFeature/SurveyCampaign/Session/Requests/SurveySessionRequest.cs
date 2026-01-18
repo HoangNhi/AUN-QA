@@ -1,4 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
 using FluentValidation;
 
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests
@@ -20,7 +21,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Request
         /// <summary>
         /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
         /// </summary>
-        public int Status { get; set; } = 1;
+        public int? Status { get; set; } = ((int)SurveySessionStatus.Draft);
 
         public DateTime? SentDate { get; set; }
 

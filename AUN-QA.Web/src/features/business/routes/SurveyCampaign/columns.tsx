@@ -74,9 +74,9 @@ export const getColumns = (
     cell: ({ row }) => {
       const status = row.original.Status;
       const map: Record<number, string> = {
-        0: "Chưa bắt đầu",
-        1: "Đang diễn ra",
-        2: "Đã kết thúc",
+        1: "Chưa bắt đầu",
+        2: "Đang diễn ra",
+        3: "Đã kết thúc",
       };
       return (
         <span className="text-center">{map[status] || "Không xác định"}</span>

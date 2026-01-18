@@ -43,6 +43,7 @@ interface ComboboxProps {
   readonly?: boolean;
   modal?: boolean;
   showSearch?: boolean;
+  eagerLoading?: boolean; // If true, fetch data on mount instead of waiting for dropdown open
 }
 
 export function Combobox({
@@ -60,6 +61,7 @@ export function Combobox({
   readonly = false,
   modal = false,
   showSearch = true,
+  eagerLoading = true,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -99,12 +101,12 @@ export function Combobox({
     }
   }, [fetchOptions, transformData, hasLoaded, externalOptions]);
 
-  // Load data when dropdown opens
+  // Load data when dropdown opens or immediately if eagerLoading is true
   React.useEffect(() => {
-    if (open && !hasLoaded && !externalOptions) {
+    if ((eagerLoading || open) && !hasLoaded && !externalOptions) {
       loadData();
     }
-  }, [open, loadData, hasLoaded, externalOptions]);
+  }, [eagerLoading, open, loadData, hasLoaded, externalOptions]);
 
   const selectedOption = options.find((option) => option.Value === value);
 

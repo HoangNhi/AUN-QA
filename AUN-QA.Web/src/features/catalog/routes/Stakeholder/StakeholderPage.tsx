@@ -15,7 +15,7 @@ import {
 import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
-import { STAKEHOLDER_TYPES } from "@/features/catalog/constants/stakeholder.constants";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const StakeholderPage = () => {
   const {

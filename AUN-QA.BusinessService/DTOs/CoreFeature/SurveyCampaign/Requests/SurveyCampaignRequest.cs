@@ -16,7 +16,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
 
         public Guid TemplateId { get; set; }
 
-        public int StakeholderType { get; set; }
+        public int? StakeholderType { get; set; }
 
         public string Name { get; set; } = null!;
 

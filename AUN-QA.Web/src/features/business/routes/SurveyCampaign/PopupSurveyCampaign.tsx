@@ -24,6 +24,7 @@ import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
 import { StakeholderSelector } from "./components/StakeholderSelector";
 import { toast } from "sonner";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -44,7 +45,7 @@ const PopupSurveyCampaign = ({
   const [id, setId] = useState<string>(surveyCampaign?.Id || uuidv4());
   const [name, setName] = useState(surveyCampaign?.Name || "");
   const [stakeholderType, setStakeholderType] = useState(
-    surveyCampaign?.StakeholderType?.toString() || "1",
+    surveyCampaign?.StakeholderType?.toString() || "",
   );
   const [status, setStatus] = useState(
     surveyCampaign?.Status?.toString() || "1",
@@ -197,12 +198,7 @@ const PopupSurveyCampaign = ({
                       Loại đối tượng
                     </Label>
                     <Combobox
-                      options={[
-                        { Value: "1", Text: "Sinh viên" },
-                        { Value: "2", Text: "Cựu sinh viên" },
-                        { Value: "3", Text: "Nhà tuyển dụng" },
-                        { Value: "4", Text: "Giảng viên" },
-                      ]}
+                      options={STAKEHOLDER_TYPES}
                       value={stakeholderType}
                       onValueChange={(val) => {
                         setStakeholderType(val);

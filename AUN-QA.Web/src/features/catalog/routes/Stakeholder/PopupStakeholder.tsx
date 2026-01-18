@@ -15,7 +15,7 @@ import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2 } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
-import { STAKEHOLDER_TYPES } from "@/features/catalog/constants/stakeholder.constants";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const PopupStakeholder = ({
   stakeholder,

@@ -1,143 +1,165 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import type {
   SurveyCampaign,
   SurveyCampaignGetListPagingRequest,
 } from "../types/survey-campaign.types";
 import { surveyCampaignService } from "../api/survey-campaign.api";
+import type { RowSelectionState } from "@tanstack/react-table";
 
 export const useSurveyCampaign = () => {
-  const [data, setData] = useState<{
-    Data: SurveyCampaign[];
-    TotalRow: number;
-  }>({
-    Data: [],
-    TotalRow: 0,
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
+  const EMPTY_SURVEY_CAMPAIGN: SurveyCampaign = {
+    Id: "",
+    CycleId: "",
+    TemplateId: "",
+    StakeholderType: undefined,
+    Name: "",
+    Status: 0,
+    ListSession: [],
+    ListScore: [],
+    ListTextAnswer: [],
+    ListTopic: [],
+    IsActived: true,
+    IsEdit: false,
+    FolderUpload: "",
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [surveyCampaign, setSurveyCampaign] = useState<SurveyCampaign | null>(
     null,
   );
-
   const [pageRequest, setPageRequest] =
     useState<SurveyCampaignGetListPagingRequest>({
       PageIndex: 1,
       PageSize: 10,
       TextSearch: "",
+      CycleId: undefined,
+      StakeholderType: undefined,
     });
 
-  const [rowSelection, setRowSelection] = useState({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  const getList = useCallback(async () => {
-    setIsFetching(true);
-    try {
-      const res = await surveyCampaignService.getList(pageRequest);
-      if (res.Success && res.Data) {
-        setData(res.Data);
-      } else {
-        toast(res.Message || "Không thể tải danh sách");
-      }
-    } catch (error) {
-      console.error(error);
-      toast("Không thể tải danh sách chiến dịch khảo sát");
-    } finally {
-      setIsFetching(false);
-    }
-  }, [pageRequest]);
+  // 1. Fetch List
+  const {
+    data: listResponse,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["survey-campaigns", pageRequest],
+    queryFn: () => surveyCampaignService.getList(pageRequest),
+    placeholderData: keepPreviousData,
+  });
 
-  useEffect(() => {
-    getList();
-  }, [getList]);
-
-  const showPopupDetail = (id?: string) => {
-    if (id) {
-      setIsLoading(true);
-      surveyCampaignService
-        .getById(id)
-        .then((res) => {
-          if (res.Success && res.Data) {
-            setSurveyCampaign({ ...res.Data, IsEdit: true } as any);
-            setIsOpen(true);
-          } else {
-            toast(res.Message || "Không thể lấy thông tin chi tiết");
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          toast("Không thể lấy thông tin chi tiết");
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setSurveyCampaign(null);
-      setIsOpen(true);
-    }
+  const data = listResponse?.Data || {
+    Data: [],
+    TotalRow: 0,
+    PageIndex: 1,
+    PageSize: 10,
   };
 
-  const onOpenChange = (open: boolean) => {
+  // 2. Mutations
+  const queryClient = useQueryClient();
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: SurveyCampaign) => {
+      const response = await (data.IsEdit
+        ? surveyCampaignService.update(data)
+        : surveyCampaignService.insert(data));
+
+      if (!response.Success) {
+        throw new Error(response.Message);
+      }
+      return response;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(
+        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công",
+      );
+      queryClient.invalidateQueries({ queryKey: ["survey-campaigns"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu",
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const response = await surveyCampaignService.deleteList(ids);
+      if (!response.Success) {
+        throw new Error(response.Message);
+      }
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Xóa chiến dịch thành công");
+      queryClient.invalidateQueries({ queryKey: ["survey-campaigns"] });
+      setRowSelection({});
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi xóa chiến dịch",
+      );
+    },
+  });
+
+  // 3. Handlers
+  const getList = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
+    if (isEdit && id) {
+      try {
+        const response = await surveyCampaignService.getById(id);
+        if (response.Success && response.Data) {
+          // Use the data directly, assuming IsEdit is handled or part of the object
+          // Since getById returns SurveyCampaign, and we need to set IsEdit for the form context
+          setSurveyCampaign({ ...response.Data, IsEdit: true });
+          setIsOpen(true);
+        }
+      } catch {
+        toast.error("Không thể lấy thông tin chi tiết");
+      }
+    } else {
+      setSurveyCampaign(EMPTY_SURVEY_CAMPAIGN);
+      setIsOpen(true);
+    }
+  }, []);
+
+  const onOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
     if (!open) {
       setSurveyCampaign(null);
     }
-  };
+  }, []);
 
   const saveChange = async (
-    data: SurveyCampaign & { IsEdit: boolean },
+    saveData: SurveyCampaign & { IsEdit: boolean },
     isAddMore: boolean,
   ) => {
-    setIsLoading(true);
     try {
-      const { IsEdit, ...payload } = data;
-      let res;
-      if (IsEdit) {
-        res = await surveyCampaignService.update(payload);
+      await saveMutation.mutateAsync(saveData);
+      if (isAddMore) {
+        setSurveyCampaign(EMPTY_SURVEY_CAMPAIGN);
       } else {
-        res = await surveyCampaignService.insert(payload);
+        setIsOpen(false);
+        setSurveyCampaign(null);
       }
-
-      if (res.Success) {
-        toast(IsEdit ? "Cập nhật thành công" : "Thêm mới thành công");
-        if (isAddMore) {
-          setSurveyCampaign(null);
-          // Reset for new entry, keeping popup open
-        } else {
-          setIsOpen(false);
-        }
-        getList();
-      } else {
-        toast(res.Message || "Có lỗi xảy ra");
-      }
-    } catch (error: any) {
-      console.error(error);
-      const description =
-        error.response?.data?.Message ||
-        (data.IsEdit ? "Không thể cập nhật" : "Không thể thêm mới");
-
-      toast(description);
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // Error handled in mutation
     }
   };
 
   const deleteList = async (ids: string[]) => {
-    if (ids.length === 0) return;
-    setIsLoading(true);
-    try {
-      const res = await surveyCampaignService.deleteList(ids);
-      if (res.Success) {
-        toast("Xóa chiến dịch thành công");
-        setRowSelection({});
-        getList();
-      } else {
-        toast(res.Message || "Không thể xóa chiến dịch");
-      }
-    } catch (error) {
-      console.error(error);
-      toast("Không thể xóa chiến dịch");
-    } finally {
-      setIsLoading(false);
-    }
+    await deleteMutation.mutateAsync(ids);
   };
 
   return {
@@ -153,7 +175,7 @@ export const useSurveyCampaign = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading,
+    isLoading: saveMutation.isPending || deleteMutation.isPending,
     isFetching,
   };
 };

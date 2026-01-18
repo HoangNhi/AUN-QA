@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { SearchIcon } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
-import { STAKEHOLDER_TYPES } from "@/features/catalog/constants/stakeholder.constants";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const SurveyTemplatePage = () => {
   const {

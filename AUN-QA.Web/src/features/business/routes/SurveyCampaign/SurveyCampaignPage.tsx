@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
@@ -13,17 +13,10 @@ import {
 } from "@/components/ui/input-group";
 import { SearchIcon } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const SurveyCampaignPage = () => {
   const {
@@ -52,13 +45,12 @@ const SurveyCampaignPage = () => {
       getColumns(
         showPopupDetail,
         deleteList,
-        permission?.IsUpdated ?? true,
-        permission?.IsDeleted ?? true,
+        permission?.IsUpdated,
+        permission?.IsDeleted,
       ),
     [permission, showPopupDetail, deleteList],
   );
 
-  // Filter state
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || "",
   );
@@ -66,30 +58,32 @@ const SurveyCampaignPage = () => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Track if it's the first render to avoid unnecessary API calls
-  const isFirstRender = useRef(true);
-
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (debouncedSearchTerm !== pageRequest.TextSearch) {
-      setPageRequest({
-        ...pageRequest,
+    setPageRequest((prev) => {
+      if (prev.TextSearch === debouncedSearchTerm) return prev;
+      return {
+        ...prev,
         TextSearch: debouncedSearchTerm,
         PageIndex: 1,
-      });
-    }
-  }, [debouncedSearchTerm]);
+      };
+    });
+  }, [debouncedSearchTerm, setPageRequest]);
 
-  // Count selected rows for delete confirmation
-  const selectedRowCount = Object.keys(rowSelection).length;
+  const canAdd = permission?.IsAdded;
+  const canDelete = permission?.IsDeleted;
+
+  const handleDelete = () => {
+    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
+      (item) => item.Id,
+    );
+    deleteList(ids);
+    setShowDeleteConfirm(false);
+    setRowSelection({});
+  };
 
   return (
     <div className="container mx-auto space-y-4">
-      {/* Filter Panel */}
-      <div className="rounded-lg border bg-muted/40 p-4">
+      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-sm font-medium">Lọc danh sách</h3>
           <Button
@@ -133,12 +127,7 @@ const SurveyCampaignPage = () => {
           />
 
           <Combobox
-            options={[
-              { Value: "1", Text: "Sinh viên" },
-              { Value: "2", Text: "Cựu sinh viên" },
-              { Value: "3", Text: "Nhà tuyển dụng" },
-              { Value: "4", Text: "Giảng viên" },
-            ]}
+            options={STAKEHOLDER_TYPES}
             value={pageRequest.StakeholderType?.toString()}
             onValueChange={(val) => {
               setPageRequest({
@@ -157,7 +146,7 @@ const SurveyCampaignPage = () => {
               placeholder="Tìm kiếm..."
               value={searchTerm || ""}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="!pl-10"
+              className="pl-10!"
             />
             <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
               <SearchIcon className="h-4 w-4 text-muted-foreground" />
@@ -166,26 +155,26 @@ const SurveyCampaignPage = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2">
-        {(permission?.IsAdded ?? true) && (
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-        )}
-        {(permission?.IsDeleted ?? true) && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={selectedRowCount === 0}
-          >
-            Xóa
-          </Button>
-        )}
+      <div className="grid grid-cols-3 items-center justify-between">
+        <div className="col-span-2 flex items-center gap-2">
+          {canAdd && (
+            <Button size="sm" onClick={() => showPopupDetail("", false)}>
+              Thêm
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={Object.keys(rowSelection).length === 0}
+            >
+              Xóa
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* DataTable */}
       <DataTable
         columns={columns}
         data={data.Data}
@@ -194,39 +183,10 @@ const SurveyCampaignPage = () => {
         setRowSelection={setRowSelection}
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
-        onRefresh={() => getList(pageRequest)}
+        onRefresh={() => getList()}
         isLoading={isFetching}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa {selectedRowCount} mục đã chọn không?
-              Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                deleteList(Object.keys(rowSelection));
-                setShowDeleteConfirm(false);
-                setRowSelection({});
-              }}
-            >
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Popup for Add/Edit */}
       {isOpen && (
         <PopupSurveyCampaign
           key={surveyCampaign?.Id || "new"}
@@ -237,6 +197,13 @@ const SurveyCampaignPage = () => {
           isLoading={isLoading}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        itemCount={Object.keys(rowSelection).length}
+      />
     </div>
   );
 };

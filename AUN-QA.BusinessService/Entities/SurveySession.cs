@@ -9,7 +9,7 @@ public partial class SurveySession
 
     public Guid CampaignId { get; set; }
 
-    public int StakeholderId { get; set; }
+    public Guid StakeholderId { get; set; }
 
     public string StakeholderName { get; set; } = null!;
 

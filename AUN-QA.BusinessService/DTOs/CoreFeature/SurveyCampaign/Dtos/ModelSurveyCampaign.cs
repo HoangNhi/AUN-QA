@@ -14,6 +14,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos
 
         public string Name { get; set; } = null!;
 
+        /// <summary>
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
+        /// </summary>
         public int Status { get; set; }
     }
 }

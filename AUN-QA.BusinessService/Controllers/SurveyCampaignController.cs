@@ -38,7 +38,7 @@ namespace AUN_QA.BusinessService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetById(request);
-            return Ok(new BaseResponse<ModelSurveyCampaign> { Data = result, Success = true });
+            return Ok(new BaseResponse<SurveyCampaignRequest> { Data = result, Success = true });
         }
 
         [HttpPost("insert")]

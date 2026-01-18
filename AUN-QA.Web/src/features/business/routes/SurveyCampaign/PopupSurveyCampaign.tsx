@@ -13,13 +13,17 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type { SurveyCampaign } from "../../types/survey-campaign.types";
+import type {
+  SurveyCampaign,
+  SurveySession,
+} from "../../types/survey-campaign.types";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
 import { StakeholderSelector } from "./components/StakeholderSelector";
+import { toast } from "sonner";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -43,18 +47,25 @@ const PopupSurveyCampaign = ({
     surveyCampaign?.StakeholderType?.toString() || "1",
   );
   const [status, setStatus] = useState(
-    surveyCampaign?.Status?.toString() || "0",
+    surveyCampaign?.Status?.toString() || "1",
   );
   const [cycleId, setCycleId] = useState(surveyCampaign?.CycleId || "");
   const [templateId, setTemplateId] = useState(
     surveyCampaign?.TemplateId || "",
   );
-  const [isActived, setIsActived] = useState(surveyCampaign?.IsActived ?? true);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(false);
 
-  const [listSession, setListSession] = useState<any[]>(
+  const [listSession, setListSession] = useState<SurveySession[]>(
     surveyCampaign?.ListSession || [],
   );
+
+  const [selectionMeta, setSelectionMeta] = useState<{
+    isResultAll: boolean;
+    excludedIds: string[];
+  }>({
+    isResultAll: false,
+    excludedIds: [],
+  });
 
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
@@ -67,17 +78,19 @@ const PopupSurveyCampaign = ({
       Status: parseInt(status),
       CycleId: cycleId,
       TemplateId: templateId,
-      IsActived: isActived,
       ListTopic: listTopic,
-      ListSession: listSession,
-      ListScore: [],
-      ListTextAnswer: [],
+      ListSession: selectionMeta.isResultAll
+        ? []
+        : listSession.map((s) => ({
+            Id: s.Id || uuidv4(),
+            CampaignId: id,
+            StakeholderId: s.StakeholderId,
+            StakeholderName: s.StakeholderName,
+            StakeholderEmail: s.StakeholderEmail,
+            Status: s.Status || 0,
+          })),
       IsEdit: (surveyCampaign as any)?.IsEdit || false,
-      CreatedAt: surveyCampaign?.CreatedAt || new Date().toISOString(),
-      CreatedBy: surveyCampaign?.CreatedBy || "",
-      IsDeleted: false,
     };
-
     saveChange(payload as any, isAddMore);
   };
 
@@ -89,9 +102,11 @@ const PopupSurveyCampaign = ({
       setStatus(surveyCampaign.Status?.toString() || "0");
       setCycleId(surveyCampaign.CycleId || "");
       setTemplateId(surveyCampaign.TemplateId || "");
-      setIsActived(surveyCampaign.IsActived ?? true);
+      setListTopic(surveyCampaign?.ListTopic || []);
       setListTopic(surveyCampaign?.ListTopic || []);
       setListSession(surveyCampaign?.ListSession || []);
+      // Reset meta on load (assuming API doesn't return this meta yet, or defaults to manual)
+      setSelectionMeta({ isResultAll: false, excludedIds: [] });
     } else {
       // Reset form
       setId(uuidv4());
@@ -100,9 +115,10 @@ const PopupSurveyCampaign = ({
       setStatus("0");
       setCycleId("");
       setTemplateId("");
-      setIsActived(true);
+      setListTopic([]);
       setListTopic([]);
       setListSession([]);
+      setSelectionMeta({ isResultAll: false, excludedIds: [] });
     }
   }, [surveyCampaign, isOpen, setListTopic]);
 
@@ -164,8 +180,8 @@ const PopupSurveyCampaign = ({
                       fetchOptions={async () => {
                         const res = await cycleService.getComboboxByUser();
                         return res.Data.map((t) => ({
-                          value: t.Value ?? "",
-                          label: t.Text ?? "",
+                          Value: t.Value ?? "",
+                          Text: t.Text ?? "",
                         }));
                       }}
                       value={cycleId}
@@ -192,6 +208,10 @@ const PopupSurveyCampaign = ({
                         setStakeholderType(val);
                         setTemplateId(""); // Reset template when stakeholder changes
                         setListSession([]); // Reset sessions when type changes
+                        setSelectionMeta({
+                          isResultAll: false,
+                          excludedIds: [],
+                        }); // Reset selection
                       }}
                       placeholder="Chọn đối tượng"
                       searchPlaceholder="Tìm kiếm đối tượng..."
@@ -229,6 +249,7 @@ const PopupSurveyCampaign = ({
                               setListTopic(res.Data.ListTopic);
                             } else {
                               setListTopic([]);
+                              toast.error(res.Message);
                             }
                           } finally {
                             setIsLoadingTemplate(false);
@@ -255,7 +276,7 @@ const PopupSurveyCampaign = ({
                       onValueChange={setStatus}
                       placeholder="Chọn trạng thái"
                       searchPlaceholder="Tìm kiếm trạng thái..."
-                      emptyText="Không tìm thấy trạng thái."
+                      readonly={!surveyCampaign?.IsEdit}
                     />
                   </div>
                 </div>
@@ -287,17 +308,23 @@ const PopupSurveyCampaign = ({
                 >
                   {/* Removed max-w and overflow to allow parent to scroll */}
                   <div className="min-h-[200px]">
-                    {isLoadingTemplate ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                        <p>Đang tải dữ liệu mẫu khảo sát...</p>
-                      </div>
+                    {templateId ? (
+                      isLoadingTemplate ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
+                          <p>Đang tải dữ liệu mẫu khảo sát...</p>
+                        </div>
+                      ) : (
+                        <TopicListEditor
+                          listTopic={listTopic}
+                          collapsedTopics={collapsedTopics}
+                          handlers={handlers}
+                        />
+                      )
                     ) : (
-                      <TopicListEditor
-                        listTopic={listTopic}
-                        collapsedTopics={collapsedTopics}
-                        handlers={handlers}
-                      />
+                      <div className="flex items-center justify-center h-48 border rounded-lg bg-gray-50 text-gray-500">
+                        Vui lòng chọn Mẫu khảo sát trước.
+                      </div>
                     )}
                   </div>
                 </TabsContent>
@@ -309,7 +336,14 @@ const PopupSurveyCampaign = ({
                     <StakeholderSelector
                       stakeholderType={stakeholderType}
                       selectedSessions={listSession}
-                      onSelectionChange={setListSession}
+                      onSelectionChange={(sessions, meta) => {
+                        setListSession(sessions);
+                        if (meta) {
+                          setSelectionMeta(meta);
+                        }
+                      }}
+                      isEdit={!!surveyCampaign?.IsEdit}
+                      selectionMeta={selectionMeta}
                     />
                   </div>
                 </TabsContent>

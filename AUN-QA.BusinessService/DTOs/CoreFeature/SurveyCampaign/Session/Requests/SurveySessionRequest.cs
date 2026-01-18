@@ -9,16 +9,16 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Request
 
         public Guid CampaignId { get; set; }
 
-        public int StakeholderId { get; set; }
+        public Guid StakeholderId { get; set; }
 
-        public string? StakeholderName { get; set; }
+        public string StakeholderName { get; set; } = null!;
 
-        public string? StakeholderEmail { get; set; }
+        public string StakeholderEmail { get; set; } = null!;
 
         public string? Token { get; set; }
 
         /// <summary>
-        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã nộp
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
         /// </summary>
         public int Status { get; set; } = 1;
 

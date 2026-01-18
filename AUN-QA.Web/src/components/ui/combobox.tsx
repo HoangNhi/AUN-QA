@@ -40,6 +40,7 @@ interface ComboboxProps {
   loadingText?: string;
   className?: string;
   disabled?: boolean;
+  readonly?: boolean;
   modal?: boolean;
   showSearch?: boolean;
 }
@@ -56,10 +57,17 @@ export function Combobox({
   loadingText = "Đang tải...",
   className,
   disabled = false,
+  readonly = false,
   modal = false,
   showSearch = true,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
+
+  // Handle open state - prevent opening if readonly
+  const handleOpenChange = (newOpen: boolean) => {
+    if (readonly) return;
+    setOpen(newOpen);
+  };
   const [internalOptions, setInternalOptions] = React.useState<ModelCombobox[]>(
     [],
   );
@@ -101,7 +109,7 @@ export function Combobox({
   const selectedOption = options.find((option) => option.Value === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={modal}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

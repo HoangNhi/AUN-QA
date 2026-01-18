@@ -31,7 +31,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)

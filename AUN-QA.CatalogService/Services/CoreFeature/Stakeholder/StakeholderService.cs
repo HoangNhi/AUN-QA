@@ -2,9 +2,11 @@ using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
 {
@@ -25,6 +27,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             _contextAccessor = contextAccessor;
         }
 
+        #region Chức năng chính
         public async Task<GetListPagingResponse<ModelStakeholderGetListPaging>> GetList(StakeholderGetListPagingRequest request)
         {
             var query = _context.Stakeholders.AsQueryable().Where(x => !x.IsDeleted);
@@ -163,5 +166,34 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             }).OrderBy(x => x.Text).ToList();
         }
 
+        public async IAsyncEnumerable<StakeholderMinimalInfo> GetStakeholdersStreamAsync(
+            int? stakeholderType,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var query = _context.Stakeholders.AsNoTracking();
+
+            if (stakeholderType.HasValue)
+            {
+                query = query.Where(s => s.Type == stakeholderType.Value);
+            }
+
+            var dataStream = query
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .Select(s => new StakeholderMinimalInfo
+                {
+                    Id = s.Id.ToString(),
+                    FullName = s.FullName,
+                    Email = s.Email,
+                    Type = s.Type,
+                    Description = s.Description
+                })
+                .AsAsyncEnumerable();
+
+            await foreach (var item in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return item;
+            }
+        }
+        #endregion
     }
 }

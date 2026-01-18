@@ -2,6 +2,7 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
 using FluentValidation;
 
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
@@ -18,9 +19,14 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
 
         public string Name { get; set; } = null!;
 
+        /// <summary>
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
+        /// </summary>
         public int Status { get; set; }
 
         public List<SurveySessionRequest> ListSession { get; set; } = new();
+
+        public List<TemplateTopicRequest> ListTopic { get; set; } = new();
 
         public List<SurveyScoreRequest> ListScore { get; set; } = new();
 
@@ -46,11 +52,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
             RuleForEach(x => x.ListSession)
                 .SetValidator(new SurveySessionRequestValidator());
 
-            RuleForEach(x => x.ListScore)
-                .SetValidator(new SurveyScoreRequestValidator());
-
-            RuleForEach(x => x.ListTextAnswer)
-                .SetValidator(new SurveyTextAnswerRequestValidator());
+            RuleForEach(x => x.ListTopic)
+                .SetValidator(new TemplateTopicRequestValidator());
         }
     }
 }

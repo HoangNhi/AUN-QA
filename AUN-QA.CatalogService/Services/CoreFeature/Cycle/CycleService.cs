@@ -5,6 +5,7 @@ using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.EvaluationSchedule.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             _contextAccessor = contextAccessor;
         }
 
+        #region Chức năng chính
         public async Task<ModelCycle> GetById(GetByIdRequest request)
         {
             var data = await _context.Cycles.FindAsync(request.Id);
@@ -327,6 +329,28 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
         }
+        #endregion
 
+        public async Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request)
+        {
+            return await _context.Councils.AnyAsync(c =>
+                c.CycleId == Guid.Parse(request.CycleId)
+                && c.UserId == Guid.Parse(request.UserId)
+                && c.RoleId == request.Role
+                && !c.IsDeleted
+                && c.IsActived);
+        }
+
+        public async Task<int?> GetUserRoleAsync(GetUserRoleRequest request)
+        {
+            var council = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == Guid.Parse(request.CycleId)
+                && c.UserId == Guid.Parse(request.UserId)
+                && !c.IsDeleted
+                && c.IsActived);
+            if (council == null)
+                return null;
+            return council.RoleId;
+        }
     }
 }

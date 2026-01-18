@@ -10,4 +10,11 @@ namespace AUN_QA.BusinessService.DTOs.Common
         APPROVE = 5, // APPROVE, NO APPROVE
         ANALYZE = 6 // EXPORT
     }
+
+    public enum CouncilRole
+    {
+        HeadOfCouncil = 1,
+        Evaluator = 2,
+        EvidenceProvider = 3
+    }
 }

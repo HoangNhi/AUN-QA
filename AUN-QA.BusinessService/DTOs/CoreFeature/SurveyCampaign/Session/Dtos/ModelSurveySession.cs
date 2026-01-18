@@ -8,7 +8,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos
 
         public Guid CampaignId { get; set; }
 
-        public int StakeholderId { get; set; }
+        public Guid StakeholderId { get; set; }
 
         public string StakeholderName { get; set; } = null!;
 
@@ -16,6 +16,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos
 
         public string Token { get; set; } = null!;
 
+        /// <summary>
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
+        /// </summary>
         public int Status { get; set; }
 
         public DateTime? SentDate { get; set; }

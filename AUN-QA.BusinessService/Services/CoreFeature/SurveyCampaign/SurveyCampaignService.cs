@@ -1,6 +1,12 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
@@ -35,7 +41,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _taskQueue = taskQueue;
         }
 
-        public async Task<ModelSurveyCampaign> GetById(GetByIdRequest request)
+        #region Chức năng chính
+        public async Task<SurveyCampaignRequest> GetById(GetByIdRequest request)
         {
             var data = await _context.SurveyCampaigns.FindAsync(request.Id);
             if (data == null)
@@ -43,13 +50,74 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            var result = _mapper.Map<ModelSurveyCampaign>(data);
+            var result = _mapper.Map<SurveyCampaignRequest>(data);
+
+            #region Chủ đề khảo sát và nhóm câu hỏi
+            // 1. Get raw data
+            var topics = await _context.TemplateTopics
+                .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var topicIds = topics.Select(x => x.Id).ToList();
+
+            var categories = await _context.TemplateCategories
+                .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var categoryIds = categories.Select(x => x.Id).ToList();
+
+            var questions = await _context.TemplateQuestions
+                .Where(x => categoryIds.Contains(x.CategoryId) && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var textQuestions = await _context.TemplateTextQuestions
+                .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .ToListAsync();
+
+            // 2. Map to DTOs
+            var topicDtos = _mapper.Map<List<TemplateTopicRequest>>(topics);
+            var categoryDtos = _mapper.Map<List<TemplateCategoryRequest>>(categories);
+            var questionDtos = _mapper.Map<List<TemplateQuestionRequest>>(questions);
+            var textQuestionDtos = _mapper.Map<List<TemplateTextQuestionRequest>>(textQuestions);
+
+            // 3. Assemble hierarchy
+            foreach (var topic in topicDtos)
+            {
+                topic.ListCategory = categoryDtos.Where(x => x.TopicId == topic.Id).ToList();
+                topic.ListTextQuestion = textQuestionDtos.Where(x => x.TopicId == topic.Id).ToList();
+
+                foreach (var category in topic.ListCategory)
+                {
+                    category.ListQuestion = questionDtos.Where(x => x.CategoryId == category.Id).ToList();
+                }
+            }
+
+            result.ListTopic = topicDtos;
+            #endregion
+
+            #region Người tham gia
+            var stakeholderDtos = await _context.SurveySessions
+                .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
+                .ToListAsync();
+
+            result.ListSession = _mapper.Map<List<SurveySessionRequest>>(stakeholderDtos);
+            #endregion
 
             return result;
         }
 
         public async Task<ModelSurveyCampaign> Insert(SurveyCampaignRequest request)
         {
+            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+            var isHeadOfCouncil = await _catalogService.IsUserInRoleAsync(request.CycleId.ToString(), userId, ((int)CouncilRole.HeadOfCouncil));
+            if (!isHeadOfCouncil)
+            {
+                throw new Exception("Chỉ trưởng hội đồng mới có quyền tạo khảo sát");
+            }
+
             var data = _context.SurveyCampaigns.Where(x =>
                 x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
                 && !x.IsDeleted
@@ -65,6 +133,86 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             await _context.SurveyCampaigns.AddAsync(add);
+
+            #region Chủ đề khảo sát và nhóm câu hỏi
+            if (!request.ListTopic.Any())
+            {
+                throw new Exception("Khảo sát phải có ít nhất một chủ đề khảo sát");
+            }
+
+            foreach (var topicReq in request.ListTopic)
+            {
+                var addTopic = _mapper.Map<Entities.TemplateTopic>(topicReq);
+                addTopic.Id = Guid.NewGuid();
+                addTopic.CampaignId = add.Id;
+                addTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                addTopic.CreatedAt = DateTime.Now;
+                await _context.TemplateTopics.AddAsync(addTopic);
+
+                if (!topicReq.ListCategory.Any())
+                {
+                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                }
+
+                foreach (var catReq in topicReq.ListCategory)
+                {
+                    var addcategory = _mapper.Map<Entities.TemplateCategory>(catReq);
+                    addcategory.Id = Guid.NewGuid();
+                    addcategory.TopicId = addTopic.Id;
+                    addcategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addcategory.CreatedAt = DateTime.Now;
+                    await _context.TemplateCategories.AddAsync(addcategory);
+
+                    if (!catReq.ListQuestion.Any())
+                    {
+                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                    }
+
+                    foreach (var question in catReq.ListQuestion)
+                    {
+                        var addQuestion = _mapper.Map<Entities.TemplateQuestion>(question);
+                        addQuestion.Id = Guid.NewGuid();
+                        addQuestion.CategoryId = addcategory.Id;
+                        addQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        addQuestion.CreatedAt = DateTime.Now;
+                        await _context.TemplateQuestions.AddAsync(addQuestion);
+                    }
+                }
+
+                if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
+                {
+                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                }
+
+                foreach (var textQuestion in topicReq.ListTextQuestion)
+                {
+                    var addTextQuestion = _mapper.Map<Entities.TemplateTextQuestion>(textQuestion);
+                    addTextQuestion.Id = Guid.NewGuid();
+                    addTextQuestion.TopicId = addTopic.Id;
+                    addTextQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addTextQuestion.CreatedAt = DateTime.Now;
+                    await _context.TemplateTextQuestions.AddAsync(addTextQuestion);
+                }
+            }
+            #endregion
+
+            #region Người tham gia
+            if (!request.ListSession.Any())
+            {
+                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
+            }
+
+            foreach (var sessionReq in request.ListSession)
+            {
+                var addSession = _mapper.Map<Entities.SurveySession>(sessionReq);
+                addSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
+                addSession.CampaignId = add.Id;
+                addSession.Token = Guid.NewGuid().ToString();
+                addSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                addSession.CreatedAt = DateTime.Now;
+                await _context.SurveySessions.AddAsync(addSession);
+            }
+            #endregion
 
             await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(add);
@@ -162,6 +310,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }).OrderBy(x => x.Text).ToList();
         }
 
+        #endregion
         public async Task<string> SendSurvey(int? type)
         {
             int count = 0;
@@ -185,5 +334,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             return $"Đã đẩy {count} email vào hàng đợi gửi đi.";
         }
+
+
     }
 }

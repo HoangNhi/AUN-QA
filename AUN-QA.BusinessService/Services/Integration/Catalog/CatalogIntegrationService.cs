@@ -16,6 +16,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             _grpcClient = grpcClient;
         }
 
+        #region Stakeholder Service
         public async IAsyncEnumerable<StakeholderDto> GetStakeholdersStreamAsync(int? type, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var request = new GetStakeholdersStreamRequest { StakeholderType = type };
@@ -37,5 +38,33 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                 };
             }
         }
+        #endregion
+
+        #region Cycle Service
+        public async Task<int> GetUserRoleAsync(string cycleId, string userId, CancellationToken cancellationToken = default)
+        {
+            var request = new GetUserRoleRequest
+            {
+                CycleId = cycleId,
+                UserId = userId
+            };
+
+            var response = await _grpcClient.GetUserRoleAsync(request, cancellationToken: cancellationToken);
+            return response.Value;
+        }
+
+        public async Task<bool> IsUserInRoleAsync(string cycleId, string userId, int role, CancellationToken cancellationToken = default)
+        {
+            var request = new IsUserInRoleRequest
+            {
+                CycleId = cycleId,
+                UserId = userId,
+                Role = role
+            };
+
+            var response = await _grpcClient.IsUserInRoleAsync(request, cancellationToken: cancellationToken);
+            return response.Value;
+        }
+        #endregion
     }
 }

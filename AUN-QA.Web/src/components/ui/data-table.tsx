@@ -36,15 +36,16 @@ import { cn } from "@/lib/utils";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  totalRow: number;
+  totalRow?: number;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
-  pageRequest: GetListPagingRequest;
+  pageRequest?: GetListPagingRequest;
   setPageRequest?: (pageRequest: GetListPagingRequest) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
   className?: string;
   containerClassName?: string;
+  getRowId?: (row: TData, index: number) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,12 +60,14 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   className,
   containerClassName,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onRowSelectionChange: setRowSelection,
+    getRowId,
     state: {
       rowSelection,
     },
@@ -121,21 +124,22 @@ export function DataTable<TData, TValue>({
                     ))}
                   </TableRow>
                 ))}
-                {table.getRowModel().rows.length < pageRequest.PageSize && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="p-0"
-                      style={{
-                        height: `${
-                          (pageRequest.PageSize -
-                            table.getRowModel().rows.length) *
-                          3.5 // Estimating 3.5rem (56px) per row
-                        }rem`,
-                      }}
-                    ></TableCell>
-                  </TableRow>
-                )}
+                {pageRequest &&
+                  table.getRowModel().rows.length < pageRequest.PageSize && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="p-0"
+                        style={{
+                          height: `${
+                            (pageRequest.PageSize -
+                              table.getRowModel().rows.length) *
+                            3.5 // Estimating 3.5rem (56px) per row
+                          }rem`,
+                        }}
+                      ></TableCell>
+                    </TableRow>
+                  )}
               </>
             ) : (
               <TableRow>
@@ -151,12 +155,14 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <DataTablePagination
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        totalRow={totalRow}
-        onRefresh={onRefresh}
-      />
+      {pageRequest && totalRow !== undefined && (
+        <DataTablePagination
+          pageRequest={pageRequest}
+          setPageRequest={setPageRequest}
+          totalRow={totalRow}
+          onRefresh={onRefresh}
+        />
+      )}
     </div>
   );
 }

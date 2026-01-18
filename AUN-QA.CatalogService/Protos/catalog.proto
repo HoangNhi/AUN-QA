@@ -8,6 +8,8 @@ package catalog;
 
 service CatalogProto {
   rpc GetStakeholdersStream (GetStakeholdersStreamRequest) returns (stream StakeholderMinimalInfo);
+  rpc IsUserInRole (IsUserInRoleRequest) returns (google.protobuf.BoolValue);
+  rpc GetUserRole (GetUserRoleRequest) returns (google.protobuf.Int32Value);
 }
 
 message GetStakeholdersStreamRequest {
@@ -20,4 +22,15 @@ message StakeholderMinimalInfo {
   string email = 3;
   int32 type = 4;
   string description = 5;
+}
+
+message IsUserInRoleRequest {
+  string cycle_id = 1;
+  string user_id = 2;
+  int32 role = 3;
+}
+
+message GetUserRoleRequest {
+  string cycle_id = 1;
+  string user_id = 2;
 }

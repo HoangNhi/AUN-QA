@@ -6,7 +6,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 {
     public interface ISurveyCampaignService
     {
-        Task<ModelSurveyCampaign> GetById(GetByIdRequest request);
+        Task<SurveyCampaignRequest> GetById(GetByIdRequest request);
         Task<ModelSurveyCampaign> Insert(SurveyCampaignRequest request);
         Task<ModelSurveyCampaign> Update(SurveyCampaignRequest request);
         Task<string> DeleteList(DeleteListRequest request);

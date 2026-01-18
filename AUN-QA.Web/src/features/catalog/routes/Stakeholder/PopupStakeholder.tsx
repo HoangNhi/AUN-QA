@@ -9,18 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Stakeholder } from "@/features/catalog/types/stakeholder.types";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2 } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 
 const PopupStakeholder = ({
   stakeholder,
@@ -35,40 +30,47 @@ const PopupStakeholder = ({
   saveChange: (stakeholder: Stakeholder, isAddMore: boolean) => void;
   isLoading?: boolean;
 }) => {
-  const [id, setId] = useState<string>(stakeholder?.Id || uuidv4());
-  const [fullName, setFullName] = useState(stakeholder?.FullName || "");
-  const [email, setEmail] = useState(stakeholder?.Email || "");
-  const [type, setType] = useState(stakeholder?.Type?.toString() || "6");
-  const [description, setDescription] = useState(
-    stakeholder?.Description || ""
-  );
+  // Form state as single object for cleaner code
+  const [formData, setFormData] = useState({
+    id: stakeholder?.Id || uuidv4(),
+    fullName: stakeholder?.FullName || "",
+    email: stakeholder?.Email || "",
+    type: stakeholder?.Type?.toString() || "",
+    description: stakeholder?.Description || "",
+  });
 
-  useEffect(() => {
-    if (stakeholder) {
-      setId(stakeholder.Id || uuidv4());
-      setFullName(stakeholder.FullName || "");
-      setEmail(stakeholder.Email || "");
-      setType(stakeholder.Type?.toString() || "6");
-      setDescription(stakeholder.Description || "");
-    } else {
-    }
-  }, [stakeholder]);
+  const updateField = <K extends keyof typeof formData>(
+    field: K,
+    value: (typeof formData)[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const onSubmit = (isAddMore: boolean) => {
     saveChange(
       {
-        Id: id,
-        FullName: fullName,
-        Email: email,
-        Type: parseInt(type),
-        Description: description,
+        Id: formData.id,
+        FullName: formData.fullName,
+        Email: formData.email,
+        Type: parseInt(formData.type),
+        Description: formData.description,
         IsEdit: stakeholder?.IsEdit || false,
         IsActived: stakeholder?.IsActived ?? true,
         FolderUpload: stakeholder?.FolderUpload || "",
       },
-      isAddMore
+      isAddMore,
     );
   };
+
+  useEffect(() => {
+    setFormData({
+      id: stakeholder?.Id || uuidv4(),
+      fullName: stakeholder?.FullName || "",
+      email: stakeholder?.Email || "",
+      type: stakeholder?.Type?.toString() || "",
+      description: stakeholder?.Description || "",
+    });
+  }, [stakeholder]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -100,8 +102,8 @@ const PopupStakeholder = ({
               </Label>
               <Input
                 id="fullname"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
+                value={formData.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
                 required
                 placeholder="Nhập họ và tên"
               />
@@ -116,8 +118,8 @@ const PopupStakeholder = ({
               <Input
                 id="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={(e) => updateField("email", e.target.value)}
                 required
                 placeholder="Nhập email"
               />
@@ -129,24 +131,22 @@ const PopupStakeholder = ({
               >
                 Loại bên liên quan
               </Label>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger id="type" className="w-full">
-                  <SelectValue placeholder="Chọn loại bên liên quan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Sinh viên</SelectItem>
-                  <SelectItem value="2">Cựu sinh viên</SelectItem>
-                  <SelectItem value="3">Nhà tuyển dụng</SelectItem>
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={STAKEHOLDER_TYPES}
+                value={formData.type}
+                onValueChange={(val) => updateField("type", val)}
+                placeholder="Chọn loại bên liên quan"
+                searchPlaceholder="Tìm kiếm loại bên liên quan..."
+                emptyText="Không tìm thấy loại bên liên quan."
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">Mô tả</Label>
               <Textarea
                 id="description"
                 placeholder="Nhập mô tả"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={formData.description}
+                onChange={(e) => updateField("description", e.target.value)}
               />
             </div>
           </div>

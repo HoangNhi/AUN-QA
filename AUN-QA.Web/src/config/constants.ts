@@ -65,6 +65,7 @@ export const API_ENDPOINTS = {
       INSERT: `${CATALOG_BASE}/Cycle/insert`,
       UPDATE: `${CATALOG_BASE}/Cycle/update`,
       DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
+      GET_COMBBOX_BY_USER: `${CATALOG_BASE}/Cycle/get-combobox-by-user`,
     },
     Stakeholder: {
       GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,
@@ -73,6 +74,14 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Stakeholder/update`,
       DELETE_LIST: `${CATALOG_BASE}/Stakeholder/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Stakeholder/get-all-combobox`,
+    },
+    FileType: {
+      GET_LIST: `${CATALOG_BASE}/FileType/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/FileType/get-by-id`,
+      INSERT: `${CATALOG_BASE}/FileType/insert`,
+      UPDATE: `${CATALOG_BASE}/FileType/update`,
+      DELETE_LIST: `${CATALOG_BASE}/FileType/delete-list`,
+      GET_ALL_COMBOBOX: `${CATALOG_BASE}/FileType/get-all-combobox`,
     },
   },
   Business: {
@@ -83,6 +92,21 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/Evidence/update`,
       DELETE_LIST: `${BUSINESS_BASE}/Evidence/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
+    },
+    SurveyTemplate: {
+      GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/SurveyTemplate/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/SurveyTemplate/insert`,
+      UPDATE: `${BUSINESS_BASE}/SurveyTemplate/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/SurveyTemplate/delete-list`,
+      GET_ALL_COMBOBOX: `${BUSINESS_BASE}/SurveyTemplate/get-all-combobox`,
+    },
+    SurveyCampaign: {
+      GET_LIST: `${BUSINESS_BASE}/SurveyCampaign/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/SurveyCampaign/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/SurveyCampaign/insert`,
+      UPDATE: `${BUSINESS_BASE}/SurveyCampaign/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/SurveyCampaign/delete-list`,
     },
   },
   File: {

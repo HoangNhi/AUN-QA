@@ -9,15 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import type { StakeholderGetListPaging } from "@/features/catalog/types/stakeholder.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -25,7 +17,7 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
-  canDelete: boolean = true
+  canDelete: boolean = true,
 ): ColumnDef<StakeholderGetListPaging>[] => [
   {
     id: "select",
@@ -123,31 +115,11 @@ const ActionCell = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa bản ghi này không? Hành động này không
-              thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                deleteList([row.original.Id]);
-                setShowDeleteConfirm(false);
-              }}
-            >
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={() => deleteList([row.original.Id])}
+      />
     </>
   );
 };

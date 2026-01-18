@@ -1,58 +1,63 @@
-﻿using AUN_QA.CatalogService.Infrastructure.Data;
-using AUN_QA.CatalogService.Protos;
+﻿using AUN_QA.CatalogService.Protos;
+using AUN_QA.CatalogService.Services.CoreFeature.Cycle;
+using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.CatalogService.Services.gRPC
 {
     public class CatalogGrpcService : CatalogProto.CatalogProtoBase
     {
-        private readonly CatalogContext _context;
+        private readonly IStakeholderService _stakeholderService;
+        private readonly ICycleService _cycleService;
 
-        public CatalogGrpcService(CatalogContext context)
+        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService)
         {
-            _context = context;
+            _stakeholderService = stakeholderService;
+            _cycleService = cycleService;
         }
 
+        #region Stakeholder Service
         public override async Task GetStakeholdersStream(
             GetStakeholdersStreamRequest request,
-            IServerStreamWriter<StakeholderMinimalInfo> responseStream,
+            IServerStreamWriter<StakeholderInfo> responseStream,
             ServerCallContext context)
         {
-            // 1. Tạo IQueryable (Lazy evaluation)
-            var query = _context.Stakeholders.AsNoTracking();
-
-            // 2. Apply Filters
-            if (request.StakeholderType != null)
+            await foreach (var item in _stakeholderService.GetStakeholdersStreamAsync(
+                request,
+                context.CancellationToken))
             {
-                // Giả sử logic map type ở đây
-                query = query.Where(s => s.Type == request.StakeholderType.Value);
-            }
-
-            // 3. Projection: Chỉ select cột cần thiết ngay từ câu SQL
-            var dataStream = query
-                .Where(x => x.IsActived && !x.IsDeleted)
-                .Select(s => new StakeholderMinimalInfo
-                {
-                    Id = s.Id.ToString(),
-                    FullName = s.FullName,
-                    Email = s.Email,
-                    Type = s.Type,
-                    Description = s.Description
-                });
-
-            // 4. Streaming Loop
-            // EF Core sẽ giữ kết nối DB mở và đọc từng dòng (hoặc từng batch nhỏ)
-            foreach (var item in dataStream)
-            {
-                if (context.CancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
-
                 await responseStream.WriteAsync(item);
             }
-
         }
+        #endregion
+
+        #region Cycle Service
+        public override async Task GetCyclesStream(
+            GetCyclesStreamRequest request,
+            IServerStreamWriter<CycleInfo> responseStream,
+            ServerCallContext context)
+        {
+            await foreach (var item in _cycleService.GetCyclesStreamAsync(
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
+
+        public override async Task<Int32Value> GetUserRole(GetUserRoleRequest request, ServerCallContext context)
+        {
+            var result = await _cycleService.GetUserRoleAsync(request);
+            return new Int32Value { Value = (int)result };
+        }
+
+        public override async Task<BoolValue> IsUserInRole(IsUserInRoleRequest request, ServerCallContext context)
+        {
+            var result = await _cycleService.IsUserInRoleAsync(request);
+            return new BoolValue { Value = result };
+        }
+
+        #endregion
     }
 }

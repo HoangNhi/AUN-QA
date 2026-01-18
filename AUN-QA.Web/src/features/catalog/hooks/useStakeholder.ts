@@ -14,6 +14,17 @@ import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
 
 export const useStakeholder = () => {
+  const EMPTY_STAKEHOLDER: Stakeholder = {
+    Id: "",
+    FullName: "",
+    Email: "",
+    Type: undefined,
+    Description: "",
+    IsEdit: false,
+    IsActived: true,
+    FolderUpload: "",
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [stakeholder, setStakeholder] = useState<Stakeholder | null>(null);
   const [pageRequest, setPageRequest] =
@@ -57,13 +68,13 @@ export const useStakeholder = () => {
     },
     onSuccess: (_, variables) => {
       toast.success(
-        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công",
       );
       queryClient.invalidateQueries({ queryKey: ["stakeholders"] });
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu"
+        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu",
       );
     },
   });
@@ -83,7 +94,7 @@ export const useStakeholder = () => {
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
+        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu",
       );
     },
   });
@@ -105,16 +116,7 @@ export const useStakeholder = () => {
         toast.error("Không thể lấy thông tin chi tiết");
       }
     } else {
-      setStakeholder({
-        Id: "",
-        FullName: "",
-        Email: "",
-        Type: 1,
-        Description: "",
-        IsEdit: isEdit,
-        IsActived: true,
-        FolderUpload: "",
-      });
+      setStakeholder(EMPTY_STAKEHOLDER);
       setIsOpen(true);
     }
   }, []);
@@ -128,16 +130,7 @@ export const useStakeholder = () => {
     try {
       await saveMutation.mutateAsync(saveData);
       if (isAddMore) {
-        setStakeholder({
-          Id: "",
-          FullName: "",
-          Email: "",
-          Type: 1,
-          Description: "",
-          IsEdit: false,
-          IsActived: true,
-          FolderUpload: "",
-        });
+        setStakeholder(EMPTY_STAKEHOLDER);
       } else {
         setIsOpen(false);
         setStakeholder(null);

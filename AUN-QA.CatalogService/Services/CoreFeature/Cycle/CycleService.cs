@@ -5,9 +5,12 @@ using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.EvaluationSchedule.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 {
@@ -28,6 +31,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             _contextAccessor = contextAccessor;
         }
 
+        #region Chức năng chính
         public async Task<ModelCycle> GetById(GetByIdRequest request)
         {
             var data = await _context.Cycles.FindAsync(request.Id);
@@ -305,5 +309,82 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 Data = result
             };
         }
+
+        public async Task<List<ModelCombobox>> GetComboboxByUser()
+        {
+            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return new List<ModelCombobox>();
+            }
+            var query = from cycle in _context.Cycles
+                        join council in _context.Councils on cycle.Id equals council.CycleId
+                        where !cycle.IsDeleted && cycle.IsActived
+                           && !council.IsDeleted && council.IsActived
+                           && council.UserId == userId
+                        select new ModelCombobox
+                        {
+                            Text = cycle.Name,
+                            Value = cycle.Id.ToString()
+                        };
+
+            return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
+        }
+        #endregion
+
+        #region GRPC Services
+        public async IAsyncEnumerable<CycleInfo> GetCyclesStreamAsync(
+            GetCyclesStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var query = _context.Cycles.AsNoTracking();
+
+            if (request.Year.HasValue)
+            {
+                query = query.Where(s => s.Year == request.Year.Value);
+            }
+
+            var dataStream = query
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .AsAsyncEnumerable();
+            await foreach (var s in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return new CycleInfo
+                {
+                    Id = s.Id.ToString(),
+                    Name = s.Name,
+                    Year = s.Year,
+                    StartDate = Timestamp.FromDateTime(DateTime.SpecifyKind(s.StartDate, DateTimeKind.Utc)),
+                    EndDate = Timestamp.FromDateTime(DateTime.SpecifyKind(s.EndDate, DateTimeKind.Utc)),
+                    Status = s.Status,
+                    EvaluationPurpose = s.EvaluationPurpose,
+                    Scope = s.Scope
+                };
+            }
+        }
+
+        public async Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request)
+        {
+            return await _context.Councils.AnyAsync(c =>
+                c.CycleId == Guid.Parse(request.CycleId)
+                && c.UserId == Guid.Parse(request.UserId)
+                && c.RoleId == request.Role
+                && !c.IsDeleted
+                && c.IsActived);
+        }
+
+        public async Task<int?> GetUserRoleAsync(GetUserRoleRequest request)
+        {
+            var council = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == Guid.Parse(request.CycleId)
+                && c.UserId == Guid.Parse(request.UserId)
+                && !c.IsDeleted
+                && c.IsActived);
+            if (council == null)
+                return null;
+            return council.RoleId;
+        }
+        #endregion
     }
 }

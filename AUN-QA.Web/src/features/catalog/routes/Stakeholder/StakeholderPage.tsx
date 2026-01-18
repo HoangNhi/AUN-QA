@@ -8,27 +8,14 @@ import PopupStakeholder from "./PopupStakeholder";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/Button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { SearchIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { Combobox } from "@/components/ui/combobox";
+import { STAKEHOLDER_TYPES } from "@/features/catalog/constants/stakeholder.constants";
 
 const StakeholderPage = () => {
   const {
@@ -68,28 +55,25 @@ const StakeholderPage = () => {
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const [typeTerm, setTypeTerm] = useState<string | undefined>(
-    pageRequest.Type?.toString(),
-  );
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
-    if (debouncedSearchTerm !== pageRequest.TextSearch) {
-      setPageRequest({
-        ...pageRequest,
+    setPageRequest((prev) => {
+      if (prev.TextSearch === debouncedSearchTerm) return prev;
+      return {
+        ...prev,
         TextSearch: debouncedSearchTerm,
         PageIndex: 1,
-      });
-    }
-  }, [debouncedSearchTerm, pageRequest, setPageRequest]);
+      };
+    });
+  }, [debouncedSearchTerm, setPageRequest]);
 
   const canAdd = permission?.IsAdded;
   const canDelete = permission?.IsDeleted;
 
   const handleDelete = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
-      (item: any) => item.Id,
+      (item) => item.Id,
     );
     deleteList(ids);
     setShowDeleteConfirm(false);
@@ -109,6 +93,7 @@ const StakeholderPage = () => {
               setPageRequest({
                 ...pageRequest,
                 TextSearch: "",
+                Type: undefined,
               });
               setSearchTerm("");
             }}
@@ -117,29 +102,20 @@ const StakeholderPage = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Select
-            value={typeTerm ?? "null"}
-            onValueChange={(value) => {
-              const newValue = value === "null" ? undefined : value;
-              setTypeTerm(newValue);
+          <Combobox
+            options={STAKEHOLDER_TYPES}
+            value={pageRequest.Type?.toString()}
+            onValueChange={(val) => {
               setPageRequest({
                 ...pageRequest,
-                Type: newValue ? Number(newValue) : undefined,
+                Type: val ? Number(val) : undefined,
                 PageIndex: 1,
               });
             }}
-          >
-            <SelectTrigger className="w-full bg-background">
-              <SelectValue placeholder="-- Tất cả loại đối tượng --" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="null">-- Tất cả loại đối tượng --</SelectItem>
-              <SelectItem value="1">Sinh viên</SelectItem>
-              <SelectItem value="2">Cựu sinh viên</SelectItem>
-              <SelectItem value="4">Giảng viên</SelectItem>
-              <SelectItem value="3">Nhà tuyển dụng</SelectItem>
-            </SelectContent>
-          </Select>
+            placeholder="Tất cả loại đối tượng"
+            searchPlaceholder="Tìm kiếm loại đối tượng..."
+            emptyText="Không tìm thấy loại đối tượng."
+          />
           <InputGroup className="col-span-1 bg-background">
             <InputGroupInput
               placeholder="Tìm kiếm..."
@@ -182,7 +158,7 @@ const StakeholderPage = () => {
         setRowSelection={setRowSelection}
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
-        onRefresh={() => getList(pageRequest)}
+        onRefresh={() => getList()}
         isLoading={isFetching}
       />
 
@@ -197,25 +173,12 @@ const StakeholderPage = () => {
         />
       )}
 
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa {Object.keys(rowSelection).length} mục
-              đã chọn không? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        itemCount={Object.keys(rowSelection).length}
+      />
     </div>
   );
 };

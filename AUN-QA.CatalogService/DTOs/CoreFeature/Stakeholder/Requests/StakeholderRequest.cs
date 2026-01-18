@@ -14,7 +14,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests
         /// <summary>
         /// 1. Sinh viên, 2. Cựu sinh viên, 3. Nhà tuyển dụng, 4. Giảng viên
         /// </summary>
-        public int Type { get; set; }
+        public int? Type { get; set; }
 
         public string? Description { get; set; }
     }

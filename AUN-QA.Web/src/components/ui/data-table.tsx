@@ -39,8 +39,8 @@ interface DataTableProps<TData, TValue> {
   totalRow?: number;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
-  pageRequest?: GetListPagingRequest;
-  setPageRequest?: (pageRequest: GetListPagingRequest) => void;
+  pageRequest?: any;
+  setPageRequest?: (pageRequest: any) => void;
   onRefresh?: () => void;
   isLoading?: boolean;
   className?: string;

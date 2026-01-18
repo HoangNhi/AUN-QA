@@ -159,8 +159,6 @@ const PopupSurveyTemplate = ({
               </div>
             </div>
           </div>
-          {/* 2. Topics List */}
-          {/* 2. Topics List */}
           <TopicListEditor
             listTopic={listTopic}
             collapsedTopics={collapsedTopics}

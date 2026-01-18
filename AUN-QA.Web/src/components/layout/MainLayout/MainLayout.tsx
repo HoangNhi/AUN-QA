@@ -32,7 +32,7 @@ export default function MainLayout({ permission }: MainLayoutProps) {
   const activeItem = menu?.find((item) => item.Controller === pathname);
   if (activeItem) {
     breadcrumbGroup = systemGroup?.find(
-      (group) => group.Id === activeItem.SystemGroupId
+      (group) => group.Id === activeItem.SystemGroupId,
     )?.Name;
     breadcrumbPage = activeItem.Name;
   }
@@ -40,7 +40,7 @@ export default function MainLayout({ permission }: MainLayoutProps) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="h-svh flex flex-col overflow-hidden">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-3">
             <SidebarTrigger />
@@ -64,7 +64,7 @@ export default function MainLayout({ permission }: MainLayoutProps) {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex flex-1 flex-col gap-4 p-4 min-h-0 overflow-auto">
           <Outlet context={{ permission }} />
         </div>
       </SidebarInset>

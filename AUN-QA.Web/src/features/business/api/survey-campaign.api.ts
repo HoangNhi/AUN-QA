@@ -13,9 +13,14 @@ export const surveyCampaignService = {
   ): Promise<
     ApiResponse<GetListPagingResponse<SurveyCampaignGetListPaging>>
   > => {
+    // Clean request: convert empty string CycleId to undefined for backend Nullable<Guid>
+    const cleanedRequest = {
+      ...request,
+      CycleId: request.CycleId || undefined,
+    };
     return api.post<GetListPagingResponse<SurveyCampaignGetListPaging>>(
       API_ENDPOINTS.Business.SurveyCampaign.GET_LIST,
-      request,
+      cleanedRequest,
     );
   },
 

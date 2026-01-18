@@ -8,7 +8,9 @@ using AUN_QA.CatalogService.Infrastructure.Data;
 using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 {
@@ -331,6 +333,37 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         }
         #endregion
 
+        #region GRPC Services
+        public async IAsyncEnumerable<CycleInfo> GetCyclesStreamAsync(
+            GetCyclesStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var query = _context.Cycles.AsNoTracking();
+
+            if (request.Year.HasValue)
+            {
+                query = query.Where(s => s.Year == request.Year.Value);
+            }
+
+            var dataStream = query
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .AsAsyncEnumerable();
+            await foreach (var s in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return new CycleInfo
+                {
+                    Id = s.Id.ToString(),
+                    Name = s.Name,
+                    Year = s.Year,
+                    StartDate = Timestamp.FromDateTime(DateTime.SpecifyKind(s.StartDate, DateTimeKind.Utc)),
+                    EndDate = Timestamp.FromDateTime(DateTime.SpecifyKind(s.EndDate, DateTimeKind.Utc)),
+                    Status = s.Status,
+                    EvaluationPurpose = s.EvaluationPurpose,
+                    Scope = s.Scope
+                };
+            }
+        }
+
         public async Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request)
         {
             return await _context.Councils.AnyAsync(c =>
@@ -352,5 +385,6 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 return null;
             return council.RoleId;
         }
+        #endregion
     }
 }

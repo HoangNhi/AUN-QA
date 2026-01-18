@@ -178,7 +178,7 @@ export const StakeholderSelector = ({
           setPageRequest={setPageRequest}
           rowSelection={rowSelection}
           setRowSelection={setRowSelection}
-          containerClassName="max-h-[300px] overflow-y-auto"
+          containerClassName="max-h-[300px]"
           getRowId={(row) => row.StakeholderId}
         />
       </div>

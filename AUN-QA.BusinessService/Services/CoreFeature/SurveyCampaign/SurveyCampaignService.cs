@@ -511,12 +511,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
         {
+            var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+
             var query = _context.SurveyCampaigns
                 .Where(x => !x.IsDeleted);
 
             if (request.StakeholderType.HasValue)
             {
                 query = query.Where(x => x.StakeholderType == request.StakeholderType);
+            }
+
+            if (request.CycleId.HasValue)
+            {
+                query = query.Where(x => x.CycleId == request.CycleId);
             }
 
             if (!string.IsNullOrEmpty(request.TextSearch))
@@ -533,6 +540,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .Take(request.PageSize)
                 .ProjectTo<ModelSurveyCampaignGetListPaging>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            // Left join with cycles in memory
+            var result = data
+                .GroupJoin(
+                    cycles,
+                    surveyCampaign => surveyCampaign.CycleId,
+                    cycle => cycle.Id,
+                    (surveyCampaign, matchedCycles) => new { surveyCampaign, matchedCycles })
+                .SelectMany(
+                    x => x.matchedCycles.DefaultIfEmpty(),
+                    (x, cycle) =>
+                    {
+                        x.surveyCampaign.Cycle = cycle?.Name;
+                        return x.surveyCampaign;
+                    })
+                .ToList();
 
             return new GetListPagingResponse<ModelSurveyCampaignGetListPaging>
             {
@@ -560,7 +583,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             // 1. Lấy dòng chảy dữ liệu từ Catalog (Streaming)
             // Code này không bao giờ load toàn bộ list vào RAM
-            await foreach (var stakeholder in _catalogService.GetStakeholdersStreamAsync(type))
+            await foreach (var stakeholder in _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest { StakeholderType = type }))
             {
                 // 2. Đẩy vào hàng đợi xử lý ngầm
                 await _taskQueue.QueueBackgroundWorkItemAsync(async (serviceProvider, token) =>
@@ -577,7 +600,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             return $"Đã đẩy {count} email vào hàng đợi gửi đi.";
         }
-
 
     }
 }

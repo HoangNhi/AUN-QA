@@ -1,4 +1,8 @@
-import type { BaseRequest } from "@/types/base/base.types";
+import type {
+  BaseRequest,
+  GetListPagingRequest,
+} from "@/types/base/base.types";
+import type { TemplateTopic } from "./survey-template.types";
 
 export interface SurveyCampaign extends BaseRequest {
   Id: string;
@@ -12,8 +16,6 @@ export interface SurveyCampaign extends BaseRequest {
   ListTextAnswer: SurveyTextAnswer[];
   ListTopic?: TemplateTopic[];
 }
-
-import type { TemplateTopic } from "./survey-template.types";
 
 export interface SurveySession extends BaseRequest {
   Id: string;
@@ -44,15 +46,11 @@ export interface SurveyTextAnswer extends BaseRequest {
 }
 
 export interface SurveyCampaignGetListPaging extends SurveyCampaign {
-  CycleName: string;
-  TemplateName: string;
-  StakeholderTypeName: string;
-  StatusName: string;
+  Cycle: string;
+  Stakeholder: string;
 }
 
-export interface SurveyCampaignGetListPagingRequest {
-  PageIndex: number;
-  PageSize: number;
-  TextSearch?: string;
+export interface SurveyCampaignGetListPagingRequest extends GetListPagingRequest {
   StakeholderType?: number;
+  CycleId?: string;
 }

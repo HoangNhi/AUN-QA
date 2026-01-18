@@ -16,7 +16,10 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         Task<List<ModelCombobox>> GetComboboxByUser();
         #endregion
 
+        #region GRPC Services
+        IAsyncEnumerable<CycleInfo> GetCyclesStreamAsync(GetCyclesStreamRequest request, CancellationToken cancellationToken = default);
         Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request);
         Task<int?> GetUserRoleAsync(GetUserRoleRequest request);
+        #endregion
     }
 }

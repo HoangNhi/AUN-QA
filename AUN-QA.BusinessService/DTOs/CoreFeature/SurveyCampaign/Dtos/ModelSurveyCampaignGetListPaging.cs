@@ -3,5 +3,7 @@
     public class ModelSurveyCampaignGetListPaging : ModelSurveyCampaign
     {
         public string? Stakeholder { get; set; }
+
+        public string? Cycle { get; set; }
     }
 }

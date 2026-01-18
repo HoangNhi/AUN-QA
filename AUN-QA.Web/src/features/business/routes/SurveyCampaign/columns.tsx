@@ -51,22 +51,16 @@ export const getColumns = (
     ),
   },
   {
+    accessorKey: "Cycle",
+    header: "Khóa học",
+  },
+  {
     accessorKey: "Name",
     header: "Tên chiến dịch",
   },
   {
-    accessorKey: "StakeholderType",
+    accessorKey: "Stakeholder",
     header: "Loại đối tượng",
-    cell: ({ row }) => {
-      const type = row.original.StakeholderType;
-      const map: Record<number, string> = {
-        1: "Sinh viên",
-        2: "Cựu sinh viên",
-        3: "Nhà tuyển dụng",
-        4: "Giảng viên",
-      };
-      return map[type] || "Khác";
-    },
   },
   {
     accessorKey: "Status",

@@ -20,20 +20,32 @@ namespace AUN_QA.CatalogService.Services.gRPC
         #region Stakeholder Service
         public override async Task GetStakeholdersStream(
             GetStakeholdersStreamRequest request,
-            IServerStreamWriter<StakeholderMinimalInfo> responseStream,
+            IServerStreamWriter<StakeholderInfo> responseStream,
             ServerCallContext context)
         {
             await foreach (var item in _stakeholderService.GetStakeholdersStreamAsync(
-                request.StakeholderType,
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
+        #endregion
+
+        #region Cycle Service
+        public override async Task GetCyclesStream(
+            GetCyclesStreamRequest request,
+            IServerStreamWriter<CycleInfo> responseStream,
+            ServerCallContext context)
+        {
+            await foreach (var item in _cycleService.GetCyclesStreamAsync(
+                request,
                 context.CancellationToken))
             {
                 await responseStream.WriteAsync(item);
             }
         }
 
-        #endregion
-
-        #region Cycle Service
         public override async Task<Int32Value> GetUserRole(GetUserRoleRequest request, ServerCallContext context)
         {
             var result = await _cycleService.GetUserRoleAsync(request);

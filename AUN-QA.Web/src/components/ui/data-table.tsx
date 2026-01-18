@@ -59,7 +59,7 @@ export function DataTable<TData, TValue>({
   onRefresh,
   isLoading = false,
   className,
-  containerClassName,
+  containerClassName = "max-h-[400px] overflow-y-auto",
   getRowId,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({

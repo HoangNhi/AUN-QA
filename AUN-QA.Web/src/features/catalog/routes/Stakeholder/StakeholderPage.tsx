@@ -184,7 +184,6 @@ const StakeholderPage = () => {
         setPageRequest={setPageRequest}
         onRefresh={() => getList(pageRequest)}
         isLoading={isFetching}
-        containerClassName="max-h-[400px] overflow-y-auto"
       />
 
       {isOpen && (

@@ -195,7 +195,7 @@ export const PopupStakeholderSelection = ({
                 setPageRequest={setPageRequest}
                 onRefresh={refetch}
                 isLoading={isLoading || isFetching}
-                containerClassName="max-h-[300px] overflow-y-auto"
+                containerClassName="max-h-[300px]"
               />
             </div>
           </div>

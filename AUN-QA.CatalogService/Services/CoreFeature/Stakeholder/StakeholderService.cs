@@ -165,21 +165,23 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+        #endregion
 
-        public async IAsyncEnumerable<StakeholderMinimalInfo> GetStakeholdersStreamAsync(
-            int? stakeholderType,
+        #region GRPC Services
+        public async IAsyncEnumerable<StakeholderInfo> GetStakeholdersStreamAsync(
+            GetStakeholdersStreamRequest request,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var query = _context.Stakeholders.AsNoTracking();
 
-            if (stakeholderType.HasValue)
+            if (request.StakeholderType.HasValue)
             {
-                query = query.Where(s => s.Type == stakeholderType.Value);
+                query = query.Where(s => s.Type == request.StakeholderType.Value);
             }
 
             var dataStream = query
                 .Where(x => x.IsActived && !x.IsDeleted)
-                .Select(s => new StakeholderMinimalInfo
+                .Select(s => new StakeholderInfo
                 {
                     Id = s.Id.ToString(),
                     FullName = s.FullName,

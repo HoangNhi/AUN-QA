@@ -14,6 +14,8 @@ public partial class CatalogContext : DbContext
 
     public virtual DbSet<Council> Councils { get; set; }
 
+    public virtual DbSet<Criterion> Criteria { get; set; }
+
     public virtual DbSet<Cycle> Cycles { get; set; }
 
     public virtual DbSet<EvaluationSchedule> EvaluationSchedules { get; set; }
@@ -23,6 +25,8 @@ public partial class CatalogContext : DbContext
     public virtual DbSet<FileType> FileTypes { get; set; }
 
     public virtual DbSet<Stakeholder> Stakeholders { get; set; }
+
+    public virtual DbSet<Standard> Standards { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +47,39 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });
+
+        modelBuilder.Entity<Criterion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("criteria");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Code)
+                .HasColumnType("text")
+                .HasColumnName("code");
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Description)
+                .HasColumnType("text")
+                .HasColumnName("description");
+            entity.Property(e => e.Guidance)
+                .HasColumnType("text")
+                .HasColumnName("guidance");
+            entity.Property(e => e.Name)
+                .HasColumnType("text")
+                .HasColumnName("name");
+            entity.Property(e => e.StandardId).HasColumnName("standard_id");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+
+            // Navigation property
+            entity.HasOne<Standard>()
+                .WithMany()
+                .HasForeignKey(e => e.StandardId)
+                .HasConstraintName("FK_Criterion_Standard");
+        });
+
 
         modelBuilder.Entity<Cycle>(entity =>
         {
@@ -114,7 +151,7 @@ public partial class CatalogContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
-            entity.ToTable("FileType");
+            entity.ToTable("filetype");
 
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
@@ -138,6 +175,32 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });
+
+        modelBuilder.Entity<Standard>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("standard");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AunVersion)
+                .HasColumnType("text")
+                .HasColumnName("aun_version");
+            entity.Property(e => e.Code)
+                .HasColumnType("text")
+                .HasColumnName("code");
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Description)
+                .HasMaxLength(1000)
+                .HasColumnName("description");
+            entity.Property(e => e.Name)
+                .HasColumnType("text")
+                .HasColumnName("name");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

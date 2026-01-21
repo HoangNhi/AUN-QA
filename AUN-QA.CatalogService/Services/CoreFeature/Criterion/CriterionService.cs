@@ -30,7 +30,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Criterion
             var data = await _context.Criteria
                 .Include(x => x.Standard)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
-            
+
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -126,7 +126,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Criterion
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch) 
+                query = query.Where(x => x.Name.Contains(request.TextSearch)
                     || x.Code.Contains(request.TextSearch)
                     || x.Standard.Name.Contains(request.TextSearch));
             }
@@ -161,7 +161,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Criterion
                 .Include(x => x.Standard)
                 .Where(x => !x.IsDeleted && x.IsActived == true)
                 .ToListAsync();
-            
+
             return data.Select(x => new ModelCombobox
             {
                 Text = $"{x.Code} - {x.Name} ({x.Standard?.Code})",

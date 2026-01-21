@@ -20,8 +20,7 @@ export const useSurveyCampaign = () => {
     TemplateId: "",
     StakeholderType: undefined,
     Name: "",
-    Status: 0,
-    ListSession: [],
+    Status: 1,
     ListScore: [],
     ListTextAnswer: [],
     ListTopic: [],
@@ -68,9 +67,15 @@ export const useSurveyCampaign = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (data: SurveyCampaign) => {
+      const cleanedRequest = {
+        ...data,
+        CycleId: data.CycleId || undefined,
+        TemplateId: data.TemplateId || undefined,
+      };
+
       const response = await (data.IsEdit
-        ? surveyCampaignService.update(data)
-        : surveyCampaignService.insert(data));
+        ? surveyCampaignService.update(cleanedRequest)
+        : surveyCampaignService.insert(cleanedRequest));
 
       if (!response.Success) {
         throw new Error(response.Message);

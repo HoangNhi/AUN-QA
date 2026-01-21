@@ -59,7 +59,7 @@ export function DataTable<TData, TValue>({
   onRefresh,
   isLoading = false,
   className,
-  containerClassName = "max-h-[400px] overflow-y-auto",
+  containerClassName = "max-h-[360px] overflow-y-auto",
   getRowId,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -234,6 +234,7 @@ function DataTablePagination({
           </div>
           <div className="flex items-center space-x-2">
             <Button
+              type="button"
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
               onClick={() =>
@@ -248,6 +249,7 @@ function DataTablePagination({
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="outline"
               className="h-8 w-8 p-0"
               onClick={() =>
@@ -276,6 +278,7 @@ function DataTablePagination({
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="outline"
               className="hidden h-8 w-8 p-0 lg:flex"
               onClick={() =>

@@ -38,6 +38,8 @@ export const PopupStakeholderSelection = ({
   const [selectedItems, setSelectedItems] = useState<
     Map<string, StakeholderGetListPaging>
   >(new Map());
+  const [isSelectAllMode, setIsSelectAllMode] = useState(false);
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
     PageIndex: 1,
     PageSize: 10,
@@ -74,65 +76,79 @@ export const PopupStakeholderSelection = ({
     [listResponse],
   );
 
-  const selectedIds = useMemo(
-    () => Array.from(selectedItems.keys()),
-    [selectedItems],
-  );
+  const selectedIds = useMemo(() => {
+    if (isSelectAllMode) {
+      // In select all mode, all items are selected except excluded ones
+      return data.filter((d) => !excludedIds.has(d.Id)).map((d) => d.Id);
+    }
+    return Array.from(selectedItems.keys());
+  }, [selectedItems, isSelectAllMode, excludedIds, data]);
 
   const handleToggle = useCallback(
     (id: string, checked: boolean) => {
-      setSelectedItems((prev) => {
-        const next = new Map(prev);
-        if (checked) {
-          const item = data.find((d) => d.Id === id);
-          if (item) next.set(id, item);
-        } else {
-          next.delete(id);
-        }
-        return next;
-      });
+      if (isSelectAllMode) {
+        // In select all mode, toggle exclusion
+        setExcludedIds((prev) => {
+          const next = new Set(prev);
+          if (checked) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+          return next;
+        });
+      } else {
+        setSelectedItems((prev) => {
+          const next = new Map(prev);
+          if (checked) {
+            const item = data.find((d) => d.Id === id);
+            if (item) next.set(id, item);
+          } else {
+            next.delete(id);
+          }
+          return next;
+        });
+      }
     },
-    [data],
+    [data, isSelectAllMode],
   );
 
-  const handleToggleAll = useCallback(
-    (checked: boolean) => {
-      setSelectedItems((prev) => {
-        const isPageFull = data.every((d) => prev.has(d.Id));
-        const shouldSelect = checked && !isPageFull;
-        const next = new Map(prev);
-        if (shouldSelect) {
-          data.forEach((d) => {
-            if (!next.has(d.Id)) {
-              next.set(d.Id, d);
-            }
-          });
-        } else {
-          data.forEach((d) => {
-            next.delete(d.Id);
-          });
-        }
-        return next;
-      });
-    },
-    [data],
-  );
+  const handleToggleAll = useCallback((checked: boolean) => {
+    if (checked) {
+      // Enable select all mode
+      setIsSelectAllMode(true);
+      setExcludedIds(new Set());
+      setSelectedItems(new Map());
+    } else {
+      // Disable select all mode
+      setIsSelectAllMode(false);
+      setExcludedIds(new Set());
+      setSelectedItems(new Map());
+    }
+  }, []);
 
   const isAllPageSelected = useMemo(() => {
     if (data.length === 0) return false;
+    if (isSelectAllMode) {
+      return data.every((d) => !excludedIds.has(d.Id));
+    }
     return data.every((d) => selectedItems.has(d.Id));
-  }, [data, selectedItems]);
+  }, [data, selectedItems, isSelectAllMode, excludedIds]);
 
   const isSomePageSelected = useMemo(() => {
     if (data.length === 0) return false;
+    if (isSelectAllMode) {
+      return data.some((d) => !excludedIds.has(d.Id));
+    }
     return data.some((d) => selectedItems.has(d.Id));
-  }, [data, selectedItems]);
+  }, [data, selectedItems, isSelectAllMode, excludedIds]);
 
   const selectAllState = useMemo(() => {
+    if (isSelectAllMode && excludedIds.size === 0) return true;
     if (isAllPageSelected) return true;
     if (isSomePageSelected) return "indeterminate";
     return false;
-  }, [isAllPageSelected, isSomePageSelected]);
+  }, [isAllPageSelected, isSomePageSelected, isSelectAllMode, excludedIds]);
 
   const columns = useMemo(
     () =>
@@ -153,12 +169,26 @@ export const PopupStakeholderSelection = ({
   );
 
   const handleSave = () => {
-    // Only return newly selected items (exclude already-selected ones)
-    const newlySelected = Array.from(selectedItems.values()).filter(
-      (item) => !alreadySelectedIds.includes(item.Id),
-    );
-    onSelect(newlySelected);
+    if (isSelectAllMode) {
+      // Select All mode: signal parent to select all stakeholders
+      const allExcludedIds = [
+        ...alreadySelectedIds,
+        ...Array.from(excludedIds),
+      ];
+      onSelect({
+        type: "all",
+        excludedIds: allExcludedIds,
+      } as unknown as StakeholderGetListPaging[]);
+    } else {
+      // Only return newly selected items (exclude already-selected ones)
+      const newlySelected = Array.from(selectedItems.values()).filter(
+        (item) => !alreadySelectedIds.includes(item.Id),
+      );
+      onSelect(newlySelected);
+    }
     setSelectedItems(new Map());
+    setIsSelectAllMode(false);
+    setExcludedIds(new Set());
     onOpenChange(false);
   };
 
@@ -207,7 +237,9 @@ export const PopupStakeholderSelection = ({
               Hủy
             </Button>
             <Button onClick={handleSave}>
-              {`Chọn (${selectedItems.size})`}
+              {isSelectAllMode
+                ? `Chọn tất cả${excludedIds.size > 0 ? ` (trừ ${excludedIds.size})` : ""}`
+                : `Chọn (${selectedItems.size})`}
             </Button>
           </div>
         </DialogFooter>

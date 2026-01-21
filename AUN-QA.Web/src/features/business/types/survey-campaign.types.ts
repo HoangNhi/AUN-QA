@@ -54,3 +54,7 @@ export interface SurveyCampaignGetListPagingRequest extends GetListPagingRequest
   StakeholderType?: number;
   CycleId?: string;
 }
+
+export interface GetStakeholderNotInCampaignRequest extends GetListPagingRequest {
+  CampainId: string;
+}

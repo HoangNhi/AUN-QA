@@ -2,6 +2,7 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ namespace AUN_QA.BusinessService.Controllers
             _service = service;
         }
 
+        #region SurveyCampaign
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(SurveyCampaignGetListPagingRequest request)
@@ -89,5 +91,19 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.SendSurvey(type);
             return Ok(result);
         }
+        #endregion
+
+        #region Stakeholder
+        [HttpPost, Route("get-stakeholder-not-in-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetStakeholdersNotInCampaign(request);
+            return Ok(new BaseResponse<GetListPagingResponse<StakeholderDto>> { Data = result, Success = true });
+        }
+        #endregion
     }
 }

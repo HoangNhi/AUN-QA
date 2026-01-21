@@ -2,11 +2,11 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
-using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
@@ -41,7 +41,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _taskQueue = taskQueue;
         }
 
-        #region Chức năng chính
+        #region SurveyCampaign
         public async Task<SurveyCampaignRequest> GetById(GetByIdRequest request)
         {
             var data = await _context.SurveyCampaigns.FindAsync(request.Id);
@@ -103,8 +103,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.StakeholderName)
                 .ToListAsync();
-
-            result.ListSession = _mapper.Map<List<SurveySessionRequest>>(stakeholderDtos);
             #endregion
 
             return result;
@@ -197,25 +195,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 }
             }
             #endregion
-
-            #region Người tham gia
-            if (!request.ListSession.Any())
-            {
-                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
-            }
-
-            foreach (var sessionReq in request.ListSession)
-            {
-                var addSession = _mapper.Map<Entities.SurveySession>(sessionReq);
-                addSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
-                addSession.CampaignId = add.Id;
-                addSession.Token = Guid.NewGuid().ToString();
-                addSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addSession.CreatedAt = DateTime.Now;
-                await _context.SurveySessions.AddAsync(addSession);
-            }
-            #endregion
-
             await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(add);
         }
@@ -293,7 +272,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     // Add Topic
                     var newTopic = _mapper.Map<Entities.TemplateTopic>(topicReq);
                     newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
-                    newTopic.TemplateId = update.Id;
+                    newTopic.CampaignId = update.Id;
                     newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     newTopic.CreatedAt = DateTime.Now;
                     await _context.TemplateTopics.AddAsync(newTopic);
@@ -433,58 +412,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             #endregion
 
-            #region Người tham gia
-            // 1. Fetch existing sessions for this campaign
-            var existingSessions = await _context.SurveySessions
-                .Where(x => x.CampaignId == update.Id && !x.IsDeleted)
-                .ToListAsync();
-
-            // 2. Validate that at least one participant exists
-            if (!request.ListSession.Any())
-            {
-                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
-            }
-
-            // 3. Process each session in the request
-            foreach (var sessionReq in request.ListSession)
-            {
-                var existingSession = existingSessions.FirstOrDefault(x => x.Id == sessionReq.Id);
-
-                if (existingSession != null)
-                {
-                    existingSession.StakeholderId = sessionReq.StakeholderId;
-                    existingSession.StakeholderName = sessionReq.StakeholderName;
-                    existingSession.StakeholderEmail = sessionReq.StakeholderEmail;
-                    existingSession.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingSession.UpdatedAt = DateTime.Now;
-                    _context.SurveySessions.Update(existingSession);
-
-                    existingSessions.Remove(existingSession);
-                }
-                else
-                {
-                    // Add new session
-                    var newSession = _mapper.Map<Entities.SurveySession>(sessionReq);
-                    newSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
-                    newSession.CampaignId = update.Id;
-                    newSession.Token = Guid.NewGuid().ToString();
-                    newSession.Status = ((int)SurveySessionStatus.Draft);
-                    newSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    newSession.CreatedAt = DateTime.Now;
-                    await _context.SurveySessions.AddAsync(newSession);
-                }
-            }
-
-            // 4. Soft-delete sessions that were removed from the request
-            foreach (var session in existingSessions)
-            {
-                session.IsDeleted = true;
-                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                session.UpdatedAt = DateTime.Now;
-                _context.SurveySessions.Update(session);
-            }
-            #endregion
-
             await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(update);
         }
@@ -575,7 +502,59 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+        #endregion
 
+        #region Stakeholder
+        public async Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
+        {
+            // 1. Lấy danh sách StakeholderId đã có trong campaign này
+            var existingStakeholderIds = await _context.SurveySessions
+                .Where(x => x.CampaignId == request.CampainId && !x.IsDeleted)
+                .Select(x => x.StakeholderId)
+                .ToListAsync();
+
+            // 2. Lấy tất cả stakeholders từ Catalog service
+            var campaign = await _context.SurveyCampaigns.FindAsync(request.CampainId);
+            if (campaign == null)
+            {
+                throw new Exception("Chiến dịch khảo sát không tồn tại");
+            }
+            var allStakeholders = await _catalogService
+                .GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
+                {
+                    StakeholderType = campaign.StakeholderType
+                })
+                .ToListAsync();
+
+            // 3. Lọc ra những stakeholder chưa có trong campaign
+            var availableStakeholders = allStakeholders
+                .Where(s => !existingStakeholderIds.Contains(s.Id))
+                .AsQueryable();
+
+            // 4. Apply search filter (nếu có)
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                var searchTerm = request.TextSearch.ToLower();
+                availableStakeholders = availableStakeholders
+                    .Where(s => s.FullName.ToLower().Contains(searchTerm)
+                             || s.Email.ToLower().Contains(searchTerm));
+            }
+
+            // 5. Pagination
+            var totalRow = availableStakeholders.Count();
+            var data = availableStakeholders
+                .Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+
+            return new GetListPagingResponse<StakeholderDto>
+            {
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                TotalRow = totalRow,
+                Data = data
+            };
+        }
         #endregion
         public async Task<string> SendSurvey(int? type)
         {

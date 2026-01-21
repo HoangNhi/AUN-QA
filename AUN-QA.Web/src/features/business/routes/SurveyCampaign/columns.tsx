@@ -7,6 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -122,6 +123,7 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+
           {canUpdate && (
             <DropdownMenuItem
               onClick={() => showPopupDetail(row.original.Id, true)}
@@ -129,10 +131,23 @@ const ActionCell = ({
               Cập nhật
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Người tham gia
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Chuyển trạng thái
+          </DropdownMenuItem>
           {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+                Xóa
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

@@ -7,6 +7,7 @@ import type { SurveySession } from "../../../types/survey-campaign.types";
 import { DataTable } from "@/components/ui/data-table";
 import type { GetListPagingRequest } from "@/types/base/base.types";
 import type { StakeholderGetListPaging } from "@/features/catalog/types/stakeholder.types";
+import { stakeholderApi } from "@/features/catalog/api/stakeholder.api";
 import {
   Dialog,
   DialogClose,
@@ -90,48 +91,100 @@ export const StakeholderSelector = ({
   };
 
   // ADD handler (from popup)
-  const handleAdd = (
+  const handleAdd = async (
     result:
       | StakeholderGetListPaging[]
       | { type: "all"; excludedIds: string[] }
       | { items: StakeholderGetListPaging[] },
   ) => {
+    // Create a map of existing sessions by StakeholderId for quick lookup
+    const existingSessionsMap = new Map(
+      selectedSessions.map((s) => [s.StakeholderId, s]),
+    );
+
     if ("type" in result && result.type === "all") {
-      // Replaces current selection with "All"
-      onSelectionChange([], {
-        isResultAll: true,
-        excludedIds: result.excludedIds,
-      });
-    } else {
-      // Manual selection: Append to existing if manual, or replace if we switched from "All"?
-      // Usually "Add" implies appending. But if we were in "All" mode, adding more doesn't make sense.
-      // So if we were in "All" mode, we switch back to Manual and just take the new ones?
-      // Or we Append?
-      // Let's Append for now, assuming user knows what they are doing.
+      // Fetch ALL stakeholders from API
+      try {
+        const response = await stakeholderApi.getList({
+          PageIndex: 1,
+          PageSize: 10000, // Large number to get all
+          Type: parseInt(stakeholderType),
+          TextSearch: null,
+        });
 
-      const items = Array.isArray(result)
-        ? result
-        : (result as { items: StakeholderGetListPaging[] }).items;
-      if (!items) return;
+        const allStakeholders = response?.Data?.Data || [];
 
-      const newSessions = items.map(
-        (stakeholder: StakeholderGetListPaging) =>
-          ({
+        // Filter out excluded IDs
+        const filteredStakeholders = allStakeholders.filter(
+          (s) => !result.excludedIds.includes(s.Id),
+        );
+
+        // Convert to SurveySession format, preserving existing session IDs
+        const newSessions = filteredStakeholders.map((stakeholder) => {
+          const existingSession = existingSessionsMap.get(stakeholder.Id);
+          if (existingSession) {
+            // Preserve existing session data (Id, Status, etc.)
+            return {
+              ...existingSession,
+              StakeholderName: stakeholder.FullName,
+              StakeholderEmail: stakeholder.Email,
+            } as SurveySession;
+          }
+          // New stakeholder - create new session
+          return {
             Id: "",
             CampaignId: "",
             StakeholderId: stakeholder.Id,
             StakeholderName: stakeholder.FullName,
             StakeholderEmail: stakeholder.Email,
             Status: 1,
-          }) as SurveySession,
-      );
+          } as SurveySession;
+        });
 
-      // If we were in "All" mode before, we probably shouldn't be appending.
-      // But let's assume switching to manual resets the "All" state.
+        onSelectionChange(newSessions, { isResultAll: false, excludedIds: [] });
+      } catch (error) {
+        console.error("Failed to fetch all stakeholders:", error);
+      }
+    } else {
+      // Manual selection: Append to existing
+      const items = Array.isArray(result)
+        ? result
+        : (result as { items: StakeholderGetListPaging[] }).items;
+      if (!items) return;
+
+      const newSessions = items.map((stakeholder: StakeholderGetListPaging) => {
+        const existingSession = existingSessionsMap.get(stakeholder.Id);
+        if (existingSession) {
+          // Preserve existing session data (Id, Status, etc.)
+          return {
+            ...existingSession,
+            StakeholderName: stakeholder.FullName,
+            StakeholderEmail: stakeholder.Email,
+          } as SurveySession;
+        }
+        // New stakeholder - create new session
+        return {
+          Id: "",
+          CampaignId: "",
+          StakeholderId: stakeholder.Id,
+          StakeholderName: stakeholder.FullName,
+          StakeholderEmail: stakeholder.Email,
+          Status: 1,
+        } as SurveySession;
+      });
+
+      // If we were in "All" mode before, replace with new selection
       if (selectionMeta?.isResultAll) {
         onSelectionChange(newSessions, { isResultAll: false, excludedIds: [] });
       } else {
-        onSelectionChange([...selectedSessions, ...newSessions], {
+        // Append new sessions, but avoid duplicates
+        const existingIds = new Set(
+          selectedSessions.map((s) => s.StakeholderId),
+        );
+        const uniqueNewSessions = newSessions.filter(
+          (s) => !existingIds.has(s.StakeholderId),
+        );
+        onSelectionChange([...selectedSessions, ...uniqueNewSessions], {
           isResultAll: false,
           excludedIds: [],
         });

@@ -73,10 +73,11 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
 
-            // Navigation property
-            entity.HasOne<Standard>()
+            // Navigation property - Chỉ rõ property name
+            entity.HasOne(e => e.Standard)
                 .WithMany()
                 .HasForeignKey(e => e.StandardId)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("FK_Criterion_Standard");
         });
 

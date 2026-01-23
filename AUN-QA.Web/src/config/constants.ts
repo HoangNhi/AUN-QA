@@ -124,6 +124,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/SurveyCampaign/update`,
       DELETE_LIST: `${BUSINESS_BASE}/SurveyCampaign/delete-list`,
       GET_STAKEHOLDER_NOT_IN_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/get-stakeholder-not-in-campaign`,
+      GET_LIST_SESSION: `${BUSINESS_BASE}/SurveyCampaign/get-list-session`,
     },
   },
   File: {

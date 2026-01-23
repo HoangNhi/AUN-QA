@@ -2,6 +2,8 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
@@ -548,6 +550,34 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .ToList();
 
             return new GetListPagingResponse<StakeholderDto>
+            {
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                TotalRow = totalRow,
+                Data = data
+            };
+        }
+
+        public async Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request)
+        {
+            var query = _context.SurveySessions
+                .Where(x => x.CampaignId == request.CampaignId && !x.IsDeleted);
+
+            if (request.Status.HasValue)
+            {
+                query = query.Where(x => x.Status == request.Status);
+            }
+
+            var totalRow = await query.CountAsync();
+
+            var data = await query
+                .OrderBy(x => x.StakeholderName).ThenBy(x => x.StakeholderEmail)
+                .Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ProjectTo<ModelSurveySession>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return new GetListPagingResponse<ModelSurveySession>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,

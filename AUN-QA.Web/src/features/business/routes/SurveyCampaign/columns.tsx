@@ -19,15 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type {
-  SurveyCampaign,
-  SurveyCampaignGetListPaging,
-} from "../../types/survey-campaign.types";
+import type { SurveyCampaignGetListPaging } from "../../types/survey-campaign.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
+  showPopupSession: (id: string, name: string) => void,
   canUpdate: boolean = true,
   canDelete: boolean = true,
 ): ColumnDef<SurveyCampaignGetListPaging>[] => [
@@ -88,6 +86,7 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
+        showPopupSession={showPopupSession}
         canUpdate={canUpdate}
         canDelete={canDelete}
       />
@@ -99,12 +98,14 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
+  showPopupSession,
   canUpdate,
   canDelete,
 }: {
-  row: Row<SurveyCampaign>;
+  row: Row<SurveyCampaignGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
+  showPopupSession: (id: string, name: string) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }) => {
@@ -132,7 +133,7 @@ const ActionCell = ({
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
-            onClick={() => showPopupDetail(row.original.Id, true)}
+            onClick={() => showPopupSession(row.original.Id, row.original.Name)}
           >
             Người tham gia
           </DropdownMenuItem>

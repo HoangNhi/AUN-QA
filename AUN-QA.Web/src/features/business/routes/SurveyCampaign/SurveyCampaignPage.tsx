@@ -3,6 +3,7 @@ import { useOutletContext } from "react-router-dom";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
+import { PopupSession } from "./components/PopupSession";
 import { DataTable } from "@/components/ui/data-table";
 import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { Button } from "@/components/ui/Button";
@@ -40,11 +41,23 @@ const SurveyCampaignPage = () => {
     permission: GetPermissionByUser | null;
   }>();
 
+  const [isPopupSessionOpen, setIsPopupSessionOpen] = useState(false);
+  const [selectedCampaign, setSelectedCampaign] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const showPopupSession = (id: string, name: string) => {
+    setSelectedCampaign({ id, name });
+    setIsPopupSessionOpen(true);
+  };
+
   const columns = useMemo(
     () =>
       getColumns(
         showPopupDetail,
         deleteList,
+        showPopupSession,
         permission?.IsUpdated,
         permission?.IsDeleted,
       ),
@@ -203,6 +216,13 @@ const SurveyCampaignPage = () => {
         onOpenChange={setShowDeleteConfirm}
         onConfirm={handleDelete}
         itemCount={Object.keys(rowSelection).length}
+      />
+
+      <PopupSession
+        open={isPopupSessionOpen}
+        onOpenChange={setIsPopupSessionOpen}
+        campaignId={selectedCampaign?.id || ""}
+        campaignName={selectedCampaign?.name}
       />
     </div>
   );

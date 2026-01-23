@@ -1,9 +1,11 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type {
+  GetListSessionRequest,
   GetStakeholderNotInCampaignRequest,
   SurveyCampaign,
   SurveyCampaignGetListPaging,
   SurveyCampaignGetListPagingRequest,
+  SurveySession,
 } from "../types/survey-campaign.types";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config";
@@ -67,6 +69,15 @@ export const surveyCampaignService = {
   ): Promise<ApiResponse<GetListPagingResponse<Stakeholder>>> => {
     return api.post<GetListPagingResponse<Stakeholder>>(
       API_ENDPOINTS.Business.SurveyCampaign.GET_STAKEHOLDER_NOT_IN_CAMPAIGN,
+      request,
+    );
+  },
+
+  getListSession: async (
+    request: GetListSessionRequest,
+  ): Promise<ApiResponse<GetListPagingResponse<SurveySession>>> => {
+    return api.post<GetListPagingResponse<SurveySession>>(
+      API_ENDPOINTS.Business.SurveyCampaign.GET_LIST_SESSION,
       request,
     );
   },

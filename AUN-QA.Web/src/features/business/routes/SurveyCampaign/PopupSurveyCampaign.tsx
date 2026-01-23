@@ -13,18 +13,14 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import type {
-  SurveyCampaign,
-  SurveySession,
-} from "../../types/survey-campaign.types";
+import type { SurveyCampaign } from "../../types/survey-campaign.types";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
-import { StakeholderSelector } from "./components/StakeholderSelector";
 import { toast } from "sonner";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
+import { CAMPAIGN_STATUS_OPTIONS } from "@/constants/business.constants";
 
 const PopupSurveyCampaign = ({
   surveyCampaign,
@@ -227,11 +223,7 @@ const PopupSurveyCampaign = ({
                   <div className="grid gap-2">
                     <Label>Trạng thái</Label>
                     <Combobox
-                      options={[
-                        { Value: "1", Text: "Chưa bắt đầu" },
-                        { Value: "2", Text: "Đang diễn ra" },
-                        { Value: "3", Text: "Đã kết thúc" },
-                      ]}
+                      options={CAMPAIGN_STATUS_OPTIONS}
                       value={formData.status}
                       onValueChange={(val) => updateField("status", val)}
                       placeholder="Chọn trạng thái"

@@ -1,6 +1,8 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
@@ -17,7 +19,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task<string> SendSurvey(int? type);
         #endregion
 
-        #region Stakeholder
+        #region Session
+        Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request);
         Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request);
         #endregion
     }

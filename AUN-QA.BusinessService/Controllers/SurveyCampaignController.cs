@@ -2,6 +2,8 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
@@ -93,7 +95,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
         #endregion
 
-        #region Stakeholder
+        #region Session
         [HttpPost, Route("get-stakeholder-not-in-campaign")]
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
@@ -104,6 +106,18 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.GetStakeholdersNotInCampaign(request);
             return Ok(new BaseResponse<GetListPagingResponse<StakeholderDto>> { Data = result, Success = true });
         }
+
+        [HttpPost, Route("get-list-session")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetListSession(SurveySessionGetListPagingRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetListSession(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ModelSurveySession>> { Data = result, Success = true });
+        }
+
         #endregion
     }
 }

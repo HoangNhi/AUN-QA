@@ -4,6 +4,7 @@ import type {
 } from "@/types/base/base.types";
 import type { TemplateTopic } from "./survey-template.types";
 
+// Model
 export interface SurveyCampaign extends BaseRequest {
   Id: string;
   CycleId: string;
@@ -45,6 +46,7 @@ export interface SurveyTextAnswer extends BaseRequest {
   Content: string;
 }
 
+// Request
 export interface SurveyCampaignGetListPaging extends SurveyCampaign {
   Cycle: string;
   Stakeholder: string;
@@ -57,4 +59,9 @@ export interface SurveyCampaignGetListPagingRequest extends GetListPagingRequest
 
 export interface GetStakeholderNotInCampaignRequest extends GetListPagingRequest {
   CampainId: string;
+}
+
+export interface GetListSessionRequest extends GetListPagingRequest {
+  CampaignId: string;
+  Status?: number;
 }

@@ -33,6 +33,7 @@ const SurveyCampaignPage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    handleChangeStatus,
     isFetching,
     isLoading,
   } = useSurveyCampaign();
@@ -58,10 +59,17 @@ const SurveyCampaignPage = () => {
         showPopupDetail,
         deleteList,
         showPopupSession,
+        handleChangeStatus,
         permission?.IsUpdated,
         permission?.IsDeleted,
       ),
-    [permission, showPopupDetail, deleteList],
+    [
+      permission,
+      showPopupDetail,
+      deleteList,
+      showPopupSession,
+      handleChangeStatus,
+    ],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(

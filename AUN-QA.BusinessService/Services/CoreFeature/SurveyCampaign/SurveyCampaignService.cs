@@ -9,6 +9,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
+using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
@@ -505,6 +506,103 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+
+        /// <summary>
+        /// Draft -> Sent -> Completed
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task ChangeStatus(GetByIdRequest request)
+        {
+            var data = await _context.SurveyCampaigns.FindAsync(request.Id);
+            if (data == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            switch (data.Status)
+            {
+                case ((int)SurveyCampaignStatus.Draft):
+                    // 1. Update Status
+                    data.Status = (int)SurveyCampaignStatus.Sent;
+                    data.UpdatedAt = DateTime.Now;
+                    data.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.SurveyCampaigns.Update(data);
+
+                    // 2. Queue Email Job
+                    var campaignId = data.Id;
+                    var campaignName = data.Name;
+                    var campaignUpdatedAt = data.UpdatedAt;
+                    var campaignUpdatedBy = data.UpdatedBy;
+
+                    await _taskQueue.QueueBackgroundWorkItemAsync(async (serviceProvider, token) =>
+                    {
+                        using var scope = serviceProvider.CreateScope();
+                        var context = scope.ServiceProvider.GetRequiredService<BusinessContext>();
+                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                        // Get active sessions for this campaign
+                        var sessions = await context.SurveySessions
+                            .Where(x => x.CampaignId == campaignId && !x.IsDeleted)
+                            .ToListAsync(token);
+
+                        var batches = sessions.Chunk(5);
+                        foreach (var batch in batches)
+                        {
+                            if (token.IsCancellationRequested) break;
+
+                            // 1. Send emails in parallel
+                            var emailTasks = batch.Select(async session =>
+                            {
+                                string subject = $"Mời tham gia khảo sát: {campaignName}";
+                                string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+
+                                string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaignName, link);
+
+                                try
+                                {
+                                    await emailService.SendEmailAsync(session.StakeholderEmail, subject, body);
+                                }
+                                catch
+                                {
+                                }
+                            });
+
+                            await Task.WhenAll(emailTasks);
+
+                            // 2. Update DB sequentially
+                            foreach (var session in batch)
+                            {
+                                session.SentDate = campaignUpdatedAt;
+                                session.Status = ((int)SurveySessionStatus.Sent);
+                                session.UpdatedAt = campaignUpdatedAt;
+                                session.UpdatedBy = campaignUpdatedBy;
+
+                                context.SurveySessions.Update(session);
+                            }
+                            await context.SaveChangesAsync(token);
+                        }
+                    });
+
+                    break;
+
+                case ((int)SurveyCampaignStatus.Sent):
+                    data.Status = (int)SurveyCampaignStatus.Completed;
+                    data.UpdatedAt = DateTime.Now;
+                    data.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.SurveyCampaigns.Update(data);
+                    break;
+
+                case ((int)SurveyCampaignStatus.Completed):
+                    throw new Exception("Chiến dịch đã kết thúc, không thể thay đổi trạng thái");
+
+                default:
+                    throw new Exception("Trạng thái không hợp lệ");
+            }
+
+            await _context.SaveChangesAsync();
+        }
         #endregion
 
         #region Session
@@ -702,29 +800,5 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             return String.Join(',', request.Ids);
         }
         #endregion
-        public async Task<string> SendSurvey(int? type)
-        {
-            int count = 0;
-
-            // 1. Lấy dòng chảy dữ liệu từ Catalog (Streaming)
-            // Code này không bao giờ load toàn bộ list vào RAM
-            await foreach (var stakeholder in _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest { StakeholderType = type }))
-            {
-                // 2. Đẩy vào hàng đợi xử lý ngầm
-                await _taskQueue.QueueBackgroundWorkItemAsync(async (serviceProvider, token) =>
-                {
-                    // Lấy EmailService từ Scope riêng của Background Worker
-                    var emailService = serviceProvider.GetRequiredService<IEmailService>();
-
-                    string body = $"Name: {stakeholder.FullName}\nEmail: {stakeholder.Email}\nDecription: {stakeholder.Description}";
-                    await emailService.SendEmailAsync(stakeholder.Email, "Test gửi email", body);
-                });
-
-                count++;
-            }
-
-            return $"Đã đẩy {count} email vào hàng đợi gửi đi.";
-        }
-
     }
 }

@@ -128,6 +128,7 @@ export const API_ENDPOINTS = {
       ADD_ALL_STAKEHOLDER_TO_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/add-all-stakeholder-to-campaign`,
       ADD_LIST_STAKEHOLDER_TO_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/add-list-stakeholder-to-campaign`,
       DELETE_LIST_SESSION: `${BUSINESS_BASE}/SurveyCampaign/delete-list-session`,
+      CHANGE_STATUS: `${BUSINESS_BASE}/SurveyCampaign/change-status`,
     },
   },
   File: {

@@ -7,7 +7,6 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
@@ -86,12 +85,15 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 
-        [HttpPost("send-survey")]
-        [AllowAnonymous]
-        public async Task<ActionResult<string>> SendSurvey([FromQuery] int? type)
+        [HttpPost("change-status")]
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> ChangeStatus([FromBody] GetByIdRequest request)
         {
-            var result = await _service.SendSurvey(type);
-            return Ok(result);
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.ChangeStatus(request);
+            return Ok(new BaseResponse(true, 200));
         }
         #endregion
 

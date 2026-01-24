@@ -68,6 +68,22 @@ export const PopupSession = ({
     }
   }, [campaignId]);
 
+  useEffect(() => {
+    if (!open) {
+      setPageRequest((prev) => ({
+        ...prev,
+        PageIndex: 1,
+        TextSearch: null,
+        Status: undefined,
+      }));
+      setTextSearch("");
+      setRowSelection({});
+      setShowDeleteConfirm(false);
+      setDeleteItem([]);
+      setOpenChooseStakeholder(false);
+    }
+  }, [open]);
+
   const handleDelete = (ids: string[]) => {
     deleteSessionMutation.mutate(ids, {
       onSuccess: () => {

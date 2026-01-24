@@ -26,6 +26,7 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   showPopupSession: (id: string, name: string) => void,
+  changeStatus: (id: string) => void,
   canUpdate: boolean = true,
   canDelete: boolean = true,
 ): ColumnDef<SurveyCampaignGetListPaging>[] => [
@@ -87,6 +88,7 @@ export const getColumns = (
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
         showPopupSession={showPopupSession}
+        changeStatus={changeStatus}
         canUpdate={canUpdate}
         canDelete={canDelete}
       />
@@ -99,6 +101,7 @@ const ActionCell = ({
   showPopupDetail,
   deleteList,
   showPopupSession,
+  changeStatus,
   canUpdate,
   canDelete,
 }: {
@@ -106,12 +109,19 @@ const ActionCell = ({
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
   showPopupSession: (id: string, name: string) => void;
+  changeStatus: (id: string) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
   if (!canUpdate && !canDelete) return null;
+
+  const status = row.original.Status;
+  const isDraft = status === 1;
+  const isSent = status === 2;
+  const isCompleted = status === 3;
 
   return (
     <>
@@ -137,11 +147,13 @@ const ActionCell = ({
           >
             Người tham gia
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => showPopupDetail(row.original.Id, true)}
-          >
-            Chuyển trạng thái
-          </DropdownMenuItem>
+
+          {!isCompleted && canUpdate && (
+            <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
+              {isDraft ? "Gửi khảo sát" : "Kết thúc khảo sát"}
+            </DropdownMenuItem>
+          )}
+
           {canDelete && (
             <>
               <DropdownMenuSeparator />
@@ -174,6 +186,32 @@ const ActionCell = ({
               }}
             >
               Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showStatusConfirm} onOpenChange={setShowStatusConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận chuyển trạng thái</DialogTitle>
+            <DialogDescription>
+              {isDraft
+                ? "Bạn có chắc chắn muốn phát hành khảo sát này? Email mời tham gia sẽ được gửi đến tất cả người tham gia trong danh sách."
+                : "Bạn có chắc chắn muốn kết thúc khảo sát này? Người tham gia sẽ không thể truy cập khảo sát nữa."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                changeStatus(row.original.Id);
+                setShowStatusConfirm(false);
+              }}
+            >
+              Xác nhận
             </Button>
           </DialogFooter>
         </DialogContent>

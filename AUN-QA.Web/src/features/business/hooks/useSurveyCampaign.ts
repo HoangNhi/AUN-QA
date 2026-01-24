@@ -167,6 +167,29 @@ export const useSurveyCampaign = () => {
     await deleteMutation.mutateAsync(ids);
   };
 
+  const changeStatusMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await surveyCampaignService.changeStatus(id);
+      if (!response.Success) {
+        throw new Error(response.Message);
+      }
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Cập nhật trạng thái thành công");
+      queryClient.invalidateQueries({ queryKey: ["survey-campaigns"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi cập nhật trạng thái",
+      );
+    },
+  });
+
+  const handleChangeStatus = async (id: string) => {
+    await changeStatusMutation.mutateAsync(id);
+  };
+
   return {
     data,
     surveyCampaign,
@@ -180,7 +203,11 @@ export const useSurveyCampaign = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading: saveMutation.isPending || deleteMutation.isPending,
+    handleChangeStatus,
+    isLoading:
+      saveMutation.isPending ||
+      deleteMutation.isPending ||
+      changeStatusMutation.isPending,
     isFetching,
   };
 };

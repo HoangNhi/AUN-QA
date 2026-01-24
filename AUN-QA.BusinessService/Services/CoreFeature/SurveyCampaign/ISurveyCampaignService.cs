@@ -16,7 +16,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task<string> DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
-        Task<string> SendSurvey(int? type);
+        Task ChangeStatus(GetByIdRequest request);
         #endregion
 
         #region Session

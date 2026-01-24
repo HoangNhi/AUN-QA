@@ -110,4 +110,10 @@ export const surveyCampaignService = {
       },
     );
   },
+
+  changeStatus: async (id: string): Promise<ApiResponse<boolean>> => {
+    return api.post(API_ENDPOINTS.Business.SurveyCampaign.CHANGE_STATUS, {
+      id,
+    });
+  },
 };

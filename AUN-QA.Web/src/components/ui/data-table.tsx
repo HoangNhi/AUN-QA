@@ -69,7 +69,7 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     getRowId,
     state: {
-      rowSelection,
+      rowSelection: rowSelection ?? {},
     },
   });
 

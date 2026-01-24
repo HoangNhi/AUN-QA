@@ -118,6 +118,38 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse<GetListPagingResponse<ModelSurveySession>> { Data = result, Success = true });
         }
 
+        [HttpPost, Route("add-list-stakeholder-to-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.AddListStakeholderToCampaign(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("add-all-stakeholder-to-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.AddAllStakeholderToCampaign(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpDelete, Route("delete-list-session")]
+        [AttributePermission(Action = ActionType.DELETE)]
+        public async Task<IActionResult> DeleteListSession([FromBody] DeleteListRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.DeleteListSession(request);
+            return Ok(new BaseResponse<string> { Data = result, Success = true });
+        }
         #endregion
     }
 }

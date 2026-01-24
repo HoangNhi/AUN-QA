@@ -1,5 +1,7 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type {
+  AddAllStakeholderToCampaignRequest,
+  AddListStakeholderToCampaignRequest,
   GetListSessionRequest,
   GetStakeholderNotInCampaignRequest,
   SurveyCampaign,
@@ -79,6 +81,33 @@ export const surveyCampaignService = {
     return api.post<GetListPagingResponse<SurveySession>>(
       API_ENDPOINTS.Business.SurveyCampaign.GET_LIST_SESSION,
       request,
+    );
+  },
+
+  addAllStakeholderToCampaign: async (
+    request: AddAllStakeholderToCampaignRequest,
+  ): Promise<ApiResponse> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.ADD_ALL_STAKEHOLDER_TO_CAMPAIGN,
+      request,
+    );
+  },
+
+  addListStakeholderToCampaign: async (
+    request: AddListStakeholderToCampaignRequest,
+  ): Promise<ApiResponse> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.ADD_LIST_STAKEHOLDER_TO_CAMPAIGN,
+      request,
+    );
+  },
+
+  deleteListSession: async (ids: string[]): Promise<ApiResponse<string>> => {
+    return api.delete<string>(
+      API_ENDPOINTS.Business.SurveyCampaign.DELETE_LIST_SESSION,
+      {
+        data: { Ids: ids },
+      },
     );
   },
 };

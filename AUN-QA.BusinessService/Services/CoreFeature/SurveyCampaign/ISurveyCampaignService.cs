@@ -22,6 +22,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         #region Session
         Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request);
         Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request);
+        Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request);
+        Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request);
+        Task<string> DeleteListSession(DeleteListRequest request);
         #endregion
     }
 }

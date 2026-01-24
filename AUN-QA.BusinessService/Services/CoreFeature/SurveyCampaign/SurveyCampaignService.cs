@@ -430,6 +430,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                delete.UpdatedAt = DateTime.Now;
 
                 _context.SurveyCampaigns.Update(delete);
             }
@@ -506,7 +507,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         }
         #endregion
 
-        #region Stakeholder
+        #region Session
         public async Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
         {
             // 1. Lấy danh sách StakeholderId đã có trong campaign này
@@ -544,10 +545,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             // 5. Pagination
             var totalRow = availableStakeholders.Count();
-            var data = availableStakeholders
-                .Skip((request.PageIndex - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToList();
+            List<StakeholderDto> data;
+
+            if (request.PageIndex == -1)
+            {
+                data = availableStakeholders.ToList();
+            }
+            else
+            {
+                data = availableStakeholders
+                    .Skip((request.PageIndex - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+            }
 
             return new GetListPagingResponse<StakeholderDto>
             {
@@ -568,6 +578,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 query = query.Where(x => x.Status == request.Status);
             }
 
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                query = query.Where(x =>
+                    x.StakeholderName.Contains(request.TextSearch)
+                    || x.StakeholderEmail.Contains(request.TextSearch)
+                );
+            }
+
             var totalRow = await query.CountAsync();
 
             var data = await query
@@ -584,6 +602,104 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 TotalRow = totalRow,
                 Data = data
             };
+        }
+
+        public async Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
+        {
+            if (!request.ListStakeholderId.Any())
+            {
+                throw new Exception("Danh sách người tham gia không được để trống");
+            }
+
+            foreach (var stakeholderId in request.ListStakeholderId)
+            {
+                var stakeholder = await _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
+                {
+                    Id = stakeholderId.ToString()
+                }).FirstOrDefaultAsync();
+
+                if (stakeholder == null)
+                {
+                    throw new Exception($"Người tham gia với ID {stakeholderId} không tồn tại");
+                }
+
+                var add = new Entities.SurveySession
+                {
+                    Id = Guid.NewGuid(),
+                    CampaignId = request.CampaignId,
+                    StakeholderId = stakeholder.Id,
+                    StakeholderName = stakeholder.FullName,
+                    StakeholderEmail = stakeholder.Email,
+                    Token = Guid.NewGuid().ToString(),
+                    Status = (int)SurveySessionStatus.Draft,
+                    CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
+                    CreatedAt = DateTime.Now
+                };
+
+                await _context.SurveySessions.AddAsync(add);
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
+        {
+            var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
+            {
+                CampainId = request.CampaignId,
+                TextSearch = request.Filter_TextSearch,
+                PageIndex = -1,
+                PageSize = 0
+            });
+
+            if (!stakeholder.Data.Any())
+            {
+                throw new Exception("Không có người tham gia nào phù hợp để thêm vào chiến dịch");
+            }
+
+            foreach (var item in stakeholder.Data)
+            {
+                var add = new Entities.SurveySession
+                {
+                    Id = Guid.NewGuid(),
+                    CampaignId = request.CampaignId,
+                    StakeholderId = item.Id,
+                    StakeholderName = item.FullName,
+                    StakeholderEmail = item.Email,
+                    Token = Guid.NewGuid().ToString(),
+                    Status = (int)SurveySessionStatus.Draft,
+                    CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
+                    CreatedAt = DateTime.Now
+                };
+                await _context.SurveySessions.AddAsync(add);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<string> DeleteListSession(DeleteListRequest request)
+        {
+            foreach (var id in request.Ids)
+            {
+                var delete = await _context.SurveySessions.FindAsync(id);
+                if (delete == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                if (delete.Status == ((int)SurveySessionStatus.Completed))
+                {
+                    continue;
+                }
+
+                delete.IsDeleted = true;
+                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+
+                _context.SurveySessions.Update(delete);
+            }
+
+            await _context.SaveChangesAsync();
+            return String.Join(',', request.Ids);
         }
         #endregion
         public async Task<string> SendSurvey(int? type)

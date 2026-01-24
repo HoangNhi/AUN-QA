@@ -65,3 +65,13 @@ export interface GetListSessionRequest extends GetListPagingRequest {
   CampaignId: string;
   Status?: number;
 }
+
+export interface AddAllStakeholderToCampaignRequest {
+  CampaignId: string;
+  Filter_TextSearch?: string;
+}
+
+export interface AddListStakeholderToCampaignRequest {
+  CampaignId: string;
+  StakeholderIds: string[];
+}

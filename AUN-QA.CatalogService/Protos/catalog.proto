@@ -16,7 +16,8 @@ service CatalogProto {
 }
 
 message GetStakeholdersStreamRequest {
-  google.protobuf.Int32Value stakeholder_type = 1;
+  google.protobuf.StringValue id = 1;
+  google.protobuf.Int32Value stakeholder_type = 2;
 }
 
 message StakeholderInfo {

@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { GetListSessionRequest } from "../types/survey-campaign.types";
 import { surveyCampaignService } from "../api/survey-campaign.api";
@@ -42,4 +42,24 @@ export const useSurveySession = (
     isError,
     refetch,
   };
+};
+
+export const useDeleteSurveySession = () => {
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const response = await surveyCampaignService.deleteListSession(ids);
+      if (!response.Success) {
+        throw new Error(response.Message);
+      }
+      return response;
+    },
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Xóa người tham gia thành công");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Có lỗi xảy ra khi xóa người tham gia");
+    },
+  });
 };

@@ -25,6 +25,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request);
         Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request);
         Task<string> DeleteListSession(DeleteListRequest request);
+        Task SendSurveyInvitation(GetByIdRequest request);
         #endregion
     }
 }

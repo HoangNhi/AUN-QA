@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,10 @@ import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/data-table";
 import { getViewStakeholderColumns } from "./session-columns";
 import { PopupChooseStakeholder } from "./PopupChooseStakeholder";
-import type { GetListSessionRequest } from "../../../types/survey-campaign.types";
+import type {
+  GetListSessionRequest,
+  SurveySession,
+} from "../../../types/survey-campaign.types";
 import {
   InputGroup,
   InputGroupAddon,
@@ -25,6 +28,8 @@ import {
 import { Combobox } from "@/components/ui/combobox";
 import { SESSION_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { surveyCampaignService } from "@/features/business/api/survey-campaign.api";
+import { toast } from "sonner";
 
 interface PopupSessionProps {
   open: boolean;
@@ -95,13 +100,33 @@ export const PopupSession = ({
     });
   };
 
+  const handleAddStakeholder = () => {
+    refetch();
+  };
+
+  const handleSendEmail = useCallback(
+    async (item: SurveySession) => {
+      try {
+        await surveyCampaignService.sendSurveyInvitation(item.Id);
+        toast.success("Gửi khảo sát thành công");
+        refetch();
+      } catch {
+        toast.error("Gửi khảo sát thất bại");
+      }
+    },
+    [refetch],
+  );
+
   const columns = useMemo(
     () =>
-      getViewStakeholderColumns((item) => {
-        setDeleteItem([item.Id]);
-        setShowDeleteConfirm(true);
-      }),
-    [],
+      getViewStakeholderColumns(
+        (item) => {
+          setDeleteItem([item.Id]);
+          setShowDeleteConfirm(true);
+        },
+        (item) => handleSendEmail(item),
+      ),
+    [handleSendEmail],
   );
 
   const handleSearchChange = (value: string) => {
@@ -111,10 +136,6 @@ export const PopupSession = ({
       TextSearch: value || null,
       PageIndex: 1,
     }));
-  };
-
-  const handleAddStakeholder = () => {
-    refetch();
   };
 
   return (

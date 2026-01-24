@@ -46,6 +46,7 @@ export const PopupChooseStakeholder = ({
   const [textSearch, setTextSearch] = useState("");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [isSelectingAll, setIsSelectingAll] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Sync campaignId to pageRequest
   useEffect(() => {
@@ -120,6 +121,7 @@ export const PopupChooseStakeholder = ({
 
   const handleAdd = async () => {
     try {
+      setIsLoading(true);
       let res;
       if (isSelectingAll) {
         res = await surveyCampaignService.addAllStakeholderToCampaign({
@@ -130,6 +132,7 @@ export const PopupChooseStakeholder = ({
         const selectedIds = Object.keys(rowSelection);
         if (selectedIds.length === 0) {
           toast.warning("Vui lòng chọn ít nhất một người tham gia");
+          setIsLoading(false);
           return;
         }
 
@@ -148,6 +151,8 @@ export const PopupChooseStakeholder = ({
       }
     } catch (error) {
       toast.error("Lỗi khi thêm người tham gia");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -197,11 +202,16 @@ export const PopupChooseStakeholder = ({
           </DialogClose>
           <Button
             onClick={handleAdd}
-            disabled={!isSelectingAll && Object.keys(rowSelection).length === 0}
+            disabled={
+              (!isSelectingAll && Object.keys(rowSelection).length === 0) ||
+              isLoading
+            }
           >
-            {isSelectingAll
-              ? "Thêm tất cả"
-              : `Thêm ${Object.keys(rowSelection).length} người`}
+            {isLoading
+              ? "Đang thêm..."
+              : isSelectingAll
+                ? "Thêm tất cả"
+                : `Thêm ${Object.keys(rowSelection).length} người`}
           </Button>
         </DialogFooter>
       </DialogContent>

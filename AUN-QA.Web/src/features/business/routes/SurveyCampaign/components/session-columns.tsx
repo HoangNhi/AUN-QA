@@ -11,8 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { useState } from "react";
+
 export const getViewStakeholderColumns = (
   onDelete?: (item: SurveySession) => void,
+  onSendEmail?: (item: SurveySession) => Promise<void>,
 ): ColumnDef<SurveySession>[] => [
   {
     id: "select",
@@ -67,25 +70,57 @@ export const getViewStakeholderColumns = (
   {
     id: "actions",
     header: "Thao tác",
-    cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-
-            <DropdownMenuItem onClick={() => {}}>Gửi khảo sát</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDelete?.(row.original)}>
-              Xóa
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ({ row }) => (
+      <ActionCell row={row} onDelete={onDelete} onSendEmail={onSendEmail} />
+    ),
   },
 ];
+
+const ActionCell = ({
+  row,
+  onDelete,
+  onSendEmail,
+}: {
+  row: { original: SurveySession };
+  onDelete?: (item: SurveySession) => void;
+  onSendEmail?: (item: SurveySession) => Promise<void>;
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleSendEmail = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!onSendEmail) return;
+
+    try {
+      setIsLoading(true);
+      await onSendEmail(row.original);
+      setOpen(false);
+    } catch {
+      // Error handled by callback usually, but we catch to ensure loading state reset
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+
+        <DropdownMenuItem onClick={handleSendEmail} disabled={isLoading}>
+          {isLoading ? "Đang gửi..." : "Gửi khảo sát"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onDelete?.(row.original)}>
+          Xóa
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

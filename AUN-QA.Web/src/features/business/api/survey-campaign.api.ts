@@ -116,4 +116,13 @@ export const surveyCampaignService = {
       id,
     });
   },
+
+  sendSurveyInvitation: async (id: string): Promise<ApiResponse<boolean>> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.SEND_SURVEY_INVITATION,
+      {
+        id,
+      },
+    );
+  },
 };

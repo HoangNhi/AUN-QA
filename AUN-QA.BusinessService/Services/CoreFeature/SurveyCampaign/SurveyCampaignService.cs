@@ -29,19 +29,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICatalogIntegrationService _catalogService;
         private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly IEmailService _emailService;
 
         public SurveyCampaignService(
             BusinessContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
             ICatalogIntegrationService catalogService,
-            IBackgroundTaskQueue taskQueue)
+            IBackgroundTaskQueue taskQueue,
+            IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _catalogService = catalogService;
             _taskQueue = taskQueue;
+            _emailService = emailService;
         }
 
         #region SurveyCampaign
@@ -544,7 +547,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                         // Get active sessions for this campaign
                         var sessions = await context.SurveySessions
-                            .Where(x => x.CampaignId == campaignId && !x.IsDeleted)
+                            .Where(x => x.CampaignId == campaignId && !x.IsDeleted && x.Status == (int)SurveySessionStatus.Draft)
                             .ToListAsync(token);
 
                         var batches = sessions.Chunk(5);
@@ -603,6 +606,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             await _context.SaveChangesAsync();
         }
+
         #endregion
 
         #region Session
@@ -798,6 +802,42 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             await _context.SaveChangesAsync();
             return String.Join(',', request.Ids);
+        }
+
+        public async Task SendSurveyInvitation(GetByIdRequest request)
+        {
+            var session = await _context.SurveySessions.FindAsync(request.Id);
+            if (session == null)
+            {
+                throw new Exception("Không tìm thấy thông tin lượt khảo sát");
+            }
+
+            var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
+            if (campaign == null)
+            {
+                throw new Exception("Không tìm thấy thông tin chiến dịch khảo sát");
+            }
+
+            string subject = $"Mời tham gia khảo sát: {campaign.Name}";
+            string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+            string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaign.Name, link);
+
+            try
+            {
+                await _emailService.SendEmailAsync(session.StakeholderEmail, subject, body);
+
+                session.Status = (int)SurveySessionStatus.Sent;
+                session.SentDate = DateTime.Now;
+                session.UpdatedAt = DateTime.Now;
+                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+
+                _context.SurveySessions.Update(session);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Gửi email thất bại: {ex.Message}");
+            }
         }
         #endregion
     }

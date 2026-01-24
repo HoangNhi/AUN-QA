@@ -152,6 +152,17 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.DeleteListSession(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }
+
+        [HttpPost("send-survey-invitation")]
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> SendSurveyInvitation([FromBody] GetByIdRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SendSurveyInvitation(request);
+            return Ok(new BaseResponse(true, 200));
+        }
         #endregion
     }
 }

@@ -12,6 +12,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests
         public string Content { get; set; } = null!;
 
         public int Sort { get; set; }
+
+        public int? Score { get; set; }
     }
 
     public class TemplateQuestionRequestValidator : AbstractValidator<TemplateQuestionRequest>

@@ -9,7 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type {
-  SurveyCampaign,
+  SurveyView, // NEW
   SurveySubmissionRequest,
 } from "../../types/survey-campaign.types";
 import { toast } from "sonner";
@@ -22,7 +22,8 @@ export const DoSurveyPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [campaign, setCampaign] = useState<SurveyCampaign | null>(null);
+  const [isEditing, setIsEditing] = useState(false); // NEW
+  const [campaign, setCampaign] = useState<SurveyView | null>(null); // CHANGED type
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
 
   // Answers State
@@ -39,10 +40,27 @@ export const DoSurveyPage = () => {
         const res = await surveyCampaignService.getSurveyByToken(token);
         if (res.Success && res.Data) {
           setCampaign(res.Data);
+
+          // NEW: Pre-fill answers if any
+          const newScores: Record<string, number> = {};
+          const newTextAnswers: Record<string, string> = {};
+
+          res.Data.ListTopic.forEach((topic) => {
+            topic.ListCategory.forEach((cat) => {
+              cat.ListQuestion.forEach((q) => {
+                if (q.Score) newScores[q.Id] = q.Score;
+              });
+            });
+            topic.ListTextQuestion.forEach((q) => {
+              if (q.Answer) newTextAnswers[q.Id] = q.Answer;
+            });
+          });
+          setScores(newScores);
+          setTextAnswers(newTextAnswers);
         } else {
           toast.error(res.Message || "Không thể tải bài khảo sát");
         }
-      } catch (_) {
+      } catch {
         toast.error("Có lỗi xảy ra khi tải bài khảo sát");
       } finally {
         setIsLoading(false);
@@ -121,7 +139,7 @@ export const DoSurveyPage = () => {
       } else {
         toast.error(res.Message || "Gửi khảo sát thất bại");
       }
-    } catch (_) {
+    } catch {
       toast.error("Có lỗi xảy ra khi gửi khảo sát");
     } finally {
       setIsSubmitting(false);
@@ -168,6 +186,53 @@ export const DoSurveyPage = () => {
           <p className="text-gray-600">
             Liên kết có thể không hợp lệ hoặc khảo sát đã kết thúc.
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // NEW: Already Responded Screen
+  if (campaign.IsSessionCompleted && !isEditing) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="h-2 bg-blue-600 w-full" />
+
+          <div className="p-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+              <ListChecks className="text-blue-600 w-10 h-10" />
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {campaign.Name}
+              </h1>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 text-green-700 font-medium text-xs">
+                <span className="w-2 h-2 rounded-full bg-green-600" />
+                Đã hoàn thành
+              </div>
+            </div>
+
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Cảm ơn bạn đã dành thời gian thực hiện khảo sát. <br />
+              Câu trả lời của bạn đã được hệ thống ghi nhận.
+            </p>
+
+            <div className="pt-2">
+              <Button
+                onClick={() => setIsEditing(true)}
+                variant="outline"
+                className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700 font-bold px-8"
+              >
+                Xem lại & Chỉnh sửa
+              </Button>
+            </div>
+
+            <p className="text-xs text-gray-400 pt-4">
+              Nếu bạn muốn thay đổi câu trả lời, vui lòng nhấn nút chỉnh sửa ở
+              trên.
+            </p>
+          </div>
         </div>
       </div>
     );

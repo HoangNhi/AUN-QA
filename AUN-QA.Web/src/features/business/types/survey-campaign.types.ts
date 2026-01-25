@@ -76,8 +76,56 @@ export interface AddListStakeholderToCampaignRequest {
   StakeholderIds: string[];
 }
 
+export interface SurveySubmissionScore {
+  QuestionId: string;
+  Score: number;
+}
+
+export interface SurveySubmissionTextAnswer {
+  TextQuestionId: string;
+  Content: string;
+}
+
 export interface SurveySubmissionRequest {
   Token: string;
-  Scores: SurveyScore[];
-  TextAnswers: SurveyTextAnswer[];
+  Scores: SurveySubmissionScore[];
+  TextAnswers: SurveySubmissionTextAnswer[];
+}
+
+// View Types (Do Survey)
+import type {
+  TemplateCategory,
+  TemplateQuestion,
+  TemplateTextQuestion,
+} from "./survey-template.types";
+
+export interface SurveyView {
+  Id: string;
+  Name: string;
+  StakeholderType: number;
+  IsSessionCompleted: boolean;
+  ListTopic: SurveyViewTopic[];
+}
+
+export interface SurveyViewTopic extends Omit<
+  TemplateTopic,
+  "ListCategory" | "ListTextQuestion"
+> {
+  ListCategory: SurveyViewCategory[];
+  ListTextQuestion: SurveyViewTextQuestion[];
+}
+
+export interface SurveyViewCategory extends Omit<
+  TemplateCategory,
+  "ListQuestion"
+> {
+  ListQuestion: SurveyViewQuestion[];
+}
+
+export interface SurveyViewQuestion extends TemplateQuestion {
+  Score?: number;
+}
+
+export interface SurveyViewTextQuestion extends TemplateTextQuestion {
+  Answer?: string;
 }

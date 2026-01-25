@@ -607,7 +607,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             await _context.SaveChangesAsync();
         }
 
-        public async Task<SurveyCampaignRequest> GetSurveyByToken(GetSurveyByTokenRequest request)
+        public async Task<ModelDoSurvey> GetSurveyByToken(GetSurveyByTokenRequest request)
         {
             // 1. Validate Token
             var session = await _context.SurveySessions
@@ -618,13 +618,76 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Liên kết khảo sát không hợp lệ");
             }
 
-            if (session.Status == (int)SurveySessionStatus.Completed)
+            // 2. Get Campaign
+            var campaignReq = await GetById(new GetByIdRequest { Id = session.CampaignId });
+
+            // 3. Map to SurveyViewDto
+            var result = new ModelDoSurvey
             {
-                throw new Exception("Bạn đã hoàn thành khảo sát này rồi");
+                Id = campaignReq.Id,
+                Name = campaignReq.Name,
+                StakeholderType = campaignReq.StakeholderType,
+                IsSessionCompleted = session.Status == (int)SurveySessionStatus.Completed,
+                ListTopic = campaignReq.ListTopic.Select(t => new TemplateTopicRequest
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    HasTextQuestionPart = t.HasTextQuestionPart,
+                    TextQuestionTitle = t.TextQuestionTitle,
+                    Sort = t.Sort,
+                    ListCategory = t.ListCategory.Select(c => new TemplateCategoryRequest
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Sort = c.Sort,
+                        ListQuestion = c.ListQuestion.Select(q => new TemplateQuestionRequest
+                        {
+                            Id = q.Id,
+                            Content = q.Content,
+                            Sort = q.Sort
+                        }).ToList()
+                    }).ToList(),
+                    ListTextQuestion = t.ListTextQuestion.Select(tq => new TemplateTextQuestionRequest
+                    {
+                        Id = tq.Id,
+                        Content = tq.Content,
+                        IsRequired = tq.IsRequired,
+                        Sort = tq.Sort
+                    }).ToList()
+                }).ToList()
+            };
+
+            // 4. Fill Answers if completed
+            if (result.IsSessionCompleted)
+            {
+                var scores = await _context.SurveyScores
+                    .Where(x => x.SessionId == session.Id)
+                    .ToListAsync();
+
+                var textAnswers = await _context.SurveyTextAnswers
+                    .Where(x => x.SessionId == session.Id)
+                    .ToListAsync();
+
+                foreach (var topic in result.ListTopic)
+                {
+                    foreach (var cat in topic.ListCategory)
+                    {
+                        foreach (var q in cat.ListQuestion)
+                        {
+                            var s = scores.FirstOrDefault(x => x.QuestionId == q.Id);
+                            if (s != null) q.Score = s.Score;
+                        }
+                    }
+
+                    foreach (var tq in topic.ListTextQuestion)
+                    {
+                        var a = textAnswers.FirstOrDefault(x => x.TextQuestionId == tq.Id);
+                        if (a != null) tq.Answer = a.Content;
+                    }
+                }
             }
 
-            // 2. Get Campaign
-            return await GetById(new GetByIdRequest { Id = session.CampaignId });
+            return result;
         }
 
         public async Task SubmitSurvey(SurveySubmissionRequest request)
@@ -638,13 +701,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Liên kết khảo sát không hợp lệ");
             }
 
-            if (session.Status == (int)SurveySessionStatus.Completed)
-            {
-                throw new Exception("Bạn đã hoàn thành khảo sát này rồi");
-            }
-
             var now = DateTime.Now;
             var stakeholderName = session.StakeholderName;
+
+            // NEW: Clean up existing answers if re-submitting (for editing)
+            if (session.Status == (int)SurveySessionStatus.Completed)
+            {
+                var oldScores = _context.SurveyScores.Where(x => x.SessionId == session.Id);
+                _context.SurveyScores.RemoveRange(oldScores);
+
+                var oldTextAnswers = _context.SurveyTextAnswers.Where(x => x.SessionId == session.Id);
+                _context.SurveyTextAnswers.RemoveRange(oldTextAnswers);
+            }
 
             // 2. Save Scores
             if (request.Scores != null && request.Scores.Any())

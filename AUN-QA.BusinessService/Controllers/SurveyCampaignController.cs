@@ -102,7 +102,7 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> GetSurveyByToken([FromQuery] GetSurveyByTokenRequest request)
         {
             var result = await _service.GetSurveyByToken(request);
-            return Ok(new BaseResponse<SurveyCampaignRequest> { Data = result, Success = true });
+            return Ok(new BaseResponse<ModelDoSurvey> { Data = result, Success = true });
         }
 
         [HttpPost("submit-survey")]

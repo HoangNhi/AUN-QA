@@ -59,7 +59,7 @@ export function DataTable<TData, TValue>({
                                              onRefresh,
                                              isLoading = false,
                                              className,
-                                             containerClassName = "max-h-[calc(100vh-220px)] overflow-auto w-full",
+                                             containerClassName = "overflow-auto w-full",
                                              getRowId,
                                          }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
@@ -74,93 +74,86 @@ export function DataTable<TData, TValue>({
     });
 
     return (
-        
         <div className={cn("space-y-4 w-full", className)}>
-            <div className="relative overflow-hidden rounded-md border">
+            <div className="relative w-full overflow-hidden rounded-md border">
                 {isLoading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 )}
-
-                {}
-                <div className={cn(containerClassName)}>
-                    <Table>
-                        <TableHeader className="bg-background sticky top-0 z-10">
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => (
-                                        <TableHead key={header.id}>
+                <Table containerClassName={containerClassName}>
+                    <TableHeader className="bg-background sticky top-0 z-10">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id} className="whitespace-nowrap">
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
                                                     header.column.columnDef.header,
-                                                    header.getContext()
+                                                    header.getContext(),
                                                 )}
                                         </TableHead>
-                                    ))}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                <>
-                                    {table.getRowModel().rows.map((row) => (
-                                        <TableRow
-                                            key={row.id}
-                                            data-state={row.getIsSelected() && "selected"}
-                                        >
-                                            {row.getVisibleCells().map((cell) => (
-                                                <TableCell
-                                                    key={cell.id}
-                                                    className={
-                                                        (
-                                                            cell.column.columnDef.meta as {
-                                                                className?: string;
-                                                            }
-                                                        )?.className
-                                                    }
-                                                >
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext()
-                                                    )}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))}
-
-                                    {pageRequest &&
-                                        table.getRowModel().rows.length < pageRequest.PageSize && (
-                                            <TableRow>
-                                                <TableCell
-                                                    colSpan={columns.length}
-                                                    className="p-0"
-                                                    style={{
-                                                        height: `${
-                                                            (pageRequest.PageSize -
-                                                                table.getRowModel().rows.length) *
-                                                            3.5
-                                                        }rem`,
-                                                    }}
-                                                />
-                                            </TableRow>
-                                        )}
-                                </>
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="h-24 text-center"
+                                    );
+                                })}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            <>
+                                {table.getRowModel().rows.map((row) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
                                     >
-                                        Không có dữ liệu
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell
+                                                key={cell.id}
+                                                className={
+                                                    (cell.column.columnDef.meta as { className?: string })
+                                                        ?.className
+                                                }
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                                {}
+                                {pageRequest &&
+                                    table.getRowModel().rows.length < pageRequest.PageSize && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="p-0 border-none" 
+                                                style={{
+                                                    height: `${
+                                                        (pageRequest.PageSize -
+                                                            table.getRowModel().rows.length) *
+                                                        3.5 
+                                                    }rem`,
+                                                }}
+                                            ></TableCell>
+                                        </TableRow>
+                                    )}
+                            </>
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className="h-24 text-center"
+                                >
+                                    Không có dữ liệu
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
             {pageRequest && totalRow !== undefined && (
@@ -193,8 +186,8 @@ function DataTablePagination({
     const pageSizeOptions = [10, 20, 30, 50, 100];
 
     return (
-        <div className="flex items-center justify-between px-2">
-            <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex items-center justify-between px-2 w-full"> {/* Thêm w-full */}
+            <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
                 {totalRow > 0 ? (
                     <>
                         Hiển thị{" "}
@@ -213,7 +206,7 @@ function DataTablePagination({
             </div>
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium">Số dòng mỗi trang</p>
+                    <p className="text-sm font-medium hidden sm:block">Số dòng/trang</p>
                     <Select
                         value={`${pageRequest.PageSize}`}
                         onValueChange={(value) => {
@@ -224,7 +217,7 @@ function DataTablePagination({
                             });
                         }}
                     >
-                        <SelectTrigger className="h-8 w-fit">
+                        <SelectTrigger className="h-8 w-[70px]">
                             <SelectValue placeholder={pageRequest.PageSize} />
                         </SelectTrigger>
                         <SelectContent side="top">

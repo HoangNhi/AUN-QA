@@ -1,11 +1,17 @@
 import api, { type ApiResponse } from "@/lib/api";
 import type {
+  AddAllStakeholderToCampaignRequest,
+  AddListStakeholderToCampaignRequest,
+  GetListSessionRequest,
+  GetStakeholderNotInCampaignRequest,
   SurveyCampaign,
   SurveyCampaignGetListPaging,
   SurveyCampaignGetListPagingRequest,
+  SurveySession,
 } from "../types/survey-campaign.types";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config";
+import type { Stakeholder } from "@/features/catalog/types/stakeholder.types";
 
 export const surveyCampaignService = {
   getList: async (
@@ -56,6 +62,66 @@ export const surveyCampaignService = {
       API_ENDPOINTS.Business.SurveyCampaign.DELETE_LIST,
       {
         data: { Ids: ids },
+      },
+    );
+  },
+
+  getStakeholderNotInCampaign: async (
+    request: GetStakeholderNotInCampaignRequest,
+  ): Promise<ApiResponse<GetListPagingResponse<Stakeholder>>> => {
+    return api.post<GetListPagingResponse<Stakeholder>>(
+      API_ENDPOINTS.Business.SurveyCampaign.GET_STAKEHOLDER_NOT_IN_CAMPAIGN,
+      request,
+    );
+  },
+
+  getListSession: async (
+    request: GetListSessionRequest,
+  ): Promise<ApiResponse<GetListPagingResponse<SurveySession>>> => {
+    return api.post<GetListPagingResponse<SurveySession>>(
+      API_ENDPOINTS.Business.SurveyCampaign.GET_LIST_SESSION,
+      request,
+    );
+  },
+
+  addAllStakeholderToCampaign: async (
+    request: AddAllStakeholderToCampaignRequest,
+  ): Promise<ApiResponse> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.ADD_ALL_STAKEHOLDER_TO_CAMPAIGN,
+      request,
+    );
+  },
+
+  addListStakeholderToCampaign: async (
+    request: AddListStakeholderToCampaignRequest,
+  ): Promise<ApiResponse> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.ADD_LIST_STAKEHOLDER_TO_CAMPAIGN,
+      request,
+    );
+  },
+
+  deleteListSession: async (ids: string[]): Promise<ApiResponse<string>> => {
+    return api.delete<string>(
+      API_ENDPOINTS.Business.SurveyCampaign.DELETE_LIST_SESSION,
+      {
+        data: { Ids: ids },
+      },
+    );
+  },
+
+  changeStatus: async (id: string): Promise<ApiResponse<boolean>> => {
+    return api.post(API_ENDPOINTS.Business.SurveyCampaign.CHANGE_STATUS, {
+      id,
+    });
+  },
+
+  sendSurveyInvitation: async (id: string): Promise<ApiResponse<boolean>> => {
+    return api.post(
+      API_ENDPOINTS.Business.SurveyCampaign.SEND_SURVEY_INVITATION,
+      {
+        id,
       },
     );
   },

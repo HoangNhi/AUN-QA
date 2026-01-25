@@ -123,6 +123,13 @@ export const API_ENDPOINTS = {
       INSERT: `${BUSINESS_BASE}/SurveyCampaign/insert`,
       UPDATE: `${BUSINESS_BASE}/SurveyCampaign/update`,
       DELETE_LIST: `${BUSINESS_BASE}/SurveyCampaign/delete-list`,
+      GET_STAKEHOLDER_NOT_IN_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/get-stakeholder-not-in-campaign`,
+      GET_LIST_SESSION: `${BUSINESS_BASE}/SurveyCampaign/get-list-session`,
+      ADD_ALL_STAKEHOLDER_TO_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/add-all-stakeholder-to-campaign`,
+      ADD_LIST_STAKEHOLDER_TO_CAMPAIGN: `${BUSINESS_BASE}/SurveyCampaign/add-list-stakeholder-to-campaign`,
+      DELETE_LIST_SESSION: `${BUSINESS_BASE}/SurveyCampaign/delete-list-session`,
+      CHANGE_STATUS: `${BUSINESS_BASE}/SurveyCampaign/change-status`,
+      SEND_SURVEY_INVITATION: `${BUSINESS_BASE}/SurveyCampaign/send-survey-invitation`,
     },
   },
   File: {

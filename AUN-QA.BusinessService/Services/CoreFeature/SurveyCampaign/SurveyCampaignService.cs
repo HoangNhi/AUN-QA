@@ -2,11 +2,14 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
+using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
@@ -26,22 +29,25 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICatalogIntegrationService _catalogService;
         private readonly IBackgroundTaskQueue _taskQueue;
+        private readonly IEmailService _emailService;
 
         public SurveyCampaignService(
             BusinessContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
             ICatalogIntegrationService catalogService,
-            IBackgroundTaskQueue taskQueue)
+            IBackgroundTaskQueue taskQueue,
+            IEmailService emailService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _catalogService = catalogService;
             _taskQueue = taskQueue;
+            _emailService = emailService;
         }
 
-        #region Chức năng chính
+        #region SurveyCampaign
         public async Task<SurveyCampaignRequest> GetById(GetByIdRequest request)
         {
             var data = await _context.SurveyCampaigns.FindAsync(request.Id);
@@ -103,8 +109,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.StakeholderName)
                 .ToListAsync();
-
-            result.ListSession = _mapper.Map<List<SurveySessionRequest>>(stakeholderDtos);
             #endregion
 
             return result;
@@ -197,25 +201,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 }
             }
             #endregion
-
-            #region Người tham gia
-            if (!request.ListSession.Any())
-            {
-                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
-            }
-
-            foreach (var sessionReq in request.ListSession)
-            {
-                var addSession = _mapper.Map<Entities.SurveySession>(sessionReq);
-                addSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
-                addSession.CampaignId = add.Id;
-                addSession.Token = Guid.NewGuid().ToString();
-                addSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addSession.CreatedAt = DateTime.Now;
-                await _context.SurveySessions.AddAsync(addSession);
-            }
-            #endregion
-
             await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(add);
         }
@@ -293,7 +278,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     // Add Topic
                     var newTopic = _mapper.Map<Entities.TemplateTopic>(topicReq);
                     newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
-                    newTopic.TemplateId = update.Id;
+                    newTopic.CampaignId = update.Id;
                     newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     newTopic.CreatedAt = DateTime.Now;
                     await _context.TemplateTopics.AddAsync(newTopic);
@@ -433,58 +418,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             #endregion
 
-            #region Người tham gia
-            // 1. Fetch existing sessions for this campaign
-            var existingSessions = await _context.SurveySessions
-                .Where(x => x.CampaignId == update.Id && !x.IsDeleted)
-                .ToListAsync();
-
-            // 2. Validate that at least one participant exists
-            if (!request.ListSession.Any())
-            {
-                throw new Exception("Khảo sát phải có ít nhất một người tham gia");
-            }
-
-            // 3. Process each session in the request
-            foreach (var sessionReq in request.ListSession)
-            {
-                var existingSession = existingSessions.FirstOrDefault(x => x.Id == sessionReq.Id);
-
-                if (existingSession != null)
-                {
-                    existingSession.StakeholderId = sessionReq.StakeholderId;
-                    existingSession.StakeholderName = sessionReq.StakeholderName;
-                    existingSession.StakeholderEmail = sessionReq.StakeholderEmail;
-                    existingSession.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingSession.UpdatedAt = DateTime.Now;
-                    _context.SurveySessions.Update(existingSession);
-
-                    existingSessions.Remove(existingSession);
-                }
-                else
-                {
-                    // Add new session
-                    var newSession = _mapper.Map<Entities.SurveySession>(sessionReq);
-                    newSession.Id = sessionReq.Id == Guid.Empty ? Guid.NewGuid() : sessionReq.Id;
-                    newSession.CampaignId = update.Id;
-                    newSession.Token = Guid.NewGuid().ToString();
-                    newSession.Status = ((int)SurveySessionStatus.Draft);
-                    newSession.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    newSession.CreatedAt = DateTime.Now;
-                    await _context.SurveySessions.AddAsync(newSession);
-                }
-            }
-
-            // 4. Soft-delete sessions that were removed from the request
-            foreach (var session in existingSessions)
-            {
-                session.IsDeleted = true;
-                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                session.UpdatedAt = DateTime.Now;
-                _context.SurveySessions.Update(session);
-            }
-            #endregion
-
             await _context.SaveChangesAsync();
             return _mapper.Map<ModelSurveyCampaign>(update);
         }
@@ -501,6 +434,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                delete.UpdatedAt = DateTime.Now;
 
                 _context.SurveyCampaigns.Update(delete);
             }
@@ -576,30 +510,335 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }).OrderBy(x => x.Text).ToList();
         }
 
-        #endregion
-        public async Task<string> SendSurvey(int? type)
+        /// <summary>
+        /// Draft -> Sent -> Completed
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task ChangeStatus(GetByIdRequest request)
         {
-            int count = 0;
-
-            // 1. Lấy dòng chảy dữ liệu từ Catalog (Streaming)
-            // Code này không bao giờ load toàn bộ list vào RAM
-            await foreach (var stakeholder in _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest { StakeholderType = type }))
+            var data = await _context.SurveyCampaigns.FindAsync(request.Id);
+            if (data == null)
             {
-                // 2. Đẩy vào hàng đợi xử lý ngầm
-                await _taskQueue.QueueBackgroundWorkItemAsync(async (serviceProvider, token) =>
-                {
-                    // Lấy EmailService từ Scope riêng của Background Worker
-                    var emailService = serviceProvider.GetRequiredService<IEmailService>();
-
-                    string body = $"Name: {stakeholder.FullName}\nEmail: {stakeholder.Email}\nDecription: {stakeholder.Description}";
-                    await emailService.SendEmailAsync(stakeholder.Email, "Test gửi email", body);
-                });
-
-                count++;
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
-            return $"Đã đẩy {count} email vào hàng đợi gửi đi.";
+            switch (data.Status)
+            {
+                case ((int)SurveyCampaignStatus.Draft):
+                    // 1. Update Status
+                    data.Status = (int)SurveyCampaignStatus.Sent;
+                    data.UpdatedAt = DateTime.Now;
+                    data.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.SurveyCampaigns.Update(data);
+
+                    // 2. Queue Email Job
+                    var campaignId = data.Id;
+                    var campaignName = data.Name;
+                    var campaignUpdatedAt = data.UpdatedAt;
+                    var campaignUpdatedBy = data.UpdatedBy;
+
+                    await _taskQueue.QueueBackgroundWorkItemAsync(async (serviceProvider, token) =>
+                    {
+                        using var scope = serviceProvider.CreateScope();
+                        var context = scope.ServiceProvider.GetRequiredService<BusinessContext>();
+                        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+                        // Get active sessions for this campaign
+                        var sessions = await context.SurveySessions
+                            .Where(x => x.CampaignId == campaignId && !x.IsDeleted && x.Status == (int)SurveySessionStatus.Draft)
+                            .ToListAsync(token);
+
+                        var batches = sessions.Chunk(5);
+                        foreach (var batch in batches)
+                        {
+                            if (token.IsCancellationRequested) break;
+
+                            // 1. Send emails in parallel
+                            var emailTasks = batch.Select(async session =>
+                            {
+                                string subject = $"Mời tham gia khảo sát: {campaignName}";
+                                string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+
+                                string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaignName, link);
+
+                                try
+                                {
+                                    await emailService.SendEmailAsync(session.StakeholderEmail, subject, body);
+                                }
+                                catch
+                                {
+                                }
+                            });
+
+                            await Task.WhenAll(emailTasks);
+
+                            // 2. Update DB sequentially
+                            foreach (var session in batch)
+                            {
+                                session.SentDate = campaignUpdatedAt;
+                                session.Status = ((int)SurveySessionStatus.Sent);
+                                session.UpdatedAt = campaignUpdatedAt;
+                                session.UpdatedBy = campaignUpdatedBy;
+
+                                context.SurveySessions.Update(session);
+                            }
+                            await context.SaveChangesAsync(token);
+                        }
+                    });
+
+                    break;
+
+                case ((int)SurveyCampaignStatus.Sent):
+                    data.Status = (int)SurveyCampaignStatus.Completed;
+                    data.UpdatedAt = DateTime.Now;
+                    data.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    _context.SurveyCampaigns.Update(data);
+                    break;
+
+                case ((int)SurveyCampaignStatus.Completed):
+                    throw new Exception("Chiến dịch đã kết thúc, không thể thay đổi trạng thái");
+
+                default:
+                    throw new Exception("Trạng thái không hợp lệ");
+            }
+
+            await _context.SaveChangesAsync();
         }
 
+        #endregion
+
+        #region Session
+        public async Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
+        {
+            // 1. Lấy danh sách StakeholderId đã có trong campaign này
+            var existingStakeholderIds = await _context.SurveySessions
+                .Where(x => x.CampaignId == request.CampainId && !x.IsDeleted)
+                .Select(x => x.StakeholderId)
+                .ToListAsync();
+
+            // 2. Lấy tất cả stakeholders từ Catalog service
+            var campaign = await _context.SurveyCampaigns.FindAsync(request.CampainId);
+            if (campaign == null)
+            {
+                throw new Exception("Chiến dịch khảo sát không tồn tại");
+            }
+            var allStakeholders = await _catalogService
+                .GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
+                {
+                    StakeholderType = campaign.StakeholderType
+                })
+                .ToListAsync();
+
+            // 3. Lọc ra những stakeholder chưa có trong campaign
+            var availableStakeholders = allStakeholders
+                .Where(s => !existingStakeholderIds.Contains(s.Id))
+                .AsQueryable();
+
+            // 4. Apply search filter (nếu có)
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                var searchTerm = request.TextSearch.ToLower();
+                availableStakeholders = availableStakeholders
+                    .Where(s => s.FullName.ToLower().Contains(searchTerm)
+                             || s.Email.ToLower().Contains(searchTerm));
+            }
+
+            // 5. Pagination
+            var totalRow = availableStakeholders.Count();
+            List<StakeholderDto> data;
+
+            if (request.PageIndex == -1)
+            {
+                data = availableStakeholders.ToList();
+            }
+            else
+            {
+                data = availableStakeholders
+                    .Skip((request.PageIndex - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+            }
+
+            return new GetListPagingResponse<StakeholderDto>
+            {
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                TotalRow = totalRow,
+                Data = data
+            };
+        }
+
+        public async Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request)
+        {
+            var query = _context.SurveySessions
+                .Where(x => x.CampaignId == request.CampaignId && !x.IsDeleted);
+
+            if (request.Status.HasValue)
+            {
+                query = query.Where(x => x.Status == request.Status);
+            }
+
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                query = query.Where(x =>
+                    x.StakeholderName.Contains(request.TextSearch)
+                    || x.StakeholderEmail.Contains(request.TextSearch)
+                );
+            }
+
+            var totalRow = await query.CountAsync();
+
+            var data = await query
+                .OrderBy(x => x.StakeholderName).ThenBy(x => x.StakeholderEmail)
+                .Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ProjectTo<ModelSurveySession>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return new GetListPagingResponse<ModelSurveySession>
+            {
+                PageIndex = request.PageIndex,
+                PageSize = request.PageSize,
+                TotalRow = totalRow,
+                Data = data
+            };
+        }
+
+        public async Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
+        {
+            if (!request.ListStakeholderId.Any())
+            {
+                throw new Exception("Danh sách người tham gia không được để trống");
+            }
+
+            foreach (var stakeholderId in request.ListStakeholderId)
+            {
+                var stakeholder = await _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
+                {
+                    Id = stakeholderId.ToString()
+                }).FirstOrDefaultAsync();
+
+                if (stakeholder == null)
+                {
+                    throw new Exception($"Người tham gia với ID {stakeholderId} không tồn tại");
+                }
+
+                var add = new Entities.SurveySession
+                {
+                    Id = Guid.NewGuid(),
+                    CampaignId = request.CampaignId,
+                    StakeholderId = stakeholder.Id,
+                    StakeholderName = stakeholder.FullName,
+                    StakeholderEmail = stakeholder.Email,
+                    Token = Guid.NewGuid().ToString(),
+                    Status = (int)SurveySessionStatus.Draft,
+                    CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
+                    CreatedAt = DateTime.Now
+                };
+
+                await _context.SurveySessions.AddAsync(add);
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
+        {
+            var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
+            {
+                CampainId = request.CampaignId,
+                TextSearch = request.Filter_TextSearch,
+                PageIndex = -1,
+                PageSize = 0
+            });
+
+            if (!stakeholder.Data.Any())
+            {
+                throw new Exception("Không có người tham gia nào phù hợp để thêm vào chiến dịch");
+            }
+
+            foreach (var item in stakeholder.Data)
+            {
+                var add = new Entities.SurveySession
+                {
+                    Id = Guid.NewGuid(),
+                    CampaignId = request.CampaignId,
+                    StakeholderId = item.Id,
+                    StakeholderName = item.FullName,
+                    StakeholderEmail = item.Email,
+                    Token = Guid.NewGuid().ToString(),
+                    Status = (int)SurveySessionStatus.Draft,
+                    CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
+                    CreatedAt = DateTime.Now
+                };
+                await _context.SurveySessions.AddAsync(add);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<string> DeleteListSession(DeleteListRequest request)
+        {
+            foreach (var id in request.Ids)
+            {
+                var delete = await _context.SurveySessions.FindAsync(id);
+                if (delete == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                if (delete.Status == ((int)SurveySessionStatus.Completed))
+                {
+                    continue;
+                }
+
+                delete.IsDeleted = true;
+                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+
+                _context.SurveySessions.Update(delete);
+            }
+
+            await _context.SaveChangesAsync();
+            return String.Join(',', request.Ids);
+        }
+
+        public async Task SendSurveyInvitation(GetByIdRequest request)
+        {
+            var session = await _context.SurveySessions.FindAsync(request.Id);
+            if (session == null)
+            {
+                throw new Exception("Không tìm thấy thông tin lượt khảo sát");
+            }
+
+            var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
+            if (campaign == null)
+            {
+                throw new Exception("Không tìm thấy thông tin chiến dịch khảo sát");
+            }
+
+            string subject = $"Mời tham gia khảo sát: {campaign.Name}";
+            string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+            string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaign.Name, link);
+
+            try
+            {
+                await _emailService.SendEmailAsync(session.StakeholderEmail, subject, body);
+
+                session.Status = (int)SurveySessionStatus.Sent;
+                session.SentDate = DateTime.Now;
+                session.UpdatedAt = DateTime.Now;
+                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+
+                _context.SurveySessions.Update(session);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Gửi email thất bại: {ex.Message}");
+            }
+        }
+        #endregion
     }
 }

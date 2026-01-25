@@ -2,9 +2,11 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
@@ -19,6 +21,7 @@ namespace AUN_QA.BusinessService.Controllers
             _service = service;
         }
 
+        #region SurveyCampaign
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(SurveyCampaignGetListPagingRequest request)
@@ -82,12 +85,84 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 
-        [HttpPost("send-survey")]
-        [AllowAnonymous]
-        public async Task<ActionResult<string>> SendSurvey([FromQuery] int? type)
+        [HttpPost("change-status")]
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> ChangeStatus([FromBody] GetByIdRequest request)
         {
-            var result = await _service.SendSurvey(type);
-            return Ok(result);
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.ChangeStatus(request);
+            return Ok(new BaseResponse(true, 200));
         }
+        #endregion
+
+        #region Session
+        [HttpPost, Route("get-stakeholder-not-in-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetStakeholdersNotInCampaign(request);
+            return Ok(new BaseResponse<GetListPagingResponse<StakeholderDto>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("get-list-session")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> GetListSession(SurveySessionGetListPagingRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetListSession(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ModelSurveySession>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("add-list-stakeholder-to-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.AddListStakeholderToCampaign(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("add-all-stakeholder-to-campaign")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.AddAllStakeholderToCampaign(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpDelete, Route("delete-list-session")]
+        [AttributePermission(Action = ActionType.DELETE)]
+        public async Task<IActionResult> DeleteListSession([FromBody] DeleteListRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.DeleteListSession(request);
+            return Ok(new BaseResponse<string> { Data = result, Success = true });
+        }
+
+        [HttpPost("send-survey-invitation")]
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> SendSurveyInvitation([FromBody] GetByIdRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SendSurveyInvitation(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+        #endregion
     }
 }

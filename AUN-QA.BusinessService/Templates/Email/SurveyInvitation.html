@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư mời tham gia khảo sát</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #0056b3;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .message {
+            margin-bottom: 25px;
+        }
+        .btn-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #6c757d;
+            border-top: 1px solid #eeeeee;
+        }
+        .link-text {
+            word-break: break-all;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mời Tham Gia Khảo Sát AUN-QA</h1>
+        </div>
+        <div class="content">
+            <p>Kính chào <strong>{{StakeholderName}}</strong>,</p>
+            
+            <div class="message">
+                <p>Quý Thầy/Cô/Anh/Chị đã được mời tham gia vào đợt khảo sát: <strong>{{CampaignName}}</strong>.</p>
+                <p>Ý kiến đóng góp của Quý vị rất quan trọng đối với chúng tôi. Vui lòng dành chút thời gian để hoàn thành khảo sát bằng cách nhấp vào nút bên dưới:</p>
+            </div>
+
+            <div class="btn-container">
+                <a href="{{SurveyLink}}" class="btn">Thực hiện khảo sát</a>
+            </div>
+
+            <div class="message">
+                <p>Nếu nút trên không hoạt động, vui lòng sao chép và dán liên kết sau vào trình duyệt web của bạn:</p>
+                <p><a href="{{SurveyLink}}" class="link-text">{{SurveyLink}}</a></p>
+            </div>
+
+            <p>Chân thành cảm ơn sự hợp tác và đóng góp của Quý vị.</p>
+            
+            <p>Trân trọng,<br>Hệ thống AUN-QA</p>
+        </div>
+        <div class="footer">
+            <p>&copy; {{CurrentYear}} AUN-QA System. Đã đăng ký bản quyền.</p>
+            <p>Đây là tin nhắn tự động, vui lòng không trả lời email này.</p>
+        </div>
+    </div>
+</body>
+</html>

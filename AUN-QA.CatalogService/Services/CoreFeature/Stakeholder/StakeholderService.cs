@@ -179,6 +179,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 query = query.Where(s => s.Type == request.StakeholderType.Value);
             }
 
+            if (!string.IsNullOrEmpty(request.Id) && Guid.TryParse(request.Id, out Guid id))
+            {
+                query = query.Where(s => s.Id == id);
+            }
+
             var dataStream = query
                 .Where(x => x.IsActived && !x.IsDeleted)
                 .Select(s => new StakeholderInfo

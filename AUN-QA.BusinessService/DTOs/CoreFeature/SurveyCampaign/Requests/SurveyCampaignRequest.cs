@@ -1,8 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
-using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests;
-using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
-using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests;
 using FluentValidation;
 
@@ -12,9 +9,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
     {
         public Guid Id { get; set; }
 
-        public Guid CycleId { get; set; }
+        public Guid? CycleId { get; set; }
 
-        public Guid TemplateId { get; set; }
+        public Guid? TemplateId { get; set; }
 
         public int? StakeholderType { get; set; }
 
@@ -25,13 +22,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
         /// </summary>
         public int? Status { get; set; } = ((int)SurveyCampaignStatus.Draft);
 
-        public List<SurveySessionRequest> ListSession { get; set; } = new();
-
         public List<TemplateTopicRequest> ListTopic { get; set; } = new();
-
-        public List<SurveyScoreRequest> ListScore { get; set; } = new();
-
-        public List<SurveyTextAnswerRequest> ListTextAnswer { get; set; } = new();
     }
 
     public class SurveyCampaignRequestValidator : AbstractValidator<SurveyCampaignRequest>
@@ -49,9 +40,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Tên chiến dịch khảo sát không được để trống");
-
-            RuleForEach(x => x.ListSession)
-                .SetValidator(new SurveySessionRequestValidator());
 
             RuleForEach(x => x.ListTopic)
                 .SetValidator(new TemplateTopicRequestValidator());

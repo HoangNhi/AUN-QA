@@ -168,7 +168,7 @@ export const SurveyPreview = ({
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center pt-6 pb-12">
+        <div className="flex justify-between items-center pt-6">
           <Button
             type="button"
             onClick={() =>
@@ -189,7 +189,7 @@ export const SurveyPreview = ({
               type="button"
               onClick={() =>
                 setCurrentPreviewTopicIndex((p) =>
-                  Math.min(totalTopics - 1, p + 1)
+                  Math.min(totalTopics - 1, p + 1),
                 )
               }
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition-all transform hover:-translate-y-0.5"

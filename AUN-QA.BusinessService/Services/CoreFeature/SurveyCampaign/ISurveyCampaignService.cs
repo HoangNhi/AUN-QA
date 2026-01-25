@@ -11,9 +11,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
     {
         #region SurveyCampaign
         Task<SurveyCampaignRequest> GetById(GetByIdRequest request);
-        Task<ModelSurveyCampaign> Insert(SurveyCampaignRequest request);
-        Task<ModelSurveyCampaign> Update(SurveyCampaignRequest request);
-        Task<string> DeleteList(DeleteListRequest request);
+        Task Insert(SurveyCampaignRequest request);
+        Task Update(SurveyCampaignRequest request);
+        Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task ChangeStatus(GetByIdRequest request);
@@ -26,7 +26,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task<GetListPagingResponse<StakeholderDto>> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request);
         Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request);
         Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request);
-        Task<string> DeleteListSession(DeleteListRequest request);
+        Task DeleteListSession(DeleteListRequest request);
         Task SendSurveyInvitation(GetByIdRequest request);
         #endregion
     }

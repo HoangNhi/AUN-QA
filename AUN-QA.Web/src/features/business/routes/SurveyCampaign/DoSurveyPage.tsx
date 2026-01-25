@@ -25,6 +25,7 @@ export const DoSurveyPage = () => {
   const [isEditing, setIsEditing] = useState(false); // NEW
   const [campaign, setCampaign] = useState<SurveyView | null>(null); // CHANGED type
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null); // NEW
 
   // Answers State
   const [scores, setScores] = useState<Record<string, number>>({});
@@ -58,9 +59,11 @@ export const DoSurveyPage = () => {
           setScores(newScores);
           setTextAnswers(newTextAnswers);
         } else {
+          setErrorMsg(res.Message || "Không thể tải bài khảo sát");
           toast.error(res.Message || "Không thể tải bài khảo sát");
         }
       } catch {
+        setErrorMsg("Có lỗi xảy ra khi tải bài khảo sát");
         toast.error("Có lỗi xảy ra khi tải bài khảo sát");
       } finally {
         setIsLoading(false);
@@ -152,6 +155,42 @@ export const DoSurveyPage = () => {
         <div className="text-center">
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-600" />
           <p className="mt-4 text-gray-600">Đang tải bài khảo sát...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMsg === "Chiến dịch chưa bắt đầu") {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+            <Loader2 className="text-yellow-600 w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Chiến dịch chưa bắt đầu
+          </h1>
+          <p className="text-gray-600">
+            Hiện tại chiến dịch khảo sát chưa được kích hoạt. <br />
+            Vui lòng quay lại sau khi nhận được thông báo bắt đầu.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for other errors (like invalid token)
+  if (errorMsg) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <div className="text-center max-w-lg p-6">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ArrowLeft className="text-red-600 w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Không thể truy cập khảo sát
+          </h1>
+          <p className="text-gray-600">{errorMsg}</p>
         </div>
       </div>
     );

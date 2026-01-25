@@ -52,8 +52,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Insert(request);
-            return Ok(new BaseResponse<ModelSurveyCampaign> { Data = result, Success = true });
+            await _service.Insert(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPut, Route("update")]
@@ -63,8 +63,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Update(request);
-            return Ok(new BaseResponse<ModelSurveyCampaign> { Data = result, Success = true });
+            await _service.Update(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpDelete, Route("delete-list")]
@@ -74,8 +74,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.DeleteList(request);
-            return Ok(new BaseResponse<string> { Data = result, Success = true });
+            await _service.DeleteList(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpGet, Route("get-all-combobox")]
@@ -169,8 +169,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.DeleteListSession(request);
-            return Ok(new BaseResponse<string> { Data = result, Success = true });
+            await _service.DeleteListSession(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPost("send-survey-invitation")]

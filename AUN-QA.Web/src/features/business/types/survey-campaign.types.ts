@@ -41,7 +41,7 @@ export interface SurveyScore extends BaseRequest {
 export interface SurveyTextAnswer extends BaseRequest {
   Id: string;
   CampaignId: string;
-  QuestionId: string;
+  TextQuestionId: string;
   SessionId: string;
   Content: string;
 }
@@ -74,4 +74,10 @@ export interface AddAllStakeholderToCampaignRequest {
 export interface AddListStakeholderToCampaignRequest {
   CampaignId: string;
   StakeholderIds: string[];
+}
+
+export interface SurveySubmissionRequest {
+  Token: string;
+  Scores: SurveyScore[];
+  TextAnswers: SurveyTextAnswer[];
 }

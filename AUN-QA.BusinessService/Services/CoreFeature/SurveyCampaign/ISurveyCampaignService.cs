@@ -17,6 +17,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task ChangeStatus(GetByIdRequest request);
+        Task<SurveyCampaignRequest> GetSurveyByToken(GetSurveyByTokenRequest request);
+        Task SubmitSurvey(SurveySubmissionRequest request);
         #endregion
 
         #region Session

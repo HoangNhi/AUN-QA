@@ -7,6 +7,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
@@ -93,6 +94,25 @@ namespace AUN_QA.BusinessService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             await _service.ChangeStatus(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpGet("get-survey-by-token")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetSurveyByToken([FromQuery] GetSurveyByTokenRequest request)
+        {
+            var result = await _service.GetSurveyByToken(request);
+            return Ok(new BaseResponse<SurveyCampaignRequest> { Data = result, Success = true });
+        }
+
+        [HttpPost("submit-survey")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SubmitSurvey([FromBody] SurveySubmissionRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SubmitSurvey(request);
             return Ok(new BaseResponse(true, 200));
         }
         #endregion

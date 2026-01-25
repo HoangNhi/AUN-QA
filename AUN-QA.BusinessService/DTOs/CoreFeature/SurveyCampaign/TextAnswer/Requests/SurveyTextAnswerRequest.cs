@@ -5,7 +5,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Requ
 {
     public class SurveyTextAnswerRequest : BaseRequest
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         public Guid SessionId { get; set; }
 
@@ -18,9 +18,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Requ
     {
         public SurveyTextAnswerRequestValidator()
         {
-            RuleFor(x => x.SessionId)
-                .NotEmpty().WithMessage("Phiên khảo sát không được để trống");
-
             RuleFor(x => x.TextQuestionId)
                 .NotEmpty().WithMessage("Câu hỏi văn bản không được để trống");
 

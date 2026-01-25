@@ -4,7 +4,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.TextAnswer.Dtos
 {
     public class ModelSurveyTextAnswer : BaseModel
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
 
         public Guid SessionId { get; set; }
 

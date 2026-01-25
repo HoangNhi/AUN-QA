@@ -5,7 +5,7 @@ namespace AUN_QA.BusinessService.Entities;
 
 public partial class SurveyTextAnswer
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     public Guid SessionId { get; set; }
 

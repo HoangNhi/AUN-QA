@@ -607,6 +607,84 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             await _context.SaveChangesAsync();
         }
 
+        public async Task<SurveyCampaignRequest> GetSurveyByToken(GetSurveyByTokenRequest request)
+        {
+            // 1. Validate Token
+            var session = await _context.SurveySessions
+                .FirstOrDefaultAsync(x => x.Token == request.Token && !x.IsDeleted);
+
+            if (session == null)
+            {
+                throw new Exception("Liên kết khảo sát không hợp lệ");
+            }
+
+            if (session.Status == (int)SurveySessionStatus.Completed)
+            {
+                throw new Exception("Bạn đã hoàn thành khảo sát này rồi");
+            }
+
+            // 2. Get Campaign
+            return await GetById(new GetByIdRequest { Id = session.CampaignId });
+        }
+
+        public async Task SubmitSurvey(SurveySubmissionRequest request)
+        {
+            // 1. Validate Token
+            var session = await _context.SurveySessions
+                .FirstOrDefaultAsync(x => x.Token == request.Token && !x.IsDeleted);
+
+            if (session == null)
+            {
+                throw new Exception("Liên kết khảo sát không hợp lệ");
+            }
+
+            if (session.Status == (int)SurveySessionStatus.Completed)
+            {
+                throw new Exception("Bạn đã hoàn thành khảo sát này rồi");
+            }
+
+            var now = DateTime.Now;
+            var stakeholderName = session.StakeholderName;
+
+            // 2. Save Scores
+            if (request.Scores != null && request.Scores.Any())
+            {
+                foreach (var score in request.Scores)
+                {
+                    var add = _mapper.Map<Entities.SurveyScore>(score);
+                    add.Id = Guid.NewGuid();
+                    add.SessionId = session.Id;
+                    add.CreatedBy = stakeholderName;
+                    add.CreatedAt = now;
+                    await _context.SurveyScores.AddAsync(add);
+                }
+            }
+
+            // 3. Save Text Answers
+            if (request.TextAnswers != null && request.TextAnswers.Any())
+            {
+                foreach (var answer in request.TextAnswers)
+                {
+                    if (string.IsNullOrWhiteSpace(answer.Content)) continue;
+
+                    var add = _mapper.Map<Entities.SurveyTextAnswer>(answer);
+                    add.Id = Guid.NewGuid();
+                    add.SessionId = session.Id;
+                    add.CreatedBy = stakeholderName;
+                    add.CreatedAt = now;
+                    await _context.SurveyTextAnswers.AddAsync(add);
+                }
+            }
+
+            // 4. Update Session Status
+            session.Status = (int)SurveySessionStatus.Completed;
+            session.UpdatedBy = stakeholderName;
+            session.UpdatedAt = now;
+            _context.SurveySessions.Update(session);
+
+            await _context.SaveChangesAsync();
+        }
+
         #endregion
 
         #region Session

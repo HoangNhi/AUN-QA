@@ -1,14 +1,30 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import {
   ArrowLeft,
   ChevronRight,
   ListChecks,
   MessageSquare,
   Loader2,
+  GraduationCap,
+  User,
+  Briefcase,
+  BookOpen,
 } from "lucide-react";
 import type { SurveyView } from "../../../types/survey-campaign.types";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface SurveyFormProps {
   campaign: SurveyView;
@@ -23,6 +39,22 @@ interface SurveyFormProps {
 }
 
 const DEFAULT_EMPTY_OBJECT = {};
+
+// Helper to get stakeholder info
+const getStakeholderInfo = (type: number) => {
+  switch (type) {
+    case 1:
+      return { icon: GraduationCap, label: "Sinh viên" };
+    case 2:
+      return { icon: User, label: "Cựu sinh viên" };
+    case 3:
+      return { icon: Briefcase, label: "Nhà tuyển dụng" };
+    case 4:
+      return { icon: BookOpen, label: "Giảng viên" };
+    default:
+      return { icon: User, label: "Khác" };
+  }
+};
 
 export const SurveyForm = ({
   campaign,
@@ -52,9 +84,11 @@ export const SurveyForm = ({
   // If no topics, show empty state or return null
   if (!currentTopic) {
     return (
-      <div className="text-center p-8">
-        Không có nội dung khảo sát để hiển thị.
-      </div>
+      <Card className="max-w-3xl mx-auto">
+        <CardContent className="text-center p-8 text-muted-foreground">
+          Không có nội dung khảo sát để hiển thị.
+        </CardContent>
+      </Card>
     );
   }
 
@@ -98,9 +132,6 @@ export const SurveyForm = ({
   const handleNext = () => {
     if (validateCurrentTopic()) {
       setCurrentTopicIndex((p) => Math.min(totalTopics - 1, p + 1));
-      // Scroll inside the container if possible. For now, window scroll is safe for full page.
-      // If used in popup, main container might be the scrollable one.
-      // We'll rely on the parent container handling overflow, or scroll behavior logic might need adjustment.
       const scrollContainer = document.querySelector(".overflow-y-auto");
       if (scrollContainer) {
         scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
@@ -116,51 +147,82 @@ export const SurveyForm = ({
     }
   };
 
+  const stakeholder = getStakeholderInfo(campaign.StakeholderType);
+  const StakeholderIcon = stakeholder.icon;
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-6 font-sans">
-      {/* Progress Bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6 sticky top-0 z-10">
-        <div
-          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        ></div>
+      {/* Progress Bar - Sticky */}
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-3 -mx-4 px-4">
+        <div className="flex items-center justify-between mb-2 text-sm text-muted-foreground">
+          <span>Tiến độ khảo sát</span>
+          <span className="font-medium">{Math.round(progress)}%</span>
+        </div>
+        <Progress value={progress} className="h-2" />
       </div>
 
       {/* Intro Card - Only on First Page */}
       {currentTopicIndex === 0 && (
-        <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white p-6 rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <h2 className="text-2xl font-bold mb-2">{campaign.Name}</h2>
-          <div className="mt-4 flex gap-4 text-xs font-mono opacity-80 bg-blue-800/30 p-2 rounded inline-block">
-            <span>Đối tượng: </span>
-            {campaign.StakeholderType === 1 && <span>Sinh viên</span>}
-            {campaign.StakeholderType === 2 && <span>Cựu sinh viên</span>}
-            {campaign.StakeholderType === 3 && <span>Nhà tuyển dụng</span>}
-            {campaign.StakeholderType === 4 && <span>Giảng viên</span>}
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {/* Decorative background pattern */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full translate-y-1/2 -translate-x-1/2" />
           </div>
-        </div>
+
+          <CardHeader className="relative pb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Badge
+                variant="secondary"
+                className="bg-white/20 text-white border-white/30 hover:bg-white/30"
+              >
+                Phần {currentTopicIndex + 1} / {totalTopics}
+              </Badge>
+            </div>
+
+            <CardTitle className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
+              {campaign.Name}
+            </CardTitle>
+
+            <CardDescription className="text-white/80 mt-4">
+              <Badge
+                variant="outline"
+                className="bg-white/10 text-white border-white/20 gap-2 px-3 py-1.5 text-sm"
+              >
+                <StakeholderIcon className="w-4 h-4" />
+                {stakeholder.label}
+              </Badge>
+            </CardDescription>
+          </CardHeader>
+        </Card>
       )}
 
       {/* Current Topic Card */}
-      <div
-        key={currentTopic.Id || "temp-topic-id"} // key helps react remount animation
-        className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-right-8 duration-300"
+      <Card
+        key={currentTopic.Id || "temp-topic-id"}
+        className="animate-in fade-in slide-in-from-right-8 duration-300"
       >
-        <div className="bg-gray-50 p-4 border-b border-gray-200 flex justify-between items-center sticky top-2 z-10">
-          <h3 className="text-xl font-bold text-blue-800">
-            {currentTopic.Title}
-          </h3>
-          <span className="text-xs font-semibold text-gray-500 bg-white px-2 py-1 rounded border">
+        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/50 py-4">
+          <div className="flex items-center gap-3">
+            <Badge className="h-8 w-8 rounded-lg flex items-center justify-center text-sm">
+              {currentTopicIndex + 1}
+            </Badge>
+            <CardTitle className="text-xl text-primary">
+              {currentTopic.Title}
+            </CardTitle>
+          </div>
+          <Badge variant="outline">
             Trang {currentTopicIndex + 1}/{totalTopics}
-          </span>
-        </div>
+          </Badge>
+        </CardHeader>
 
-        <div className="p-6 space-y-8">
-          {/* Part I: Scale */}
+        <CardContent className="pt-6 space-y-8">
+          {/* Part I: Scale Questions */}
           <div className="space-y-6">
             {currentTopic.ListCategory?.map((cat) => (
               <div key={cat.Id}>
                 {cat.Name && (
-                  <h4 className="font-bold text-gray-800 mb-4 bg-blue-50/50 p-2 rounded border-l-4 border-blue-500">
+                  <h4 className="font-bold text-foreground mb-4 bg-primary/5 p-3 rounded-lg border-l-4 border-primary">
                     {cat.Name}
                   </h4>
                 )}
@@ -168,53 +230,38 @@ export const SurveyForm = ({
                   {cat.ListQuestion?.map((q) => (
                     <div
                       key={q.Id}
-                      className="space-y-3 pb-4 border-b border-gray-100 last:border-0"
+                      className="space-y-3 pb-4 border-b border-border/50 last:border-0"
                     >
-                      <p className="text-gray-800 font-medium">
-                        {q.Content} <span className="text-red-500">*</span>
-                      </p>
-                      {/* 1-5 Scale UI */}
-                      <div className="flex flex-wrap gap-2 items-center justify-between sm:justify-start sm:gap-4">
+                      <Label className="text-foreground font-medium text-base">
+                        {q.Content} <span className="text-destructive">*</span>
+                      </Label>
+
+                      {/* 1-5 Scale UI with styled buttons */}
+                      <div className="flex flex-wrap gap-2 items-center justify-between sm:justify-start sm:gap-3">
                         {[1, 2, 3, 4, 5].map((val) => (
-                          <label
+                          <button
                             key={val}
-                            className="flex flex-col items-center gap-1 cursor-pointer group"
+                            type="button"
+                            onClick={() => handleScoreChange(q.Id, val)}
+                            className={cn(
+                              "w-11 h-11 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all duration-200",
+                              scores[q.Id] === val
+                                ? val === 1
+                                  ? "border-destructive bg-destructive text-destructive-foreground scale-110"
+                                  : val === 5
+                                    ? "border-green-500 bg-green-500 text-white scale-110"
+                                    : "border-primary bg-primary text-primary-foreground scale-110"
+                                : "border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:bg-muted",
+                            )}
                           >
-                            <div
-                              className={`
-                                           w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all
-                                           ${
-                                             scores[q.Id] === val
-                                               ? "border-blue-500 text-white bg-blue-500 scale-110"
-                                               : "border-gray-200 text-gray-500 hover:border-blue-300"
-                                           }
-                                           ${
-                                             val === 1 && scores[q.Id] === val
-                                               ? "bg-red-500! border-red-500!"
-                                               : ""
-                                           }
-                                           ${
-                                             val === 5 && scores[q.Id] === val
-                                               ? "bg-green-500! border-green-500!"
-                                               : ""
-                                           }
-                                        `}
-                            >
-                              {val}
-                            </div>
-                            <input
-                              type="radio"
-                              name={q.Id}
-                              value={val}
-                              checked={scores[q.Id] === val}
-                              onChange={() => handleScoreChange(q.Id, val)}
-                              className="sr-only"
-                            />
-                          </label>
+                            {val}
+                          </button>
                         ))}
-                        <div className="hidden sm:flex text-[10px] text-gray-400 gap-8 italic ml-4">
-                          <span>(1: Kém nhất)</span>
-                          <span>(5: Tốt nhất)</span>
+                        <div className="hidden sm:flex text-xs text-muted-foreground gap-6 items-center ml-4">
+                          <span className="italic">
+                            (1: Hoàn toàn không đồng ý)
+                          </span>
+                          <span className="italic">(5: Hoàn toàn đồng ý)</span>
                         </div>
                       </div>
                     </div>
@@ -226,39 +273,45 @@ export const SurveyForm = ({
 
           {/* Part II: Open Ended / Text Questions */}
           {currentTopic.HasTextQuestionPart && (
-            <div className="pt-6 border-t-2 border-dashed border-gray-200">
-              <h4 className="font-bold text-orange-700 mb-4 flex items-center gap-2">
-                <MessageSquare size={20} />
-                {currentTopic.TextQuestionTitle || "Ý kiến bổ sung"}
-              </h4>
+            <>
+              <Separator className="my-6" />
               <div className="space-y-5">
-                {currentTopic.ListTextQuestion?.map((q) => (
-                  <div key={q.Id} className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 block">
-                      {q.Content}{" "}
-                      {q.IsRequired && <span className="text-red-500">*</span>}
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={textAnswers[q.Id] || ""}
-                      onChange={(e) =>
-                        handleTextAnswerChange(q.Id, e.target.value)
-                      }
-                      className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-shadow"
-                      placeholder="Nhập câu trả lời của bạn..."
-                    ></textarea>
-                  </div>
-                ))}
+                <h4 className="font-bold text-orange-600 dark:text-orange-400 flex items-center gap-2">
+                  <MessageSquare size={20} />
+                  {currentTopic.TextQuestionTitle || "Ý kiến bổ sung"}
+                </h4>
+                <div className="space-y-5">
+                  {currentTopic.ListTextQuestion?.map((q) => (
+                    <div key={q.Id} className="space-y-2">
+                      <Label className="text-sm font-semibold">
+                        {q.Content}{" "}
+                        {q.IsRequired && (
+                          <span className="text-destructive">*</span>
+                        )}
+                      </Label>
+                      <textarea
+                        rows={3}
+                        value={textAnswers[q.Id] || ""}
+                        onChange={(e) =>
+                          handleTextAnswerChange(q.Id, e.target.value)
+                        }
+                        className="w-full border border-input rounded-lg p-3 text-sm bg-background focus:ring-2 focus:ring-orange-200 focus:border-orange-400 outline-none transition-shadow resize-none"
+                        placeholder="Nhập câu trả lời của bạn..."
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Navigation Buttons */}
       <div className="flex justify-between items-center pt-6 pb-12">
         <Button
           type="button"
+          variant="outline"
           onClick={() => {
             setCurrentTopicIndex((p) => Math.max(0, p - 1));
             const scrollContainer = document.querySelector(".overflow-y-auto");
@@ -269,31 +322,23 @@ export const SurveyForm = ({
             }
           }}
           disabled={currentTopicIndex === 0}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-all ${
-            currentTopicIndex === 0
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 shadow-sm"
-          }`}
+          className="flex items-center gap-2"
         >
           <ArrowLeft size={18} /> Quay lại
         </Button>
 
         {currentTopicIndex < totalTopics - 1 ? (
-          <Button
-            type="button"
-            onClick={handleNext}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold shadow-md transition-all transform hover:-translate-y-0.5"
-          >
+          <Button type="button" onClick={handleNext} className="gap-2">
             Tiếp theo <ChevronRight size={18} />
           </Button>
         ) : (
           <Button
             type="button"
-            className={`flex items-center gap-2 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-all transform hover:-translate-y-0.5 ${
-              isPreview
-                ? "bg-teal-600 hover:bg-teal-700"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            variant={isPreview ? "secondary" : "default"}
+            className={cn(
+              "gap-2",
+              !isPreview && "bg-green-600 hover:bg-green-700 text-white",
+            )}
             onClick={handleSubmitClick}
             disabled={isSubmitting}
           >

@@ -16,6 +16,7 @@ import { useState } from "react";
 export const getViewStakeholderColumns = (
   onDelete?: (item: SurveySession) => void,
   onSendEmail?: (item: SurveySession) => Promise<void>,
+  onViewAnswers?: (item: SurveySession) => void,
 ): ColumnDef<SurveySession>[] => [
   {
     id: "select",
@@ -71,7 +72,12 @@ export const getViewStakeholderColumns = (
     id: "actions",
     header: "Thao tác",
     cell: ({ row }) => (
-      <ActionCell row={row} onDelete={onDelete} onSendEmail={onSendEmail} />
+      <ActionCell
+        row={row}
+        onDelete={onDelete}
+        onSendEmail={onSendEmail}
+        onViewAnswers={onViewAnswers}
+      />
     ),
   },
 ];
@@ -80,10 +86,12 @@ const ActionCell = ({
   row,
   onDelete,
   onSendEmail,
+  onViewAnswers,
 }: {
   row: { original: SurveySession };
   onDelete?: (item: SurveySession) => void;
   onSendEmail?: (item: SurveySession) => Promise<void>;
+  onViewAnswers?: (item: SurveySession) => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -117,6 +125,11 @@ const ActionCell = ({
         <DropdownMenuItem onClick={handleSendEmail} disabled={isLoading}>
           {isLoading ? "Đang gửi..." : "Gửi khảo sát"}
         </DropdownMenuItem>
+        {row.original.Status === 3 && (
+          <DropdownMenuItem onClick={() => onViewAnswers?.(row.original)}>
+            Xem câu trả lời
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => onDelete?.(row.original)}>
           Xóa
         </DropdownMenuItem>

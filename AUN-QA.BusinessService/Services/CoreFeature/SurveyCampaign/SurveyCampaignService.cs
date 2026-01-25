@@ -114,14 +114,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             return result;
         }
 
-        public async Task<ModelSurveyCampaign> Insert(SurveyCampaignRequest request)
+        public async Task Insert(SurveyCampaignRequest request)
         {
-            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
-            var isHeadOfCouncil = await _catalogService.IsUserInRoleAsync(request.CycleId.ToString(), userId, ((int)CouncilRole.HeadOfCouncil));
-            if (!isHeadOfCouncil)
-            {
-                throw new Exception("Chỉ trưởng hội đồng mới có quyền tạo khảo sát");
-            }
+            await ValidateHeadOfCouncil(request.CycleId.ToString());
 
             var data = _context.SurveyCampaigns.Where(x =>
                 x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
@@ -202,11 +197,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             #endregion
             await _context.SaveChangesAsync();
-            return _mapper.Map<ModelSurveyCampaign>(add);
         }
 
-        public async Task<ModelSurveyCampaign> Update(SurveyCampaignRequest request)
+        public async Task Update(SurveyCampaignRequest request)
         {
+            await ValidateHeadOfCouncil(request.CycleId.ToString());
             var data = _context.SurveyCampaigns.Where(x =>
                x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
                 && !x.IsDeleted && x.Id != request.Id);
@@ -419,10 +414,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             #endregion
 
             await _context.SaveChangesAsync();
-            return _mapper.Map<ModelSurveyCampaign>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -432,6 +426,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
+                await ValidateHeadOfCouncil(delete.CycleId.ToString());
+
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                 delete.UpdatedAt = DateTime.Now;
@@ -440,7 +436,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
@@ -523,6 +518,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 throw new Exception("Dữ liệu không tồn tại");
             }
+
+            await ValidateHeadOfCouncil(data.CycleId.ToString());
 
             switch (data.Status)
             {
@@ -607,6 +604,172 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             await _context.SaveChangesAsync();
         }
 
+        public async Task<ModelDoSurvey> GetSurveyByToken(GetSurveyByTokenRequest request)
+        {
+            // 1. Validate Token
+            var session = await _context.SurveySessions
+                .FirstOrDefaultAsync(x => x.Token == request.Token && !x.IsDeleted);
+
+            if (session == null)
+            {
+                throw new Exception("Liên kết khảo sát không hợp lệ");
+            }
+
+            // 2. Get Campaign
+            var campaignReq = await GetById(new GetByIdRequest { Id = session.CampaignId });
+
+            if (campaignReq.Status == (int)SurveyCampaignStatus.Draft)
+            {
+                throw new Exception("Chiến dịch chưa bắt đầu");
+            }
+
+            if (campaignReq.Status == (int)SurveyCampaignStatus.Completed)
+            {
+                throw new Exception("Chiến dịch đã kết thúc");
+            }
+
+            // 3. Map to SurveyViewDto
+            var result = new ModelDoSurvey
+            {
+                Id = campaignReq.Id,
+                Name = campaignReq.Name,
+                StakeholderType = campaignReq.StakeholderType,
+                IsSessionCompleted = session.Status == (int)SurveySessionStatus.Completed,
+                ListTopic = campaignReq.ListTopic.Select(t => new TemplateTopicRequest
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    HasTextQuestionPart = t.HasTextQuestionPart,
+                    TextQuestionTitle = t.TextQuestionTitle,
+                    Sort = t.Sort,
+                    ListCategory = t.ListCategory.Select(c => new TemplateCategoryRequest
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Sort = c.Sort,
+                        ListQuestion = c.ListQuestion.Select(q => new TemplateQuestionRequest
+                        {
+                            Id = q.Id,
+                            Content = q.Content,
+                            Sort = q.Sort
+                        }).ToList()
+                    }).ToList(),
+                    ListTextQuestion = t.ListTextQuestion.Select(tq => new TemplateTextQuestionRequest
+                    {
+                        Id = tq.Id,
+                        Content = tq.Content,
+                        IsRequired = tq.IsRequired,
+                        Sort = tq.Sort
+                    }).ToList()
+                }).ToList()
+            };
+
+            // 4. Fill Answers if completed
+            if (result.IsSessionCompleted)
+            {
+                var scores = await _context.SurveyScores
+                    .Where(x => x.SessionId == session.Id)
+                    .ToListAsync();
+
+                var textAnswers = await _context.SurveyTextAnswers
+                    .Where(x => x.SessionId == session.Id)
+                    .ToListAsync();
+
+                foreach (var topic in result.ListTopic)
+                {
+                    foreach (var cat in topic.ListCategory)
+                    {
+                        foreach (var q in cat.ListQuestion)
+                        {
+                            var s = scores.FirstOrDefault(x => x.QuestionId == q.Id);
+                            if (s != null) q.Score = s.Score;
+                        }
+                    }
+
+                    foreach (var tq in topic.ListTextQuestion)
+                    {
+                        var a = textAnswers.FirstOrDefault(x => x.TextQuestionId == tq.Id);
+                        if (a != null) tq.Answer = a.Content;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public async Task SubmitSurvey(SurveySubmissionRequest request)
+        {
+            // 1. Validate Token
+            var session = await _context.SurveySessions
+                .FirstOrDefaultAsync(x => x.Token == request.Token && !x.IsDeleted);
+
+            if (session == null)
+            {
+                throw new Exception("Liên kết khảo sát không hợp lệ");
+            }
+
+            var now = DateTime.Now;
+            var stakeholderName = session.StakeholderName;
+
+            var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
+            if (campaign == null)
+            {
+                throw new Exception("Không tìm thấy thông tin chiến dịch");
+            }
+
+            if (campaign.Status == (int)SurveyCampaignStatus.Draft)
+            {
+                throw new Exception("Chiến dịch chưa bắt đầu");
+            }
+
+            // NEW: Clean up existing answers if re-submitting (for editing)
+            if (session.Status == (int)SurveySessionStatus.Completed)
+            {
+                var oldScores = _context.SurveyScores.Where(x => x.SessionId == session.Id);
+                _context.SurveyScores.RemoveRange(oldScores);
+
+                var oldTextAnswers = _context.SurveyTextAnswers.Where(x => x.SessionId == session.Id);
+                _context.SurveyTextAnswers.RemoveRange(oldTextAnswers);
+            }
+
+            // 2. Save Scores
+            if (request.Scores != null && request.Scores.Any())
+            {
+                foreach (var score in request.Scores)
+                {
+                    var add = _mapper.Map<Entities.SurveyScore>(score);
+                    add.Id = Guid.NewGuid();
+                    add.SessionId = session.Id;
+                    add.CreatedBy = stakeholderName;
+                    add.CreatedAt = now;
+                    await _context.SurveyScores.AddAsync(add);
+                }
+            }
+
+            // 3. Save Text Answers
+            if (request.TextAnswers != null && request.TextAnswers.Any())
+            {
+                foreach (var answer in request.TextAnswers)
+                {
+                    if (string.IsNullOrWhiteSpace(answer.Content)) continue;
+
+                    var add = _mapper.Map<Entities.SurveyTextAnswer>(answer);
+                    add.Id = Guid.NewGuid();
+                    add.SessionId = session.Id;
+                    add.CreatedBy = stakeholderName;
+                    add.CreatedAt = now;
+                    await _context.SurveyTextAnswers.AddAsync(add);
+                }
+            }
+
+            // 4. Update Session Status
+            session.Status = (int)SurveySessionStatus.Completed;
+            session.UpdatedBy = stakeholderName;
+            session.UpdatedAt = now;
+            _context.SurveySessions.Update(session);
+
+            await _context.SaveChangesAsync();
+        }
         #endregion
 
         #region Session
@@ -708,12 +871,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
         {
-            if (!request.ListStakeholderId.Any())
+            var data = await _context.SurveyCampaigns.FindAsync(request.CampaignId);
+            if (data == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            await ValidateHeadOfCouncil(data.CycleId.ToString());
+
+            if (!request.StakeholderIds.Any())
             {
                 throw new Exception("Danh sách người tham gia không được để trống");
             }
 
-            foreach (var stakeholderId in request.ListStakeholderId)
+            foreach (var stakeholderId in request.StakeholderIds)
             {
                 var stakeholder = await _catalogService.GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
                 {
@@ -735,7 +906,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     Token = Guid.NewGuid().ToString(),
                     Status = (int)SurveySessionStatus.Draft,
                     CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    IsActived = true,
+                    IsDeleted = false
                 };
 
                 await _context.SurveySessions.AddAsync(add);
@@ -745,6 +918,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
         {
+            var data = await _context.SurveyCampaigns.FindAsync(request.CampaignId);
+            if (data == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            await ValidateHeadOfCouncil(data.CycleId.ToString());
+
             var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
             {
                 CampainId = request.CampaignId,
@@ -770,7 +951,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     Token = Guid.NewGuid().ToString(),
                     Status = (int)SurveySessionStatus.Draft,
                     CreatedBy = _contextAccessor.HttpContext.User.Identity.Name,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    IsActived = true,
+                    IsDeleted = false
                 };
                 await _context.SurveySessions.AddAsync(add);
             }
@@ -778,30 +961,43 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             await _context.SaveChangesAsync();
         }
 
-        public async Task<string> DeleteListSession(DeleteListRequest request)
+        public async Task DeleteListSession(DeleteListRequest request)
         {
-            foreach (var id in request.Ids)
-            {
-                var delete = await _context.SurveySessions.FindAsync(id);
-                if (delete == null)
-                {
-                    throw new Exception("Dữ liệu không tồn tại");
-                }
+            if (request.Ids == null || !request.Ids.Any()) return;
 
-                if (delete.Status == ((int)SurveySessionStatus.Completed))
+            var sessions = await _context.SurveySessions
+                .Where(x => request.Ids.Contains(x.Id) && !x.IsDeleted)
+                .ToListAsync();
+
+            if (!sessions.Any()) return;
+
+            // Validate based on the first session's campaign
+            var firstSession = sessions.First();
+            var campaign = await _context.SurveyCampaigns.FindAsync(firstSession.CampaignId);
+            if (campaign != null)
+            {
+                await ValidateHeadOfCouncil(campaign.CycleId.ToString());
+            }
+            else
+            {
+                throw new Exception("Chiến dịch không tồn tại");
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session.Status == ((int)SurveySessionStatus.Completed))
                 {
                     continue;
                 }
 
-                delete.IsDeleted = true;
-                delete.UpdatedAt = DateTime.Now;
-                delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                session.IsDeleted = true;
+                session.UpdatedAt = DateTime.Now;
+                session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
 
-                _context.SurveySessions.Update(delete);
+                _context.SurveySessions.Update(session);
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task SendSurveyInvitation(GetByIdRequest request)
@@ -811,6 +1007,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 throw new Exception("Không tìm thấy thông tin lượt khảo sát");
             }
+
+            var data = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
+            if (data == null)
+            {
+                throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            await ValidateHeadOfCouncil(data.CycleId.ToString());
 
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (campaign == null)
@@ -826,7 +1030,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 await _emailService.SendEmailAsync(session.StakeholderEmail, subject, body);
 
-                session.Status = (int)SurveySessionStatus.Sent;
+                if (session.Status == (int)SurveySessionStatus.Draft)
+                {
+                    session.Status = (int)SurveySessionStatus.Sent;
+                }
                 session.SentDate = DateTime.Now;
                 session.UpdatedAt = DateTime.Now;
                 session.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
@@ -837,6 +1044,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             catch (Exception ex)
             {
                 throw new Exception($"Gửi email thất bại: {ex.Message}");
+            }
+        }
+        #endregion
+
+        #region Helpers
+        private async Task ValidateHeadOfCouncil(string cycleId)
+        {
+            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+            var isHeadOfCouncil = await _catalogService.IsUserInRoleAsync(cycleId, userId, ((int)CouncilRole.HeadOfCouncil));
+            if (!isHeadOfCouncil)
+            {
+                throw new Exception("Chỉ trưởng hội đồng mới có quyền thực hiện thao tác này");
             }
         }
         #endregion

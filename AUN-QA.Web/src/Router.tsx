@@ -19,12 +19,15 @@ import SurveyCampaignPage from "./features/business/routes/SurveyCampaign/Survey
 import StandardPage from "./features/catalog/routes/Standard/StandardPage";
 import CriterionPage from "./features/catalog/routes/Criterion/CriterionPage";
 
+import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
+
 const Router: FC = () => {
   return (
     <BrowserRouter>
       <Routes>
         {/* Unauthenticated Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/survey/do-survey" element={<DoSurveyPage />} />
 
         {/* Authenticated Routes */}
         <Route

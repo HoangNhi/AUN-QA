@@ -7,6 +7,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Survey;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
@@ -51,8 +52,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Insert(request);
-            return Ok(new BaseResponse<ModelSurveyCampaign> { Data = result, Success = true });
+            await _service.Insert(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPut, Route("update")]
@@ -62,8 +63,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Update(request);
-            return Ok(new BaseResponse<ModelSurveyCampaign> { Data = result, Success = true });
+            await _service.Update(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpDelete, Route("delete-list")]
@@ -73,8 +74,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.DeleteList(request);
-            return Ok(new BaseResponse<string> { Data = result, Success = true });
+            await _service.DeleteList(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpGet, Route("get-all-combobox")]
@@ -93,6 +94,25 @@ namespace AUN_QA.BusinessService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             await _service.ChangeStatus(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpGet("get-survey-by-token")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetSurveyByToken([FromQuery] GetSurveyByTokenRequest request)
+        {
+            var result = await _service.GetSurveyByToken(request);
+            return Ok(new BaseResponse<ModelDoSurvey> { Data = result, Success = true });
+        }
+
+        [HttpPost("submit-survey")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SubmitSurvey([FromBody] SurveySubmissionRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SubmitSurvey(request);
             return Ok(new BaseResponse(true, 200));
         }
         #endregion
@@ -149,8 +169,8 @@ namespace AUN_QA.BusinessService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.DeleteListSession(request);
-            return Ok(new BaseResponse<string> { Data = result, Success = true });
+            await _service.DeleteListSession(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPost("send-survey-invitation")]

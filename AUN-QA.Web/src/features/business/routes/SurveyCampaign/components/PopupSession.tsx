@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/data-table";
 import { getViewStakeholderColumns } from "./session-columns";
 import { PopupChooseStakeholder } from "./PopupChooseStakeholder";
+import { PopupViewAnswers } from "./PopupViewAnswers"; // NEW
 import type {
   GetListSessionRequest,
   SurveySession,
@@ -56,6 +57,8 @@ export const PopupSession = ({
   const [rowSelection, setRowSelection] = useState({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState<string[]>([]); // store ids to delete
+  const [viewAnswerSession, setViewAnswerSession] =
+    useState<SurveySession | null>(null); // NEW
 
   const { data, totalRow, isFetching, refetch } = useSurveySession(
     pageRequest,
@@ -125,6 +128,7 @@ export const PopupSession = ({
           setShowDeleteConfirm(true);
         },
         (item) => handleSendEmail(item),
+        (item) => setViewAnswerSession(item), // NEW
       ),
     [handleSendEmail],
   );
@@ -245,6 +249,14 @@ export const PopupSession = ({
         onOpenChange={setShowDeleteConfirm}
         onConfirm={() => handleDelete(deleteItem)}
         itemCount={deleteItem.length}
+        isLoading={deleteSessionMutation.isPending}
+        stopAutoClose={true}
+      />
+      <PopupViewAnswers
+        open={!!viewAnswerSession}
+        onOpenChange={(open) => !open && setViewAnswerSession(null)}
+        token={viewAnswerSession?.Token}
+        stakeholderName={viewAnswerSession?.StakeholderName}
       />
     </>
   );

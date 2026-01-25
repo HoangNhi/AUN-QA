@@ -14,6 +14,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests
         public int Sort { get; set; }
 
         public bool IsRequired { get; set; } = true;
+
+        public string? Answer { get; set; }
     }
 
     public class TemplateTextQuestionRequestValidator : AbstractValidator<TemplateTextQuestionRequest>

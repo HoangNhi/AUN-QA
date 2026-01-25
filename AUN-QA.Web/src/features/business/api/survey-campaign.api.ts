@@ -8,6 +8,8 @@ import type {
   SurveyCampaignGetListPaging,
   SurveyCampaignGetListPagingRequest,
   SurveySession,
+  SurveySubmissionRequest,
+  SurveyView,
 } from "../types/survey-campaign.types";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config";
@@ -123,6 +125,24 @@ export const surveyCampaignService = {
       {
         id,
       },
+    );
+  },
+
+  getSurveyByToken: async (token: string): Promise<ApiResponse<SurveyView>> => {
+    return api.get<SurveyView>(
+      API_ENDPOINTS.Business.SurveyCampaign.GET_SURVEY_BY_TOKEN,
+      {
+        params: { token },
+      },
+    );
+  },
+
+  submitSurvey: async (
+    data: SurveySubmissionRequest,
+  ): Promise<ApiResponse<boolean>> => {
+    return api.post<boolean>(
+      API_ENDPOINTS.Business.SurveyCampaign.SUBMIT_SURVEY,
+      data,
     );
   },
 };

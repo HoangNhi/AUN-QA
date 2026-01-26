@@ -6,14 +6,6 @@ import {
     type RowSelectionState,
     type OnChangeFn,
 } from "@tanstack/react-table";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/Button";
 import {
     ChevronLeftIcon,
@@ -32,6 +24,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+
+
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -59,7 +53,7 @@ export function DataTable<TData, TValue>({
                                              onRefresh,
                                              isLoading = false,
                                              className,
-                                             containerClassName = "overflow-auto w-full",
+                                             containerClassName = "h-[calc(100vh-350px)] overflow-auto w-full relative",
                                              getRowId,
                                          }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
@@ -75,100 +69,101 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className={cn("space-y-4 w-full", className)}>
-            <div className="relative w-full overflow-hidden rounded-md border">
+            {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
+            <div className="relative w-full overflow-hidden rounded-md border flex flex-col bg-white">
+
+                {/* Loading Overlay */}
                 {isLoading && (
                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 )}
-                <Table containerClassName={containerClassName}>
-                    <TableHeader className="bg-background sticky top-0 z-10">
+
+                {/* 👇 KHUNG CUỘN CHÍNH (Nơi chứa thanh cuộn) */}
+                <div className={cn(containerClassName)}>
+                    <table className="w-full caption-bottom text-sm text-left">
+                        {/* Header */}
+                        <thead className="bg-background">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id} className="whitespace-nowrap">
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext(),
-                                                )}
-                                        </TableHead>
-                                    );
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            <>
-                                {table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
+                            <tr key={headerGroup.id} className="border-b transition-colors data-[state=selected]:bg-muted">
+                                {headerGroup.headers.map((header) => (
+                                    <th
+                                        key={header.id}
+                                        // 👇 STICKY CHUẨN:
+                                        // - sticky top-0: Dính lên trên cùng.
+                                        // - z-10: Nổi lên trên nội dung.
+                                        // - bg-white: Nền trắng đặc để che chữ chạy bên dưới.
+                                        // - shadow: Tạo đường kẻ mỏng bên dưới (thay cho border để không bị dày).
+                                        className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-10 bg-white shadow-[0_1px_0_0_#e5e7eb]"
                                     >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell
-                                                key={cell.id}
-                                                className={
-                                                    (cell.column.columnDef.meta as { className?: string })
-                                                        ?.className
-                                                }
-                                            >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext(),
+                                            )}
+                                    </th>
                                 ))}
-                                {}
-                                {pageRequest &&
-                                    table.getRowModel().rows.length < pageRequest.PageSize && (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={columns.length}
-                                                className="p-0 border-none" 
-                                                style={{
-                                                    height: `${
-                                                        (pageRequest.PageSize -
-                                                            table.getRowModel().rows.length) *
-                                                        3.5 
-                                                    }rem`,
-                                                }}
-                                            ></TableCell>
-                                        </TableRow>
-                                    )}
-                            </>
+                            </tr>
+                        ))}
+                        </thead>
+
+                        {/* Body */}
+                        <tbody className="[&_tr:last-child]:border-0">
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <tr
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && "selected"}
+                                    className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <td
+                                            key={cell.id}
+                                            className={cn(
+                                                "p-4 align-middle",
+                                                (cell.column.columnDef.meta as { className?: string })?.className
+                                            )}
+                                        >
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
                         ) : (
-                            <TableRow>
-                                <TableCell
+                            <tr>
+                                <td
                                     colSpan={columns.length}
-                                    className="h-24 text-center"
+                                    className="h-24 text-center align-middle"
                                 >
                                     Không có dữ liệu
-                                </TableCell>
-                            </TableRow>
+                                </td>
+                            </tr>
                         )}
-                    </TableBody>
-                </Table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
 
-            {pageRequest && totalRow !== undefined && (
-                <DataTablePagination
-                    pageRequest={pageRequest}
-                    setPageRequest={setPageRequest}
-                    totalRow={totalRow}
-                    onRefresh={onRefresh}
-                />
-            )}
+                {/* 👇 PAGINATION: Nằm trong khung border, ngăn cách bằng border-t */}
+                {pageRequest && totalRow !== undefined && (
+                    <div className="shrink-0 border-t bg-white">
+                        <DataTablePagination
+                            pageRequest={pageRequest}
+                            setPageRequest={setPageRequest}
+                            totalRow={totalRow}
+                            onRefresh={onRefresh}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
-
+// --- Component Pagination ---
 interface DataTablePaginationProps {
     pageRequest: GetListPagingRequest;
     setPageRequest?: (pageRequest: GetListPagingRequest) => void;
@@ -186,7 +181,7 @@ function DataTablePagination({
     const pageSizeOptions = [10, 20, 30, 50, 100];
 
     return (
-        <div className="flex items-center justify-between px-2 w-full"> {/* Thêm w-full */}
+        <div className="flex items-center justify-between px-4 py-3 w-full">
             <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
                 {totalRow > 0 ? (
                     <>
@@ -206,7 +201,7 @@ function DataTablePagination({
             </div>
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium hidden sm:block">Số dòng/trang</p>
+                    <p className="text-sm font-medium hidden sm:block">Số dòng mỗi trang</p>
                     <Select
                         value={`${pageRequest.PageSize}`}
                         onValueChange={(value) => {
@@ -217,7 +212,7 @@ function DataTablePagination({
                             });
                         }}
                     >
-                        <SelectTrigger className="h-8 w-[70px]">
+                        <SelectTrigger className="h-8 w-[90px]">
                             <SelectValue placeholder={pageRequest.PageSize} />
                         </SelectTrigger>
                         <SelectContent side="top">

@@ -30,18 +30,18 @@ interface PopupChooseStakeholderProps {
 }
 
 export const PopupChooseStakeholder = ({
-  open,
-  onOpenChange,
-  campaignId,
-  onAdd,
-}: PopupChooseStakeholderProps) => {
+                                         open,
+                                         onOpenChange,
+                                         campaignId,
+                                         onAdd,
+                                       }: PopupChooseStakeholderProps) => {
   const [pageRequest, setPageRequest] =
-    useState<GetStakeholderNotInCampaignRequest>({
-      PageIndex: 1,
-      PageSize: 10,
-      TextSearch: "",
-      CampainId: campaignId,
-    });
+      useState<GetStakeholderNotInCampaignRequest>({
+        PageIndex: 1,
+        PageSize: 10,
+        TextSearch: "",
+        CampainId: campaignId,
+      });
 
   const [textSearch, setTextSearch] = useState("");
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -81,7 +81,7 @@ export const PopupChooseStakeholder = ({
     queryKey: ["stakeholders-not-in-campaign", pageRequest],
     queryFn: async () => {
       const response =
-        await surveyCampaignService.getStakeholderNotInCampaign(pageRequest);
+          await surveyCampaignService.getStakeholderNotInCampaign(pageRequest);
       if (!response.Success) {
         toast.error(response.Message || "Lỗi tải dữ liệu");
         throw new Error(response.Message);
@@ -100,14 +100,14 @@ export const PopupChooseStakeholder = ({
   };
 
   const columns = useMemo(
-    () =>
-      getChooseStakeholderColumns(
-        isSelectingAll,
-        setIsSelectingAll,
-        rowSelection,
-        setRowSelection,
-      ),
-    [isSelectingAll, rowSelection],
+      () =>
+          getChooseStakeholderColumns(
+              isSelectingAll,
+              setIsSelectingAll,
+              rowSelection,
+              setRowSelection,
+          ),
+      [isSelectingAll, rowSelection],
   );
 
   const handleSearchChange = (value: string) => {
@@ -157,64 +157,67 @@ export const PopupChooseStakeholder = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
-          <DialogTitle>Thêm người tham gia vào khảo sát</DialogTitle>
-        </DialogHeader>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {/* 👇 FIX 1: Tăng độ rộng (max-w-5xl) và chỉnh chiều cao cố định (h-[600px]) để tạo dáng chữ nhật */}
+        <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
+            <DialogTitle>Thêm người tham gia vào khảo sát</DialogTitle>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
-          <div className="h-full overflow-y-auto px-6 py-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1"></div>
-                <InputGroup className="bg-white w-72">
-                  <InputGroupInput
-                    placeholder="Tìm kiếm..."
-                    value={textSearch}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                  />
-                  <InputGroupAddon>
-                    <SearchIcon className="h-4 w-4" />
-                  </InputGroupAddon>
-                </InputGroup>
+          <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
+            {/* 👇 FIX 2: overflow-hidden để tắt thanh cuộn thừa bên ngoài */}
+            <div className="h-full overflow-hidden px-6 py-4 flex flex-col">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4 shrink-0">
+                  <div className="flex-1"></div>
+                  <InputGroup className="bg-white w-72">
+                    <InputGroupInput
+                        placeholder="Tìm kiếm..."
+                        value={textSearch}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                    />
+                    <InputGroupAddon>
+                      <SearchIcon className="h-4 w-4" />
+                    </InputGroupAddon>
+                  </InputGroup>
+                </div>
+
+                {/* 👇 FIX 3: Chiều cao bảng cố định 340px, vừa khít khung 600px */}
+                <DataTable
+                    columns={columns}
+                    data={data.Data}
+                    totalRow={data.TotalRow}
+                    pageRequest={pageRequest}
+                    setPageRequest={setPageRequest}
+                    isLoading={isFetching}
+                    onRefresh={refetch}
+                    containerClassName="h-[340px] overflow-auto w-full relative"
+                    rowSelection={rowSelection}
+                    setRowSelection={setRowSelection}
+                />
               </div>
-
-              <DataTable
-                columns={columns}
-                data={data.Data}
-                totalRow={data.TotalRow}
-                pageRequest={pageRequest}
-                setPageRequest={setPageRequest}
-                isLoading={isFetching}
-                onRefresh={refetch}
-                containerClassName="max-h-[280px]"
-                rowSelection={rowSelection}
-                setRowSelection={setRowSelection}
-              />
             </div>
           </div>
-        </div>
 
-        <DialogFooter className="p-4 border-t shrink-0 bg-white">
-          <DialogClose asChild>
-            <Button variant="outline">Hủy</Button>
-          </DialogClose>
-          <Button
-            onClick={handleAdd}
-            disabled={
-              (!isSelectingAll && Object.keys(rowSelection).length === 0) ||
-              isLoading
-            }
-          >
-            {isLoading
-              ? "Đang thêm..."
-              : isSelectingAll
-                ? "Thêm tất cả"
-                : `Thêm ${Object.keys(rowSelection).length} người`}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="p-4 border-t shrink-0 bg-white">
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+                onClick={handleAdd}
+                disabled={
+                    (!isSelectingAll && Object.keys(rowSelection).length === 0) ||
+                    isLoading
+                }
+            >
+              {isLoading
+                  ? "Đang thêm..."
+                  : isSelectingAll
+                      ? "Thêm tất cả"
+                      : `Thêm ${Object.keys(rowSelection).length} người`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
   );
 };

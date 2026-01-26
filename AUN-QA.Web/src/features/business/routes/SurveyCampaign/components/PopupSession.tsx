@@ -145,7 +145,7 @@ export const PopupSession = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl h-[80vh] flex flex-col p-0 gap-0">
+        <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
               Danh sách người tham gia
@@ -225,7 +225,7 @@ export const PopupSession = ({
                   onRefresh={refetch}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
-                  containerClassName="max-h-[280px]"
+                  containerClassName="h-[30vh] overflow-auto w-full relative"
                 />
               </div>
             </div>

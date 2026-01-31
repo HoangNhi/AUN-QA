@@ -20,12 +20,13 @@ import {
 import { useState } from "react";
 import type { FileType } from "@/features/catalog/types/filetype.types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatDate } from "@/lib/utils";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
-  canDelete: boolean = true
+  canDelete: boolean = true,
 ): ColumnDef<FileType>[] => [
   {
     id: "select",
@@ -54,6 +55,22 @@ export const getColumns = (
   {
     accessorKey: "Name",
     header: "Tên loại tệp",
+  },
+  {
+    accessorKey: "CreateAt",
+    header: "Ngày tạo",
+    cell: ({ row }) => formatDate(row.original.CreatedAt),
+  },
+  {
+    accessorKey: "UpdatedAt",
+    header: "Ngày cập nhật",
+    cell: ({ row }) => formatDate(row.original.UpdatedAt),
+  },
+  {
+    accessorKey: "IsActived",
+    header: "Trạng thái",
+    cell: ({ row }) =>
+      row.original.IsActived ? "Hoạt động" : "Không hoạt động",
   },
   {
     id: "actions",

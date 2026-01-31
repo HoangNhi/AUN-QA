@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import {
   useQuery,
   useMutation,
@@ -11,10 +11,18 @@ import type {
   FileTypeGetListPagingRequest,
 } from "@/features/catalog/types/filetype.types";
 import { toast } from "sonner";
-import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
 
 export const useFileType = () => {
+  const EMPTY_FILE_TYPE: FileType = {
+    Id: "",
+    Code: "",
+    Name: "",
+    IsActived: true,
+    IsEdit: false,
+    FolderUpload: "",
+  };
+
   const [isOpen, setIsOpen] = useState(false);
   const [fileType, setFileType] = useState<FileType | null>(null);
   const [pageRequest, setPageRequest] =
@@ -36,12 +44,6 @@ export const useFileType = () => {
     placeholderData: keepPreviousData,
   });
 
-  useEffect(() => {
-    if (listResponse && !listResponse.Success) {
-      toast.error(listResponse.Message);
-    }
-  }, [listResponse]);
-
   const data = listResponse?.Data || {
     Data: [],
     TotalRow: 0,
@@ -53,20 +55,26 @@ export const useFileType = () => {
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
-    mutationFn: (data: FileType) => {
-      return data.IsEdit
-        ? fileTypeService.update(data)
-        : fileTypeService.insert(data);
-    },
-    onSuccess: (response, variables) => {
-      if (response.Success) {
-        toast.success(
-          variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
-        );
-        queryClient.invalidateQueries({ queryKey: ["fileTypes"] });
-      } else {
-        toast.error(response.Message);
+    mutationFn: async (data: FileType) => {
+      const cleanedRequest = {
+        ...data,
+        FolderUpload: data.FolderUpload || undefined,
+      };
+
+      const response = await (data.IsEdit
+        ? fileTypeService.update(cleanedRequest)
+        : fileTypeService.insert(cleanedRequest));
+
+      if (!response.Success) {
+        throw new Error(response.Message);
       }
+      return response;
+    },
+    onSuccess: (_, variables) => {
+      toast.success(
+        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+      );
+      queryClient.invalidateQueries({ queryKey: ["fileTypes"] });
     },
     onError: (error) => {
       toast.error(
@@ -76,15 +84,17 @@ export const useFileType = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (ids: string[]) => fileTypeService.deleteList(ids),
-    onSuccess: (response) => {
-      if (response.Success) {
-        toast.success("Xóa dữ liệu thành công");
-        queryClient.invalidateQueries({ queryKey: ["fileTypes"] });
-        setRowSelection({});
-      } else {
-        toast.error(response.Message);
+    mutationFn: async (ids: string[]) => {
+      const response = await fileTypeService.deleteList(ids);
+      if (!response.Success) {
+        throw new Error(response.Message);
       }
+      return response;
+    },
+    onSuccess: () => {
+      toast.success("Xóa dữ liệu thành công");
+      queryClient.invalidateQueries({ queryKey: ["fileTypes"] });
+      setRowSelection({});
     },
     onError: (error) => {
       toast.error(
@@ -99,16 +109,18 @@ export const useFileType = () => {
   }, [refetch]);
 
   const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
-    if (isEdit) {
-      const response = await fileTypeService.getById(id);
-      if (response?.Success && response?.Data) {
-        setFileType({ ...response.Data, IsEdit: isEdit });
-        setIsOpen(true);
-      } else {
-        toast.error(response?.Message);
+    if (isEdit && id) {
+      try {
+        const response = await fileTypeService.getById(id);
+        if (response.Success && response.Data) {
+          setFileType({ ...response.Data, IsEdit: true });
+          setIsOpen(true);
+        }
+      } catch {
+        toast.error("Không thể lấy thông tin chi tiết");
       }
     } else {
-      setFileType({ Id: id, Code: "", Name: "", IsEdit: isEdit });
+      setFileType(EMPTY_FILE_TYPE);
       setIsOpen(true);
     }
   }, []);
@@ -120,20 +132,20 @@ export const useFileType = () => {
     }
   }, []);
 
-  const saveChange = async (saveFileType: FileType, isAddMore: boolean) => {
-    const result = await saveMutation.mutateAsync(saveFileType);
-    if (result.Success) {
+  const saveChange = async (
+    saveFileType: FileType & { IsEdit: boolean },
+    isAddMore: boolean
+  ) => {
+    try {
+      await saveMutation.mutateAsync(saveFileType);
       if (isAddMore) {
-        setFileType({
-          Id: uuidv4(),
-          Code: "",
-          Name: "",
-          IsEdit: false,
-        });
+        setFileType(EMPTY_FILE_TYPE);
       } else {
         setIsOpen(false);
         setFileType(null);
       }
+    } catch {
+      // Error handled in mutation
     }
   };
 

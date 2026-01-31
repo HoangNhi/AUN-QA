@@ -31,6 +31,7 @@ const FileTypePage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    isLoading,
     isFetching,
   } = useFileType();
 
@@ -108,7 +109,7 @@ const FileTypePage = () => {
             onValueChange={(val) => {
               setPageRequest({
                 ...pageRequest,
-                IsActived: val ? Boolean(val) : undefined,
+                IsActived: val ? val === "true" : undefined,
                 PageIndex: 1,
               });
             }}
@@ -169,6 +170,7 @@ const FileTypePage = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           saveChange={saveChange}
+          isLoading={isLoading}
         />
       )}
 

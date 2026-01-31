@@ -20,29 +20,14 @@ import {
 import { useState } from "react";
 import type { Role } from "@/features/system/types/role.types";
 import { Checkbox } from "@/components/ui/checkbox";
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-
-  // Helper function to pad single digits with a leading zero
-  const pad = (num: number) => String(num).padStart(2, "0");
-
-  const day = pad(date.getDate());
-  const month = pad(date.getMonth() + 1); // Remember: Months are 0-indexed (Jan is 0)
-  const year = date.getFullYear();
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-
-  return `${day}/${month}/${year} - ${hours}:${minutes}`;
-};
+import { formatDate } from "@/lib/utils";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   showPopupPermission: (id: string) => void,
   isUpdated?: boolean,
-  isDeleted?: boolean
+  isDeleted?: boolean,
 ): ColumnDef<Role>[] => [
   {
     id: "select",

@@ -7,6 +7,7 @@ export interface FileType extends BaseRequest {
     Id: string;
     Code: string;
     Name: string;
+    Description?: string;
 }
 
 export interface FileTypeGetListPagingRequest extends GetListPagingRequest {

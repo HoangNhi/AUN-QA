@@ -157,7 +157,7 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
-            entity.Property(e => e.Decription).HasColumnType("text");
+            entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
@@ -208,7 +208,7 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
-            entity.Property(e => e.Decription).HasColumnType("text");
+            entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);

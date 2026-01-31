@@ -57,6 +57,15 @@ export const getColumns = (
     header: "Tên loại tệp",
   },
   {
+    accessorKey: "Description",
+    header: "Mô tả",
+    cell: ({ row }) => (
+      <div className="max-w-md truncate" title={row.original.Description || ""}>
+        {row.original.Description || "-"}
+      </div>
+    ),
+  },
+  {
     accessorKey: "CreateAt",
     header: "Ngày tạo",
     cell: ({ row }) => formatDate(row.original.CreatedAt),

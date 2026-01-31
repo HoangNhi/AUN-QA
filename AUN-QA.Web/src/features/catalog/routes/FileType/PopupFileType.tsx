@@ -15,6 +15,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import type { FileType } from "@/features/catalog/types/filetype.types";
 import { useState, useEffect } from "react";
@@ -41,6 +42,7 @@ const PopupFileType = ({
     id: fileType?.Id || uuidv4(),
     code: fileType?.Code || "",
     name: fileType?.Name || "",
+    description: fileType?.Description || "",
     isActived: fileType?.IsActived ?? true,
   });
 
@@ -88,6 +90,7 @@ const PopupFileType = ({
         id: fileType.Id || uuidv4(),
         code: fileType.Code || "",
         name: fileType.Name || "",
+        description: fileType.Description || "",
         isActived: fileType.IsActived ?? true,
       });
       // Clear errors when form is populated with new data
@@ -104,6 +107,7 @@ const PopupFileType = ({
       Id: formData.id,
       Code: formData.code.trim(),
       Name: formData.name.trim(),
+      Description: formData.description.trim(),
       IsActived: formData.isActived,
       IsEdit: fileType?.IsEdit || false,
       FolderUpload: "",
@@ -181,6 +185,20 @@ const PopupFileType = ({
                 {errors.name && (
                   <FieldError id="name-error">{errors.name}</FieldError>
                 )}
+              </FieldContent>
+            </Field>
+
+            {/* Description Field */}
+            <Field>
+              <FieldLabel htmlFor="description">Mô tả</FieldLabel>
+              <FieldContent>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => updateField("description", e.target.value)}
+                  placeholder="Nhập mô tả loại file"
+                  rows={3}
+                />
               </FieldContent>
             </Field>
 

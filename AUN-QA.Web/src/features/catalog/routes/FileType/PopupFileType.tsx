@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
   DialogClose,
@@ -9,14 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import type { FileType } from "@/features/catalog/types/filetype.types";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -36,7 +30,7 @@ const PopupFileType = ({
   const [code, setCode] = useState(fileType?.Code || "");
   const [name, setName] = useState(fileType?.Name || "");
   const [isActived, setIsActived] = useState<boolean>(
-    fileType?.IsActived ?? true
+    fileType?.IsActived ?? true,
   );
 
   const onSubmit = (isAddMore: boolean) => {
@@ -48,7 +42,7 @@ const PopupFileType = ({
         IsEdit: fileType?.IsEdit || false,
         IsActived: isActived,
       },
-      isAddMore
+      isAddMore,
     );
   };
 
@@ -81,22 +75,16 @@ const PopupFileType = ({
             </div>
             <div className="grid gap-3">
               <Label>Trạng thái</Label>
-              <Select
-                value={isActived ? "true" : "false"}
-                onValueChange={(value) =>
-                  setIsActived(value === "true" ? true : false)
+              <Combobox
+                options={ACTIVE_STATUS_OPTIONS}
+                value={isActived.toString()}
+                onValueChange={(val) =>
+                  setIsActived(val === "true" ? true : false)
                 }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Chọn trạng thái" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="true">Hoạt động</SelectItem>
-                    <SelectItem value="false">Không hoạt động</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                placeholder="Chọn trạng thái"
+                searchPlaceholder="Tìm kiếm trạng thái..."
+                emptyText="Không tìm thấy trạng thái."
+              />
             </div>
           </div>
           <DialogFooter>

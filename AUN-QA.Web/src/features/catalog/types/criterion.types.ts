@@ -5,7 +5,8 @@ export interface Criterion {
     Code: string;
     Name: string;
     Description: string;
-    Guidance: string;
+    FileTypeId?: string;
+    FileTypeName?: string;
     CreatedBy?: string;
     CreatedAt?: string;
     UpdatedBy?: string;
@@ -21,6 +22,6 @@ export interface CriterionRequest {
     Code: string;
     Name: string;
     Description: string;
-    Guidance: string;
+    FileTypeId?: string;
     IsActived?: boolean;
 }

@@ -116,9 +116,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch) 
-                    || x.Code.Contains(request.TextSearch)
-                    || x.AunVersion.Contains(request.TextSearch));
+                query = query.Where(x => x.Name.Contains(request.TextSearch)
+                    || x.Code.Contains(request.TextSearch));
+                //|| x.AunVersion.Contains(request.TextSearch));
             }
 
             var totalRow = await query.CountAsync();

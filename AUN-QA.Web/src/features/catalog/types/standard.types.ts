@@ -1,9 +1,11 @@
+import type { Criterion } from './criterion.types';
+
 export interface Standard {
     Id: string;
     Code: string;
     Name: string;
     Description: string;
-    AunVersion: string;
+    Criteria?: Criterion[];
     CreatedBy?: string;
     CreatedAt?: string;
     UpdatedBy?: string;
@@ -18,6 +20,6 @@ export interface StandardRequest {
     Code: string;
     Name: string;
     Description: string;
-    AunVersion: string;
+    Criteria: Criterion[];
     IsActived?: boolean;
 }

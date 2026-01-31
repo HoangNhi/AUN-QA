@@ -6,8 +6,10 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
-import type { FileType } from "@/features/catalog/types/filetype.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type {
+  FileType,
+  FileTypeGetListPagingRequest,
+} from "@/features/catalog/types/filetype.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -15,11 +17,12 @@ import type { RowSelectionState } from "@tanstack/react-table";
 export const useFileType = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [fileType, setFileType] = useState<FileType | null>(null);
-  const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
-    PageIndex: 1,
-    PageSize: 10,
-    TextSearch: "",
-  });
+  const [pageRequest, setPageRequest] =
+    useState<FileTypeGetListPagingRequest>({
+      PageIndex: 1,
+      PageSize: 10,
+      TextSearch: "",
+    });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // 1. Fetch List

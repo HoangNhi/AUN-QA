@@ -15,8 +15,6 @@ public partial class Criterion
 
     public string Description { get; set; } = null!;
 
-    public string Guidance { get; set; } = null!;
-
     public DateTime CreatedAt { get; set; }
 
     public string CreatedBy { get; set; } = null!;
@@ -29,5 +27,5 @@ public partial class Criterion
 
     public bool IsDeleted { get; set; }
 
-    public virtual Standard? Standard { get; set; }
+    public Guid FileTypeId { get; set; }
 }

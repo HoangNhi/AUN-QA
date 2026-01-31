@@ -13,8 +13,6 @@ public partial class Standard
 
     public string Description { get; set; } = null!;
 
-    public string AunVersion { get; set; } = null!;
-
     public string CreatedBy { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }

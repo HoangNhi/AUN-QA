@@ -21,7 +21,7 @@ namespace AUN_QA.CatalogService.Controllers
 
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.VIEW)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        public async Task<IActionResult> GetList(FileTypeGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
@@ -48,8 +48,8 @@ namespace AUN_QA.CatalogService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Insert(request);
-            return Ok(new BaseResponse<ModelFileType> { Data = result, Success = true });
+            await _service.Insert(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPut, Route("update")]
@@ -59,8 +59,8 @@ namespace AUN_QA.CatalogService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.Update(request);
-            return Ok(new BaseResponse<ModelFileType> { Data = result, Success = true });
+            await _service.Update(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpDelete, Route("delete-list")]
@@ -70,8 +70,8 @@ namespace AUN_QA.CatalogService.Controllers
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            var result = await _service.DeleteList(request);
-            return Ok(new BaseResponse<string> { Data = result, Success = true });
+            await _service.DeleteList(request);
+            return Ok(new BaseResponse(true, 200));
         }
 
         [HttpGet, Route("get-all-combobox")]

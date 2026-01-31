@@ -377,3 +377,6 @@ FodyWeavers.xsd
 /AUN-QA.FileService/wwwroot/Files/Temp
 
 /thoughts
+/.agents
+/.claude
+CLAUDE.md

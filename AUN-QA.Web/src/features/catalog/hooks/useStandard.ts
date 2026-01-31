@@ -6,8 +6,7 @@ import {
     keepPreviousData,
 } from "@tanstack/react-query";
 import { standardService } from "@/features/catalog/api/standard.api";
-import type { Standard } from "@/features/catalog/types/standard.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type { Standard, StandardGetListPagingRequest } from "@/features/catalog/types/standard.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -15,10 +14,11 @@ import type { RowSelectionState } from "@tanstack/react-table";
 export const useStandard = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [standard, setStandard] = useState<Standard | null>(null);
-    const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
+    const [pageRequest, setPageRequest] = useState<StandardGetListPagingRequest>({
         PageIndex: 1,
         PageSize: 10,
         TextSearch: "",
+        IsActived: undefined,
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -110,7 +110,7 @@ export const useStandard = () => {
                 Code: "",
                 Name: "",
                 Description: "",
-                AunVersion: "",
+                Criterions: [],
                 IsEdit: isEdit
             });
             setIsOpen(true);
@@ -133,7 +133,7 @@ export const useStandard = () => {
                     Code: "",
                     Name: "",
                     Description: "",
-                    AunVersion: "",
+                    Criterions: [],
                     IsEdit: false,
                 });
             } else {

@@ -56,10 +56,6 @@ export const getColumns = (
             header: "Tên tiêu chuẩn",
         },
         {
-            accessorKey: "AunVersion",
-            header: "Phiên bản AUN-QA",
-        },
-        {
             accessorKey: "Description",
             header: "Mô tả",
             cell: ({ row }) => (

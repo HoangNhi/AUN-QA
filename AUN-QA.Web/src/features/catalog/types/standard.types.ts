@@ -1,25 +1,22 @@
-import type { Criterion } from './criterion.types';
+import type { BaseRequest, GetListPagingRequest } from "@/types/base/base.types";
 
-export interface Standard {
+export interface Standard extends BaseRequest {
     Id: string;
     Code: string;
     Name: string;
-    Description: string;
-    Criteria?: Criterion[];
-    CreatedBy?: string;
-    CreatedAt?: string;
-    UpdatedBy?: string;
-    UpdatedAt?: string;
-    IsActived?: boolean;
-    IsDeleted?: boolean;
-    IsEdit?: boolean;
+    Description?: string;
+    Criterions?: Criterion[];
 }
 
-export interface StandardRequest {
+export interface Criterion extends BaseRequest {
     Id: string;
     Code: string;
     Name: string;
-    Description: string;
-    Criteria: Criterion[];
+    Description?: string;
+    FileTypeId: string;
+    Order: number;
+}
+
+export interface StandardGetListPagingRequest extends GetListPagingRequest {
     IsActived?: boolean;
 }

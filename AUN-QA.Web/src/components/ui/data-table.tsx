@@ -114,7 +114,7 @@ export function DataTable<TData, TValue>({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    data-state={rowSelection && row.getIsSelected() && "selected"}
                     className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                   >
                     {row.getVisibleCells().map((cell) => (

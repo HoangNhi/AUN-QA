@@ -59,7 +59,7 @@ export const getColumns = (
   },
   {
     accessorKey: "Cycle",
-    header: "Khóa học",
+    header: "Quy trình",
   },
   {
     accessorKey: "Name",

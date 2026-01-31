@@ -32,28 +32,35 @@ import { Combobox } from "@/components/ui/combobox";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import { useStandardCriteria } from "@/features/catalog/hooks/useStandardCriteria";
 
-const getCriterionColumns = (
-  onUpdate: (id: string, updates: Partial<Criterion>) => void,
-  onDelete: (id: string) => void,
-  fileTypes: ModelCombobox[],
-): ColumnDef<Criterion>[] => [
+interface StandardTableMeta {
+  onUpdate: (id: string, updates: Partial<Criterion>) => void;
+  onDelete: (id: string) => void;
+  fileTypes: ModelCombobox[];
+}
+
+const getCriterionColumns = (): ColumnDef<Criterion>[] => [
   {
     accessorKey: "Order",
     header: () => <div className="text-center">STT</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        <Input
-          type="number"
-          value={row.original.Order}
-          onChange={(e) =>
-            onUpdate(row.original.Id, { Order: parseInt(e.target.value) || 1 })
-          }
-          className="h-8 w-16 text-center text-sm"
-          min={1}
-        />
-      </div>
-    ),
-    meta: { className: "w-24" },
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <div className="text-center">
+          <Input
+            type="number"
+            value={row.original.Order}
+            onChange={(e) =>
+              meta?.onUpdate(row.original.Id, {
+                Order: parseInt(e.target.value) || 1,
+              })
+            }
+            className="h-8 w-16 text-center text-sm"
+            min={1}
+          />
+        </div>
+      );
+    },
+    meta: { className: "w-28" },
   },
   {
     accessorKey: "Code",
@@ -62,14 +69,20 @@ const getCriterionColumns = (
         Mã tiêu chí <span className="text-red-500">*</span>
       </div>
     ),
-    cell: ({ row }) => (
-      <Input
-        value={row.original.Code}
-        onChange={(e) => onUpdate(row.original.Id, { Code: e.target.value })}
-        placeholder="Nhập mã"
-        className="h-8 text-sm"
-      />
-    ),
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <Input
+          value={row.original.Code}
+          onChange={(e) =>
+            meta?.onUpdate(row.original.Id, { Code: e.target.value })
+          }
+          placeholder="Nhập mã"
+          className="h-8 text-sm min-w-[150px]"
+        />
+      );
+    },
+    meta: { className: "min-w-[180px]" },
   },
   {
     accessorKey: "Name",
@@ -78,28 +91,38 @@ const getCriterionColumns = (
         Tên tiêu chí <span className="text-red-500">*</span>
       </div>
     ),
-    cell: ({ row }) => (
-      <Input
-        value={row.original.Name}
-        onChange={(e) => onUpdate(row.original.Id, { Name: e.target.value })}
-        placeholder="Nhập tên"
-        className="h-8 text-sm"
-      />
-    ),
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <Input
+          value={row.original.Name}
+          onChange={(e) =>
+            meta?.onUpdate(row.original.Id, { Name: e.target.value })
+          }
+          placeholder="Nhập tên"
+          className="h-8 text-sm min-w-[200px]"
+        />
+      );
+    },
+    meta: { className: "min-w-[230px]" },
   },
   {
     accessorKey: "Description",
     header: "Mô tả",
-    cell: ({ row }) => (
-      <Input
-        value={row.original.Description || ""}
-        onChange={(e) =>
-          onUpdate(row.original.Id, { Description: e.target.value })
-        }
-        placeholder="Mô tả (tùy chọn)"
-        className="h-8 text-sm"
-      />
-    ),
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <Input
+          value={row.original.Description || ""}
+          onChange={(e) =>
+            meta?.onUpdate(row.original.Id, { Description: e.target.value })
+          }
+          placeholder="Mô tả (tùy chọn)"
+          className="h-8 text-sm min-w-[180px]"
+        />
+      );
+    },
+    meta: { className: "min-w-[200px]" },
   },
   {
     accessorKey: "FileTypeId",
@@ -108,44 +131,53 @@ const getCriterionColumns = (
         Loại tệp <span className="text-red-500">*</span>
       </div>
     ),
-    cell: ({ row }) => (
-      <Combobox
-        options={fileTypes}
-        value={row.original.FileTypeId}
-        onValueChange={(val) => onUpdate(row.original.Id, { FileTypeId: val })}
-        placeholder="Chọn loại tệp"
-        searchPlaceholder="Tìm kiếm..."
-        emptyText="Không tìm thấy"
-        className="h-8 text-sm min-w-[200px]"
-      />
-    ),
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <Combobox
+          options={meta?.fileTypes || []}
+          value={row.original.FileTypeId}
+          onValueChange={(val) =>
+            meta?.onUpdate(row.original.Id, { FileTypeId: val })
+          }
+          placeholder="Chọn loại tệp"
+          searchPlaceholder="Tìm kiếm..."
+          emptyText="Không tìm thấy"
+          className="h-8 text-sm min-w-[220px]"
+        />
+      );
+    },
+    meta: { className: "min-w-[250px]" },
   },
   {
     id: "actions",
     header: () => <div className="text-center">Thao tác</div>,
     meta: { className: "w-24" },
-    cell: ({ row }) => (
-      <div className="flex justify-center">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (
-              confirm(
-                `Bạn có chắc chắn muốn xóa tiêu chí "${row.original.Name || "này"}"?`,
-              )
-            ) {
-              onDelete(row.original.Id);
-            }
-          }}
-          className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-          title="Xóa"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    ),
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as StandardTableMeta;
+      return (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (
+                confirm(
+                  `Bạn có chắc chắn muốn xóa tiêu chí "${row.original.Name || "này"}"?`,
+                )
+              ) {
+                meta?.onDelete(row.original.Id);
+              }
+            }}
+            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+            title="Xóa"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    },
   },
 ];
 
@@ -190,19 +222,19 @@ const PopupStandard = ({
   const fileTypes = fileTypesResponse?.Data || [];
 
   // Configure columns for criterion DataTable
-  const columns = useMemo(
-    () =>
-      getCriterionColumns(
-        // onUpdate handler - updates criterion in array
-        handlers.updateCriterion,
-        // onDelete handler
-        (id) => {
-          handlers.deleteCriterion(id);
-          toast.success("Xóa tiêu chí thành công");
-        },
-        fileTypes,
-      ),
-    [fileTypes, handlers],
+  // Configure columns for criterion DataTable
+  const columns = useMemo(() => getCriterionColumns(), []);
+
+  const tableMeta = useMemo(
+    () => ({
+      onUpdate: handlers.updateCriterion,
+      onDelete: (id: string) => {
+        handlers.deleteCriterion(id);
+        toast.success("Xóa tiêu chí thành công");
+      },
+      fileTypes,
+    }),
+    [handlers, fileTypes],
   );
 
   // Sync form data when standard changes
@@ -275,6 +307,10 @@ const PopupStandard = ({
         Criterions: criterionsWithStandardId,
         IsEdit: standard?.IsEdit || false,
         IsActived: formData.isActived,
+        FolderUpload: standard?.FolderUpload || "",
+        CreatedBy: standard?.CreatedBy || "",
+        CreatedAt: standard?.CreatedAt || "",
+        UpdatedAt: standard?.UpdatedAt || "",
       },
       isAddMore,
     );
@@ -415,7 +451,8 @@ const PopupStandard = ({
             <DataTable
               columns={columns}
               data={criterions}
-              containerClassName="max-h-[400px] overflow-auto"
+              meta={tableMeta}
+              containerClassName="max-h-[400px] overflow-x-auto overflow-y-auto"
             />
           </div>
         </form>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Criterion } from "@/features/catalog/types/standard.types";
 
 export const useStandardCriteria = (initialCriterions: Criterion[] = []) => {
@@ -24,12 +24,15 @@ export const useStandardCriteria = (initialCriterions: Criterion[] = []) => {
     );
   }, [criterions]);
 
-  const handlers = {
-    addCriterion,
-    updateCriterion,
-    deleteCriterion,
-    validateCriterions,
-  };
+  const handlers = useMemo(
+    () => ({
+      addCriterion,
+      updateCriterion,
+      deleteCriterion,
+      validateCriterions,
+    }),
+    [addCriterion, updateCriterion, deleteCriterion, validateCriterions]
+  );
 
   return { criterions, setCriterions, handlers };
 };

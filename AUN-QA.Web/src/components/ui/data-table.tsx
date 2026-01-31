@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   containerClassName?: string;
   getRowId?: (row: TData, index: number) => string;
+  meta?: any;
 }
 
 export function DataTable<TData, TValue>({
@@ -53,6 +54,7 @@ export function DataTable<TData, TValue>({
   className,
   containerClassName = "h-[calc(100vh-350px)] overflow-auto w-full relative",
   getRowId,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -63,6 +65,7 @@ export function DataTable<TData, TValue>({
     state: {
       rowSelection,
     },
+    meta,
   });
 
   return (
@@ -114,7 +117,9 @@ export function DataTable<TData, TValue>({
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    data-state={rowSelection && row.getIsSelected() && "selected"}
+                    data-state={
+                      rowSelection && row.getIsSelected() && "selected"
+                    }
                     className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                   >
                     {row.getVisibleCells().map((cell) => (

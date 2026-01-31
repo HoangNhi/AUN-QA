@@ -1,4 +1,5 @@
 using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -25,7 +26,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             _contextAccessor = contextAccessor;
         }
 
-        public async Task<ModelStandard> GetById(GetByIdRequest request)
+        public async Task<StandardRequest> GetById(GetByIdRequest request)
         {
             var data = await _context.Standards.FindAsync(request.Id);
             if (data == null)
@@ -33,10 +34,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            return _mapper.Map<ModelStandard>(data);
+            var result = _mapper.Map<StandardRequest>(data);
+            var criteria = await _context.Criteria
+                .Where(x => x.StandardId == data.Id && !x.IsDeleted)
+                .OrderBy(x => x.Order)
+                .ToListAsync();
+
+            result.Criterions = _mapper.Map<List<CriterionRequest>>(criteria);
+
+            return result;
         }
 
-        public async Task<ModelStandard> Insert(StandardRequest request)
+        public async Task Insert(StandardRequest request)
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
@@ -50,18 +59,31 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             var add = _mapper.Map<Entities.Standard>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
-            add.IsActived = true;
-            add.IsDeleted = false;
+
+            #region Criterions
+            if (!request.Criterions.Any())
+            {
+                throw new Exception("Tiêu chí không được để trống");
+            }
+
+            foreach (var criterion in request.Criterions)
+            {
+                var addCriterion = _mapper.Map<Entities.Criterion>(criterion);
+                addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
+                addCriterion.StandardId = add.Id;
+                addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                addCriterion.CreatedAt = DateTime.Now;
+                await _context.Criteria.AddAsync(addCriterion);
+            }
+            #endregion
 
             await _context.Standards.AddAsync(add);
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelStandard>(add);
         }
 
-        public async Task<ModelStandard> Update(StandardRequest request)
+        public async Task Update(StandardRequest request)
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
@@ -80,16 +102,55 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             _mapper.Map(request, update);
 
-            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             update.UpdatedAt = DateTime.Now;
+
+            #region Criterions
+            var existingCriterions = _context.Criteria
+                .Where(x => x.StandardId == update.Id && !x.IsDeleted)
+                .ToList();
+            // Mark removed criterions as deleted
+            foreach (var existing in existingCriterions)
+            {
+                if (!request.Criterions.Any(x => x.Id == existing.Id))
+                {
+                    existing.IsDeleted = true;
+                    existing.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    existing.UpdatedAt = DateTime.Now;
+                    _context.Criteria.Update(existing);
+                }
+            }
+            // Add or update criterions
+            foreach (var criterion in request.Criterions)
+            {
+                var existingCriterion = existingCriterions
+                    .FirstOrDefault(x => x.Id == criterion.Id);
+                if (existingCriterion != null)
+                {
+                    // Update existing
+                    _mapper.Map(criterion, existingCriterion);
+                    existingCriterion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    existingCriterion.UpdatedAt = DateTime.Now;
+                    _context.Criteria.Update(existingCriterion);
+                }
+                else
+                {
+                    // Add new
+                    var addCriterion = _mapper.Map<Entities.Criterion>(criterion);
+                    addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
+                    addCriterion.StandardId = update.Id;
+                    addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addCriterion.CreatedAt = DateTime.Now;
+                    await _context.Criteria.AddAsync(addCriterion);
+                }
+            }
+            #endregion
 
             _context.Standards.Update(update);
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelStandard>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -100,14 +161,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 }
 
                 delete.IsDeleted = true;
-                delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                 delete.UpdatedAt = DateTime.Now;
 
                 _context.Standards.Update(delete);
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task<GetListPagingResponse<ModelStandard>> GetList(GetListPagingRequest request)
@@ -117,8 +177,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
                 query = query.Where(x => x.Name.Contains(request.TextSearch)
-                    || x.Code.Contains(request.TextSearch));
-                //|| x.AunVersion.Contains(request.TextSearch));
+                    || x.Code.Contains(request.TextSearch)
+                    || x.Name.Contains(request.TextSearch)
+                    || (x.Description != null && x.Description.Contains(request.TextSearch)));
             }
 
             var totalRow = await query.CountAsync();

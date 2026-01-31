@@ -9,11 +9,15 @@ public partial class Criterion
 
     public Guid StandardId { get; set; }
 
+    public Guid FileTypeId { get; set; }
+
     public string Code { get; set; } = null!;
 
     public string Name { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
+
+    public int Order { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -26,6 +30,4 @@ public partial class Criterion
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
-
-    public Guid FileTypeId { get; set; }
 }

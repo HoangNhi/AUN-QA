@@ -9,10 +9,6 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Services\CoreFeature\Criterion\CriterionService.cs" />
-  </ItemGroup>
-
 
 
   <ItemGroup>

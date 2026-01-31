@@ -28,6 +28,8 @@ public partial class CatalogContext : DbContext
 
     public virtual DbSet<Standard> Standards { get; set; }
 
+    public virtual DbSet<StandardSet> StandardSets { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
@@ -155,6 +157,7 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Decription).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
@@ -191,6 +194,21 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Name).HasColumnType("text");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<StandardSet>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("StandardSet");
+
+            entity.Property(e => e.Code).HasColumnType("text");
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Decription).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);

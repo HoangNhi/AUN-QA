@@ -91,6 +91,14 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${CATALOG_BASE}/Standard/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Standard/get-all-combobox`,
     },
+    StandardSet: {
+      GET_LIST: `${CATALOG_BASE}/StandardSet/get-list`,
+      GET_BY_ID: `${CATALOG_BASE}/StandardSet/get-by-id`,
+      INSERT: `${CATALOG_BASE}/StandardSet/insert`,
+      UPDATE: `${CATALOG_BASE}/StandardSet/update`,
+      DELETE_LIST: `${CATALOG_BASE}/StandardSet/delete-list`,
+      GET_ALL_COMBOBOX: `${CATALOG_BASE}/StandardSet/get-all-combobox`,
+    },
   },
   Business: {
     Evidence: {

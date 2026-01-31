@@ -1,0 +1,9 @@
+using AUN_QA.CatalogService.DTOs.Base;
+
+namespace AUN_QA.CatalogService.DTOs.CoreFeature.StandardSet.Requests
+{
+    public class StandardSetGetListPagingRequest : GetListPagingRequest
+    {
+        public bool? IsActived { get; set; }
+    }
+}

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace AUN_QA.CatalogService.Entities;
 
-public partial class FileType
+public partial class StandardSet
 {
     public Guid Id { get; set; }
 
@@ -13,9 +13,9 @@ public partial class FileType
 
     public string? Decription { get; set; }
 
-    public string CreatedBy { get; set; } = null!;
-
     public DateTime CreatedAt { get; set; }
+
+    public string CreatedBy { get; set; } = null!;
 
     public DateTime? UpdatedAt { get; set; }
 

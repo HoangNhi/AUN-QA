@@ -9,11 +9,13 @@ public partial class Criterion
 
     public Guid StandardId { get; set; }
 
-    public Guid FileTypeId { get; set; }
-
     public string Code { get; set; } = null!;
 
     public string Name { get; set; } = null!;
+
+    public bool IsPrerequisite { get; set; }
+
+    public string? DiagnosticQuestions { get; set; }
 
     public string? Description { get; set; }
 

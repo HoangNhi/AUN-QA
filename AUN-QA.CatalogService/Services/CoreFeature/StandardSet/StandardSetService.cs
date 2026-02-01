@@ -102,7 +102,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelStandardSet>> GetList(StandardSetGetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelStandardSetGetListPaging>> GetList(StandardSetGetListPagingRequest request)
         {
             var query = _context.StandardSets.AsQueryable().Where(x => !x.IsDeleted);
 
@@ -116,6 +116,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
                 query = query.Where(x => x.IsActived == request.IsActived.Value);
             }
 
+            if (request.EvaluationMode.HasValue)
+            {
+                query = query.Where(x => x.EvaluationMode == request.EvaluationMode.Value);
+            }
+
             var totalRow = await query.CountAsync();
 
             var data = await query
@@ -124,12 +129,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            return new GetListPagingResponse<ModelStandardSet>
+            return new GetListPagingResponse<ModelStandardSetGetListPaging>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
                 TotalRow = totalRow,
-                Data = _mapper.Map<List<ModelStandardSet>>(data)
+                Data = _mapper.Map<List<ModelStandardSetGetListPaging>>(data)
             };
         }
 

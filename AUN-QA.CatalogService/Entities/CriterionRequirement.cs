@@ -3,19 +3,17 @@ using System.Collections.Generic;
 
 namespace AUN_QA.CatalogService.Entities;
 
-public partial class Standard
+public partial class CriterionRequirement
 {
     public Guid Id { get; set; }
 
-    public Guid StandardSetId { get; set; }
+    public Guid CriterionId { get; set; }
 
-    public string Code { get; set; } = null!;
+    public Guid FileTypeId { get; set; }
 
-    public string Name { get; set; } = null!;
+    public bool IsMandatory { get; set; }
 
-    public string? Description { get; set; }
-
-    public int Order { get; set; }
+    public int MinQuantity { get; set; }
 
     public string CreatedBy { get; set; } = null!;
 

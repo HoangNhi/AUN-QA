@@ -27,7 +27,7 @@ namespace AUN_QA.CatalogService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelStandardSet>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelStandardSetGetListPaging>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]

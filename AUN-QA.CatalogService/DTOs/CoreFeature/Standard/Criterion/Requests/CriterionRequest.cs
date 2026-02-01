@@ -1,4 +1,5 @@
 using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Requests;
 using FluentValidation;
 
 namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
@@ -8,8 +9,6 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
         public Guid Id { get; set; }
 
         public Guid StandardId { get; set; }
-
-        public Guid FileTypeId { get; set; }
 
         public string Code { get; set; } = null!;
 
@@ -22,6 +21,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
         #region GetList
         public string? FileType { get; set; }
         #endregion
+
+        public List<CriterionRequirementRequest> CriterionRequirements { get; set; } = new();
     }
 
     public class CriterionRequestValidator : AbstractValidator<CriterionRequest>
@@ -31,9 +32,6 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
             RuleFor(x => x.StandardId)
                 .NotEmpty().WithMessage("Tiêu chuẩn không được để trống");
 
-            RuleFor(x => x.FileTypeId)
-                .NotEmpty().WithMessage("Loại tệp không được để trống");
-
             RuleFor(x => x.Code)
                 .NotEmpty().WithMessage("Mã tiêu chí không được để trống");
 
@@ -42,6 +40,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
 
             RuleFor(x => x.Order)
                 .GreaterThanOrEqualTo(0).WithMessage("Thứ tự phải lớn hơn hoặc bằng 0");
+
+            RuleForEach(x => x.CriterionRequirements).SetValidator(new CriterionRequirementRequestValidator());
         }
     }
 }

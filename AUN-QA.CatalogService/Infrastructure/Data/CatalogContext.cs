@@ -16,6 +16,8 @@ public partial class CatalogContext : DbContext
 
     public virtual DbSet<Criterion> Criteria { get; set; }
 
+    public virtual DbSet<CriterionRequirement> CriterionRequirements { get; set; }
+
     public virtual DbSet<Cycle> Cycles { get; set; }
 
     public virtual DbSet<EvaluationSchedule> EvaluationSchedules { get; set; }
@@ -63,6 +65,8 @@ public partial class CatalogContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
 
+            entity.ToTable("Criterion");
+
             entity.Property(e => e.Id)
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
@@ -70,10 +74,23 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.DiagnosticQuestions).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.StandardId)
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
+            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+        });
+
+        modelBuilder.Entity<CriterionRequirement>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("CriterionRequirement");
+
+            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
+            entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });

@@ -11,6 +11,8 @@ public partial class StandardSet
 
     public string Name { get; set; } = null!;
 
+    public int EvaluationMode { get; set; }
+
     public string? Description { get; set; }
 
     public DateTime CreatedAt { get; set; }

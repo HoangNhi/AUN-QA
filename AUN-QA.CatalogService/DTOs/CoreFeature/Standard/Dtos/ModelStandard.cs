@@ -6,10 +6,14 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos
     {
         public Guid Id { get; set; }
 
+        public Guid StandardSetId { get; set; }
+
         public string Code { get; set; } = null!;
 
         public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
+
+        public int Order { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -42,6 +43,15 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             result.Criterions = _mapper.Map<List<CriterionRequest>>(criteria);
 
+            foreach (var criterion in result.Criterions)
+            {
+                var options = await _context.CriterionRequirements
+                    .Where(x => x.CriterionId == criterion.Id && !x.IsDeleted)
+                    .ToListAsync();
+
+                criterion.CriterionRequirements = _mapper.Map<List<CriterionRequirementRequest>>(options);
+            }
+
             return result;
         }
 
@@ -76,6 +86,17 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                 addCriterion.CreatedAt = DateTime.Now;
                 await _context.Criteria.AddAsync(addCriterion);
+
+                // Criterion Requirements
+                foreach (var option in criterion.CriterionRequirements)
+                {
+                    var addOption = _mapper.Map<Entities.CriterionRequirement>(option);
+                    addOption.Id = option.Id == Guid.Empty ? Guid.NewGuid() : option.Id;
+                    addOption.CriterionId = addCriterion.Id;
+                    addOption.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                    addOption.CreatedAt = DateTime.Now;
+                    await _context.CriterionRequirements.AddAsync(addOption);
+                }
             }
             #endregion
 
@@ -132,6 +153,52 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     existingCriterion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     existingCriterion.UpdatedAt = DateTime.Now;
                     _context.Criteria.Update(existingCriterion);
+
+                    #region CriterionRequirements for existing Criterion
+                    // Get existing CriterionRequirements for this Criterion
+                    var existingRequirements = _context.CriterionRequirements
+                        .Where(r => r.CriterionId == existingCriterion.Id && !r.IsDeleted)
+                        .ToList();
+
+                    // Mark removed CriterionRequirements as deleted
+                    var requestRequirementIds = criterion.CriterionRequirements.Select(r => r.Id).ToList();
+                    var removedRequirements = existingRequirements
+                        .Where(r => !requestRequirementIds.Contains(r.Id));
+
+                    foreach (var removed in removedRequirements)
+                    {
+                        removed.IsDeleted = true;
+                        removed.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        removed.UpdatedAt = DateTime.Now;
+                        _context.CriterionRequirements.Update(removed);
+                    }
+
+                    // Process each CriterionRequirement in the request
+                    foreach (var requirementRequest in criterion.CriterionRequirements)
+                    {
+                        var existingRequirement = existingRequirements
+                            .FirstOrDefault(r => r.Id == requirementRequest.Id);
+
+                        if (existingRequirement != null)
+                        {
+                            // Update existing CriterionRequirement
+                            _mapper.Map(requirementRequest, existingRequirement);
+                            existingRequirement.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                            existingRequirement.UpdatedAt = DateTime.Now;
+                            _context.CriterionRequirements.Update(existingRequirement);
+                        }
+                        else
+                        {
+                            // Add new CriterionRequirement
+                            var addRequirement = _mapper.Map<Entities.CriterionRequirement>(requirementRequest);
+                            addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
+                            addRequirement.CriterionId = existingCriterion.Id;
+                            addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                            addRequirement.CreatedAt = DateTime.Now;
+                            await _context.CriterionRequirements.AddAsync(addRequirement);
+                        }
+                    }
+                    #endregion
                 }
                 else
                 {
@@ -142,6 +209,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     addCriterion.CreatedAt = DateTime.Now;
                     await _context.Criteria.AddAsync(addCriterion);
+
+                    #region CriterionRequirements for new Criterion
+                    // Add all CriterionRequirements for the new Criterion
+                    foreach (var requirementRequest in criterion.CriterionRequirements)
+                    {
+                        var addRequirement = _mapper.Map<Entities.CriterionRequirement>(requirementRequest);
+                        addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
+                        addRequirement.CriterionId = addCriterion.Id;
+                        addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                        addRequirement.CreatedAt = DateTime.Now;
+                        await _context.CriterionRequirements.AddAsync(addRequirement);
+                    }
+                    #endregion
                 }
             }
             #endregion

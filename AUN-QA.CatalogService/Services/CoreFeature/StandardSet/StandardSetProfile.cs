@@ -10,6 +10,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
         {
             CreateMap<Entities.StandardSet, ModelStandardSet>().ReverseMap();
             CreateMap<StandardSetRequest, Entities.StandardSet>().ReverseMap();
+            CreateMap<Entities.StandardSet, ModelStandardSetGetListPaging>()
+                .ForMember(dest => dest.EvaluationMode_Name, opt => opt.MapFrom(src =>
+                    GetEvaluationModeName(src.EvaluationMode)));
+        }
+
+        private static string GetEvaluationModeName(int evaluationMode)
+        {
+            return evaluationMode switch
+            {
+                1 => "Thang điểm 7",
+                2 => "Đạt/Không đạt",
+                _ => "Không xác định"
+            };
         }
     }
 }

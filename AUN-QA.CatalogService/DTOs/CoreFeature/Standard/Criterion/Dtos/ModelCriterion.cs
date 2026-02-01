@@ -8,8 +8,6 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Dtos
 
         public Guid StandardId { get; set; }
 
-        public Guid FileTypeId { get; set; }
-
         public string Code { get; set; } = null!;
 
         public string Name { get; set; } = null!;

@@ -57,6 +57,11 @@ export const getColumns = (
     header: "Tên bộ tiêu chuẩn",
   },
   {
+    accessorKey: "EvaluationMode_Name",
+    header: "Chế độ đánh giá",
+    cell: ({ row }) => row.original.EvaluationMode_Name || "-",
+  },
+  {
     accessorKey: "CreateAt",
     header: "Ngày tạo",
     cell: ({ row }) => formatDate(row.original.CreatedAt),

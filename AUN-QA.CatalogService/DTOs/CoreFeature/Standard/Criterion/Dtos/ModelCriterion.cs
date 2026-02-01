@@ -12,6 +12,10 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Dtos
 
         public string Name { get; set; } = null!;
 
+        public bool IsPrerequisite { get; set; }
+
+        public string? DiagnosticQuestions { get; set; }
+
         public string? Description { get; set; }
 
         public int Order { get; set; }

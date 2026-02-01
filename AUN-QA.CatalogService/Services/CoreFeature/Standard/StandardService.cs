@@ -250,7 +250,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelStandard>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request)
         {
             var query = _context.Standards.AsQueryable().Where(x => !x.IsDeleted);
 
@@ -270,12 +270,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            return new GetListPagingResponse<ModelStandard>
+            return new GetListPagingResponse<ModelStandardGetListPaging>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
                 TotalRow = totalRow,
-                Data = _mapper.Map<List<ModelStandard>>(data)
+                Data = _mapper.Map<List<ModelStandardGetListPaging>>(data)
             };
         }
 

@@ -15,7 +15,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
+import {
+  ACTIVE_STATUS_OPTIONS,
+  EVALUATION_MODE_OPTIONS,
+} from "@/constants/catalog.constants";
 import type { StandardSet } from "@/features/catalog/types/standardset.types";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
@@ -41,6 +44,7 @@ const PopupStandardSet = ({
     id: standardSet?.Id || uuidv4(),
     code: standardSet?.Code || "",
     name: standardSet?.Name || "",
+    evaluationMode: standardSet?.EvaluationMode ?? 1,
     isActived: standardSet?.IsActived ?? true,
   });
 
@@ -86,6 +90,7 @@ const PopupStandardSet = ({
         id: standardSet.Id || uuidv4(),
         code: standardSet.Code || "",
         name: standardSet.Name || "",
+        evaluationMode: standardSet.EvaluationMode ?? 1,
         isActived: standardSet.IsActived ?? true,
       });
       // Clear errors when form is populated with new data
@@ -102,6 +107,7 @@ const PopupStandardSet = ({
       Id: formData.id,
       Code: formData.code.trim(),
       Name: formData.name.trim(),
+      EvaluationMode: formData.evaluationMode,
       IsActived: formData.isActived,
       IsEdit: standardSet?.IsEdit || false,
       FolderUpload: "",
@@ -187,6 +193,25 @@ const PopupStandardSet = ({
                 {errors.name && (
                   <FieldError id="name-error">{errors.name}</FieldError>
                 )}
+              </FieldContent>
+            </Field>
+
+            {/* Evaluation Mode Field */}
+            <Field>
+              <FieldLabel htmlFor="evaluationMode">
+                Chế độ đánh giá <span className="text-red-500">*</span>
+              </FieldLabel>
+              <FieldContent>
+                <Combobox
+                  options={EVALUATION_MODE_OPTIONS}
+                  value={formData.evaluationMode.toString()}
+                  onValueChange={(val) =>
+                    updateField("evaluationMode", Number(val))
+                  }
+                  placeholder="Chọn chế độ đánh giá"
+                  searchPlaceholder="Tìm kiếm chế độ đánh giá..."
+                  emptyText="Không tìm thấy chế độ đánh giá."
+                />
               </FieldContent>
             </Field>
 

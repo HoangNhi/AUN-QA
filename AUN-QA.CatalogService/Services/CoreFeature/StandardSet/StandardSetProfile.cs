@@ -20,7 +20,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
             return evaluationMode switch
             {
                 1 => "Thang điểm 7",
-                2 => "Đạt/Không đạt",
+                2 => "Đạt / không đạt",
                 _ => "Không xác định"
             };
         }

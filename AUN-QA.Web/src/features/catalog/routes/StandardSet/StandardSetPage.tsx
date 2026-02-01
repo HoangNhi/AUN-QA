@@ -15,7 +15,10 @@ import {
 import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
-import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
+import {
+  ACTIVE_STATUS_OPTIONS,
+  EVALUATION_MODE_OPTIONS,
+} from "@/constants/catalog.constants";
 
 const StandardSetPage = () => {
   const {
@@ -95,6 +98,7 @@ const StandardSetPage = () => {
                 PageIndex: 1,
                 TextSearch: "",
                 IsActived: undefined,
+                EvaluationMode: undefined,
               });
               setSearchTerm("");
             }}
@@ -116,6 +120,20 @@ const StandardSetPage = () => {
             placeholder="Tất cả trạng thái"
             searchPlaceholder="Tìm kiếm trạng thái..."
             emptyText="Không tìm thấy trạng thái."
+          />
+          <Combobox
+            options={EVALUATION_MODE_OPTIONS}
+            value={pageRequest.EvaluationMode?.toString()}
+            onValueChange={(val) => {
+              setPageRequest({
+                ...pageRequest,
+                EvaluationMode: val ? Number(val) : undefined,
+                PageIndex: 1,
+              });
+            }}
+            placeholder="Tất cả chế độ đánh giá"
+            searchPlaceholder="Tìm kiếm chế độ đánh giá..."
+            emptyText="Không tìm thấy chế độ đánh giá."
           />
           <InputGroup className="col-span-1 bg-background">
             <InputGroupInput

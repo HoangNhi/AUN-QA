@@ -14,6 +14,10 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
 
         public string Name { get; set; } = null!;
 
+        public bool IsPrerequisite { get; set; } = true;
+
+        public string? DiagnosticQuestions { get; set; }
+
         public string? Description { get; set; }
 
         public int Order { get; set; }
@@ -37,6 +41,9 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Tên tiêu chí không được để trống");
+
+            RuleFor(x => x.IsPrerequisite)
+                .NotNull().WithMessage("Bắt buộc phải chọn tiên quyết hoặc không tiên quyết");
 
             RuleFor(x => x.Order)
                 .GreaterThanOrEqualTo(0).WithMessage("Thứ tự phải lớn hơn hoặc bằng 0");

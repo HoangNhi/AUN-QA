@@ -13,3 +13,9 @@ export const ACTIVE_STATUS_OPTIONS: ModelCombobox[] = [
   { Value: "true", Text: "Hoạt động" },
   { Value: "false", Text: "Không hoạt động" },
 ];
+
+// Evaluation mode options for StandardSet
+export const EVALUATION_MODE_OPTIONS: ModelCombobox[] = [
+  { Value: "1", Text: "Thang điểm 7" },
+  { Value: "2", Text: "Đạt / không đạt" },
+];

@@ -15,6 +15,8 @@ public partial class CriterionRequirement
 
     public int MinQuantity { get; set; }
 
+    public string? Suggestion { get; set; }
+
     public string CreatedBy { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }

@@ -18,6 +18,7 @@ export const useStandardSet = () => {
     Id: "",
     Code: "",
     Name: "",
+    EvaluationMode: 1,
     IsActived: true,
     IsEdit: false,
     FolderUpload: "",

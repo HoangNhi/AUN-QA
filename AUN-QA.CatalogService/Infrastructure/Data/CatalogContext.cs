@@ -91,6 +91,7 @@ public partial class CatalogContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
+            entity.Property(e => e.Suggestion).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });

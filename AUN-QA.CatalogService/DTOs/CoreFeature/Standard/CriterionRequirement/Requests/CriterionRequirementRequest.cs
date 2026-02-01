@@ -14,6 +14,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.R
         public bool IsMandatory { get; set; } = true;
 
         public int MinQuantity { get; set; }
+
+        public string? Suggestion { get; set; }
     }
 
     public class CriterionRequirementRequestValidator : AbstractValidator<CriterionRequirementRequest>

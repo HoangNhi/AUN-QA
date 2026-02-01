@@ -13,5 +13,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.D
         public bool IsMandatory { get; set; }
 
         public int MinQuantity { get; set; }
+
+        public string? Suggestion { get; set; }
     }
 }

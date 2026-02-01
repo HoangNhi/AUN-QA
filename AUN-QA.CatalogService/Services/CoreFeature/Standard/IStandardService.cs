@@ -10,7 +10,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         Task Insert(StandardRequest request);
         Task Update(StandardRequest request);
         Task DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelStandard>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
     }
 }

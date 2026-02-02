@@ -16,6 +16,8 @@ import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
+import { useQuery } from "@tanstack/react-query";
+import { standardSetService } from "@/features/catalog/api/standardset.api";
 
 const StandardPage = () => {
   const {
@@ -57,6 +59,14 @@ const StandardPage = () => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Fetch StandardSet options for filter
+  const { data: standardSetResponse } = useQuery({
+    queryKey: ["standardSets", "combobox"],
+    queryFn: () => standardSetService.getAllCombobox(),
+  });
+
+  const standardSetOptions = standardSetResponse?.Data || [];
+
   useEffect(() => {
     setPageRequest((prev) => {
       if (prev.TextSearch === debouncedSearchTerm) return prev;
@@ -95,6 +105,7 @@ const StandardPage = () => {
                 PageIndex: 1,
                 TextSearch: "",
                 IsActived: undefined,
+                StandardSetId: undefined,
               });
               setSearchTerm("");
             }}
@@ -103,6 +114,20 @@ const StandardPage = () => {
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <Combobox
+            options={standardSetOptions}
+            value={pageRequest.StandardSetId}
+            onValueChange={(val) => {
+              setPageRequest({
+                ...pageRequest,
+                StandardSetId: val || undefined,
+                PageIndex: 1,
+              });
+            }}
+            placeholder="Tất cả bộ tiêu chuẩn"
+            searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+            emptyText="Không tìm thấy bộ tiêu chuẩn."
+          />
           <Combobox
             options={ACTIVE_STATUS_OPTIONS}
             value={pageRequest.IsActived?.toString()}
@@ -117,7 +142,7 @@ const StandardPage = () => {
             searchPlaceholder="Tìm kiếm trạng thái..."
             emptyText="Không tìm thấy trạng thái."
           />
-          <InputGroup className="col-span-1 bg-background">
+          <InputGroup className="col-span-1 md:col-span-2 bg-background">
             <InputGroupInput
               placeholder="Tìm kiếm..."
               value={searchTerm || ""}

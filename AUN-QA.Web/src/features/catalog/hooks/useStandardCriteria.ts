@@ -19,9 +19,25 @@ export const useStandardCriteria = (initialCriterions: Criterion[] = []) => {
   }, []);
 
   const validateCriterions = useCallback((): boolean => {
-    return criterions.every(
-      (c) => c.Code?.trim() && c.Name?.trim() && c.FileTypeId
-    );
+    return criterions.every((c) => {
+      // Check basic required fields
+      if (!c.Code?.trim() || !c.Name?.trim()) {
+        return false;
+      }
+
+      // Check that criterion has at least one requirement
+      if (!c.CriterionRequirements || c.CriterionRequirements.length === 0) {
+        return false;
+      }
+
+      // Validate all requirements
+      return c.CriterionRequirements.every(
+        (req) =>
+          req.FileTypeId &&
+          req.FileTypeId.trim() !== "" &&
+          req.MinQuantity >= 0
+      );
+    });
   }, [criterions]);
 
   const handlers = useMemo(

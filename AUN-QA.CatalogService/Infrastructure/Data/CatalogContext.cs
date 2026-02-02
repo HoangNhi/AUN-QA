@@ -205,9 +205,6 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("Standard");
 
-            entity.Property(e => e.Id)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);

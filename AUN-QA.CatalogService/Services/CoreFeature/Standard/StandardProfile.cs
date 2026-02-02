@@ -14,6 +14,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         {
             CreateMap<Entities.Standard, ModelStandard>().ReverseMap();
             CreateMap<Entities.Standard, StandardRequest>().ReverseMap();
+            CreateMap<Entities.Standard, ModelStandardGetListPaging>().ReverseMap();
 
             CreateMap<Entities.Criterion, ModelCriterion>().ReverseMap();
             CreateMap<Entities.Criterion, CriterionRequest>().ReverseMap();

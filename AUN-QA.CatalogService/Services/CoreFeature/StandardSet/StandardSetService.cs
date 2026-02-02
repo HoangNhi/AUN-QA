@@ -140,10 +140,10 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.StandardSets.Where(x => !x.IsDeleted && x.IsActived == true).ToListAsync();
+            var data = await _context.StandardSets.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
             return data.Select(x => new ModelCombobox
             {
-                Text = x.Name,
+                Text = $"{x.Code} - {x.Name}",
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }

@@ -12,7 +12,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
             CreateMap<StandardSetRequest, Entities.StandardSet>().ReverseMap();
             CreateMap<Entities.StandardSet, ModelStandardSetGetListPaging>()
                 .ForMember(dest => dest.EvaluationMode_Name, opt => opt.MapFrom(src =>
-                    GetEvaluationModeName(src.EvaluationMode)));
+                    GetEvaluationModeName(src.EvaluationMode))).ReverseMap();
         }
 
         private static string GetEvaluationModeName(int evaluationMode)

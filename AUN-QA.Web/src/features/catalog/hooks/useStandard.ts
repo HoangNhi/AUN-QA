@@ -19,6 +19,7 @@ export const useStandard = () => {
         PageSize: 10,
         TextSearch: "",
         IsActived: undefined,
+        StandardSetId: undefined,
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -107,9 +108,11 @@ export const useStandard = () => {
         } else {
             setStandard({
                 Id: id,
+                StandardSetId: "",
                 Code: "",
                 Name: "",
                 Description: "",
+                Order: 1,
                 Criterions: [],
                 IsEdit: isEdit
             });
@@ -130,9 +133,11 @@ export const useStandard = () => {
             if (isAddMore) {
                 setStandard({
                     Id: uuidv4(),
+                    StandardSetId: "",
                     Code: "",
                     Name: "",
                     Description: "",
+                    Order: 1,
                     Criterions: [],
                     IsEdit: false,
                 });

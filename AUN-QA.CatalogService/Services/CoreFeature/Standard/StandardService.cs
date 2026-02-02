@@ -252,30 +252,48 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request)
         {
-            var query = _context.Standards.AsQueryable().Where(x => !x.IsDeleted);
+            var query = from s in _context.Standards.Where(x => !x.IsDeleted)
+                        join ss in _context.StandardSets.Where(x => !x.IsDeleted && x.IsActived)
+                        on s.StandardSetId equals ss.Id
+                        select new { Standard = s, StandardSetName = ss.Name };
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch)
-                    || x.Code.Contains(request.TextSearch)
-                    || x.Name.Contains(request.TextSearch)
-                    || (x.Description != null && x.Description.Contains(request.TextSearch)));
+                query = query.Where(x => x.Standard.Name.Contains(request.TextSearch)
+                    || x.Standard.Code.Contains(request.TextSearch)
+                    || (x.Standard.Description != null && x.Standard.Description.Contains(request.TextSearch)));
             }
 
             var totalRow = await query.CountAsync();
 
             var data = await query
-                .OrderByDescending(x => x.UpdatedAt.HasValue ? x.UpdatedAt : x.CreatedAt)
+                .OrderByDescending(x => x.Standard.UpdatedAt.HasValue ? x.Standard.UpdatedAt : x.Standard.CreatedAt)
                 .Skip((request.PageIndex - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .ToListAsync();
+
+            var result = data.Select(x => new ModelStandardGetListPaging
+            {
+                Id = x.Standard.Id,
+                StandardSetId = x.Standard.StandardSetId,
+                Code = x.Standard.Code,
+                Name = x.Standard.Name,
+                Description = x.Standard.Description,
+                Order = x.Standard.Order,
+                IsActived = x.Standard.IsActived,
+                CreatedAt = x.Standard.CreatedAt,
+                CreatedBy = x.Standard.CreatedBy,
+                UpdatedAt = x.Standard.UpdatedAt,
+                UpdatedBy = x.Standard.UpdatedBy,
+                StandardSet = x.StandardSetName
+            }).ToList();
 
             return new GetListPagingResponse<ModelStandardGetListPaging>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
                 TotalRow = totalRow,
-                Data = _mapper.Map<List<ModelStandardGetListPaging>>(data)
+                Data = result
             };
         }
 

@@ -56,6 +56,10 @@ export const getColumns = (
             header: "Tên tiêu chuẩn",
         },
         {
+            accessorKey: "StandardSet",
+            header: "Bộ tiêu chuẩn",
+        },
+        {
             accessorKey: "Description",
             header: "Mô tả",
             cell: ({ row }) => (

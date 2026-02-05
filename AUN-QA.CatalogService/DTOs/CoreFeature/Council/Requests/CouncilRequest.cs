@@ -9,7 +9,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests
 
         public Guid CycleId { get; set; }
 
-        public Guid UserId { get; set; }
+        public Guid? UserId { get; set; }
 
         /// <summary>
         /// 1. Trưởng hội đồng, 2. Thành viên đánh giá, 3. Người cung cấp minh chứng

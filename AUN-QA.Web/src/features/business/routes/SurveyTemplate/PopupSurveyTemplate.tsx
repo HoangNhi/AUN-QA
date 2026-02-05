@@ -196,6 +196,7 @@ const PopupSurveyTemplate = ({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
+                    maxLength={255}
                     placeholder="Nhập tiêu đề"
                     className="bg-white"
                   />

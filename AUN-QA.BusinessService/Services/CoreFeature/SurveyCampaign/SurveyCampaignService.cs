@@ -987,7 +987,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 if (session.Status == ((int)SurveySessionStatus.Completed))
                 {
-                    continue;
+                    throw new Exception("Không thể xóa người đã hoàn thành khảo sát");
                 }
 
                 session.IsDeleted = true;

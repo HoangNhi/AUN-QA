@@ -1,0 +1,193 @@
+import { type ColumnDef, type Row } from "@tanstack/react-table";
+import { MoreHorizontal } from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useState } from "react";
+import type { EvidenceCycleMapGetListPaging } from "@/features/business/types/evidence.types";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS } from "@/constants/business.constants";
+
+export const getColumns = (
+  showPopupDetail: (id: string, isEdit: boolean) => void,
+  deleteList: (ids: string[]) => void,
+  canUpdate: boolean = true,
+  canDelete: boolean = true
+): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+  },
+  {
+    accessorKey: "EvidenceCode",
+    header: "Mã MC",
+  },
+  {
+    accessorKey: "EvidenceName",
+    header: "Tên minh chứng",
+  },
+  {
+    accessorKey: "CycleName",
+    header: "Kế hoạch",
+  },
+  {
+    accessorKey: "ReviewStatus",
+    header: "Trạng thái xét duyệt",
+    cell: ({ row }) => {
+      const status = row.getValue("ReviewStatus") as number;
+      const statusOption = EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS.find(
+        (opt) => opt.Value === status.toString()
+      );
+      const statusText = statusOption?.Text || "N/A";
+
+      const statusColors: Record<number, string> = {
+        1: "bg-gray-100 text-gray-700", // Chưa bắt đầu
+        2: "bg-yellow-100 text-yellow-700", // Đang tiến hành
+        3: "bg-green-100 text-green-700", // Hoàn thành
+      };
+
+      const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
+
+      return (
+        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+          {statusText}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: "FinalDecisionBy",
+    header: "Người quyết định",
+  },
+  {
+    accessorKey: "FinalDecisionAt",
+    header: "Ngày quyết định",
+    cell: ({ row }) => {
+      const date = row.getValue("FinalDecisionAt") as string | undefined;
+      if (!date) return "";
+      try {
+        return format(new Date(date), "dd/MM/yyyy");
+      } catch {
+        return "";
+      }
+    },
+  },
+  {
+    id: "actions",
+    meta: {
+      className: "text-center",
+    },
+    cell: ({ row }) => (
+      <ActionCell
+        row={row}
+        showPopupDetail={showPopupDetail}
+        deleteList={deleteList}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+      />
+    ),
+  },
+];
+
+const ActionCell = ({
+  row,
+  showPopupDetail,
+  deleteList,
+  canUpdate,
+  canDelete,
+}: {
+  row: Row<EvidenceCycleMapGetListPaging>;
+  showPopupDetail: (id: string, isEdit: boolean) => void;
+  deleteList: (ids: string[]) => void;
+  canUpdate: boolean;
+  canDelete: boolean;
+}) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  if (!canUpdate && !canDelete) return null;
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+          {canUpdate && (
+            <DropdownMenuItem
+              onClick={() => showPopupDetail(row.original.Id, true)}
+            >
+              Cập nhật
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+              Xóa
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa bản ghi này không? Hành động này không
+              thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                deleteList([row.original.Id]);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};

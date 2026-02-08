@@ -36,10 +36,37 @@ export interface EvidenceCycleMap extends BaseRequest {
     Id: string;
     EvidenceId: string;
     CycleId: string;
-    CriterionId: string;
     ReviewStatus: number; // 1=NotStarted, 2=InProgress, 3=Completed
     FinalDecisionBy?: string;
     FinalDecisionAt?: string;
+
+    // Evidence fields for form
+    Name: string;
+    Code: string;
+    Status: number;
+    IssueDate?: string;
+    IssuingAuthority?: string;
+    ExpiryDate?: string;
+    FileTypeId: string;
+    Description?: string;
+    RejectionReason?: string;
+    AttachmentIds?: string[];
+    ListAttachment?: Attachment[];
+}
+
+// For list responses with resolved names
+export interface EvidenceCycleMapGetListPaging extends EvidenceCycleMap {
+    EvidenceName?: string;
+    EvidenceCode?: string;
+    CycleName?: string;
+    ReviewStatusName?: string;
+}
+
+// Request type for filtering
+export interface EvidenceCycleMapGetListPagingRequest extends GetListPagingRequest {
+    ReviewStatus?: number;
+    CycleId?: string;
+    EvidenceId?: string;
 }
 
 // For criteria mapping in the popup form

@@ -110,6 +110,14 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${BUSINESS_BASE}/Evidence/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
     },
+    EvidenceCycleMap: {
+      GET_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/EvidenceCycleMap/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/EvidenceCycleMap/insert`,
+      UPDATE: `${BUSINESS_BASE}/EvidenceCycleMap/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/delete-list`,
+      GET_ALL_COMBOBOX: `${BUSINESS_BASE}/EvidenceCycleMap/get-all-combobox`,
+    },
     SurveyTemplate: {
       GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,
       GET_BY_ID: `${BUSINESS_BASE}/SurveyTemplate/get-by-id`,

@@ -7,6 +7,7 @@ import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
 import CyclePage from "./features/catalog/routes/Cycle/CyclePage";
 import FileTypePage from "./features/catalog/routes/FileType/FileTypePage";
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
+import EvidenceCycleMapPage from "./features/business/routes/EvidenceCycleMap/EvidenceCycleMapPage";
 import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./features/system/routes/SystemGroup/SystemGroupPage";
@@ -43,6 +44,7 @@ const Router: FC = () => {
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/filetype" element={<FileTypePage />} />
           <Route path="/evidence" element={<EvidencePage />} />
+          <Route path="/evidence-cycle-map" element={<EvidenceCycleMapPage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />

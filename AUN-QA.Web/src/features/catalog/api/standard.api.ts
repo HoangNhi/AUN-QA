@@ -1,11 +1,15 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { Standard, StandardGetListPagingRequest, StandardRequest } from "@/features/catalog/types/standard.types";
+import type { GetListStandardWithCriteriaRequest, Standard, StandardGetListPagingRequest, StandardRequest } from "@/features/catalog/types/standard.types";
 import type { GetListPagingResponse, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 
 export const standardService = {
     getList: async (request: StandardGetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<Standard>>> => {
         return api.post<GetListPagingResponse<Standard>>(API_ENDPOINTS.Catalog.Standard.GET_LIST, request);
+    },
+
+    getListWithCriteria: async (request: GetListStandardWithCriteriaRequest): Promise<ApiResponse<StandardRequest[]>> => {
+        return api.post<StandardRequest[]>(API_ENDPOINTS.Catalog.Standard.GET_LIST_WITH_CRITERIA, request);
     },
 
     getById: async (id: string): Promise<ApiResponse<StandardRequest>> => {

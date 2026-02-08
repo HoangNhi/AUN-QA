@@ -309,6 +309,73 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             }).OrderBy(x => x.Text).ToList();
         }
 
+        public async Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request)
+        {
+            var cycle = await _context.Cycles
+                .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
+            if (cycle == null)
+            {
+                throw new Exception("Chu kỳ không tồn tại");
+            }
+
+            var standards = await _context.Standards
+                .Where(x => x.StandardSetId == cycle.StandardSetId && !x.IsDeleted && x.IsActived)
+                .OrderBy(x => x.Order)
+                .ToListAsync();
+
+            if (!standards.Any())
+            {
+                return new List<StandardRequest>();
+            }
+
+            var standardIds = standards.Select(x => x.Id).ToList();
+
+            var criteria = await _context.Criteria
+                .Where(x => standardIds.Contains(x.StandardId) && !x.IsDeleted && x.IsActived)
+                .OrderBy(x => x.Order)
+                .ToListAsync();
+
+            if (!criteria.Any())
+            {
+                return _mapper.Map<List<StandardRequest>>(standards);
+            }
+
+            var criterionIds = criteria.Select(x => x.Id).ToList();
+
+            var requirements = await _context.CriterionRequirements
+                .Where(x => criterionIds.Contains(x.CriterionId)
+                    && x.FileTypeId == request.FileTypeId
+                    && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+
+            var requirementsByCriterion = requirements
+                .GroupBy(x => x.CriterionId)
+                .ToDictionary(x => x.Key, x => x.ToList());
+
+            var result = _mapper.Map<List<StandardRequest>>(standards);
+
+            foreach (var standard in result)
+            {
+                var standardCriteria = criteria
+                    .Where(x => x.StandardId == standard.Id && requirementsByCriterion.ContainsKey(x.Id))
+                    .ToList();
+
+                var mappedCriteria = _mapper.Map<List<CriterionRequest>>(standardCriteria);
+
+                foreach (var criterion in mappedCriteria)
+                {
+                    if (requirementsByCriterion.TryGetValue(criterion.Id, out var criterionRequirements))
+                    {
+                        criterion.CriterionRequirements = _mapper.Map<List<CriterionRequirementRequest>>(criterionRequirements);
+                    }
+                }
+
+                standard.Criterions = mappedCriteria;
+            }
+
+            return result.Where(x => x.Criterions.Any()).ToList();
+        }
+
         #region GRPC Services
         public async IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
             GetCriterionsForEvidenceStreamRequest request,

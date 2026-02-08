@@ -143,7 +143,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -168,7 +168,7 @@ export function DataTable<TData, TValue>({
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -271,7 +271,7 @@ export function DataTable<TData, TValue>({
                 deleteList?.(
                   table
                     .getSelectedRowModel()
-                    .rows.map((row) => (row.original as { Id: string }).Id)
+                    .rows.map((row) => (row.original as { Id: string }).Id),
                 );
                 setShowDeleteConfirm(false);
                 table.resetRowSelection();

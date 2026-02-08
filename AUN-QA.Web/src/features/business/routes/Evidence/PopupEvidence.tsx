@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
-import { Plus, Trash, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
@@ -15,13 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -38,16 +30,17 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
-import type {
-  Evidence,
-  CriterionMapping,
-} from "@/features/business/types/evidence.types";
+import type { Evidence } from "@/features/business/types/evidence.types";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import type { Standard } from "@/features/catalog/types/standard.types";
+import type {
+  Standard,
+  CriterionRequirement,
+} from "@/features/catalog/types/standard.types";
+import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { standardService } from "@/features/catalog/api/standard.api";
-import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import { standardSetService } from "@/features/catalog/api/standardset.api";
 
 interface PopupEvidenceProps {
   evidence: Evidence | null;
@@ -83,12 +76,7 @@ const PopupEvidence = ({
     cycleId: evidence?.CycleId || "",
   });
 
-  const [listCriterionMap, setListCriterionMap] = useState<CriterionMapping[]>(
-    [],
-  );
-  const [selectedStandardId, setSelectedStandardId] = useState<string>("");
-  const [selectedCriterionId, setSelectedCriterionId] = useState<string>("");
-
+  const [standardSetId, setStandardSetId] = useState<string>("");
   const uploadRef = useRef<UploadFileRef>(null);
   const [folderUpload, setFolderUpload] = useState<string>(
     evidence?.FolderUpload || uuidv4(),
@@ -96,6 +84,14 @@ const PopupEvidence = ({
   const [listAttachment, setListAttachment] = useState<Attachment[]>(
     evidence?.ListAttachment || [],
   );
+  const [standardsWithCriteria, setStandardsWithCriteria] = useState<
+    Standard[]
+  >([]);
+  const [criteriaLoading, setCriteriaLoading] = useState<boolean>(false);
+  const [criteriaError, setCriteriaError] = useState<string | null>(null);
+  const [expandedStandardIds, setExpandedStandardIds] = useState<
+    Record<string, boolean>
+  >({});
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -105,50 +101,6 @@ const PopupEvidence = ({
     issueDate?: string;
     expiryDate?: string;
   }>({});
-
-  // --- Fetch dropdown options ---
-  const { data: fileTypeResponse } = useQuery({
-    queryKey: ["fileTypes", "combobox"],
-    queryFn: () => fileTypeService.getAllCombobox(),
-    enabled: isOpen,
-  });
-  const fileTypeOptions = fileTypeResponse?.Data || [];
-
-  const { data: cycleResponse } = useQuery({
-    queryKey: ["cycles", "combobox"],
-    queryFn: () => cycleService.getComboboxByUser(),
-    enabled: isOpen,
-  });
-  const cycleOptions = cycleResponse?.Data || [];
-
-  // Fetch standards when cycle is selected
-  const { data: standardsResponse } = useQuery({
-    queryKey: ["standards", "list", formData.cycleId],
-    queryFn: async () => {
-      // Get the cycle to find its StandardSetId
-      const cycle = cycleOptions.find((c) => c.Value === formData.cycleId);
-      if (!cycle) return { Data: { Data: [], TotalRow: 0 } };
-
-      // Fetch standards for this cycle's standard set
-      // Note: This assumes cycle has StandardSetId property. Adjust if needed.
-      return standardService.getList({
-        PageIndex: 1,
-        PageSize: 100,
-        // StandardSetId: cycle.StandardSetId, // Uncomment when available
-      });
-    },
-    enabled: isOpen && !!formData.cycleId,
-  });
-  const standards = standardsResponse?.Data?.Data || [];
-
-  // Fetch selected standard details to get criterions
-  const { data: standardDetailResponse } = useQuery({
-    queryKey: ["standard", "detail", selectedStandardId],
-    queryFn: () => standardService.getById(selectedStandardId),
-    enabled: isOpen && !!selectedStandardId,
-  });
-  const standardDetail = standardDetailResponse?.Data as Standard | undefined;
-  const criterions = standardDetail?.Criterions || [];
 
   // --- Sync form state when evidence prop changes ---
   useEffect(() => {
@@ -172,9 +124,6 @@ const PopupEvidence = ({
       });
       setFolderUpload(evidence.FolderUpload || uuidv4());
       setListAttachment(evidence.ListAttachment || []);
-      setListCriterionMap([]);
-      setSelectedStandardId("");
-      setSelectedCriterionId("");
       setErrors({});
     }
   }, [evidence]);
@@ -190,55 +139,71 @@ const PopupEvidence = ({
     }
   };
 
-  // --- Criterion mapping handlers ---
-  const handleAddCriterion = useCallback(() => {
-    if (!selectedStandardId || !selectedCriterionId) {
-      toast.error("Vui lòng chọn tiêu chuẩn và tiêu chí");
-      return;
-    }
-
-    // Find standard and criterion details
-    const standard = standards.find((s) => s.Id === selectedStandardId);
-    const criterion = criterions.find((c) => c.Id === selectedCriterionId);
-
-    if (!standard || !criterion) {
-      toast.error("Không tìm thấy thông tin tiêu chuẩn hoặc tiêu chí");
-      return;
-    }
-
-    // Check for duplicates
-    if (listCriterionMap.some((c) => c.CriterionId === selectedCriterionId)) {
-      toast.error("Tiêu chí này đã được gán");
-      return;
-    }
-
-    // Add to list
-    setListCriterionMap((prev) => [
+  const toggleStandard = (standardId: string) => {
+    setExpandedStandardIds((prev) => ({
       ...prev,
-      {
-        Id: uuidv4(),
-        StandardId: standard.Id,
-        StandardName: standard.Name,
-        StandardSetName: standard.StandardSet || "",
-        CriterionId: criterion.Id,
-        CriterionName: criterion.Name,
-        CriterionCode: criterion.Code,
-      },
-    ]);
+      [standardId]: !prev[standardId],
+    }));
+  };
 
-    // Reset selection
-    setSelectedCriterionId("");
-  }, [
-    selectedStandardId,
-    selectedCriterionId,
-    standards,
-    criterions,
-    listCriterionMap,
-  ]);
+  const getRequirementSummary = (requirements?: CriterionRequirement[]) => {
+    if (!requirements || requirements.length === 0) {
+      return { isMandatory: false, minQuantity: 0 };
+    }
 
-  const handleDeleteCriterion = useCallback((id: string) => {
-    setListCriterionMap((prev) => prev.filter((c) => c.Id !== id));
-  }, []);
+    return {
+      isMandatory: requirements.some((req) => req.IsMandatory),
+      minQuantity: Math.max(...requirements.map((req) => req.MinQuantity || 0)),
+    };
+  };
+
+  const fetchStandardsWithCriteria = useCallback(
+    async (cycleId: string, fileTypeId: string) => {
+      setCriteriaLoading(true);
+      setCriteriaError(null);
+
+      try {
+        const res = await standardService.getListWithCriteria({
+          CycleId: cycleId,
+          FileTypeId: fileTypeId,
+        });
+
+        if (res.Success) {
+          const standards = (res.Data || []) as Standard[];
+          setStandardsWithCriteria(standards);
+          const expanded: Record<string, boolean> = {};
+          standards.forEach((standard) => {
+            expanded[standard.Id] = true;
+          });
+          setExpandedStandardIds(expanded);
+        } else {
+          setStandardsWithCriteria([]);
+          setExpandedStandardIds({});
+          setCriteriaError("Khong the tai danh sach tieu chuan.");
+        }
+      } catch (error) {
+        console.error(error);
+        setStandardsWithCriteria([]);
+        setExpandedStandardIds({});
+        setCriteriaError("Khong the tai danh sach tieu chuan.");
+      } finally {
+        setCriteriaLoading(false);
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!formData.cycleId || !formData.fileTypeId) {
+      setStandardsWithCriteria([]);
+      setExpandedStandardIds({});
+      setCriteriaError(null);
+      setCriteriaLoading(false);
+      return;
+    }
+
+    fetchStandardsWithCriteria(formData.cycleId, formData.fileTypeId);
+  }, [formData.cycleId, formData.fileTypeId, fetchStandardsWithCriteria]);
 
   // --- Validation ---
   const validateForm = (): boolean => {
@@ -361,26 +326,22 @@ const PopupEvidence = ({
                       Loại tài liệu <span className="text-red-500">*</span>
                     </FieldLabel>
                     <FieldContent>
-                      <Select
+                      <Combobox
+                        fetchOptions={async () => {
+                          const res = await fileTypeService.getAllCombobox();
+                          return (res.Data || []).map((t) => ({
+                            Value: t.Value ?? "",
+                            Text: t.Text ?? "",
+                          }));
+                        }}
                         value={formData.fileTypeId}
-                        onValueChange={(value) =>
-                          updateField("fileTypeId", value)
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Chọn loại tài liệu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {fileTypeOptions.map((option) => (
-                            <SelectItem
-                              key={option.Value}
-                              value={option.Value || ""}
-                            >
-                              {option.Text}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onValueChange={(val) => {
+                          updateField("fileTypeId", val || "");
+                        }}
+                        placeholder="Chọn loại tài liệu"
+                        searchPlaceholder="Tìm kiếm loại tài liệu..."
+                        emptyText="Không tìm thấy loại tài liệu."
+                      />
                       {errors.fileTypeId && (
                         <FieldError>{errors.fileTypeId}</FieldError>
                       )}
@@ -477,31 +438,34 @@ const PopupEvidence = ({
                 {/* Cycle Selection */}
                 <Field>
                   <FieldLabel>
-                    Kế hoạch <span className="text-red-500">*</span>
+                    Chu kỳ <span className="text-red-500">*</span>
                   </FieldLabel>
                   <FieldContent>
-                    <Select
-                      value={formData.cycleId}
-                      onValueChange={(value) => {
-                        updateField("cycleId", value);
-                        setSelectedStandardId("");
-                        setSelectedCriterionId("");
+                    <Combobox
+                      fetchOptions={async () => {
+                        const res = await cycleService.getComboboxByUser();
+                        return (res.Data || []).map((t) => ({
+                          Value: t.Value ?? "",
+                          Text: t.Text ?? "",
+                        }));
                       }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="-- Chọn Kế hoạch --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cycleOptions.map((option) => (
-                          <SelectItem
-                            key={option.Value}
-                            value={option.Value || ""}
-                          >
-                            {option.Text}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      value={formData.cycleId}
+                      onValueChange={async (val) => {
+                        updateField("cycleId", val || "");
+                        // Fetch and set standard set id based on selected cycle
+                        if (val) {
+                          const res = await cycleService.getById(val);
+                          if (res.Success) {
+                            setStandardSetId(res.Data?.StandardSetId || "");
+                          }
+                        } else {
+                          setStandardSetId("");
+                        }
+                      }}
+                      placeholder="Chọn chu kỳ"
+                      searchPlaceholder="Tìm kiếm chu kỳ..."
+                      emptyText="Không tìm thấy chu kỳ."
+                    />
                     {errors.cycleId && (
                       <FieldError>{errors.cycleId}</FieldError>
                     )}
@@ -510,115 +474,132 @@ const PopupEvidence = ({
 
                 {/* Standard Selection */}
                 <Field>
-                  <FieldLabel>Tiêu chuẩn (Standard)</FieldLabel>
+                  <FieldLabel>
+                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
+                  </FieldLabel>
                   <FieldContent>
-                    <Select
-                      value={selectedStandardId}
-                      onValueChange={(value) => {
-                        setSelectedStandardId(value);
-                        setSelectedCriterionId("");
+                    <Combobox
+                      fetchOptions={async () => {
+                        const res = await standardSetService.getAllCombobox();
+                        return (res.Data || []).map((t) => ({
+                          Value: t.Value ?? "",
+                          Text: t.Text ?? "",
+                        }));
                       }}
-                      disabled={!formData.cycleId}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="-- Chọn Tiêu chuẩn --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {standards.map((standard) => (
-                          <SelectItem key={standard.Id} value={standard.Id}>
-                            {standard.Code} - {standard.Name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FieldContent>
-                </Field>
-
-                {/* Criteria Selection and Add Button */}
-                <Field>
-                  <FieldLabel>Tiêu chí (Criteria)</FieldLabel>
-                  <FieldContent>
-                    <div className="flex gap-2">
-                      <Select
-                        value={selectedCriterionId}
-                        onValueChange={setSelectedCriterionId}
-                        disabled={!selectedStandardId}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="-- Chọn Tiêu chí --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {criterions.map((criterion) => (
-                            <SelectItem key={criterion.Id} value={criterion.Id}>
-                              {criterion.Code} - {criterion.Name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        onClick={handleAddCriterion}
-                        disabled={!selectedCriterionId}
-                        className="flex gap-2 whitespace-nowrap"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Thêm
-                      </Button>
-                    </div>
+                      value={standardSetId}
+                      onValueChange={(val) => setStandardSetId(val || "")}
+                      placeholder="Chọn bộ tiêu chuẩn"
+                      searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+                      emptyText="Không tìm thấy bộ tiêu chuẩn."
+                      readonly={true}
+                    />
                   </FieldContent>
                 </Field>
 
                 {/* Criteria Table */}
                 <div className="mt-4">
                   <Label className="text-sm font-medium mb-2 block">
-                    Danh sách tiêu chí đã gán:
+                    Danh sách tiêu chuẩn liên kết:
                   </Label>
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[30%]">Tiêu chuẩn</TableHead>
-                          <TableHead className="w-[35%]">Tiêu chí</TableHead>
+                          <TableHead className="w-45">Tieu chuan</TableHead>
+                          <TableHead>Tieu chi</TableHead>
+                          <TableHead className="w-28">Bat buoc</TableHead>
+                          <TableHead className="w-24 text-right">
+                            So luong
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {listCriterionMap.length === 0 ? (
+                        {criteriaLoading ? (
                           <TableRow>
                             <TableCell
                               colSpan={4}
-                              className="text-center h-24 text-gray-500"
+                              className="text-center text-sm text-muted-foreground"
                             >
-                              Chưa gán tiêu chí nào.
+                              Dang tai danh sach tieu chuan...
+                            </TableCell>
+                          </TableRow>
+                        ) : criteriaError ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-sm text-red-500"
+                            >
+                              {criteriaError}
+                            </TableCell>
+                          </TableRow>
+                        ) : !formData.cycleId || !formData.fileTypeId ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-sm text-muted-foreground"
+                            >
+                              Vui long chon chu ky va loai tai lieu.
+                            </TableCell>
+                          </TableRow>
+                        ) : standardsWithCriteria.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center text-sm text-muted-foreground"
+                            >
+                              Chua co du lieu tieu chuan.
                             </TableCell>
                           </TableRow>
                         ) : (
-                          listCriterionMap.map((criterion) => (
-                            <TableRow key={criterion.Id}>
-                              <TableCell>
-                                <span className="text-xs font-semibold text-blue-700">
-                                  {criterion.StandardSetName}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {criterion.StandardName}
-                              </TableCell>
-                              <TableCell className="text-sm">
-                                {criterion.CriterionCode} -{" "}
-                                {criterion.CriterionName}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    handleDeleteCriterion(criterion.Id)
-                                  }
-                                >
-                                  <Trash className="w-4 h-4 text-red-500" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
+                          standardsWithCriteria.map((standard) => (
+                            <Fragment key={standard.Id}>
+                              <TableRow className="bg-muted/40">
+                                <TableCell colSpan={4} className="py-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="font-medium">
+                                      {standard.Code} - {standard.Name}
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        toggleStandard(standard.Id)
+                                      }
+                                    >
+                                      {expandedStandardIds[standard.Id]
+                                        ? "Thu gon"
+                                        : "Mo rong"}
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {expandedStandardIds[standard.Id] &&
+                                (standard.Criterions || []).map((criterion) => {
+                                  const summary = getRequirementSummary(
+                                    criterion.CriterionRequirements,
+                                  );
+
+                                  return (
+                                    <TableRow key={criterion.Id}>
+                                      <TableCell className="text-sm text-muted-foreground">
+                                        {criterion.Code}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {criterion.Name}
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {summary.isMandatory
+                                          ? "Bat buoc"
+                                          : "Khong"}
+                                      </TableCell>
+                                      <TableCell className="text-sm text-right">
+                                        {summary.minQuantity || "-"}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                            </Fragment>
                           ))
                         )}
                       </TableBody>

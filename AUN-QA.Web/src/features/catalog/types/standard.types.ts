@@ -36,3 +36,8 @@ export interface StandardGetListPagingRequest extends GetListPagingRequest {
     IsActived?: boolean;
     StandardSetId?: string;
 }
+
+export interface GetListStandardWithCriteriaRequest {
+    CycleId: string;
+    FileTypeId: string;
+}

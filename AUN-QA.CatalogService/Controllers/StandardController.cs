@@ -30,6 +30,17 @@ namespace AUN_QA.CatalogService.Controllers
             return Ok(new BaseResponse<GetListPagingResponse<ModelStandardGetListPaging>> { Data = result, Success = true });
         }
 
+        [HttpPost, Route("get-list-with-criteria")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetListWithCriteria([FromBody] GetListStandardWithCriteriaRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetListWithCriteria(request);
+            return Ok(new BaseResponse<List<StandardRequest>> { Data = result, Success = true });
+        }
+
         [HttpGet, Route("get-by-id")]
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)

@@ -13,6 +13,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
+        Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request);
 
         // gRPC Services
         IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(

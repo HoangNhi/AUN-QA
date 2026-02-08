@@ -85,6 +85,7 @@ export const API_ENDPOINTS = {
     },
     Standard: {
       GET_LIST: `${CATALOG_BASE}/Standard/get-list`,
+      GET_LIST_WITH_CRITERIA: `${CATALOG_BASE}/Standard/get-list-with-criteria`,
       GET_BY_ID: `${CATALOG_BASE}/Standard/get-by-id`,
       INSERT: `${CATALOG_BASE}/Standard/insert`,
       UPDATE: `${CATALOG_BASE}/Standard/update`,

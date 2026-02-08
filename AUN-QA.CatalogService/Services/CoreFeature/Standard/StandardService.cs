@@ -4,9 +4,11 @@ using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Reque
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 {
@@ -306,5 +308,54 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+
+        #region GRPC Services
+        public async IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
+            GetCriterionsForEvidenceStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            // Parse GUIDs from request
+            if (!Guid.TryParse(request.CycleId, out var cycleId))
+                yield break;
+
+            if (!Guid.TryParse(request.FileTypeId, out var fileTypeId))
+                yield break;
+
+            // Query with joins: Cycle → StandardSet → Standard → Criterion → CriterionRequirement
+            var query = from criterion in _context.Criteria
+                        join standard in _context.Standards on criterion.StandardId equals standard.Id
+                        join standardSet in _context.StandardSets on standard.StandardSetId equals standardSet.Id
+                        join cycle in _context.Cycles on standardSet.Id equals cycle.StandardSetId
+                        join requirement in _context.CriterionRequirements on criterion.Id equals requirement.CriterionId
+                        where cycle.Id == cycleId
+                          && requirement.FileTypeId == fileTypeId
+                          && !criterion.IsDeleted && criterion.IsActived
+                          && !standard.IsDeleted && standard.IsActived
+                          && !cycle.IsDeleted && cycle.IsActived
+                          && !requirement.IsDeleted && requirement.IsActived
+                        select criterion;
+
+            // Stream results with distinct and ordering
+            var dataStream = query
+                .Distinct()
+                .OrderBy(x => x.Order)
+                .AsAsyncEnumerable();
+
+            await foreach (var criterion in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return new CriterionInfo
+                {
+                    Id = criterion.Id.ToString(),
+                    StandardId = criterion.StandardId.ToString(),
+                    Code = criterion.Code,
+                    Name = criterion.Name,
+                    IsPrerequisite = criterion.IsPrerequisite,
+                    DiagnosticQuestions = criterion.DiagnosticQuestions ?? string.Empty,
+                    Description = criterion.Description ?? string.Empty,
+                    Order = criterion.Order
+                };
+            }
+        }
+        #endregion
     }
 }

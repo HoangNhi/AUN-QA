@@ -87,5 +87,29 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             return response.Value;
         }
         #endregion
+
+        #region Standard Service
+        public async IAsyncEnumerable<CriterionDto> GetCriterionsForEvidenceStreamAsync(GetCriterionsForEvidenceStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            // Gọi gRPC
+            using var call = _grpcClient.GetCriterionsForEvidenceStream(request, cancellationToken: cancellationToken);
+            // Đọc stream từ gRPC và convert sang Model của mình
+            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            {
+                // Mapping: Proto -> DTO
+                yield return new CriterionDto
+                {
+                    Id = Guid.Parse(item.Id),
+                    StandardId = Guid.Parse(item.StandardId),
+                    Code = item.Code,
+                    Name = item.Name,
+                    IsPrerequisite = item.IsPrerequisite,
+                    DiagnosticQuestions = item.DiagnosticQuestions,
+                    Description = item.Description,
+                    Order = item.Order
+                };
+            }
+        }
+        #endregion
     }
 }

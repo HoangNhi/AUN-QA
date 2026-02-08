@@ -1,6 +1,7 @@
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests;
+using AUN_QA.CatalogService.Protos;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 {
@@ -12,5 +13,10 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
+
+        // gRPC Services
+        IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
+            GetCriterionsForEvidenceStreamRequest request,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -1,8 +1,11 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
+using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -16,17 +19,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IUploadFileService _uploadFileService;
+        private readonly ICatalogIntegrationService _catalogService;
 
         public EvidenceService(
             BusinessContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
-            IUploadFileService uploadFileService)
+            IUploadFileService uploadFileService,
+            ICatalogIntegrationService catalogService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _uploadFileService = uploadFileService;
+            _catalogService = catalogService;
         }
 
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
@@ -43,7 +49,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             return result;
         }
 
-        public async Task<ModelEvidence> Insert(EvidenceRequest request)
+        public async Task Insert(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
                 x.Name == request.Name
@@ -57,6 +63,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             var add = _mapper.Map<Entities.Evidence>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            add.Status = ((int)EvidenceStatus.Draft);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
             await _context.Evidences.AddAsync(add);
@@ -76,11 +83,37 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }
             #endregion
 
+            #region Thêm Evidence cycle map
+            var criteriaStream = _catalogService.GetCriterionsForEvidenceStreamAsync(
+                new CatalogService.Protos.GetCriterionsForEvidenceStreamRequest
+                {
+                    CycleId = request.CycleId.ToString(),
+                    FileTypeId = request.FileTypeId.ToString()
+                });
+
+            // Create EvidenceCycleMap entry for each criterion from the stream
+            await foreach (var criterion in criteriaStream)
+            {
+                var cycleMapAdd = new EvidenceCycleMap
+                {
+                    Id = Guid.NewGuid(),
+                    EvidenceId = add.Id,
+                    CycleId = request.CycleId,
+                    CriterionId = criterion.Id,
+                    ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
+                    CreatedBy = add.CreatedBy,
+                    CreatedAt = DateTime.Now,
+                    IsActived = true,
+                    IsDeleted = false
+                };
+                await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
+            }
+            #endregion
+
             await _context.SaveChangesAsync();
-            return _mapper.Map<ModelEvidence>(add);
         }
 
-        public async Task<ModelEvidence> Update(EvidenceRequest request)
+        public async Task Update(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
                 x.Name == request.Name
@@ -134,11 +167,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             #endregion
 
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelEvidence>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -155,7 +186,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task<GetListPagingResponse<ModelEvidence>> GetList(GetListPagingRequest request)

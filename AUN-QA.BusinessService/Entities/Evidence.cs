@@ -20,4 +20,20 @@ public partial class Evidence
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public string Code { get; set; } = null!;
+
+    public int Status { get; set; }
+
+    public DateTime? IssueDate { get; set; }
+
+    public string? IssuingAuthority { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
+
+    public Guid FileTypeId { get; set; }
+
+    public string? RejectionReason { get; set; }
+
+    public string? Description { get; set; }
 }

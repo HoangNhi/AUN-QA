@@ -31,4 +31,17 @@ namespace AUN_QA.BusinessService.DTOs.Common
         Evaluator = 2,
         EvidenceProvider = 3
     }
+
+    public enum EvidenceStatus
+    {
+        Draft = 1,
+        Pending = 2,
+        Verified = 3,
+        Rejected = 4
+    }
+
+    public enum EvidenceCycleMapReviewStatus
+    {
+        NotStarted = 1, InProgress = 2, Completed = 3
+    }
 }

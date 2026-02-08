@@ -4,13 +4,13 @@ import type {
   ModelCombobox,
 } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
-import type { Cycle, CycleGetListPagingRequest } from "../types/cycle.types";
+import type { Cycle, CycleGetListPaging, CycleGetListPagingRequest } from "../types/cycle.types";
 
 export const cycleService = {
   getList: async (
     request: CycleGetListPagingRequest,
-  ): Promise<ApiResponse<GetListPagingResponse<Cycle>>> => {
-    return api.post<GetListPagingResponse<Cycle>>(
+  ): Promise<ApiResponse<GetListPagingResponse<CycleGetListPaging>>> => {
+    return api.post<GetListPagingResponse<CycleGetListPaging>>(
       API_ENDPOINTS.Catalog.Cycle.GET_LIST,
       request,
     );

@@ -3,5 +3,7 @@
     public class ModelCycleGetListPaging : ModelCycle
     {
         public string? StatusName { get; set; }
+
+        public string? StandardSet { get; set; }
     }
 }

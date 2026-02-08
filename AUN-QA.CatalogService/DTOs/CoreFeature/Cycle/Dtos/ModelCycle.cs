@@ -23,6 +23,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos
 
         public int Scope { get; set; }
 
+        public Guid StandardSetId { get; set; }
+
         public List<CouncilRequest> ListCouncil { get; set; } = new();
 
         public List<EvaluationScheduleRequest> ListEvaluationSchedule { get; set; } = new();

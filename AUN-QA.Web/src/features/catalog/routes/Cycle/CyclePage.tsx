@@ -20,6 +20,7 @@ import {
   CYCLE_STATUS_OPTIONS,
   CYCLE_SCOPE_OPTIONS,
 } from "@/constants/catalog.constants";
+import { standardSetService } from "../../api/standardset.api";
 
 const CyclePage = () => {
   const {
@@ -131,6 +132,26 @@ const CyclePage = () => {
             placeholder="Tất cả trạng thái"
             searchPlaceholder="Tìm kiếm trạng thái..."
             emptyText="Không tìm thấy trạng thái."
+          />
+          <Combobox
+            fetchOptions={async () => {
+              const res = await standardSetService.getAllCombobox();
+              return (res.Data || []).map((t) => ({
+                Value: t.Value ?? "",
+                Text: t.Text ?? "",
+              }));
+            }}
+            value={pageRequest.StandardSetId}
+            onValueChange={(val) => {
+              setPageRequest({
+                ...pageRequest,
+                StandardSetId: val || undefined,
+                PageIndex: 1,
+              });
+            }}
+            placeholder="Tất cả bộ tiêu chuẩn"
+            searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+            emptyText="Không tìm thấy bộ tiêu chuẩn."
           />
           <Combobox
             options={CYCLE_SCOPE_OPTIONS}

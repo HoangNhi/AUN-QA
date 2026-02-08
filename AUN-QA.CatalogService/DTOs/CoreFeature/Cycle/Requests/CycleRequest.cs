@@ -24,6 +24,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
 
         public int Scope { get; set; }
 
+        public Guid StandardSetId { get; set; }
+
         public List<CouncilRequest> ListCouncil { get; set; } = new();
 
         public List<EvaluationScheduleRequest> ListEvaluationSchedule { get; set; } = new();
@@ -51,6 +53,10 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
             RuleFor(x => x.Year)
                 .InclusiveBetween(2000, 2100)
                 .WithMessage("Năm phải nằm trong khoảng từ 2000 đến 2100");
+
+            RuleFor(x => x.StandardSetId)
+                .NotEqual(Guid.Empty)
+                .WithMessage("Bộ tiêu chuẩn không được để trống");
         }
     }
 }

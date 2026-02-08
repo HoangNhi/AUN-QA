@@ -9,9 +9,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
     {
         #region Chức năng chính
         Task<ModelCycle> GetById(GetByIdRequest request);
-        Task<ModelCycle> Insert(CycleRequest request);
-        Task<ModelCycle> Update(CycleRequest request);
-        Task<string> DeleteList(DeleteListRequest request);
+        Task Insert(CycleRequest request);
+        Task Update(CycleRequest request);
+        Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request);
         Task<List<ModelCombobox>> GetComboboxByUser();
         #endregion

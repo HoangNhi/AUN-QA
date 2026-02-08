@@ -26,7 +26,7 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
-  canDelete: boolean = true
+  canDelete: boolean = true,
 ): ColumnDef<CycleGetListPaging>[] => [
   {
     id: "select",
@@ -55,6 +55,10 @@ export const getColumns = (
   {
     accessorKey: "Year",
     header: "Năm",
+  },
+  {
+    accessorKey: "StandardSet",
+    header: "Bộ tiêu chuẩn",
   },
   {
     accessorKey: "StatusName",

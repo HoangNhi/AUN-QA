@@ -50,6 +50,7 @@ import {
   CYCLE_STATUS_OPTIONS,
   CYCLE_SCOPE_OPTIONS,
 } from "@/constants/catalog.constants";
+import { standardSetService } from "../../api/standardset.api";
 
 interface PopupCycleProps {
   cycle: Cycle | null;
@@ -80,6 +81,7 @@ const PopupCycle = ({
     status: cycle?.Status?.toString() || "1",
     scope: cycle?.Scope?.toString() || "1",
     evaluationPurpose: cycle?.EvaluationPurpose || "",
+    standardSetId: cycle?.StandardSetId || "",
   });
 
   const [listCouncil, setListCouncil] = useState<Council[]>(
@@ -96,6 +98,8 @@ const PopupCycle = ({
     endDate?: string;
     listCouncil?: string;
     listEvaluationSchedule?: string;
+    standardSetId?: string;
+    evaluationPurpose?: string;
   }>({});
 
   // --- Fetch user options via TanStack Query ---
@@ -122,6 +126,7 @@ const PopupCycle = ({
         status: cycle.Status?.toString() || "1",
         scope: cycle.Scope?.toString() || "1",
         evaluationPurpose: cycle.EvaluationPurpose || "",
+        standardSetId: cycle.StandardSetId || "",
       });
       setListCouncil(cycle.ListCouncil || []);
       setListEvaluationSchedule(cycle.ListEvaluationSchedule || []);
@@ -272,6 +277,14 @@ const PopupCycle = ({
       toast.error("Tất cả hoạt động phải có tên");
     }
 
+    if (formData.standardSetId.trim() === "") {
+      newErrors.standardSetId = "Bộ tiêu chuẩn không được để trống";
+    }
+
+    if (formData.evaluationPurpose.trim() === "") {
+      newErrors.evaluationPurpose = "Mục đích đánh giá không được để trống";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -289,6 +302,7 @@ const PopupCycle = ({
         EndDate: formData.endDate,
         Status: formData.status,
         EvaluationPurpose: formData.evaluationPurpose,
+        StandardSetId: formData.standardSetId,
         Scope: parseInt(formData.scope),
         IsEdit: cycle?.IsEdit || false,
         IsActived: cycle?.IsActived ?? true,
@@ -407,6 +421,35 @@ const PopupCycle = ({
 
             <div className="col-span-4">
               <Field>
+                <FieldLabel>
+                  Bộ tiêu chuẩn <span className="text-red-500">*</span>
+                </FieldLabel>
+                <FieldContent>
+                  <Combobox
+                    fetchOptions={async () => {
+                      const res = await standardSetService.getAllCombobox();
+                      return (res.Data || []).map((t) => ({
+                        Value: t.Value ?? "",
+                        Text: t.Text ?? "",
+                      }));
+                    }}
+                    value={formData.standardSetId}
+                    onValueChange={(val) =>
+                      updateField("standardSetId", val || "")
+                    }
+                    placeholder="Chọn bộ tiêu chuẩn"
+                    searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+                    emptyText="Không tìm thấy bộ tiêu chuẩn."
+                  />
+                  {errors.standardSetId && (
+                    <FieldError>{errors.standardSetId}</FieldError>
+                  )}
+                </FieldContent>
+              </Field>
+            </div>
+
+            <div className="col-span-4">
+              <Field>
                 <FieldLabel>Trạng thái</FieldLabel>
                 <FieldContent>
                   <Combobox
@@ -448,7 +491,9 @@ const PopupCycle = ({
 
             <TabsContent value="purpose">
               <Field>
-                <FieldLabel>Mục đích đánh giá</FieldLabel>
+                <FieldLabel>
+                  Mục đích đánh giá <span className="text-red-500">*</span>
+                </FieldLabel>
                 <FieldContent>
                   <Textarea
                     placeholder="Nhập mục đích đánh giá"
@@ -457,6 +502,9 @@ const PopupCycle = ({
                       updateField("evaluationPurpose", e.target.value)
                     }
                   />
+                  {errors.evaluationPurpose && (
+                    <FieldError>{errors.evaluationPurpose}</FieldError>
+                  )}
                 </FieldContent>
               </Field>
             </TabsContent>

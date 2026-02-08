@@ -1,7 +1,7 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
@@ -14,14 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Field,
@@ -501,109 +493,98 @@ const PopupEvidence = ({
                   <Label className="text-sm font-medium mb-2 block">
                     Danh sách tiêu chuẩn liên kết:
                   </Label>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-45">Tieu chuan</TableHead>
-                          <TableHead>Tieu chi</TableHead>
-                          <TableHead className="w-28">Bat buoc</TableHead>
-                          <TableHead className="w-24 text-right">
-                            So luong
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {criteriaLoading ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={4}
-                              className="text-center text-sm text-muted-foreground"
+                  <div className="rounded-md border bg-background">
+                    {criteriaLoading ? (
+                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                        Đang tải danh sách tiêu chuẩn...
+                      </div>
+                    ) : criteriaError ? (
+                      <div className="px-4 py-6 text-center text-sm text-red-500">
+                        {criteriaError}
+                      </div>
+                    ) : !formData.cycleId || !formData.fileTypeId ? (
+                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                        Vui lòng chọn chu kỳ và loại tài liệu.
+                      </div>
+                    ) : standardsWithCriteria.length === 0 ? (
+                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                        Chưa có dữ liệu tiêu chuẩn.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-muted">
+                        {standardsWithCriteria.map((standard) => (
+                          <div key={standard.Id}>
+                            <button
+                              type="button"
+                              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
+                              onClick={() => toggleStandard(standard.Id)}
                             >
-                              Dang tai danh sach tieu chuan...
-                            </TableCell>
-                          </TableRow>
-                        ) : criteriaError ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={4}
-                              className="text-center text-sm text-red-500"
-                            >
-                              {criteriaError}
-                            </TableCell>
-                          </TableRow>
-                        ) : !formData.cycleId || !formData.fileTypeId ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={4}
-                              className="text-center text-sm text-muted-foreground"
-                            >
-                              Vui long chon chu ky va loai tai lieu.
-                            </TableCell>
-                          </TableRow>
-                        ) : standardsWithCriteria.length === 0 ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={4}
-                              className="text-center text-sm text-muted-foreground"
-                            >
-                              Chua co du lieu tieu chuan.
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          standardsWithCriteria.map((standard) => (
-                            <Fragment key={standard.Id}>
-                              <TableRow className="bg-muted/40">
-                                <TableCell colSpan={4} className="py-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="font-medium">
-                                      {standard.Code} - {standard.Name}
-                                    </div>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        toggleStandard(standard.Id)
-                                      }
-                                    >
-                                      {expandedStandardIds[standard.Id]
-                                        ? "Thu gon"
-                                        : "Mo rong"}
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                              {expandedStandardIds[standard.Id] &&
-                                (standard.Criterions || []).map((criterion) => {
-                                  const summary = getRequirementSummary(
-                                    criterion.CriterionRequirements,
-                                  );
+                              <div className="space-y-1">
+                                <div className="text-sm font-semibold">
+                                  {standard.Code} - {standard.Name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {standard.Criterions?.length || 0} tiêu chí
+                                </div>
+                              </div>
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                {expandedStandardIds[standard.Id] ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </span>
+                            </button>
+                            {expandedStandardIds[standard.Id] && (
+                              <div className="divide-y divide-muted">
+                                {(standard.Criterions || []).map(
+                                  (criterion) => {
+                                    const summary = getRequirementSummary(
+                                      criterion.CriterionRequirements,
+                                    );
 
-                                  return (
-                                    <TableRow key={criterion.Id}>
-                                      <TableCell className="text-sm text-muted-foreground">
-                                        {criterion.Code}
-                                      </TableCell>
-                                      <TableCell className="text-sm">
-                                        {criterion.Name}
-                                      </TableCell>
-                                      <TableCell className="text-sm">
-                                        {summary.isMandatory
-                                          ? "Bat buoc"
-                                          : "Khong"}
-                                      </TableCell>
-                                      <TableCell className="text-sm text-right">
-                                        {summary.minQuantity || "-"}
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                })}
-                            </Fragment>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
+                                    return (
+                                      <div
+                                        key={criterion.Id}
+                                        className="px-4 py-4"
+                                      >
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                          <div className="space-y-1">
+                                            <div className="text-xs font-semibold text-muted-foreground">
+                                              {criterion.Code}
+                                            </div>
+                                            <div className="text-sm leading-6">
+                                              {criterion.Name}
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <span
+                                              className={
+                                                summary.isMandatory
+                                                  ? "rounded-full bg-red-100 px-2 py-0.5 text-red-700"
+                                                  : "rounded-full bg-slate-100 px-2 py-0.5 text-slate-600"
+                                              }
+                                            >
+                                              {summary.isMandatory
+                                                ? "Bắt buộc"
+                                                : "Không bắt buộc"}
+                                            </span>
+                                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
+                                              Số lượng:{" "}
+                                              {summary.minQuantity || "-"}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

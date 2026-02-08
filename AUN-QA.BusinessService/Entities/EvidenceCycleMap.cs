@@ -11,8 +11,6 @@ public partial class EvidenceCycleMap
 
     public Guid CycleId { get; set; }
 
-    public Guid CriterionId { get; set; }
-
     public int ReviewStatus { get; set; }
 
     public string? FinalDecisionBy { get; set; }

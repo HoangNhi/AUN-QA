@@ -35,6 +35,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             _catalogService = catalogService;
         }
 
+        #region PDCA - DO: Evidence
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
         {
             var data = await _context.Evidences.FindAsync(request.Id);
@@ -63,7 +64,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             var add = _mapper.Map<Entities.Evidence>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.Status = ((int)EvidenceStatus.Draft);
+            add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
             await _context.Evidences.AddAsync(add);
@@ -99,7 +100,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                     Id = Guid.NewGuid(),
                     EvidenceId = add.Id,
                     CycleId = request.CycleId,
-                    CriterionId = criterion.Id,
                     ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
                     CreatedBy = add.CreatedBy,
                     CreatedAt = DateTime.Now,
@@ -116,7 +116,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         public async Task Update(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
-                x.Name == request.Name
+                (x.Name == request.Name || x.Code == request.Code)
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (data.Any())
@@ -130,8 +130,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
+            {
+                throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+            }
+
             _mapper.Map(request, update);
 
+            update.Status = (int)EvidenceStatus.Draft;
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
 
@@ -224,12 +230,46 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }).OrderBy(x => x.Text).ToList();
         }
 
+        public async Task SubmitForReview(SubmitForReviewRequest request)
+        {
+            if (!request.Ids.Any())
+            {
+                throw new Exception("Không có minh chứng để gửi duyệt");
+            }
+
+            foreach (var id in request.Ids)
+            {
+                var evidence = await _context.Evidences.FindAsync(id);
+                if (evidence == null)
+                {
+                    throw new Exception("Minh chứng không tồn tại");
+                }
+
+                if (evidence.Status != ((int)EvidenceStatus.Draft))
+                {
+                    continue;
+                }
+
+                evidence.Status = (int)EvidenceStatus.Pending;
+                evidence.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                evidence.UpdatedAt = DateTime.Now;
+                _context.Evidences.Update(evidence);
+            }
+        }
+
+        public async Task UpdateApprovalStatus(EvidenceRequest request)
+        {
+
+        }
+        #endregion
+
+        #region Helper
         private List<ModelAttachment> GetAllAttachment(Guid Id)
         {
             var result = _context.EvidenceAttachments.Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
                 .Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
             return result;
         }
-
+        #endregion
     }
 }

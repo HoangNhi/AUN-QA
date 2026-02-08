@@ -12,6 +12,7 @@ export interface Cycle extends BaseRequest {
   Status: string;
   EvaluationPurpose: string;
   Scope: number;
+  StandardSetId: string;
 
   ListCouncil: Council[];
   ListEvaluationSchedule: EvaluationSchedule[];
@@ -19,12 +20,14 @@ export interface Cycle extends BaseRequest {
 
 export interface CycleGetListPaging extends Cycle {
   StatusName: string;
+  StandardSet: string;
 }
 
 export interface CycleGetListPagingRequest extends GetListPagingRequest {
   Year?: number;
   Status?: string;
   Scope?: string;
+  StandardSetId?: string;
 }
 
 export interface Council extends BaseRequest {

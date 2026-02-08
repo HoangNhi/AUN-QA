@@ -1,12 +1,20 @@
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import {
+  Send,
+  StopCircle,
+  SquarePen,
+  Users,
+  Trash2,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -18,15 +26,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type {
-  SurveyCampaign,
-  SurveyCampaignGetListPaging,
-} from "../../types/survey-campaign.types";
+import type { SurveyCampaignGetListPaging } from "../../types/survey-campaign.types";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
+  showPopupSession: (id: string, name: string) => void,
+  changeStatus: (id: string) => Promise<void>,
   canUpdate: boolean = true,
   canDelete: boolean = true,
 ): ColumnDef<SurveyCampaignGetListPaging>[] => [
@@ -52,7 +59,7 @@ export const getColumns = (
   },
   {
     accessorKey: "Cycle",
-    header: "Khóa học",
+    header: "Quy trình",
   },
   {
     accessorKey: "Name",
@@ -67,13 +74,35 @@ export const getColumns = (
     header: "Trạng thái",
     cell: ({ row }) => {
       const status = row.original.Status;
-      const map: Record<number, string> = {
-        1: "Chưa bắt đầu",
-        2: "Đang diễn ra",
-        3: "Đã kết thúc",
+      const statusConfig: Record<number, { text: string; className: string }> =
+        {
+          1: {
+            text: "Chưa bắt đầu",
+            className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+          },
+          2: {
+            text: "Đang diễn ra",
+            className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+          },
+          3: {
+            text: "Đã kết thúc",
+            className: "bg-green-100 text-green-800 hover:bg-green-200",
+          },
+        };
+
+      const config = statusConfig[status] || {
+        text: "Không xác định",
+        className: "bg-gray-100 text-gray-800",
       };
+
       return (
-        <span className="text-center">{map[status] || "Không xác định"}</span>
+        <div className="flex justify-center">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 ${config.className}`}
+          >
+            {config.text}
+          </span>
+        </div>
       );
     },
   },
@@ -87,6 +116,8 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
+        showPopupSession={showPopupSession}
+        changeStatus={changeStatus}
         canUpdate={canUpdate}
         canDelete={canDelete}
       />
@@ -98,18 +129,29 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
+  showPopupSession,
+  changeStatus,
   canUpdate,
   canDelete,
 }: {
-  row: Row<SurveyCampaign>;
+  row: Row<SurveyCampaignGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
+  showPopupSession: (id: string, name: string) => void;
+  changeStatus: (id: string) => Promise<void>;
   canUpdate: boolean;
   canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
+  // Restore variable definitions
   if (!canUpdate && !canDelete) return null;
+
+  const status = row.original.Status;
+  const isDraft = status === 1;
+
+  const isCompleted = status === 3;
 
   return (
     <>
@@ -122,17 +164,46 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+
           {canUpdate && (
             <DropdownMenuItem
               onClick={() => showPopupDetail(row.original.Id, true)}
             >
+              <SquarePen className="mr-2 h-4 w-4" />
               Cập nhật
             </DropdownMenuItem>
           )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
+          <DropdownMenuItem
+            onClick={() => showPopupSession(row.original.Id, row.original.Name)}
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Người tham gia
+          </DropdownMenuItem>
+
+          {!isCompleted && canUpdate && (
+            <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
+              {isDraft ? (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Gửi khảo sát
+                </>
+              ) : (
+                <>
+                  <StopCircle className="mr-2 h-4 w-4" />
+                  Kết thúc khảo sát
+                </>
+              )}
             </DropdownMenuItem>
+          )}
+
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                <span className="text-red-500">Xóa</span>
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -158,6 +229,32 @@ const ActionCell = ({
               }}
             >
               Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showStatusConfirm} onOpenChange={setShowStatusConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận chuyển trạng thái</DialogTitle>
+            <DialogDescription>
+              {isDraft
+                ? "Bạn có chắc chắn muốn phát hành khảo sát này? Email mời tham gia sẽ được gửi đến tất cả người tham gia trong danh sách."
+                : "Bạn có chắc chắn muốn kết thúc khảo sát này? Người tham gia sẽ không thể truy cập khảo sát nữa."}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              onClick={async () => {
+                await changeStatus(row.original.Id);
+                setShowStatusConfirm(false);
+              }}
+            >
+              Xác nhận
             </Button>
           </DialogFooter>
         </DialogContent>

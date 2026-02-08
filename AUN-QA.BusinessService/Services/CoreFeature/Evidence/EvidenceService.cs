@@ -1,8 +1,11 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
+using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -16,19 +19,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IUploadFileService _uploadFileService;
+        private readonly ICatalogIntegrationService _catalogService;
 
         public EvidenceService(
             BusinessContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
-            IUploadFileService uploadFileService)
+            IUploadFileService uploadFileService,
+            ICatalogIntegrationService catalogService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _uploadFileService = uploadFileService;
+            _catalogService = catalogService;
         }
 
+        #region PDCA - DO: Evidence
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
         {
             var data = await _context.Evidences.FindAsync(request.Id);
@@ -43,7 +50,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             return result;
         }
 
-        public async Task<ModelEvidence> Insert(EvidenceRequest request)
+        public async Task Insert(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
                 x.Name == request.Name
@@ -57,6 +64,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             var add = _mapper.Map<Entities.Evidence>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.Now;
             await _context.Evidences.AddAsync(add);
@@ -76,14 +84,39 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }
             #endregion
 
+            #region Thêm Evidence cycle map
+            var criteriaStream = _catalogService.GetCriterionsForEvidenceStreamAsync(
+                new CatalogService.Protos.GetCriterionsForEvidenceStreamRequest
+                {
+                    CycleId = request.CycleId.ToString(),
+                    FileTypeId = request.FileTypeId.ToString()
+                });
+
+            // Create EvidenceCycleMap entry for each criterion from the stream
+            await foreach (var criterion in criteriaStream)
+            {
+                var cycleMapAdd = new EvidenceCycleMap
+                {
+                    Id = Guid.NewGuid(),
+                    EvidenceId = add.Id,
+                    CycleId = request.CycleId,
+                    ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
+                    CreatedBy = add.CreatedBy,
+                    CreatedAt = DateTime.Now,
+                    IsActived = true,
+                    IsDeleted = false
+                };
+                await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
+            }
+            #endregion
+
             await _context.SaveChangesAsync();
-            return _mapper.Map<ModelEvidence>(add);
         }
 
-        public async Task<ModelEvidence> Update(EvidenceRequest request)
+        public async Task Update(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
-                x.Name == request.Name
+                (x.Name == request.Name || x.Code == request.Code)
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (data.Any())
@@ -97,8 +130,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
+            {
+                throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+            }
+
             _mapper.Map(request, update);
 
+            update.Status = (int)EvidenceStatus.Draft;
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             update.UpdatedAt = DateTime.Now;
 
@@ -134,11 +173,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             #endregion
 
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelEvidence>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -155,7 +192,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task<GetListPagingResponse<ModelEvidence>> GetList(GetListPagingRequest request)
@@ -194,12 +230,46 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }).OrderBy(x => x.Text).ToList();
         }
 
+        public async Task SubmitForReview(SubmitForReviewRequest request)
+        {
+            if (!request.Ids.Any())
+            {
+                throw new Exception("Không có minh chứng để gửi duyệt");
+            }
+
+            foreach (var id in request.Ids)
+            {
+                var evidence = await _context.Evidences.FindAsync(id);
+                if (evidence == null)
+                {
+                    throw new Exception("Minh chứng không tồn tại");
+                }
+
+                if (evidence.Status != ((int)EvidenceStatus.Draft))
+                {
+                    continue;
+                }
+
+                evidence.Status = (int)EvidenceStatus.Pending;
+                evidence.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                evidence.UpdatedAt = DateTime.Now;
+                _context.Evidences.Update(evidence);
+            }
+        }
+
+        public async Task UpdateApprovalStatus(EvidenceRequest request)
+        {
+
+        }
+        #endregion
+
+        #region Helper
         private List<ModelAttachment> GetAllAttachment(Guid Id)
         {
             var result = _context.EvidenceAttachments.Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
                 .Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
             return result;
         }
-
+        #endregion
     }
 }

@@ -9,6 +9,30 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests
 
         public string Name { get; set; } = null!;
 
+        public string Code { get; set; } = null!;
+
+        /// <summary>
+        /// 1. Draft, 2. Pending, 3. Verified, 4. Rejected
+        /// </summary>
+        public int Status { get; set; } = 0;
+
+        public DateTime? IssueDate { get; set; }
+
+        public string? IssuingAuthority { get; set; }
+
+        public DateTime? ExpiryDate { get; set; }
+
+        public Guid FileTypeId { get; set; }
+
+        public string? RejectionReason { get; set; }
+
+        public string? Description { get; set; }
+
+        #region Different 
+        public Guid CycleId { get; set; }
+
+        #endregion
+
         #region Attachment
         public List<Guid> AttachmentIds { get; set; } = new List<Guid>();
 
@@ -22,6 +46,15 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests
         {
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Tên không được để trống");
+
+            RuleFor(x => x.Code)
+                .NotEmpty().WithMessage("Mã không được để trống");
+
+            RuleFor(x => x.FileTypeId)
+                .NotEmpty().WithMessage("Loại tài liệu không được để trống");
+
+            RuleFor(x => x.CycleId)
+                .NotEmpty().WithMessage("Chu kỳ không được để trống");
         }
     }
 }

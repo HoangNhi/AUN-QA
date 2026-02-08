@@ -1,19 +1,15 @@
-export interface FileType {
+import type {
+  BaseRequest,
+  GetListPagingRequest,
+} from "@/types/base/base.types";
+
+export interface FileType extends BaseRequest {
     Id: string;
     Code: string;
     Name: string;
-    CreatedBy?: string;
-    CreatedAt?: string;
-    UpdatedBy?: string;
-    UpdatedAt?: string;
-    IsActived?: boolean;
-    IsDeleted?: boolean;
-    IsEdit?: boolean;
+    Description?: string;
 }
 
-export interface FileTypeRequest {
-    Id: string;
-    Code: string;
-    Name: string;
-    IsActived?: boolean;
+export interface FileTypeGetListPagingRequest extends GetListPagingRequest {
+  IsActived?: boolean;
 }

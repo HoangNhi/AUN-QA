@@ -16,6 +16,8 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<EvidenceAttachment> EvidenceAttachments { get; set; }
 
+    public virtual DbSet<EvidenceCycleMap> EvidenceCycleMaps { get; set; }
+
     public virtual DbSet<SurveyCampaign> SurveyCampaigns { get; set; }
 
     public virtual DbSet<SurveyScore> SurveyScores { get; set; }
@@ -47,6 +49,8 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.ExpiryDate).HasColumnType("datetime");
+            entity.Property(e => e.IssueDate).HasColumnType("datetime");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
@@ -55,9 +59,9 @@ public partial class BusinessContext : DbContext
 
         modelBuilder.Entity<EvidenceAttachment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("Evidence_Attachment_pk");
+            entity.HasKey(e => e.Id).HasName("EvidenceAttachment_pk");
 
-            entity.ToTable("Evidence_Attachment");
+            entity.ToTable("EvidenceAttachment");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -65,6 +69,27 @@ public partial class BusinessContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<EvidenceCycleMap>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("EvidenceCycleMap_pk");
+
+            entity.ToTable("EvidenceCycleMap");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.FinalDecisionAt).HasColumnType("datetime");
+            entity.Property(e => e.FinalDecisionBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)

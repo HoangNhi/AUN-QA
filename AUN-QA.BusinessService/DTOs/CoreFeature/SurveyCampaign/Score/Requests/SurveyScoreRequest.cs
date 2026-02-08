@@ -18,9 +18,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests
     {
         public SurveyScoreRequestValidator()
         {
-            RuleFor(x => x.SessionId)
-                .NotEmpty().WithMessage("Phiên khảo sát không được để trống");
-
             RuleFor(x => x.QuestionId)
                 .NotEmpty().WithMessage("Câu hỏi không được để trống");
 

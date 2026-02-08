@@ -21,6 +21,8 @@ public partial class Cycle
 
     public int Scope { get; set; }
 
+    public Guid StandardSetId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public string? CreatedBy { get; set; }

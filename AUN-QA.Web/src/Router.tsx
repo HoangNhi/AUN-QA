@@ -7,6 +7,7 @@ import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
 import CyclePage from "./features/catalog/routes/Cycle/CyclePage";
 import FileTypePage from "./features/catalog/routes/FileType/FileTypePage";
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
+import EvidenceCycleMapPage from "./features/business/routes/EvidenceCycleMap/EvidenceCycleMapPage";
 import LoginPage from "./features/system/routes/Auth/LoginPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import SystemGroupPage from "./features/system/routes/SystemGroup/SystemGroupPage";
@@ -16,6 +17,10 @@ import UnauthorizedPage from "./pages/common/UnauthorizedPage";
 import StakeholderPage from "./features/catalog/routes/Stakeholder/StakeholderPage";
 import SurveyTemplatePage from "./features/business/routes/SurveyTemplate/SurveyTemplatePage";
 import SurveyCampaignPage from "./features/business/routes/SurveyCampaign/SurveyCampaignPage";
+import StandardPage from "./features/catalog/routes/Standard/StandardPage";
+import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPage";
+
+import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
 const Router: FC = () => {
   return (
@@ -23,6 +28,7 @@ const Router: FC = () => {
       <Routes>
         {/* Unauthenticated Routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/survey/do-survey" element={<DoSurveyPage />} />
 
         {/* Authenticated Routes */}
         <Route
@@ -38,12 +44,15 @@ const Router: FC = () => {
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/filetype" element={<FileTypePage />} />
           <Route path="/evidence" element={<EvidencePage />} />
+          <Route path="/evidence-cycle-map" element={<EvidenceCycleMapPage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />
           <Route path="/stakeholder" element={<StakeholderPage />} />
           <Route path="/surveytemplate" element={<SurveyTemplatePage />} />
           <Route path="/surveycampaign" element={<SurveyCampaignPage />} />
+          <Route path="/standard" element={<StandardPage />} />
+          <Route path="/standardset" element={<StandardSetPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

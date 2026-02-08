@@ -11,6 +11,8 @@ public partial class FileType
 
     public string Name { get; set; } = null!;
 
+    public string? Description { get; set; }
+
     public string CreatedBy { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }

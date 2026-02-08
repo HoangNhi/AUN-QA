@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -16,6 +17,8 @@ interface ConfirmDeleteDialogProps {
   title?: string;
   description?: string;
   itemCount?: number;
+  isLoading?: boolean;
+  stopAutoClose?: boolean;
 }
 
 export function ConfirmDeleteDialog({
@@ -25,6 +28,8 @@ export function ConfirmDeleteDialog({
   title = "Xác nhận xóa",
   description,
   itemCount = 1,
+  isLoading = false,
+  stopAutoClose = false,
 }: ConfirmDeleteDialogProps) {
   const defaultDescription =
     itemCount > 1
@@ -42,15 +47,21 @@ export function ConfirmDeleteDialog({
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Hủy</Button>
+            <Button variant="outline" disabled={isLoading}>
+              Hủy
+            </Button>
           </DialogClose>
           <Button
             variant="destructive"
+            disabled={isLoading}
             onClick={() => {
               onConfirm();
-              onOpenChange(false);
+              if (!stopAutoClose) {
+                onOpenChange(false);
+              }
             }}
           >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Xóa
           </Button>
         </DialogFooter>

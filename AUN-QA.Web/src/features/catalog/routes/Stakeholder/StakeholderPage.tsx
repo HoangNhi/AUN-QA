@@ -94,6 +94,7 @@ const StakeholderPage = () => {
                 ...pageRequest,
                 TextSearch: "",
                 Type: undefined,
+                PageIndex: 1,
               });
               setSearchTerm("");
             }}

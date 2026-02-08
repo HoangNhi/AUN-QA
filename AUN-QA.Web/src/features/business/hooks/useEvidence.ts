@@ -6,8 +6,10 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { evidenceService } from "@/features/business/api/evidence.api";
-import type { Evidence } from "@/features/business/types/evidence.types";
-import type { GetListPagingRequest } from "@/types/base/base.types";
+import type {
+  Evidence,
+  EvidenceGetListPagingRequest,
+} from "@/features/business/types/evidence.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -15,7 +17,7 @@ import type { RowSelectionState } from "@tanstack/react-table";
 export const useEvidence = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
-  const [pageRequest, setPageRequest] = useState<GetListPagingRequest>({
+  const [pageRequest, setPageRequest] = useState<EvidenceGetListPagingRequest>({
     PageIndex: 1,
     PageSize: 10,
     TextSearch: "",
@@ -105,7 +107,16 @@ export const useEvidence = () => {
         toast.error(response?.Message);
       }
     } else {
-      setEvidence({ Id: id, Name: "", IsEdit: isEdit });
+      setEvidence({
+        Id: id,
+        Name: "",
+        Code: "",
+        Status: 1,
+        FileTypeId: "",
+        CycleId: "",
+        IsEdit: isEdit,
+        IsActived: true,
+      });
       setIsOpen(true);
     }
   }, []);
@@ -122,7 +133,12 @@ export const useEvidence = () => {
         setEvidence({
           Id: uuidv4(),
           Name: "",
+          Code: "",
+          Status: 1,
+          FileTypeId: "",
+          CycleId: "",
           IsEdit: false,
+          IsActived: true,
         });
       } else {
         setIsOpen(false);

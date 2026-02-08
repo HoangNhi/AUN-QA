@@ -36,7 +36,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             return _mapper.Map<ModelFileType>(data);
         }
 
-        public async Task<ModelFileType> Insert(FileTypeRequest request)
+        public async Task Insert(FileTypeRequest request)
         {
             var data = _context.FileTypes.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
@@ -50,16 +50,14 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
 
             var add = _mapper.Map<Entities.FileType>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
 
             await _context.FileTypes.AddAsync(add);
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelFileType>(add);
         }
 
-        public async Task<ModelFileType> Update(FileTypeRequest request)
+        public async Task Update(FileTypeRequest request)
         {
             var data = _context.FileTypes.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
@@ -78,16 +76,14 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
 
             _mapper.Map(request, update);
 
-            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             update.UpdatedAt = DateTime.Now;
 
             _context.FileTypes.Update(update);
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelFileType>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -104,16 +100,20 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
-        public async Task<GetListPagingResponse<ModelFileType>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelFileType>> GetList(FileTypeGetListPagingRequest request)
         {
             var query = _context.FileTypes.AsQueryable().Where(x => !x.IsDeleted);
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
                 query = query.Where(x => x.Name.Contains(request.TextSearch) || x.Code.Contains(request.TextSearch));
+            }
+
+            if (request.IsActived.HasValue)
+            {
+                query = query.Where(x => x.IsActived == request.IsActived.Value);
             }
 
             var totalRow = await query.CountAsync();

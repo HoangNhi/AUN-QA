@@ -22,7 +22,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests
         public SurveyTemplateRequestValidator()
         {
             RuleFor(x => x.Title)
-                .NotEmpty().WithMessage("Tiêu đề khảo sát không được để trống");
+                .NotEmpty().WithMessage("Tiêu đề khảo sát không được để trống")
+                .MaximumLength(255).WithMessage("Tiêu đề khảo sát không được vượt quá 255 ký tự");
             RuleFor(x => x.StakeholderType)
                 .GreaterThanOrEqualTo(0).WithMessage("Loại đối tượng không được để trống");
 

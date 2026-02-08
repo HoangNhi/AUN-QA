@@ -7,10 +7,10 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
     public interface IFileTypeService
     {
         Task<ModelFileType> GetById(GetByIdRequest request);
-        Task<ModelFileType> Insert(FileTypeRequest request);
-        Task<ModelFileType> Update(FileTypeRequest request);
-        Task<string> DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelFileType>> GetList(GetListPagingRequest request);
+        Task Insert(FileTypeRequest request);
+        Task Update(FileTypeRequest request);
+        Task DeleteList(DeleteListRequest request);
+        Task<GetListPagingResponse<ModelFileType>> GetList(FileTypeGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
     }
 }

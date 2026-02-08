@@ -6,14 +6,6 @@ import {
   type RowSelectionState,
   type OnChangeFn,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/Button";
 import {
   ChevronLeftIcon,
@@ -46,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   containerClassName?: string;
   getRowId?: (row: TData, index: number) => string;
+  meta?: any;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,8 +52,9 @@ export function DataTable<TData, TValue>({
   onRefresh,
   isLoading = false,
   className,
-  containerClassName = "max-h-[400px] overflow-y-auto",
+  containerClassName = "h-[calc(100vh-350px)] overflow-auto w-full relative",
   getRowId,
+  meta,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
@@ -71,102 +65,111 @@ export function DataTable<TData, TValue>({
     state: {
       rowSelection,
     },
+    meta,
   });
 
   return (
-    <div className={cn("space-y-4", className)}>
-      <div className="relative overflow-hidden rounded-md border">
+    <div className={cn("space-y-4 w-full", className)}>
+      {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
+      <div className="relative w-full overflow-hidden rounded-md border flex flex-col bg-white">
+        {/* Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         )}
-        <Table containerClassName={containerClassName}>
-          <TableHeader className="bg-background sticky top-0 z-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
+
+        {/* 👇 KHUNG CUỘN CHÍNH (Nơi chứa thanh cuộn) */}
+        <div className={cn(containerClassName)}>
+          <table className="w-full caption-bottom text-sm text-left">
+            {/* Header */}
+            <thead className="bg-background">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr
+                  key={headerGroup.id}
+                  className="border-b transition-colors data-[state=selected]:bg-muted"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      // 👇 STICKY CHUẨN:
+                      // - sticky top-0: Dính lên trên cùng.
+                      // - z-10: Nổi lên trên nội dung.
+                      // - bg-white: Nền trắng đặc để che chữ chạy bên dưới.
+                      // - shadow: Tạo đường kẻ mỏng bên dưới (thay cho border để không bị dày).
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-10 bg-white shadow-[0_1px_0_0_#e5e7eb]"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext(),
                           )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              <>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+
+            {/* Body */}
+            <tbody className="[&_tr:last-child]:border-0">
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    data-state={
+                      rowSelection && row.getIsSelected() && "selected"
+                    }
+                    className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell
+                      <td
                         key={cell.id}
-                        className={
+                        className={cn(
+                          "p-4 align-middle",
                           (cell.column.columnDef.meta as { className?: string })
-                            ?.className
-                        }
+                            ?.className,
+                        )}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
                         )}
-                      </TableCell>
+                      </td>
                     ))}
-                  </TableRow>
-                ))}
-                {pageRequest &&
-                  table.getRowModel().rows.length < pageRequest.PageSize && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="p-0"
-                        style={{
-                          height: `${
-                            (pageRequest.PageSize -
-                              table.getRowModel().rows.length) *
-                            3.5 // Estimating 3.5rem (56px) per row
-                          }rem`,
-                        }}
-                      ></TableCell>
-                    </TableRow>
-                  )}
-              </>
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Không có dữ liệu
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center align-middle"
+                  >
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {pageRequest && totalRow !== undefined && (
-        <DataTablePagination
-          pageRequest={pageRequest}
-          setPageRequest={setPageRequest}
-          totalRow={totalRow}
-          onRefresh={onRefresh}
-        />
-      )}
+        {/* 👇 PAGINATION: Nằm trong khung border, ngăn cách bằng border-t */}
+        {pageRequest && totalRow !== undefined && (
+          <div className="shrink-0 border-t bg-white">
+            <DataTablePagination
+              pageRequest={pageRequest}
+              setPageRequest={setPageRequest}
+              totalRow={totalRow}
+              onRefresh={onRefresh}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
+// --- Component Pagination ---
 interface DataTablePaginationProps {
   pageRequest: GetListPagingRequest;
   setPageRequest?: (pageRequest: GetListPagingRequest) => void;
@@ -184,8 +187,8 @@ function DataTablePagination({
   const pageSizeOptions = [10, 20, 30, 50, 100];
 
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="flex-1 text-sm text-muted-foreground">
+    <div className="flex items-center justify-between px-4 py-3 w-full">
+      <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
         {totalRow > 0 ? (
           <>
             Hiển thị{" "}
@@ -204,18 +207,20 @@ function DataTablePagination({
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Số dòng mỗi trang</p>
+          <p className="text-sm font-medium hidden sm:block">
+            Số dòng mỗi trang
+          </p>
           <Select
             value={`${pageRequest.PageSize}`}
             onValueChange={(value) => {
               setPageRequest?.({
                 ...pageRequest,
                 PageSize: Number(value),
-                PageIndex: 1, // Reset to first page
+                PageIndex: 1,
               });
             }}
           >
-            <SelectTrigger className="h-8 w-fit">
+            <SelectTrigger className="h-8 w-[90px]">
               <SelectValue placeholder={pageRequest.PageSize} />
             </SelectTrigger>
             <SelectContent side="top">

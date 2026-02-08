@@ -53,7 +53,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             return result;
         }
 
-        public async Task<ModelCycle> Insert(CycleRequest request)
+        public async Task Insert(CycleRequest request)
         {
             var data = _context.Cycles.Where(x =>
                 x.Name == request.Name
@@ -116,11 +116,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             #endregion
 
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelCycle>(add);
         }
 
-        public async Task<ModelCycle> Update(CycleRequest request)
+        public async Task Update(CycleRequest request)
         {
             var data = _context.Cycles.Where(x =>
                 x.Name == request.Name
@@ -231,11 +229,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             #endregion
 
             await _context.SaveChangesAsync();
-
-            return _mapper.Map<ModelCycle>(update);
         }
 
-        public async Task<string> DeleteList(DeleteListRequest request)
+        public async Task DeleteList(DeleteListRequest request)
         {
             foreach (var id in request.Ids)
             {
@@ -252,51 +248,60 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             }
 
             await _context.SaveChangesAsync();
-            return String.Join(',', request.Ids);
         }
 
         public async Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request)
         {
-            var query = _context.Cycles.AsQueryable().Where(x => !x.IsDeleted);
+            var query = from cycle in _context.Cycles.Where(x => !x.IsDeleted)
+                        join ss in _context.StandardSets.Where(x => !x.IsDeleted && x.IsActived)
+                        on cycle.StandardSetId equals ss.Id into ssGroup
+                        from ss in ssGroup.DefaultIfEmpty()
+                        select new { Cycle = cycle, StandardSetName = ss != null ? ss.Code : null };
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch.Trim()));
+                query = query.Where(x => x.Cycle.Name.Contains(request.TextSearch.Trim()));
             }
 
             if (request.Status.HasValue)
             {
-                query = query.Where(x => x.Status == request.Status.Value);
+                query = query.Where(x => x.Cycle.Status == request.Status);
             }
 
             if (request.Year.HasValue)
             {
-                query = query.Where(x => x.Year == request.Year.Value);
+                query = query.Where(x => x.Cycle.Year == request.Year);
             }
 
             if (request.Scope.HasValue)
             {
-                query = query.Where(x => x.Scope == request.Scope.Value);
+                query = query.Where(x => x.Cycle.Scope == request.Scope);
+            }
+
+            if (request.StandardSetId.HasValue)
+            {
+                query = query.Where(x => x.Cycle.StandardSetId == request.StandardSetId);
             }
 
             var totalRow = await query.CountAsync();
 
             var data = await query
-                .OrderByDescending(x => x.UpdatedAt.HasValue ? x.UpdatedAt : x.CreatedAt)
+                .OrderByDescending(x => x.Cycle.UpdatedAt.HasValue ? x.Cycle.UpdatedAt : x.Cycle.CreatedAt)
                 .Skip((request.PageIndex - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .ToListAsync();
 
             var result = data.Select(x =>
             {
-                var res = _mapper.Map<ModelCycleGetListPaging>(x);
-                res.StatusName = x.Status switch
+                var res = _mapper.Map<ModelCycleGetListPaging>(x.Cycle);
+                res.StatusName = x.Cycle.Status switch
                 {
                     1 => "Lập kế hoạch",
                     2 => "Đang diễn ra",
                     3 => "Đã kết thúc",
                     _ => "Không xác định"
                 };
+                res.StandardSet = x.StandardSetName;
 
                 return res;
             }).ToList();

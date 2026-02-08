@@ -1,4 +1,4 @@
-namespace AUN_QA.CatalogService.DTOs.Common
+﻿namespace AUN_QA.CatalogService.DTOs.Common
 {
     public enum ActionType
     {
@@ -16,5 +16,11 @@ namespace AUN_QA.CatalogService.DTOs.Common
         HeadOfCouncil = 1,
         Evaluator = 2,
         EvidenceProvider = 3
+    }
+
+    public enum StandardSet_EvaluationMode
+    {
+        SCORING_7 = 1, // Áp dụng cho AUN-QA
+        PASS_FAIL = 2 // Áp dụng cho MOET
     }
 }

@@ -4,6 +4,7 @@ import type {
 } from "@/types/base/base.types";
 import type { TemplateTopic } from "./survey-template.types";
 
+// Model
 export interface SurveyCampaign extends BaseRequest {
   Id: string;
   CycleId: string;
@@ -40,11 +41,12 @@ export interface SurveyScore extends BaseRequest {
 export interface SurveyTextAnswer extends BaseRequest {
   Id: string;
   CampaignId: string;
-  QuestionId: string;
+  TextQuestionId: string;
   SessionId: string;
   Content: string;
 }
 
+// Request
 export interface SurveyCampaignGetListPaging extends SurveyCampaign {
   Cycle: string;
   Stakeholder: string;
@@ -53,4 +55,77 @@ export interface SurveyCampaignGetListPaging extends SurveyCampaign {
 export interface SurveyCampaignGetListPagingRequest extends GetListPagingRequest {
   StakeholderType?: number;
   CycleId?: string;
+}
+
+export interface GetStakeholderNotInCampaignRequest extends GetListPagingRequest {
+  CampainId: string;
+}
+
+export interface GetListSessionRequest extends GetListPagingRequest {
+  CampaignId: string;
+  Status?: number;
+}
+
+export interface AddAllStakeholderToCampaignRequest {
+  CampaignId: string;
+  Filter_TextSearch?: string;
+}
+
+export interface AddListStakeholderToCampaignRequest {
+  CampaignId: string;
+  StakeholderIds: string[];
+}
+
+export interface SurveySubmissionScore {
+  QuestionId: string;
+  Score: number;
+}
+
+export interface SurveySubmissionTextAnswer {
+  TextQuestionId: string;
+  Content: string;
+}
+
+export interface SurveySubmissionRequest {
+  Token: string;
+  Scores: SurveySubmissionScore[];
+  TextAnswers: SurveySubmissionTextAnswer[];
+}
+
+// View Types (Do Survey)
+import type {
+  TemplateCategory,
+  TemplateQuestion,
+  TemplateTextQuestion,
+} from "./survey-template.types";
+
+export interface SurveyView {
+  Id: string;
+  Name: string;
+  StakeholderType: number;
+  IsSessionCompleted: boolean;
+  ListTopic: SurveyViewTopic[];
+}
+
+export interface SurveyViewTopic extends Omit<
+  TemplateTopic,
+  "ListCategory" | "ListTextQuestion"
+> {
+  ListCategory: SurveyViewCategory[];
+  ListTextQuestion: SurveyViewTextQuestion[];
+}
+
+export interface SurveyViewCategory extends Omit<
+  TemplateCategory,
+  "ListQuestion"
+> {
+  ListQuestion: SurveyViewQuestion[];
+}
+
+export interface SurveyViewQuestion extends TemplateQuestion {
+  Score?: number;
+}
+
+export interface SurveyViewTextQuestion extends TemplateTextQuestion {
+  Answer?: string;
 }

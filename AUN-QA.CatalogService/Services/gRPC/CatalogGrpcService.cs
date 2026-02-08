@@ -1,6 +1,7 @@
 ﻿using AUN_QA.CatalogService.Protos;
 using AUN_QA.CatalogService.Services.CoreFeature.Cycle;
 using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
+using AUN_QA.CatalogService.Services.CoreFeature.Standard;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 
@@ -10,11 +11,13 @@ namespace AUN_QA.CatalogService.Services.gRPC
     {
         private readonly IStakeholderService _stakeholderService;
         private readonly ICycleService _cycleService;
+        private readonly IStandardService _standardService;
 
-        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService)
+        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService, IStandardService standardService)
         {
             _stakeholderService = stakeholderService;
             _cycleService = cycleService;
+            _standardService = standardService;
         }
 
         #region Stakeholder Service
@@ -58,6 +61,21 @@ namespace AUN_QA.CatalogService.Services.gRPC
             return new BoolValue { Value = result };
         }
 
+        #endregion
+
+        #region Standard Service
+        public override async Task GetCriterionsForEvidenceStream(
+            GetCriterionsForEvidenceStreamRequest request,
+            IServerStreamWriter<CriterionInfo> responseStream,
+            ServerCallContext context)
+        {
+            await foreach (var item in _standardService.GetCriterionsForEvidenceStreamAsync(
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
         #endregion
     }
 }

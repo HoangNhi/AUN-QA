@@ -116,6 +116,7 @@ export const useCycle = () => {
         Status: "1",
         EvaluationPurpose: "",
         Scope: 1,
+        StandardSetId: undefined,
         IsEdit: isEdit,
       });
       setIsOpen(true);
@@ -140,6 +141,7 @@ export const useCycle = () => {
           Status: "1",
           EvaluationPurpose: "",
           Scope: 1,
+          StandardSetId: undefined,
           IsEdit: false,
         });
       } else {

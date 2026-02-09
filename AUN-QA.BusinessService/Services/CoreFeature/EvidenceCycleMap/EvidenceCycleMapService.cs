@@ -2,7 +2,6 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
-using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
@@ -102,28 +101,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             #endregion
 
             #region Thêm Evidence cycle map
-            var criteriaStream = _catalogService.GetCriterionsForEvidenceStreamAsync(
-                new CatalogService.Protos.GetCriterionsForEvidenceStreamRequest
-                {
-                    CycleId = request.CycleId.ToString(),
-                    FileTypeId = request.FileTypeId.ToString()
-                });
-
-            await foreach (var criterion in criteriaStream)
+            var cycleMapAdd = new Entities.EvidenceCycleMap
             {
-                var cycleMapAdd = new Entities.EvidenceCycleMap
-                {
-                    Id = Guid.NewGuid(),
-                    EvidenceId = add.Id,
-                    CycleId = request.CycleId,
-                    ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
-                    CreatedBy = add.CreatedBy,
-                    CreatedAt = DateTime.Now,
-                    IsActived = true,
-                    IsDeleted = false
-                };
-                await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
-            }
+                Id = Guid.NewGuid(),
+                EvidenceId = add.Id,
+                CycleId = request.CycleId,
+                ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
+                CreatedBy = add.CreatedBy,
+                CreatedAt = DateTime.Now,
+                IsActived = true,
+                IsDeleted = false
+            };
+            await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
             #endregion
 
             await _context.SaveChangesAsync();
@@ -257,13 +246,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
             var data = await (from ecm in _context.EvidenceCycleMaps
-                             join e in _context.Evidences on ecm.EvidenceId equals e.Id
-                             where !ecm.IsDeleted && ecm.IsActived
-                             select new ModelCombobox
-                             {
-                                 Text = e.Name,
-                                 Value = ecm.Id.ToString()
-                             }).OrderBy(x => x.Text).ToListAsync();
+                              join e in _context.Evidences on ecm.EvidenceId equals e.Id
+                              where !ecm.IsDeleted && ecm.IsActived
+                              select new ModelCombobox
+                              {
+                                  Text = e.Name,
+                                  Value = ecm.Id.ToString()
+                              }).OrderBy(x => x.Text).ToListAsync();
 
             return data;
         }

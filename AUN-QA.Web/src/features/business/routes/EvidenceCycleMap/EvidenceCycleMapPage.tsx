@@ -3,8 +3,8 @@ import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { useOutletContext } from "react-router-dom";
 import { useEvidenceCycleMap } from "@/features/business/hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
-import { DataTable } from "./data-table";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
+import { DataTable } from "@/components/ui/data-table";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -33,9 +33,9 @@ const EvidenceCycleMapPage = () => {
         showPopupDetail,
         deleteList,
         permission?.IsUpdated,
-        permission?.IsDeleted
+        permission?.IsDeleted,
       ),
-    [permission, showPopupDetail, deleteList]
+    [permission, showPopupDetail, deleteList],
   );
 
   return (

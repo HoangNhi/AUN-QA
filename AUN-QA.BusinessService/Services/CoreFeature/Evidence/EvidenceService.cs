@@ -2,7 +2,6 @@
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
-using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
@@ -35,7 +34,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             _catalogService = catalogService;
         }
 
-        #region PDCA - DO: Evidence
+        #region CRUD
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
         {
             var data = await _context.Evidences.FindAsync(request.Id);
@@ -95,7 +94,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             // Create EvidenceCycleMap entry for each criterion from the stream
             await foreach (var criterion in criteriaStream)
             {
-                var cycleMapAdd = new EvidenceCycleMap
+                var cycleMapAdd = new Entities.EvidenceCycleMap
                 {
                     Id = Guid.NewGuid(),
                     EvidenceId = add.Id,

@@ -37,7 +37,8 @@ namespace AUN_QA.BusinessService.DTOs.Common
         Draft = 1,
         Pending = 2,
         Verified = 3,
-        Rejected = 4
+        Rejected = 4,
+        Expired = 5
     }
 
     public enum EvidenceCycleMapReviewStatus

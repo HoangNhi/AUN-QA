@@ -1,5 +1,6 @@
 ﻿using AUN_QA.CatalogService.Protos;
 using AUN_QA.CatalogService.Services.CoreFeature.Cycle;
+using AUN_QA.CatalogService.Services.CoreFeature.FileType;
 using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
 using AUN_QA.CatalogService.Services.CoreFeature.Standard;
 using Google.Protobuf.WellKnownTypes;
@@ -12,12 +13,14 @@ namespace AUN_QA.CatalogService.Services.gRPC
         private readonly IStakeholderService _stakeholderService;
         private readonly ICycleService _cycleService;
         private readonly IStandardService _standardService;
+        private readonly IFileTypeService _fileTypeService;
 
-        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService, IStandardService standardService)
+        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService, IStandardService standardService, IFileTypeService fileTypeService)
         {
             _stakeholderService = stakeholderService;
             _cycleService = cycleService;
             _standardService = standardService;
+            _fileTypeService = fileTypeService;
         }
 
         #region Stakeholder Service
@@ -70,6 +73,21 @@ namespace AUN_QA.CatalogService.Services.gRPC
             ServerCallContext context)
         {
             await foreach (var item in _standardService.GetCriterionsForEvidenceStreamAsync(
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
+        #endregion
+
+        #region FileType Service
+        public override async Task GetFileTypesStream(
+           GetFileTypesStreamRequest request,
+           IServerStreamWriter<FileTypeInfo> responseStream,
+           ServerCallContext context)
+        {
+            await foreach (var item in _fileTypeService.GetFileTypesStreamAsync(
                 request,
                 context.CancellationToken))
             {

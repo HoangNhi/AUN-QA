@@ -18,5 +18,9 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
         #region Standard
         IAsyncEnumerable<CriterionDto> GetCriterionsForEvidenceStreamAsync(GetCriterionsForEvidenceStreamRequest request, CancellationToken cancellationToken = default);
         #endregion
+
+        #region FileType
+        IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, CancellationToken cancellationToken = default);
+        #endregion
     }
 }

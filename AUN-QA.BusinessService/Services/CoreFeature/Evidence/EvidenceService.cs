@@ -83,32 +83,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }
             #endregion
 
-            #region Thêm Evidence cycle map
-            var criteriaStream = _catalogService.GetCriterionsForEvidenceStreamAsync(
-                new CatalogService.Protos.GetCriterionsForEvidenceStreamRequest
-                {
-                    CycleId = request.CycleId.ToString(),
-                    FileTypeId = request.FileTypeId.ToString()
-                });
-
-            // Create EvidenceCycleMap entry for each criterion from the stream
-            await foreach (var criterion in criteriaStream)
-            {
-                var cycleMapAdd = new Entities.EvidenceCycleMap
-                {
-                    Id = Guid.NewGuid(),
-                    EvidenceId = add.Id,
-                    CycleId = request.CycleId,
-                    ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
-                    CreatedBy = add.CreatedBy,
-                    CreatedAt = DateTime.Now,
-                    IsActived = true,
-                    IsDeleted = false
-                };
-                await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
-            }
-            #endregion
-
             await _context.SaveChangesAsync();
         }
 
@@ -193,8 +167,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelEvidence>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelEvidenceGetListPaging>> GetList(GetListPagingRequest request)
         {
+            var fileTypes = await _catalogService.GetFileTypesStreamAsync(new CatalogService.Protos.GetFileTypesStreamRequest()).ToListAsync();
+            var fileTypeDict = fileTypes.ToDictionary(f => f.Id, f => f.Name);
+
             var query = _context.Evidences.AsQueryable().Where(x => !x.IsDeleted);
 
             if (!string.IsNullOrEmpty(request.TextSearch))
@@ -210,12 +187,28 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            return new GetListPagingResponse<ModelEvidence>
+            var result = data.Select(x =>
+            {
+                var res = _mapper.Map<ModelEvidenceGetListPaging>(x);
+                res.StatusName = x.Status switch
+                {
+                    (int)EvidenceStatus.Draft => "Chưa gửi",
+                    (int)EvidenceStatus.Pending => "Đã gửi",
+                    (int)EvidenceStatus.Verified => "Đã duyệt",
+                    (int)EvidenceStatus.Rejected => "Không duyệt",
+                    (int)EvidenceStatus.Expired => "Hết hạn",
+                    _ => "Không xác định"
+                };
+                res.FileTypeName = fileTypeDict.TryGetValue(x.FileTypeId.ToString(), out var name) ? name : null;
+                return res;
+            }).ToList();
+
+            return new GetListPagingResponse<ModelEvidenceGetListPaging>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
                 TotalRow = totalRow,
-                Data = _mapper.Map<List<ModelEvidence>>(data)
+                Data = result
             };
         }
 

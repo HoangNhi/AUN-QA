@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Field,
@@ -24,15 +23,11 @@ import {
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { EvidenceCycleMap } from "@/features/business/types/evidence.types";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import type {
-  Standard,
-  CriterionRequirement,
-} from "@/features/catalog/types/standard.types";
 import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { standardService } from "@/features/catalog/api/standard.api";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
+import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 
 interface PopupEvidenceCycleMapProps {
   evidenceCycleMap: EvidenceCycleMap | null;
@@ -76,14 +71,6 @@ const PopupEvidenceCycleMap = ({
   const [listAttachment, setListAttachment] = useState<Attachment[]>(
     evidenceCycleMap?.ListAttachment || [],
   );
-  const [standardsWithCriteria, setStandardsWithCriteria] = useState<
-    Standard[]
-  >([]);
-  const [criteriaLoading, setCriteriaLoading] = useState<boolean>(false);
-  const [criteriaError, setCriteriaError] = useState<string | null>(null);
-  const [expandedStandardIds, setExpandedStandardIds] = useState<
-    Record<string, boolean>
-  >({});
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -130,72 +117,6 @@ const PopupEvidenceCycleMap = ({
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
-
-  const toggleStandard = (standardId: string) => {
-    setExpandedStandardIds((prev) => ({
-      ...prev,
-      [standardId]: !prev[standardId],
-    }));
-  };
-
-  const getRequirementSummary = (requirements?: CriterionRequirement[]) => {
-    if (!requirements || requirements.length === 0) {
-      return { isMandatory: false, minQuantity: 0 };
-    }
-
-    return {
-      isMandatory: requirements.some((req) => req.IsMandatory),
-      minQuantity: Math.max(...requirements.map((req) => req.MinQuantity || 0)),
-    };
-  };
-
-  const fetchStandardsWithCriteria = useCallback(
-    async (cycleId: string, fileTypeId: string) => {
-      setCriteriaLoading(true);
-      setCriteriaError(null);
-
-      try {
-        const res = await standardService.getListWithCriteria({
-          CycleId: cycleId,
-          FileTypeId: fileTypeId,
-        });
-
-        if (res.Success) {
-          const standards = (res.Data || []) as Standard[];
-          setStandardsWithCriteria(standards);
-          const expanded: Record<string, boolean> = {};
-          standards.forEach((standard) => {
-            expanded[standard.Id] = true;
-          });
-          setExpandedStandardIds(expanded);
-        } else {
-          setStandardsWithCriteria([]);
-          setExpandedStandardIds({});
-          setCriteriaError("Khong the tai danh sach tieu chuan.");
-        }
-      } catch (error) {
-        console.error(error);
-        setStandardsWithCriteria([]);
-        setExpandedStandardIds({});
-        setCriteriaError("Khong the tai danh sach tieu chuan.");
-      } finally {
-        setCriteriaLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!formData.cycleId || !formData.fileTypeId) {
-      setStandardsWithCriteria([]);
-      setExpandedStandardIds({});
-      setCriteriaError(null);
-      setCriteriaLoading(false);
-      return;
-    }
-
-    fetchStandardsWithCriteria(formData.cycleId, formData.fileTypeId);
-  }, [formData.cycleId, formData.fileTypeId, fetchStandardsWithCriteria]);
 
   // --- Validation ---
   const validateForm = (): boolean => {
@@ -488,128 +409,10 @@ const PopupEvidenceCycleMap = ({
                 </Field>
 
                 {/* Criteria Table */}
-                <div className="mt-4">
-                  <Label className="text-sm font-medium mb-2 block">
-                    Danh sách tiêu chuẩn liên kết:
-                  </Label>
-                  <div className="rounded-md border bg-background">
-                    {criteriaLoading ? (
-                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        Đang tải danh sách tiêu chuẩn...
-                      </div>
-                    ) : criteriaError ? (
-                      <div className="px-4 py-6 text-center text-sm text-red-500">
-                        {criteriaError}
-                      </div>
-                    ) : !formData.cycleId || !formData.fileTypeId ? (
-                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        Vui lòng chọn chu kỳ và loại tài liệu.
-                      </div>
-                    ) : standardsWithCriteria.length === 0 ? (
-                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        Chưa có dữ liệu tiêu chuẩn.
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-muted">
-                        {standardsWithCriteria.map((standard) => {
-                          const criterions = standard.Criterions || [];
-                          const mandatoryCount = criterions.filter(
-                            (criterion) =>
-                              getRequirementSummary(
-                                criterion.CriterionRequirements,
-                              ).isMandatory,
-                          ).length;
-
-                          return (
-                            <div key={standard.Id}>
-                              <button
-                                type="button"
-                                className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
-                                onClick={() => toggleStandard(standard.Id)}
-                              >
-                                <div className="space-y-1">
-                                  <div className="text-sm font-semibold text-slate-900">
-                                    {standard.Code} - {standard.Name}
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                    <span>{criterions.length} tiêu chí</span>
-                                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                                      Bắt buộc: {mandatoryCount}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors group-hover:text-slate-700">
-                                  {expandedStandardIds[standard.Id] ? (
-                                    <ChevronUp className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4" />
-                                  )}
-                                </span>
-                              </button>
-                              {expandedStandardIds[standard.Id] && (
-                                <div className="bg-slate-50/60 px-3 pb-4">
-                                  <div className="space-y-3 pt-2">
-                                    {criterions.map((criterion) => {
-                                      const summary = getRequirementSummary(
-                                        criterion.CriterionRequirements,
-                                      );
-                                      const isMandatory = summary.isMandatory;
-                                      const requirementCount =
-                                        criterion.CriterionRequirements
-                                          ?.length || 0;
-
-                                      return (
-                                        <div
-                                          key={criterion.Id}
-                                          className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm animate-in transition-shadow hover:shadow-md ${
-                                            isMandatory
-                                              ? "border-l-4 border-l-red-300"
-                                              : "border-l-4 border-l-slate-200"
-                                          }`}
-                                        >
-                                          <div className="flex flex-wrap items-start justify-between gap-3">
-                                            <div className="min-w-0 space-y-2">
-                                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                                                {criterion.Code}
-                                              </span>
-                                              <div className="text-sm font-medium leading-6 text-slate-800">
-                                                {criterion.Name}
-                                              </div>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                                              <span
-                                                className={
-                                                  summary.isMandatory
-                                                    ? "rounded-full bg-red-100 px-2 py-0.5 text-red-700"
-                                                    : "rounded-full bg-slate-100 px-2 py-0.5 text-slate-600"
-                                                }
-                                              >
-                                                {summary.isMandatory
-                                                  ? "Bắt buộc"
-                                                  : "Không bắt buộc"}
-                                              </span>
-                                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                                                Số lượng:{" "}
-                                                {summary.minQuantity || "-"}
-                                              </span>
-                                              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                                                Yêu cầu: {requirementCount}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <StandardCriteriaTable
+                  cycleId={formData.cycleId}
+                  fileTypeId={formData.fileTypeId}
+                />
               </div>
             </div>
           </div>

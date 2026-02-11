@@ -27,7 +27,7 @@ namespace AUN_QA.BusinessService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidence>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceGetListPaging>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]

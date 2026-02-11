@@ -111,5 +111,20 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
         }
         #endregion
+
+        #region FileType Service
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            // Gọi gRPC
+            using var call = _grpcClient.GetFileTypesStream(request, cancellationToken: cancellationToken);
+
+            // Đọc stream từ gRPC và convert sang Model của mình
+            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            {
+                // Mapping: Proto -> DTO
+                yield return item;
+            }
+        }
+        #endregion
     }
 }

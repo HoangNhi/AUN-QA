@@ -14,6 +14,7 @@ service CatalogProto {
 
   rpc IsUserInRole (IsUserInRoleRequest) returns (google.protobuf.BoolValue);
   rpc GetUserRole (GetUserRoleRequest) returns (google.protobuf.Int32Value);
+  rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
 }
 
 message GetStakeholdersStreamRequest {
@@ -70,4 +71,16 @@ message CriterionInfo {
 message GetCriterionsForEvidenceStreamRequest {
   string file_type_id = 1;
   string cycle_id = 2;
+}
+
+// FileType
+message FileTypeInfo {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  optional string description = 4;
+}
+
+message GetFileTypesStreamRequest {
+  google.protobuf.StringValue id = 1;
 }

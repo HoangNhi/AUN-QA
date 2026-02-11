@@ -2,9 +2,11 @@ using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.FileType.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.FileType.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
+using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
 {
@@ -25,6 +27,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             _contextAccessor = contextAccessor;
         }
 
+        #region CRUD
         public async Task<ModelFileType> GetById(GetByIdRequest request)
         {
             var data = await _context.FileTypes.FindAsync(request.Id);
@@ -142,5 +145,36 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
                 Value = x.Id.ToString()
             }).OrderBy(x => x.Text).ToList();
         }
+        #endregion
+
+        #region GRPC Services
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(
+            GetFileTypesStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var query = _context.FileTypes.AsNoTracking();
+
+            if (!string.IsNullOrEmpty(request.Id) && Guid.TryParse(request.Id, out Guid id))
+            {
+                query = query.Where(s => s.Id == Guid.Parse(request.Id));
+            }
+
+            var dataStream = query
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .Select(s => new FileTypeInfo
+                {
+                    Id = s.Id.ToString(),
+                    Code = s.Code,
+                    Name = s.Name,
+                    Description = s.Description
+                })
+                .AsAsyncEnumerable();
+
+            await foreach (var item in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return item;
+            }
+        }
+        #endregion
     }
 }

@@ -193,7 +193,9 @@ const PopupEvidenceCycleMap = ({
       >
         <DialogHeader className="border-b pb-2">
           <DialogTitle>
-            {evidenceCycleMap?.IsEdit ? "Cập nhật Minh chứng theo chu kỳ" : "Thêm mới Minh chứng theo chu kỳ"}
+            {evidenceCycleMap?.IsEdit
+              ? "Cập nhật Minh chứng theo chu kỳ"
+              : "Thêm mới Minh chứng theo chu kỳ"}
           </DialogTitle>
         </DialogHeader>
 
@@ -411,7 +413,7 @@ const PopupEvidenceCycleMap = ({
                 {/* Criteria Table */}
                 <StandardCriteriaTable
                   cycleId={formData.cycleId}
-                  fileTypeId={formData.fileTypeId}
+                  selectedFileTypeId={formData.fileTypeId}
                 />
               </div>
             </div>

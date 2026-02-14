@@ -38,6 +38,7 @@ export interface StandardGetListPagingRequest extends GetListPagingRequest {
 }
 
 export interface GetListStandardWithCriteriaRequest {
-    CycleId: string;
-    FileTypeId: string;
+    CycleId?: string;
+    StandardSetId?: string;
+    FileTypeId?: string;
 }

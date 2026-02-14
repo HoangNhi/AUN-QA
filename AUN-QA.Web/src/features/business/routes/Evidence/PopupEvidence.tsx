@@ -26,8 +26,7 @@ import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { standardSetService } from "@/features/catalog/api/standardset.api";
-import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
+import MultiStandardSetPanel from "@/features/catalog/components/MultiStandardSetPanel";
 
 interface PopupEvidenceProps {
   evidence: Evidence | null;
@@ -63,7 +62,7 @@ const PopupEvidence = ({
     cycleId: evidence?.CycleId || "",
   });
 
-  const [standardSetId, setStandardSetId] = useState<string>("");
+  const [fileTypeName, setFileTypeName] = useState<string>("");
   const uploadRef = useRef<UploadFileRef>(null);
   const [folderUpload, setFolderUpload] = useState<string>(
     evidence?.FolderUpload || uuidv4(),
@@ -196,11 +195,11 @@ const PopupEvidence = ({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Scrollable Body - Split View 6/6 */}
+        {/* Scrollable Body - Split View 5/7 */}
         <div className="flex-1 p-4 min-h-0 flex flex-col overflow-hidden">
           <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
             {/* LEFT COLUMN - General Information */}
-            <div className="col-span-6 flex flex-col min-h-0">
+            <div className="col-span-5 flex flex-col min-h-0">
               <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-2">
                 {/* Name */}
                 <Field>
@@ -247,8 +246,9 @@ const PopupEvidence = ({
                           }));
                         }}
                         value={formData.fileTypeId}
-                        onValueChange={(val) => {
+                        onValueChange={(val, text) => {
                           updateField("fileTypeId", val || "");
+                          setFileTypeName(text || "");
                         }}
                         placeholder="Chọn loại tài liệu"
                         searchPlaceholder="Tìm kiếm loại tài liệu..."
@@ -260,6 +260,32 @@ const PopupEvidence = ({
                     </FieldContent>
                   </Field>
                 </div>
+
+                {/* Cycle Selection */}
+                <Field>
+                  <FieldLabel>
+                    Chu kỳ <span className="text-red-500">*</span>
+                  </FieldLabel>
+                  <FieldContent>
+                    <Combobox
+                      fetchOptions={async () => {
+                        const res = await cycleService.getComboboxByUser();
+                        return (res.Data || []).map((t) => ({
+                          Value: t.Value ?? "",
+                          Text: t.Text ?? "",
+                        }));
+                      }}
+                      value={formData.cycleId}
+                      onValueChange={(val) => updateField("cycleId", val || "")}
+                      placeholder="Chọn chu kỳ"
+                      searchPlaceholder="Tìm kiếm chu kỳ..."
+                      emptyText="Không tìm thấy chu kỳ."
+                    />
+                    {errors.cycleId && (
+                      <FieldError>{errors.cycleId}</FieldError>
+                    )}
+                  </FieldContent>
+                </Field>
 
                 {/* Attachments */}
                 <Field>
@@ -344,74 +370,12 @@ const PopupEvidence = ({
               </div>
             </div>
 
-            {/* RIGHT COLUMN - Criteria Mapping */}
-            <div className="col-span-6 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-                {/* Cycle Selection */}
-                <Field>
-                  <FieldLabel>
-                    Chu kỳ <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      fetchOptions={async () => {
-                        const res = await cycleService.getComboboxByUser();
-                        return (res.Data || []).map((t) => ({
-                          Value: t.Value ?? "",
-                          Text: t.Text ?? "",
-                        }));
-                      }}
-                      value={formData.cycleId}
-                      onValueChange={async (val) => {
-                        updateField("cycleId", val || "");
-                        // Fetch and set standard set id based on selected cycle
-                        if (val) {
-                          const res = await cycleService.getById(val);
-                          if (res.Success) {
-                            setStandardSetId(res.Data?.StandardSetId || "");
-                          }
-                        } else {
-                          setStandardSetId("");
-                        }
-                      }}
-                      placeholder="Chọn chu kỳ"
-                      searchPlaceholder="Tìm kiếm chu kỳ..."
-                      emptyText="Không tìm thấy chu kỳ."
-                    />
-                    {errors.cycleId && (
-                      <FieldError>{errors.cycleId}</FieldError>
-                    )}
-                  </FieldContent>
-                </Field>
-
-                {/* Standard Selection */}
-                <Field>
-                  <FieldLabel>
-                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      fetchOptions={async () => {
-                        const res = await standardSetService.getAllCombobox();
-                        return (res.Data || []).map((t) => ({
-                          Value: t.Value ?? "",
-                          Text: t.Text ?? "",
-                        }));
-                      }}
-                      value={standardSetId}
-                      onValueChange={(val) => setStandardSetId(val || "")}
-                      placeholder="Chọn bộ tiêu chuẩn"
-                      searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                      emptyText="Không tìm thấy bộ tiêu chuẩn."
-                      readonly={true}
-                    />
-                  </FieldContent>
-                </Field>
-
-                {/* Criteria Table */}
-                <StandardCriteriaTable
-                  cycleId={formData.cycleId}
-                  fileTypeId={formData.fileTypeId}
+            {/* RIGHT COLUMN - Criteria Satisfaction */}
+            <div className="col-span-7 flex flex-col min-h-0">
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
+                <MultiStandardSetPanel
+                  selectedFileTypeId={formData.fileTypeId}
+                  selectedFileTypeName={fileTypeName}
                 />
               </div>
             </div>

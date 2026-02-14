@@ -33,7 +33,7 @@ interface ComboboxProps {
   transformData?: (data: any) => ModelCombobox[];
 
   value?: string;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string, text?: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
@@ -158,9 +158,9 @@ export function Combobox({
                         value === option.Value && "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
-                        onValueChange(
-                          option.Value === value ? "" : option.Value,
-                        );
+                        const newValue = option.Value === value ? "" : option.Value;
+                        const newText = option.Value === value ? "" : option.Text;
+                        onValueChange(newValue, newText);
                         setOpen(false);
                       }}
                     >

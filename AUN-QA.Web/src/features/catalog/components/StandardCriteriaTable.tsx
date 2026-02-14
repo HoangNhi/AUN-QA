@@ -1,147 +1,722 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ChevronRight,
+  CheckCircle2,
+  MinusCircle,
+  XCircle,
+  ShieldCheck,
+  ShieldAlert,
+  FileText,
+  Check,
+  X,
+  Zap,
+  Filter,
+  Layers,
+} from "lucide-react";
 import {
   useStandardsWithCriteria,
-  getRequirementSummary,
+  getCriterionStatus,
+  getStandardStatus,
+  type CriterionStatus,
+  type FilterMode,
 } from "@/features/catalog/hooks/useStandardsWithCriteria";
+import type {
+  Standard,
+  Criterion,
+} from "@/features/catalog/types/standard.types";
+
+// --- Props ---
 
 interface StandardCriteriaTableProps {
-  cycleId: string;
-  fileTypeId: string;
+  /** Existing: fetch by cycleId (used when standards is not provided) */
+  cycleId?: string;
+  fileTypeId?: string;
+  selectedFileTypeId?: string;
   label?: string;
   emptyMessage?: string;
+  /** New: pass standards directly (bypasses hook fetching) */
+  standards?: Standard[];
+  /** New: toggle summary cards visibility (default true) */
+  showSummaryCards?: boolean;
+  /** New: toggle progress bar visibility (default true) */
+  showProgressBar?: boolean;
 }
+
+// --- Small Sub-components ---
+
+const Badge = ({
+  children,
+  variant = "default",
+}: {
+  children: React.ReactNode;
+  variant?: "default" | "green" | "red" | "amber";
+}) => {
+  const styles: Record<string, string> = {
+    default: "bg-slate-100 text-slate-600 border-slate-200",
+    green: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    red: "bg-red-50 text-red-600 border-red-200",
+    amber: "bg-amber-50 text-amber-700 border-amber-200",
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${styles[variant]}`}
+    >
+      {children}
+    </span>
+  );
+};
+
+const ProgressRing = ({
+  current,
+  total,
+  size = 32,
+}: {
+  current: number;
+  total: number;
+  size?: number;
+}) => {
+  const pct = total === 0 ? 0 : Math.round((current / total) * 100);
+  const r = (size - 6) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  const color = pct === 100 ? "#10b981" : pct > 0 ? "#f59e0b" : "#e2e8f0";
+  const textColor = pct === 100 ? "#059669" : pct > 0 ? "#d97706" : "#94a3b8";
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#f1f5f9"
+          strokeWidth={3}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={3}
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: "stroke-dashoffset 0.5s ease" }}
+        />
+      </svg>
+      <span
+        className="absolute text-[9px] font-bold"
+        style={{ color: textColor }}
+      >
+        {pct}%
+      </span>
+    </div>
+  );
+};
+
+const StatusIcon = ({
+  status,
+  size = 16,
+}: {
+  status: CriterionStatus;
+  size?: number;
+}) => {
+  if (status === "satisfied")
+    return <CheckCircle2 size={size} className="text-emerald-500" />;
+  if (status === "partial")
+    return <MinusCircle size={size} className="text-amber-500" />;
+  return <XCircle size={size} className="text-slate-300" />;
+};
+
+const MiniBar = ({ current, total }: { current: number; total: number }) => {
+  const pct =
+    total === 0 ? 0 : Math.min(100, Math.round((current / total) * 100));
+  const bg =
+    pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-400" : "bg-slate-200";
+  return (
+    <div className="flex items-center gap-2 flex-1">
+      <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${bg}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-mono text-slate-400 tabular-nums whitespace-nowrap">
+        {current}/{total}
+      </span>
+    </div>
+  );
+};
+
+// --- CSS Animations (injected once) ---
+
+const AnimationStyles = () => (
+  <style>{`
+    @keyframes highlight-pulse {
+      0% { background-color: rgba(139, 92, 246, 0.25); }
+      100% { background-color: rgba(139, 92, 246, 0.06); }
+    }
+    @keyframes req-glow {
+      0% { box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4); }
+      100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+    }
+    @keyframes fade-in-up {
+      0% { opacity: 0; transform: translateY(4px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+  `}</style>
+);
+
+// --- Main Component ---
 
 const StandardCriteriaTable = ({
   cycleId,
   fileTypeId,
-  label = "Danh sách tiêu chuẩn liên kết:",
-  emptyMessage = "Vui lòng chọn chu kỳ và loại tài liệu.",
+  selectedFileTypeId,
+  emptyMessage = "Vui lòng chọn chu kỳ.",
+  standards: externalStandards,
+  showSummaryCards = true,
+  showProgressBar = true,
 }: StandardCriteriaTableProps) => {
-  const {
-    standardsWithCriteria,
-    criteriaLoading,
-    criteriaError,
-    expandedStandardIds,
-    toggleStandard,
-  } = useStandardsWithCriteria(cycleId, fileTypeId);
+  const isExternalMode = !!externalStandards;
+
+  // --- Hook-based mode (existing behavior) ---
+  const hookResult = useStandardsWithCriteria(
+    isExternalMode ? "" : cycleId || "",
+    isExternalMode ? undefined : fileTypeId,
+  );
+
+  // --- Local state for external standards mode ---
+  const [localExpandedIds, setLocalExpandedIds] = useState<
+    Record<string, boolean>
+  >({});
+  const [localAutoExpandEnabled, setLocalAutoExpandEnabled] = useState(true);
+
+  // Initialize expansion when external standards change
+  useEffect(() => {
+    if (externalStandards) {
+      const expanded: Record<string, boolean> = {};
+      externalStandards.forEach((s) => {
+        expanded[s.Id] = true;
+      });
+      setLocalExpandedIds(expanded);
+      setLocalAutoExpandEnabled(true);
+    }
+  }, [externalStandards]);
+
+  const localToggle = useCallback((id: string) => {
+    setLocalExpandedIds((prev) => ({
+      ...prev,
+      [id]: !(prev[id] ?? true),
+    }));
+  }, []);
+
+  const localExpandAll = useCallback(() => {
+    if (!externalStandards) return;
+    const all: Record<string, boolean> = {};
+    externalStandards.forEach((s) => {
+      all[s.Id] = true;
+    });
+    setLocalExpandedIds(all);
+    setLocalAutoExpandEnabled(true);
+  }, [externalStandards]);
+
+  const localCollapseAll = useCallback(() => {
+    if (!externalStandards) return;
+    const allCollapsed: Record<string, boolean> = {};
+    externalStandards.forEach((s) => {
+      allCollapsed[s.Id] = false;
+    });
+    setLocalExpandedIds(allCollapsed);
+    setLocalAutoExpandEnabled(false);
+  }, [externalStandards]);
+
+  // --- Unified state resolution ---
+  const standards = externalStandards || hookResult.filteredStandards;
+  const expandedIds = isExternalMode
+    ? localExpandedIds
+    : hookResult.expandedStandardIds;
+  const toggle = isExternalMode ? localToggle : hookResult.toggleStandard;
+  const expandAllFn = isExternalMode ? localExpandAll : hookResult.expandAll;
+  const collapseAllFn = isExternalMode
+    ? localCollapseAll
+    : hookResult.collapseAll;
+
+  // Compute matching IDs
+  const matchingCriterionIds = useMemo(() => {
+    if (!selectedFileTypeId) return new Set<string>();
+    const ids = new Set<string>();
+    standards.forEach((std) => {
+      (std.Criterions || []).forEach((crit) => {
+        if (
+          crit.CriterionRequirements?.some(
+            (req) => req.FileTypeId === selectedFileTypeId,
+          )
+        ) {
+          ids.add(crit.Id);
+        }
+      });
+    });
+    return ids;
+  }, [standards, selectedFileTypeId]);
+
+  const matchCount = matchingCriterionIds.size;
+
+  // Auto-expand matching (external mode)
+  useEffect(() => {
+    if (
+      isExternalMode &&
+      localAutoExpandEnabled &&
+      selectedFileTypeId &&
+      externalStandards
+    ) {
+      setLocalExpandedIds((prev) => {
+        const next = { ...prev };
+        externalStandards.forEach((std) => {
+          if (
+            (std.Criterions || []).some((crit) =>
+              crit.CriterionRequirements?.some(
+                (req) => req.FileTypeId === selectedFileTypeId,
+              ),
+            )
+          ) {
+            next[std.Id] = true;
+          }
+        });
+        return next;
+      });
+    } else if (!isExternalMode) {
+      hookResult.autoExpandMatching(selectedFileTypeId);
+    }
+  }, [
+    selectedFileTypeId,
+    isExternalMode,
+    localAutoExpandEnabled,
+    externalStandards,
+    hookResult.autoExpandMatching,
+  ]);
+
+  // Stats for summary cards (hook mode only)
+  const { stats, filterMode, setFilterMode } = hookResult;
+
+  // --- Loading / Error / Empty states (hook mode only) ---
+  if (!isExternalMode) {
+    if (hookResult.criteriaLoading) {
+      return (
+        <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+          Đang tải danh sách tiêu chuẩn...
+        </div>
+      );
+    }
+
+    if (hookResult.criteriaError) {
+      return (
+        <div className="px-4 py-8 text-center text-sm text-red-500">
+          {hookResult.criteriaError}
+        </div>
+      );
+    }
+
+    if (!cycleId) {
+      return (
+        <div className="border border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center gap-2">
+          <Layers size={28} className="text-slate-300" />
+          <p className="text-sm text-slate-400">{emptyMessage}</p>
+        </div>
+      );
+    }
+  }
 
   return (
-    <div className="mt-4">
-      <Label className="text-sm font-medium mb-2 block">{label}</Label>
-      <div className="rounded-md border bg-background">
-        {criteriaLoading ? (
-          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-            Đang tải danh sách tiêu chuẩn...
+    <div className="flex flex-col">
+      <AnimationStyles />
+
+      {/* Summary Cards (hook mode + showSummaryCards) */}
+      {showSummaryCards && !isExternalMode && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {(
+            [
+              {
+                key: "satisfied" as FilterMode,
+                icon: ShieldCheck,
+                count: stats.satisfiedCriteria,
+                label: "Đạt",
+                colors: "emerald",
+              },
+              {
+                key: "partial" as FilterMode,
+                icon: ShieldAlert,
+                count: stats.partialCriteria,
+                label: "Thiếu",
+                colors: "amber",
+              },
+              {
+                key: "empty" as FilterMode,
+                icon: XCircle,
+                count: stats.emptyCriteria,
+                label: "Chưa có",
+                colors: "red",
+              },
+            ] as const
+          ).map(({ key, icon: Icon, count, label, colors }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilterMode(filterMode === key ? "all" : key)}
+              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                filterMode === key
+                  ? ""
+                  : "bg-white border-slate-150 hover:bg-opacity-30"
+              }`}
+              style={
+                filterMode === key
+                  ? {
+                      backgroundColor:
+                        colors === "emerald"
+                          ? "#ecfdf5"
+                          : colors === "amber"
+                            ? "#fffbeb"
+                            : "#fef2f2",
+                      borderColor:
+                        colors === "emerald"
+                          ? "#6ee7b7"
+                          : colors === "amber"
+                            ? "#fcd34d"
+                            : "#fca5a5",
+                    }
+                  : {}
+              }
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor:
+                    colors === "emerald"
+                      ? "#d1fae5"
+                      : colors === "amber"
+                        ? "#fef3c7"
+                        : "#fee2e2",
+                }}
+              >
+                <Icon
+                  size={16}
+                  style={{
+                    color:
+                      colors === "emerald"
+                        ? "#059669"
+                        : colors === "amber"
+                          ? "#d97706"
+                          : "#ef4444",
+                  }}
+                />
+              </div>
+              <div className="text-left">
+                <div
+                  className="text-lg font-bold leading-none"
+                  style={{
+                    color:
+                      colors === "emerald"
+                        ? "#047857"
+                        : colors === "amber"
+                          ? "#b45309"
+                          : "#dc2626",
+                  }}
+                >
+                  {count}
+                </div>
+                <div
+                  className="text-[10px] font-medium opacity-70"
+                  style={{
+                    color:
+                      colors === "emerald"
+                        ? "#059669"
+                        : colors === "amber"
+                          ? "#d97706"
+                          : "#ef4444",
+                  }}
+                >
+                  {label}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Overall Progress (hook mode + showProgressBar) */}
+      {showProgressBar && !isExternalMode && (
+        <div className="flex items-center gap-3 mb-3 px-1">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-medium text-slate-500">
+                Tiến độ chung
+              </span>
+              <span className="text-[11px] font-bold text-slate-700">
+                {stats.satisfiedCriteria}/{stats.totalCriteria} tiêu chí
+              </span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${stats.totalCriteria ? Math.round((stats.satisfiedCriteria / stats.totalCriteria) * 100) : 0}%`,
+                  background: "linear-gradient(90deg, #10b981, #34d399)",
+                }}
+              />
+            </div>
           </div>
-        ) : criteriaError ? (
-          <div className="px-4 py-6 text-center text-sm text-red-500">
-            {criteriaError}
-          </div>
-        ) : !cycleId || !fileTypeId ? (
-          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-            {emptyMessage}
-          </div>
-        ) : standardsWithCriteria.length === 0 ? (
-          <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-            Chưa có dữ liệu tiêu chuẩn.
+          <ProgressRing
+            current={stats.satisfiedCriteria}
+            total={stats.totalCriteria}
+            size={38}
+          />
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <div className="flex items-center gap-2">
+          {!isExternalMode && filterMode !== "all" && (
+            <button
+              type="button"
+              onClick={() => setFilterMode("all")}
+              className="text-[11px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-md transition-colors"
+            >
+              <X size={10} /> Xóa bộ lọc
+            </button>
+          )}
+          {selectedFileTypeId && matchCount > 0 && (
+            <span className="text-[11px] font-medium text-violet-600 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <Zap size={10} />
+              Phù hợp {matchCount}/
+              {standards.flatMap((s) => s.Criterions || []).length} tiêu chí
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={expandAllFn}
+            className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
+          >
+            Mở tất cả
+          </button>
+          <span className="text-slate-300">|</span>
+          <button
+            type="button"
+            onClick={collapseAllFn}
+            className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
+          >
+            Thu gọn
+          </button>
+        </div>
+      </div>
+
+      {/* Standards Tree */}
+      <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
+        {standards.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Filter size={24} className="text-slate-300 mb-2" />
+            <p className="text-sm text-slate-400">
+              Không có tiêu chí nào phù hợp bộ lọc
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-muted">
-            {standardsWithCriteria.map((standard) => {
-              const criterions = standard.Criterions || [];
-              const mandatoryCount = criterions.filter(
-                (criterion) =>
-                  getRequirementSummary(criterion.CriterionRequirements)
-                    .isMandatory,
-              ).length;
+          <div className="divide-y divide-slate-100">
+            {standards.map((std) => (
+              <StandardRow
+                key={std.Id}
+                standard={std}
+                isExpanded={expandedIds[std.Id] === true}
+                onToggle={() => toggle(std.Id)}
+                matchingCriterionIds={matchingCriterionIds}
+                selectedFileTypeId={selectedFileTypeId}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
+// --- Standard Row ---
+
+const StandardRow = ({
+  standard,
+  isExpanded,
+  onToggle,
+  matchingCriterionIds,
+  selectedFileTypeId,
+}: {
+  standard: Standard;
+  isExpanded: boolean;
+  onToggle: () => void;
+  matchingCriterionIds: Set<string>;
+  selectedFileTypeId?: string;
+}) => {
+  const criteria = standard.Criterions || [];
+  const stdStatus = getStandardStatus(standard);
+  const satisfiedInStd = criteria.filter(
+    (c) => getCriterionStatus(c) === "satisfied",
+  ).length;
+  const matchInStd = criteria.filter((c) =>
+    matchingCriterionIds.has(c.Id),
+  ).length;
+
+  return (
+    <div>
+      {/* Standard header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors ${
+          matchInStd > 0 ? "hover:bg-violet-50/50" : "hover:bg-slate-50/80"
+        }`}
+      >
+        <div
+          className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+        >
+          <ChevronRight size={14} className="text-slate-400" />
+        </div>
+        <StatusIcon status={stdStatus} size={16} />
+        <div className="flex-1 text-left min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded shrink-0">
+              {standard.Code}
+            </span>
+            <span className="text-[13px] font-semibold text-slate-700 truncate">
+              {standard.Name}
+            </span>
+            {matchInStd > 0 && (
+              <span className="text-[10px] font-semibold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5">
+                <Zap size={8} />
+                {matchInStd}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 w-28">
+          <MiniBar current={satisfiedInStd} total={criteria.length} />
+        </div>
+      </button>
+
+      {/* Criteria */}
+      {isExpanded && (
+        <div className="bg-slate-50/40">
+          {criteria.map((crit) => (
+            <CriterionRow
+              key={crit.Id}
+              criterion={crit}
+              isMatching={matchingCriterionIds.has(crit.Id)}
+              selectedFileTypeId={selectedFileTypeId}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Criterion Row ---
+
+const CriterionRow = ({
+  criterion,
+  isMatching,
+  selectedFileTypeId,
+}: {
+  criterion: Criterion;
+  isMatching: boolean;
+  selectedFileTypeId?: string;
+}) => {
+  const status = getCriterionStatus(criterion);
+  const reqs = criterion.CriterionRequirements || [];
+  const totalRequired = reqs.reduce((sum, r) => sum + (r.MinQuantity || 0), 0);
+
+  return (
+    <div
+      className={`relative pl-10 pr-3 py-2.5 border-t border-slate-100/80 transition-all duration-500 ${
+        isMatching
+          ? "bg-violet-50/70 ring-1 ring-inset ring-violet-200"
+          : status === "satisfied"
+            ? "bg-emerald-50/20"
+            : status === "partial"
+              ? "bg-amber-50/20"
+              : ""
+      }`}
+      style={
+        isMatching ? { animation: "highlight-pulse 1.5s ease-out" } : undefined
+      }
+    >
+      {/* Matching indicator bar */}
+      {isMatching && (
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-violet-500 rounded-r" />
+      )}
+
+      <div className="flex items-start gap-2">
+        <div className="flex-1 min-w-0">
+          {/* Code + badges */}
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[11px] font-mono font-bold text-slate-500">
+              {criterion.Code}
+            </span>
+            {status === "satisfied" && <Badge variant="green">Đủ MC</Badge>}
+            {status === "partial" && <Badge variant="amber">Thiếu MC</Badge>}
+            {status === "empty" && <Badge variant="red">Chưa có MC</Badge>}
+            {isMatching && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-700 bg-violet-100 border border-violet-200 px-1.5 py-0.5 rounded-md"
+                style={{ animation: "fade-in-up 0.3s ease-out" }}
+              >
+                <Zap size={9} /> Phù hợp
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed mb-1.5">
+            {criterion.Name}
+          </p>
+
+          {/* Progress */}
+          <div className="flex items-center gap-3 mb-1.5">
+            <MiniBar current={0} total={totalRequired} />
+          </div>
+
+          {/* File type requirements */}
+          <div className="flex flex-wrap gap-1">
+            {reqs.map((req) => {
+              const isReqMatch =
+                selectedFileTypeId && req.FileTypeId === selectedFileTypeId;
               return (
-                <div key={standard.Id}>
-                  <button
-                    type="button"
-                    className="group flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
-                    onClick={() => toggleStandard(standard.Id)}
-                  >
-                    <div className="space-y-1">
-                      <div className="text-sm font-semibold text-slate-900">
-                        {standard.Code} - {standard.Name}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <span>{criterions.length} tiêu chí</span>
-                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                          Bắt buộc: {mandatoryCount}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors group-hover:text-slate-700">
-                      {expandedStandardIds[standard.Id] ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </span>
-                  </button>
-                  {expandedStandardIds[standard.Id] && (
-                    <div className="bg-slate-50/60 px-3 pb-4">
-                      <div className="space-y-3 pt-2">
-                        {criterions.map((criterion) => {
-                          const summary = getRequirementSummary(
-                            criterion.CriterionRequirements,
-                          );
-                          const isMandatory = summary.isMandatory;
-                          const requirementCount =
-                            criterion.CriterionRequirements?.length || 0;
-
-                          return (
-                            <div
-                              key={criterion.Id}
-                              className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm animate-in transition-shadow hover:shadow-md ${
-                                isMandatory
-                                  ? "border-l-4 border-l-red-300"
-                                  : "border-l-4 border-l-slate-200"
-                              }`}
-                            >
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="min-w-0 space-y-2">
-                                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
-                                    {criterion.Code}
-                                  </span>
-                                  <div className="text-sm font-medium leading-6 text-slate-800">
-                                    {criterion.Name}
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2 text-xs">
-                                  <span
-                                    className={
-                                      summary.isMandatory
-                                        ? "rounded-full bg-red-100 px-2 py-0.5 text-red-700"
-                                        : "rounded-full bg-slate-100 px-2 py-0.5 text-slate-600"
-                                    }
-                                  >
-                                    {summary.isMandatory
-                                      ? "Bắt buộc"
-                                      : "Không bắt buộc"}
-                                  </span>
-                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                                    Số lượng: {summary.minQuantity || "-"}
-                                  </span>
-                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                                    Yêu cầu: {requirementCount}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <span
+                  key={req.Id}
+                  className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-all duration-300 ${
+                    isReqMatch
+                      ? "bg-violet-100 border-violet-300 text-violet-700 shadow-sm font-semibold"
+                      : req.IsMandatory
+                        ? "bg-slate-50 border-slate-200 text-slate-500"
+                        : "bg-white border-dashed border-slate-200 text-slate-400"
+                  }`}
+                  style={
+                    isReqMatch
+                      ? { animation: "req-glow 1.5s ease-out" }
+                      : undefined
+                  }
+                >
+                  <FileText size={9} />
+                  <span className="font-mono font-bold">
+                    ×{req.MinQuantity}
+                  </span>
+                  {req.IsMandatory && <span className="text-red-400">*</span>}
+                  {isReqMatch && <Check size={9} className="text-violet-600" />}
+                </span>
               );
             })}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

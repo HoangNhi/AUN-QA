@@ -6,11 +6,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 {
     public interface IEvidenceCycleMapService
     {
-        Task<ModelEvidenceCycleMap> GetById(GetByIdRequest request);
-        Task Insert(EvidenceCycleMapRequest request);
+        Task<EvidenceCycleMapRequest> GetById(GetByIdRequest request);
+        Task InsertWithEvidence(EvidenceCycleMapRequest request);
         Task Update(EvidenceCycleMapRequest request);
         Task DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelEvidenceCycleMap>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
     }
 }

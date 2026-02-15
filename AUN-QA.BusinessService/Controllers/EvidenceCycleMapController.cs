@@ -21,13 +21,13 @@ namespace AUN_QA.BusinessService.Controllers
 
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.VIEW)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        public async Task<IActionResult> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceCycleMap>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]
@@ -38,17 +38,17 @@ namespace AUN_QA.BusinessService.Controllers
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetById(request);
-            return Ok(new BaseResponse<ModelEvidenceCycleMap> { Data = result, Success = true });
+            return Ok(new BaseResponse<EvidenceCycleMapRequest> { Data = result, Success = true });
         }
 
-        [HttpPost("insert")]
+        [HttpPost("insert-with-evidence")]
         [AttributePermission(Action = ActionType.ADD)]
-        public async Task<IActionResult> Insert([FromBody] EvidenceCycleMapRequest request)
+        public async Task<IActionResult> InsertWithEvidence([FromBody] EvidenceCycleMapRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            await _service.Insert(request);
+            await _service.InsertWithEvidence(request);
             return Ok(new BaseResponse(true, 200));
         }
 

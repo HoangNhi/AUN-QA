@@ -19,15 +19,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import type { EvidenceCycleMapGetListPaging } from "@/features/business/types/evidence.types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS } from "@/constants/business.constants";
+import {
+  EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS,
+  EVIDENCE_STATUS_OPTIONS,
+} from "@/constants/business.constants";
+import type { EvidenceCycleMapGetListPaging } from "../../types/evidence-cycle-map.types";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
-  canDelete: boolean = true
+  canDelete: boolean = true,
 ): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
   {
     id: "select",
@@ -50,16 +53,43 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: "EvidenceCode",
+    accessorKey: "evidenceCode",
     header: "Mã MC",
   },
   {
-    accessorKey: "EvidenceName",
+    accessorKey: "evidenceName",
     header: "Tên minh chứng",
   },
   {
-    accessorKey: "CycleName",
+    accessorKey: "cycleName",
     header: "Kế hoạch",
+  },
+  {
+    accessorKey: "evidenceStatus",
+    header: "Trạng thái minh chứng",
+    cell: ({ row }) => {
+      const status = row.getValue("evidenceStatus") as number;
+      const statusOption = EVIDENCE_STATUS_OPTIONS.find(
+        (opt) => opt.Value === status?.toString(),
+      );
+      const statusText = statusOption?.Text || "N/A";
+
+      const statusColors: Record<number, string> = {
+        1: "bg-gray-100 text-gray-700",
+        2: "bg-yellow-100 text-yellow-700",
+        3: "bg-green-100 text-green-700",
+      };
+
+      const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
+
+      return (
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+        >
+          {statusText}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "ReviewStatus",
@@ -67,7 +97,7 @@ export const getColumns = (
     cell: ({ row }) => {
       const status = row.getValue("ReviewStatus") as number;
       const statusOption = EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS.find(
-        (opt) => opt.Value === status.toString()
+        (opt) => opt.Value === status.toString(),
       );
       const statusText = statusOption?.Text || "N/A";
 
@@ -80,7 +110,9 @@ export const getColumns = (
       const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
 
       return (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+        >
           {statusText}
         </span>
       );

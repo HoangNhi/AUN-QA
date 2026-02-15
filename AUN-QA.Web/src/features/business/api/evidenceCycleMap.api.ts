@@ -1,19 +1,83 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { EvidenceCycleMap } from "@/features/business/types/evidence.types";
-import type { GetListPagingRequest, GetListPagingResponse, ModelCombobox } from "@/types/base/base.types";
+import type { GetListPagingResponse, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
+import type {
+  EvidenceCycleMap,
+  EvidenceCycleMapGetListPaging,
+  EvidenceCycleMapGetListPagingRequest
+} from "../types/evidence-cycle-map.types";
+
+// Backend response type (with underscore naming)
+interface BackendEvidenceCycleMapGetListPaging {
+  Id: string;
+  EvidenceId: string;
+  CycleId: string;
+  ReviewStatus: number;
+  FinalDecisionBy?: string;
+  FinalDecisionAt?: string;
+  Evidence_Name?: string;
+  Evidence_Code?: string;
+  Evidence_Status?: number;
+  CycleName?: string;
+  CreatedAt?: string;
+  CreatedBy?: string;
+  UpdatedAt?: string;
+  UpdatedBy?: string;
+  IsActived?: boolean;
+  IsDeleted?: boolean;
+}
+
+// Transform backend response to frontend naming convention
+const transformEvidenceCycleMapResponse = (
+  backendData: BackendEvidenceCycleMapGetListPaging
+): EvidenceCycleMapGetListPaging => ({
+  Id: backendData.Id,
+  EvidenceId: backendData.EvidenceId,
+  CycleId: backendData.CycleId,
+  ReviewStatus: backendData.ReviewStatus,
+  FinalDecisionBy: backendData.FinalDecisionBy,
+  FinalDecisionAt: backendData.FinalDecisionAt,
+  evidenceName: backendData.Evidence_Name,
+  evidenceCode: backendData.Evidence_Code,
+  evidenceStatus: backendData.Evidence_Status,
+  cycleName: backendData.CycleName,
+  CreatedAt: backendData.CreatedAt ?? "",
+  CreatedBy: backendData.CreatedBy ?? "",
+  UpdatedAt: backendData.UpdatedAt,
+  UpdatedBy: backendData.UpdatedBy,
+  IsActived: backendData.IsActived ?? false,
+  IsDeleted: backendData.IsDeleted ?? false,
+  IsEdit: false,
+  FolderUpload: "",
+});
 
 export const evidenceCycleMapService = {
-  getList: async (request: GetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<EvidenceCycleMap>>> => {
-    return api.post<GetListPagingResponse<EvidenceCycleMap>>(API_ENDPOINTS.Business.EvidenceCycleMap.GET_LIST, request);
+  getList: async (request: EvidenceCycleMapGetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<EvidenceCycleMapGetListPaging>>> => {
+    const response = await api.post<GetListPagingResponse<BackendEvidenceCycleMapGetListPaging>>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.GET_LIST,
+      request
+    );
+
+    // Transform backend response to frontend naming convention
+    if (response.Success && response.Data) {
+      return {
+        ...response,
+        Data: {
+          ...response.Data,
+          Data: response.Data.Data.map(transformEvidenceCycleMapResponse),
+        },
+      };
+    }
+
+    return response as ApiResponse<GetListPagingResponse<EvidenceCycleMapGetListPaging>>;
   },
 
   getById: async (id: string): Promise<ApiResponse<EvidenceCycleMap>> => {
     return api.get<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.GET_BY_ID, { params: { id } });
   },
 
-  insert: async (data: EvidenceCycleMap): Promise<ApiResponse<EvidenceCycleMap>> => {
-    return api.post<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.INSERT, data);
+  insertWithEvidence: async (data: EvidenceCycleMap): Promise<ApiResponse<EvidenceCycleMap>> => {
+    return api.post<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.INSERT_WITH_EVIDENCE, data);
   },
 
   update: async (data: EvidenceCycleMap): Promise<ApiResponse<EvidenceCycleMap>> => {

@@ -16,7 +16,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS } from "@/constants/business.constants";
+import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS, EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -97,6 +97,7 @@ const EvidenceCycleMapPage = () => {
                 TextSearch: "",
                 ReviewStatus: undefined,
                 CycleId: undefined,
+                EvidenceStatus: undefined,
               });
               setSearchTerm("");
             }}
@@ -108,7 +109,7 @@ const EvidenceCycleMapPage = () => {
           <Combobox
             fetchOptions={async () => {
               const res = await cycleService.getComboboxByUser();
-              return res.Data.map((t) => ({
+              return (res.Data || []).map((t) => ({
                 Value: t.Value ?? "",
                 Text: t.Text ?? "",
               }));
@@ -136,8 +137,23 @@ const EvidenceCycleMapPage = () => {
                 PageIndex: 1,
               });
             }}
-            placeholder="Tất cả trạng thái"
-            searchPlaceholder="Tìm kiếm trạng thái..."
+            placeholder="Tất cả trạng thái duyệt"
+            searchPlaceholder="Tìm kiếm trạng thái duyệt..."
+            emptyText="Không tìm thấy trạng thái."
+          />
+
+          <Combobox
+            options={EVIDENCE_STATUS_OPTIONS}
+            value={pageRequest.EvidenceStatus?.toString()}
+            onValueChange={(val) => {
+              setPageRequest({
+                ...pageRequest,
+                EvidenceStatus: val ? Number(val) : undefined,
+                PageIndex: 1,
+              });
+            }}
+            placeholder="Tất cả trạng thái minh chứng"
+            searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
             emptyText="Không tìm thấy trạng thái."
           />
 

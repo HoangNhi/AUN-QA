@@ -1,5 +1,6 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
@@ -11,6 +12,20 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 {
+    /// <summary>
+    /// Evidence Cycle Map Service
+    ///
+    /// Evidence Status Workflow:
+    /// 1. Draft → Initial state for new/updated evidence
+    /// 2. Pending → Submitted for review (cannot be edited)
+    /// 3. Verified → Approved by reviewer (cannot be edited)
+    /// 4. Rejected → Not approved, can be edited and resubmitted
+    ///
+    /// Edit Rules:
+    /// - Draft/Rejected evidence can be edited
+    /// - Pending/Verified evidence cannot be edited
+    /// - Any edit resets status to Draft (requires re-approval)
+    /// </summary>
     [RegisterClassAsTransient]
     public class EvidenceCycleMapService : IEvidenceCycleMapService
     {
@@ -35,7 +50,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         }
 
         #region PDCA - DO: EvidenceCycleMap
-        public async Task<ModelEvidenceCycleMap> GetById(GetByIdRequest request)
+        public async Task<EvidenceCycleMapRequest> GetById(GetByIdRequest request)
         {
             var data = await _context.EvidenceCycleMaps.FindAsync(request.Id);
             if (data == null)
@@ -43,141 +58,198 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            var result = _mapper.Map<ModelEvidenceCycleMap>(data);
+            var result = _mapper.Map<EvidenceCycleMapRequest>(data);
 
             // Load Evidence details
             var evidence = await _context.Evidences.FindAsync(data.EvidenceId);
             if (evidence != null)
             {
-                result.EvidenceName = evidence.Name;
-                result.EvidenceCode = evidence.Code;
-                result.Name = evidence.Name;
-                result.Code = evidence.Code;
-                result.Status = evidence.Status;
-                result.IssueDate = evidence.IssueDate;
-                result.IssuingAuthority = evidence.IssuingAuthority;
-                result.ExpiryDate = evidence.ExpiryDate;
-                result.FileTypeId = evidence.FileTypeId;
-                result.RejectionReason = evidence.RejectionReason;
-                result.Description = evidence.Description;
-                result.ListAttachment = GetAllAttachment(evidence.Id);
+                result.Evidence = _mapper.Map<EvidenceRequest>(evidence);
+                result.Evidence.ListAttachment = await GetAllAttachmentAsync(evidence.Id);
             }
 
             return result;
         }
 
-        public async Task Insert(EvidenceCycleMapRequest request)
+        public async Task InsertWithEvidence(EvidenceCycleMapRequest request)
         {
-            var data = _context.Evidences.Where(x =>
-                x.Name == request.Name
-                && !x.IsDeleted
-            );
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
 
-            if (data.Any())
+            try
             {
-                throw new Exception("Tên minh chứng đã tồn tại");
+                // Validate duplicate name or code
+                var data = _context.Evidences.Where(x =>
+                    (x.Name == request.Evidence.Name || x.Code == request.Evidence.Code)
+                    && !x.IsDeleted
+                );
+
+                if (await data.AnyAsync())
+                {
+                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                }
+
+                var add = _mapper.Map<Entities.Evidence>(request.Evidence);
+                add.Id = Guid.NewGuid(); // Server-side ID generation only
+
+                // Status Transition: New Evidence
+                // - If request specifies Pending status → submit for review immediately
+                // - Otherwise → start as Draft (default for new evidence)
+                add.Status = request.Evidence.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
+
+                add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                add.CreatedAt = DateTime.Now;
+                await _context.Evidences.AddAsync(add);
+
+                #region Thêm tài liệu đính kèm
+                lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
+                foreach (var attachment in lstAttachment)
+                {
+                    Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                    addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
+                    addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.IsActived = true;
+                    addAttachment.IsDeleted = false;
+
+                    await _context.EvidenceAttachments.AddAsync(addAttachment);
+                }
+                #endregion
+
+                #region Thêm Evidence cycle map
+                var cycleMapAdd = new Entities.EvidenceCycleMap
+                {
+                    Id = Guid.NewGuid(), // Server-side ID generation only
+                    EvidenceId = add.Id,
+                    CycleId = request.CycleId,
+                    ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
+                    CreatedBy = add.CreatedBy,
+                    CreatedAt = DateTime.Now,
+                    IsActived = true,
+                    IsDeleted = false
+                };
+                await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
+                #endregion
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-
-            var add = _mapper.Map<Entities.Evidence>(request);
-            add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
-            add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
-            await _context.Evidences.AddAsync(add);
-
-            #region Thêm tài liệu đính kèm
-            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
-            foreach (var attachment in lstAttachment)
+            catch
             {
-                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
-                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
-                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                addAttachment.CreatedAt = DateTime.Now;
-                addAttachment.IsActived = true;
-                addAttachment.IsDeleted = false;
+                await transaction.RollbackAsync();
 
-                await _context.EvidenceAttachments.AddAsync(addAttachment);
+                // Clean up uploaded files if transaction fails
+                if (lstAttachment.Any())
+                {
+                    await _uploadFileService.DeleteDataAsync(lstAttachment.Select(x => x.FileUrl).ToList());
+                }
+
+                throw;
             }
-            #endregion
-
-            #region Thêm Evidence cycle map
-            var cycleMapAdd = new Entities.EvidenceCycleMap
-            {
-                Id = Guid.NewGuid(),
-                EvidenceId = add.Id,
-                CycleId = request.CycleId,
-                ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
-                CreatedBy = add.CreatedBy,
-                CreatedAt = DateTime.Now,
-                IsActived = true,
-                IsDeleted = false
-            };
-            await _context.EvidenceCycleMaps.AddAsync(cycleMapAdd);
-            #endregion
-
-            await _context.SaveChangesAsync();
         }
 
         public async Task Update(EvidenceCycleMapRequest request)
         {
-            var data = _context.Evidences.Where(x =>
-                (x.Name == request.Name || x.Code == request.Code)
-                && !x.IsDeleted && x.Id != request.Id);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            List<ModelAttachment> lstAttachment = new List<ModelAttachment>();
 
-            if (data.Any())
+            try
             {
-                throw new Exception("Tên minh chứng đã tồn tại");
-            }
+                #region Evidence
+                var update = await _context.Evidences.FindAsync(request.Evidence.Id);
+                if (update == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
 
-            var update = await _context.Evidences.FindAsync(request.Id);
-            if (update == null)
+                // Status Transition Rules for Update:
+                // ✅ Draft → can be updated → returns to Draft
+                // ✅ Rejected → can be updated → returns to Draft
+                // ❌ Pending → cannot be updated (under review)
+                // ❌ Verified → cannot be updated (already approved)
+                // Rationale: Any modification to evidence requires re-approval
+                if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
+                {
+                    throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+                }
+
+                // Validate duplicate name or code
+                var data = _context.Evidences.Where(x =>
+                    (x.Name == request.Evidence.Name || x.Code == request.Evidence.Code)
+                    && !x.IsDeleted && x.Id != request.Evidence.Id);
+
+                if (await data.AnyAsync())
+                {
+                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                }
+
+                _mapper.Map(request.Evidence, update);
+
+                // Always reset to Draft after update to require re-approval
+                update.Status = (int)EvidenceStatus.Draft;
+                update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                update.UpdatedAt = DateTime.Now;
+
+                _context.Evidences.Update(update);
+
+                #region Thêm tài liệu đính kèm
+                var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                    && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToList();
+
+                // Xóa các file không còn trong danh sách
+                await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
+                foreach (var attachment in ListDinhKemCanXoa)
+                {
+                    attachment.UpdatedAt = DateTime.Now;
+                    attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    attachment.IsDeleted = true;
+
+                    _context.EvidenceAttachments.Update(attachment);
+                }
+                // Thêm mới các file trong danh sách
+                lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+                foreach (var attachment in lstAttachment)
+                {
+                    Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                    addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
+                    addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.IsActived = true;
+                    addAttachment.IsDeleted = false;
+
+                    await _context.EvidenceAttachments.AddAsync(addAttachment);
+                }
+                #endregion
+                #endregion
+
+                #region Evidence cycle map
+                var cycleMapUpdate = await _context.EvidenceCycleMaps.FindAsync(request.Id);
+                if (cycleMapUpdate == null)
+                {
+                    throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                cycleMapUpdate.CycleId = request.CycleId;
+                cycleMapUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                cycleMapUpdate.UpdatedAt = DateTime.Now;
+                _context.EvidenceCycleMaps.Update(cycleMapUpdate);
+                #endregion
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                await transaction.RollbackAsync();
+
+                // Clean up uploaded files if transaction fails
+                if (lstAttachment.Any())
+                {
+                    await _uploadFileService.DeleteDataAsync(lstAttachment.Select(x => x.FileUrl).ToList());
+                }
+
+                throw;
             }
-
-            if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
-            {
-                throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
-            }
-
-            _mapper.Map(request, update);
-
-            update.Status = (int)EvidenceStatus.Draft;
-            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
-
-            _context.Evidences.Update(update);
-
-            #region Thêm tài liệu đính kèm
-            var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
-                                && !request.AttachmentIds.Any(y => y == x.Id)).ToList();
-
-            // Xóa các file không còn trong danh sách
-            await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
-            foreach (var attachment in ListDinhKemCanXoa)
-            {
-                attachment.UpdatedAt = DateTime.Now;
-                attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                attachment.IsDeleted = true;
-
-                _context.EvidenceAttachments.Update(attachment);
-            }
-            // Thêm mới các file trong danh sách
-            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
-            foreach (var attachment in lstAttachment)
-            {
-                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
-                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
-                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                addAttachment.CreatedAt = DateTime.Now;
-                addAttachment.IsActived = true;
-                addAttachment.IsDeleted = false;
-
-                await _context.EvidenceAttachments.AddAsync(addAttachment);
-            }
-            #endregion
-
-            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteList(DeleteListRequest request)
@@ -199,12 +271,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelEvidenceCycleMap>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
+            var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
                         join e in _context.Evidences on ecm.EvidenceId equals e.Id
                         where !ecm.IsDeleted
-                        select new ModelEvidenceCycleMap
+                        select new ModelEvidenceCycleMapGetListPaging
                         {
                             Id = ecm.Id,
                             EvidenceId = ecm.EvidenceId,
@@ -212,8 +286,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                             ReviewStatus = ecm.ReviewStatus,
                             FinalDecisionBy = ecm.FinalDecisionBy,
                             FinalDecisionAt = ecm.FinalDecisionAt,
-                            EvidenceName = e.Name,
-                            EvidenceCode = e.Code,
+                            Evidence_Name = e.Name,
+                            Evidence_Code = e.Code,
+                            Evidence_Status = e.Status,
                             CreatedAt = ecm.CreatedAt,
                             CreatedBy = ecm.CreatedBy,
                             UpdatedAt = ecm.UpdatedAt,
@@ -223,7 +298,24 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.EvidenceName!.Contains(request.TextSearch));
+                query = query.Where(x =>
+                    x.Evidence_Name!.Contains(request.TextSearch) ||
+                    x.Evidence_Code!.Contains(request.TextSearch));
+            }
+
+            if (request.CycleId.HasValue)
+            {
+                query = query.Where(x => x.CycleId == request.CycleId.Value);
+            }
+
+            if (request.ReviewStatus.HasValue)
+            {
+                query = query.Where(x => x.ReviewStatus == request.ReviewStatus.Value);
+            }
+
+            if (request.EvidenceStatus.HasValue)
+            {
+                query = query.Where(x => x.Evidence_Status == request.EvidenceStatus.Value);
             }
 
             var totalRow = await query.CountAsync();
@@ -234,7 +326,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            return new GetListPagingResponse<ModelEvidenceCycleMap>
+            // Populate CycleName from in-memory cycle list
+            foreach (var item in data)
+            {
+                item.CycleName = cycle.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
+            }
+
+            return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>
             {
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
@@ -259,10 +357,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         #endregion
 
         #region Helper
-        private List<ModelAttachment> GetAllAttachment(Guid Id)
+        private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
-            var result = _context.EvidenceAttachments.Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
-                .Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
+            var result = await _context.EvidenceAttachments
+                .Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
+                .Select(x => _mapper.Map<ModelAttachment>(x))
+                .ToListAsync();
             return result;
         }
         #endregion

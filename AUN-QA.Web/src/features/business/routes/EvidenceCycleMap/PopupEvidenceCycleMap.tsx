@@ -21,13 +21,13 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
-import type { EvidenceCycleMap } from "@/features/business/types/evidence.types";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
+import type { EvidenceCycleMap } from "../../types/evidence-cycle-map.types";
 
 interface PopupEvidenceCycleMapProps {
   evidenceCycleMap: EvidenceCycleMap | null;
@@ -47,29 +47,30 @@ const PopupEvidenceCycleMap = ({
   // --- Form state ---
   const [formData, setFormData] = useState({
     id: evidenceCycleMap?.Id || uuidv4(),
-    name: evidenceCycleMap?.Name || "",
-    code: evidenceCycleMap?.Code || "",
-    status: evidenceCycleMap?.Status?.toString() || "1",
-    issueDate: evidenceCycleMap?.IssueDate
-      ? format(new Date(evidenceCycleMap.IssueDate), "yyyy-MM-dd")
+    evidenceId: evidenceCycleMap?.EvidenceId || "",
+    name: evidenceCycleMap?.Evidence?.Name || "",
+    code: evidenceCycleMap?.Evidence?.Code || "",
+    status: evidenceCycleMap?.Evidence?.Status?.toString() || "1",
+    issueDate: evidenceCycleMap?.Evidence?.IssueDate
+      ? format(new Date(evidenceCycleMap.Evidence.IssueDate), "yyyy-MM-dd")
       : "",
-    issuingAuthority: evidenceCycleMap?.IssuingAuthority || "",
-    expiryDate: evidenceCycleMap?.ExpiryDate
-      ? format(new Date(evidenceCycleMap.ExpiryDate), "yyyy-MM-dd")
+    issuingAuthority: evidenceCycleMap?.Evidence?.IssuingAuthority || "",
+    expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
+      ? format(new Date(evidenceCycleMap.Evidence.ExpiryDate), "yyyy-MM-dd")
       : "",
-    fileTypeId: evidenceCycleMap?.FileTypeId || "",
-    description: evidenceCycleMap?.Description || "",
-    rejectionReason: evidenceCycleMap?.RejectionReason || "",
+    fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
+    description: evidenceCycleMap?.Evidence?.Description || "",
+    rejectionReason: evidenceCycleMap?.Evidence?.RejectionReason || "",
     cycleId: evidenceCycleMap?.CycleId || "",
   });
 
   const [standardSetId, setStandardSetId] = useState<string>("");
   const uploadRef = useRef<UploadFileRef>(null);
   const [folderUpload, setFolderUpload] = useState<string>(
-    evidenceCycleMap?.FolderUpload || uuidv4(),
+    evidenceCycleMap?.Evidence?.FolderUpload || uuidv4(),
   );
   const [listAttachment, setListAttachment] = useState<Attachment[]>(
-    evidenceCycleMap?.ListAttachment || [],
+    evidenceCycleMap?.Evidence?.ListAttachment || [],
   );
 
   const [errors, setErrors] = useState<{
@@ -81,30 +82,44 @@ const PopupEvidenceCycleMap = ({
     expiryDate?: string;
   }>({});
 
+  const cycleId_Change = async (val: string) => {
+    if (val) {
+      const res = await cycleService.getById(val);
+      if (res.Success) {
+        setStandardSetId(res.Data?.StandardSetId || "");
+      }
+    } else {
+      setStandardSetId("");
+    }
+  };
+
   // --- Sync form state when evidenceCycleMap prop changes ---
   useEffect(() => {
     if (evidenceCycleMap) {
       setFormData({
         id: evidenceCycleMap.Id || uuidv4(),
-        name: evidenceCycleMap.Name || "",
-        code: evidenceCycleMap.Code || "",
-        status: evidenceCycleMap.Status?.toString() || "1",
-        issueDate: evidenceCycleMap.IssueDate
-          ? format(new Date(evidenceCycleMap.IssueDate), "yyyy-MM-dd")
+        evidenceId: evidenceCycleMap.EvidenceId || "",
+        name: evidenceCycleMap.Evidence?.Name || "",
+        code: evidenceCycleMap.Evidence?.Code || "",
+        status: evidenceCycleMap.Evidence?.Status?.toString() || "1",
+        issueDate: evidenceCycleMap.Evidence?.IssueDate
+          ? format(new Date(evidenceCycleMap.Evidence.IssueDate), "yyyy-MM-dd")
           : "",
-        issuingAuthority: evidenceCycleMap.IssuingAuthority || "",
-        expiryDate: evidenceCycleMap.ExpiryDate
-          ? format(new Date(evidenceCycleMap.ExpiryDate), "yyyy-MM-dd")
+        issuingAuthority: evidenceCycleMap.Evidence?.IssuingAuthority || "",
+        expiryDate: evidenceCycleMap.Evidence?.ExpiryDate
+          ? format(new Date(evidenceCycleMap.Evidence.ExpiryDate), "yyyy-MM-dd")
           : "",
-        fileTypeId: evidenceCycleMap.FileTypeId || "",
-        description: evidenceCycleMap.Description || "",
-        rejectionReason: evidenceCycleMap.RejectionReason || "",
+        fileTypeId: evidenceCycleMap.Evidence?.FileTypeId || "",
+        description: evidenceCycleMap.Evidence?.Description || "",
+        rejectionReason: evidenceCycleMap.Evidence?.RejectionReason || "",
         cycleId: evidenceCycleMap.CycleId || "",
       });
-      setFolderUpload(evidenceCycleMap.FolderUpload || uuidv4());
-      setListAttachment(evidenceCycleMap.ListAttachment || []);
+      setFolderUpload(evidenceCycleMap.Evidence?.FolderUpload || uuidv4());
+      setListAttachment(evidenceCycleMap.Evidence?.ListAttachment || []);
       setErrors({});
     }
+
+    cycleId_Change(evidenceCycleMap?.CycleId || "");
   }, [evidenceCycleMap]);
 
   // --- Helpers ---
@@ -152,7 +167,7 @@ const PopupEvidenceCycleMap = ({
   };
 
   // --- Submission ---
-  const onSubmit = async (isAddMore: boolean) => {
+  const onSubmit = async (isAddMore: boolean, status: number) => {
     if (!validateForm()) {
       return;
     }
@@ -160,26 +175,41 @@ const PopupEvidenceCycleMap = ({
     // Upload files first
     await uploadRef.current?.upload();
 
-    // Construct data object
+    // Construct data object with nested Evidence
     const saveData: EvidenceCycleMap = {
       Id: formData.id,
-      EvidenceId: evidenceCycleMap?.EvidenceId || "",
+      EvidenceId: formData.evidenceId || "",
       CycleId: formData.cycleId,
       ReviewStatus: evidenceCycleMap?.ReviewStatus || 1,
-      Name: formData.name,
-      Code: formData.code,
-      Status: parseInt(formData.status),
-      IssueDate: formData.issueDate || undefined,
-      IssuingAuthority: formData.issuingAuthority || undefined,
-      ExpiryDate: formData.expiryDate || undefined,
-      FileTypeId: formData.fileTypeId,
-      Description: formData.description || undefined,
-      RejectionReason: formData.rejectionReason || undefined,
-      AttachmentIds: listAttachment.map((a) => a.Id),
-      ListAttachment: listAttachment,
+      Evidence: {
+        Id: evidenceCycleMap?.Evidence?.Id || formData.evidenceId || uuidv4(),
+        Name: formData.name,
+        Code: formData.code,
+        Status: status,
+        IssueDate: formData.issueDate || undefined,
+        IssuingAuthority: formData.issuingAuthority || undefined,
+        ExpiryDate: formData.expiryDate || undefined,
+        FileTypeId: formData.fileTypeId,
+        Description: formData.description || undefined,
+        RejectionReason: formData.rejectionReason || undefined,
+        CycleId: formData.cycleId,
+        AttachmentIds: listAttachment.map((a) => a.Id),
+        ListAttachment: listAttachment,
+        IsEdit: evidenceCycleMap?.IsEdit || false,
+        IsActived: evidenceCycleMap?.IsActived ?? true,
+        FolderUpload: folderUpload,
+        CreatedBy: evidenceCycleMap?.Evidence?.CreatedBy,
+        CreatedAt: evidenceCycleMap?.Evidence?.CreatedAt,
+        UpdatedBy: evidenceCycleMap?.Evidence?.UpdatedBy,
+        UpdatedAt: evidenceCycleMap?.Evidence?.UpdatedAt,
+      },
       IsEdit: evidenceCycleMap?.IsEdit || false,
       IsActived: evidenceCycleMap?.IsActived ?? true,
       FolderUpload: folderUpload,
+      CreatedBy: evidenceCycleMap?.CreatedBy,
+      CreatedAt: evidenceCycleMap?.CreatedAt,
+      UpdatedBy: evidenceCycleMap?.UpdatedBy,
+      UpdatedAt: evidenceCycleMap?.UpdatedAt,
     };
 
     saveChange(saveData, isAddMore);
@@ -200,11 +230,11 @@ const PopupEvidenceCycleMap = ({
         </DialogHeader>
 
         {/* Scrollable Body - Split View 6/6 */}
-        <div className="flex-1 p-4 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
             {/* LEFT COLUMN - General Information */}
             <div className="col-span-6 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
                 {/* Name */}
                 <Field>
                   <FieldLabel>
@@ -313,22 +343,6 @@ const PopupEvidenceCycleMap = ({
                   </Field>
 
                   <Field>
-                    <FieldLabel>Cơ quan ban hành</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        value={formData.issuingAuthority}
-                        onChange={(e) =>
-                          updateField("issuingAuthority", e.target.value)
-                        }
-                        placeholder="Tên cơ quan"
-                      />
-                    </FieldContent>
-                  </Field>
-                </div>
-
-                {/* Expiry Date */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Field>
                     <FieldLabel>Ngày hết hạn</FieldLabel>
                     <FieldContent>
                       <Input
@@ -344,12 +358,28 @@ const PopupEvidenceCycleMap = ({
                     </FieldContent>
                   </Field>
                 </div>
+
+                {/* Expiry Date */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Field className="col-span-2">
+                    <FieldLabel>Cơ quan ban hành</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        value={formData.issuingAuthority}
+                        onChange={(e) =>
+                          updateField("issuingAuthority", e.target.value)
+                        }
+                        placeholder="Tên cơ quan"
+                      />
+                    </FieldContent>
+                  </Field>
+                </div>
               </div>
             </div>
 
             {/* RIGHT COLUMN - Criteria Mapping */}
             <div className="col-span-6 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-2">
+              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
                 {/* Cycle Selection */}
                 <Field>
                   <FieldLabel>
@@ -367,14 +397,7 @@ const PopupEvidenceCycleMap = ({
                       value={formData.cycleId}
                       onValueChange={async (val) => {
                         updateField("cycleId", val || "");
-                        if (val) {
-                          const res = await cycleService.getById(val);
-                          if (res.Success) {
-                            setStandardSetId(res.Data?.StandardSetId || "");
-                          }
-                        } else {
-                          setStandardSetId("");
-                        }
+                        cycleId_Change(val || "");
                       }}
                       placeholder="Chọn chu kỳ"
                       searchPlaceholder="Tìm kiếm chu kỳ..."
@@ -427,15 +450,17 @@ const PopupEvidenceCycleMap = ({
               Hủy bỏ
             </Button>
           </DialogClose>
-          <Button onClick={() => onSubmit(false)} disabled={isLoading}>
+          <Button onClick={() => onSubmit(false, 1)} disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Lưu
           </Button>
           {!evidenceCycleMap?.IsEdit && (
-            <Button onClick={() => onSubmit(true)} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu và thêm tiếp
-            </Button>
+            <>
+              <Button onClick={() => onSubmit(false, 2)} disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Lưu và gửi
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>

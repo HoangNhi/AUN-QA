@@ -6,13 +6,11 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { evidenceCycleMapService } from "@/features/business/api/evidenceCycleMap.api";
-import type {
-  EvidenceCycleMap,
-  EvidenceCycleMapGetListPagingRequest,
-} from "@/features/business/types/evidence.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
+import type { EvidenceCycleMap, EvidenceCycleMapGetListPagingRequest } from "../types/evidence-cycle-map.types";
+import type { Evidence } from "../types/evidence.types";
 
 export const useEvidenceCycleMap = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +53,7 @@ export const useEvidenceCycleMap = () => {
     mutationFn: (data: EvidenceCycleMap) => {
       return data.IsEdit
         ? evidenceCycleMapService.update(data)
-        : evidenceCycleMapService.insert(data);
+        : evidenceCycleMapService.insertWithEvidence(data);
     },
     onSuccess: (response, variables) => {
       if (response.Success) {
@@ -107,17 +105,34 @@ export const useEvidenceCycleMap = () => {
         toast.error(response?.Message);
       }
     } else {
+      // For new records, create with nested Evidence object
+      const newEvidence: Evidence = {
+        Id: uuidv4(),
+        Name: "",
+        Code: "",
+        Status: 1,
+        FileTypeId: "",
+        CycleId: "",
+        IsEdit: false,
+        IsActived: true,
+        AttachmentIds: [],
+        ListAttachment: [],
+        FolderUpload: uuidv4(),
+        CreatedBy: "",
+        CreatedAt: "",
+      };
+
       setEvidenceCycleMap({
         Id: id,
         EvidenceId: "",
         CycleId: "",
         ReviewStatus: 1,
-        Name: "",
-        Code: "",
-        Status: 1,
-        FileTypeId: "",
+        Evidence: newEvidence,
         IsEdit: isEdit,
         IsActived: true,
+        FolderUpload: uuidv4(),
+        CreatedBy: "",
+        CreatedAt: "",
       });
       setIsOpen(true);
     }
@@ -132,17 +147,33 @@ export const useEvidenceCycleMap = () => {
     const result = await saveMutation.mutateAsync(saveData);
     if (result.Success) {
       if (isAddMore) {
+        const newEvidence: Evidence = {
+          Id: uuidv4(),
+          Name: "",
+          Code: "",
+          Status: 1,
+          FileTypeId: "",
+          CycleId: "",
+          IsEdit: false,
+          IsActived: true,
+          AttachmentIds: [],
+          ListAttachment: [],
+          FolderUpload: uuidv4(),
+          CreatedBy: "",
+          CreatedAt: "",
+        };
+
         setEvidenceCycleMap({
           Id: uuidv4(),
           EvidenceId: "",
           CycleId: "",
           ReviewStatus: 1,
-          Name: "",
-          Code: "",
-          Status: 1,
-          FileTypeId: "",
+          Evidence: newEvidence,
           IsEdit: false,
           IsActived: true,
+          FolderUpload: uuidv4(),
+          CreatedBy: "",
+          CreatedAt: "",
         });
       } else {
         setIsOpen(false);

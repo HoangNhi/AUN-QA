@@ -11,6 +11,7 @@ using AutoMapper;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 {
@@ -84,6 +85,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
+                if (request.ListCouncil.Count < 9)
+                {
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var council in request.ListCouncil)
@@ -167,6 +174,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
+                if (request.ListCouncil.Count < 9)
+                {
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var item in request.ListCouncil)
@@ -390,6 +403,93 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 return null;
             return council.RoleId;
         }
+        #endregion
+
+        #region PDCA Permissions
+
+        /// <inheritdoc/>
+        public async Task<bool> CanUserDoActionInPdcaAsync(PdcaActionCheckRequest request)
+        {
+            // 1. Tìm bản ghi Council của user trong cycle này
+            var council = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == request.CycleId
+                && c.UserId == request.UserId
+                && !c.IsDeleted
+                && c.IsActived);
+
+            if (council == null)
+                return false;
+
+            var role = (CouncilRole)council.RoleId;
+
+            return role switch
+            {
+                // CT HĐ: toàn quyền, bỏ qua scope (Đ15.k5a — phụ trách tất cả TC)
+                CouncilRole.HeadOfCouncil => true,
+
+                // PCT HĐ: VIEW luôn được; ADD/UPDATE/DELETE/APPROVE chỉ khi được ủy quyền hợp lệ
+                CouncilRole.ViceChairman => request.Action == ActionType.VIEW
+                    || IsDelegationActive(council),
+
+                // Thư ký: toàn quyền (V/C/E/D/A trong PDCA)
+                CouncilRole.Secretary => true,
+
+                // Thành viên ĐG: VIEW/ADD/UPDATE/DELETE theo phạm vi TC phụ trách; không có APPROVE
+                CouncilRole.Evaluator => request.Action != ActionType.APPROVE
+                    && IsInScope(council.AssignedStandards, request.StandardId),
+
+                // Người cung cấp MC: VIEW/ADD theo phạm vi TC phụ trách; không UPDATE/DELETE/APPROVE
+                CouncilRole.EvidenceProvider =>
+                    (request.Action == ActionType.VIEW || request.Action == ActionType.ADD)
+                    && IsInScope(council.AssignedStandards, request.StandardId),
+
+                // Vai trò không xác định
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Kiểm tra ủy quyền của PCT HĐ còn hiệu lực hay không.
+        /// Hợp lệ khi: IsDelegated = true VÀ (DelegatedUntil == null HOẶC chưa hết hạn).
+        /// </summary>
+        private static bool IsDelegationActive(Entities.Council council)
+        {
+            if (!council.IsDelegated)
+                return false;
+
+            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.UtcNow)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Kiểm tra phạm vi tiêu chuẩn phụ trách.
+        /// - Nếu standardId == null: không cần lọc phạm vi → true.
+        /// - Nếu standardId có giá trị: AssignedStandards JSON phải chứa standardId đó.
+        /// - Nếu AssignedStandards rỗng/null: user chưa được phân công TC nào → false khi có standardId.
+        /// </summary>
+        private static bool IsInScope(string? assignedStandardsJson, Guid? standardId)
+        {
+            // Không lọc phạm vi nếu không chỉ định TC cụ thể
+            if (standardId == null)
+                return true;
+
+            if (string.IsNullOrWhiteSpace(assignedStandardsJson))
+                return false;
+
+            try
+            {
+                var assignedIds = JsonSerializer.Deserialize<List<Guid>>(assignedStandardsJson);
+                return assignedIds != null && assignedIds.Contains(standardId.Value);
+            }
+            catch
+            {
+                // JSON không hợp lệ → an toàn là từ chối
+                return false;
+            }
+        }
+
         #endregion
     }
 }

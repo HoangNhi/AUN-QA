@@ -10,9 +10,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         public EvidenceCycleMapProfile()
         {
             CreateMap<Entities.EvidenceCycleMap, ModelEvidenceCycleMap>().ReverseMap();
-            CreateMap<Entities.Evidence, EvidenceCycleMapRequest>().ReverseMap();
-
-            CreateMap<Entities.EvidenceAttachment, ModelAttachment>().ReverseMap();
+            CreateMap<Entities.EvidenceCycleMap, EvidenceCycleMapRequest>().ReverseMap();
         }
     }
 }

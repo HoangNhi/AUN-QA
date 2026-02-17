@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { type ColumnDef } from "@tanstack/react-table";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
 import { Plus, Trash, Loader2 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DataTable } from "@/components/ui/data-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -49,8 +51,133 @@ import { userService } from "@/features/system/api/user.api";
 import {
   CYCLE_STATUS_OPTIONS,
   CYCLE_SCOPE_OPTIONS,
+  COUNCIL_ROLES,
 } from "@/constants/catalog.constants";
+import MultipleSelector, { type Option } from "@/components/ui/multi-select";
 import { standardSetService } from "../../api/standardset.api";
+import { standardService, type StandardOption } from "../../api/standard.api";
+
+// Council role constants — matches CouncilRole enum in BE
+const ROLE_HEAD = 1; // Chủ tịch HĐ — phụ trách tất cả TC
+const ROLE_VICE = 2; // Phó Chủ tịch HĐ
+const ROLE_SECRETARY = 3; // Thư ký — không cần phân công TC
+const ROLE_EVALUATOR = 4; // Thành viên ĐG
+const ROLE_PROVIDER = 5; // Người cung cấp MC
+
+// --- Council table column factory ---
+interface CouncilColumnHandlers {
+  userOptions: { Value?: string; Text?: string }[];
+  standards: StandardOption[];
+  handleChangeCouncil: (
+    id: string,
+    field: keyof Council,
+    value: string | number | boolean | string[],
+  ) => void;
+  handleDeleteCouncil: (id: string) => void;
+}
+
+function getCouncilColumns({
+  userOptions,
+  standards,
+  handleChangeCouncil,
+  handleDeleteCouncil,
+}: CouncilColumnHandlers): ColumnDef<Council>[] {
+  return [
+    {
+      id: "UserId",
+      header: "Thành viên",
+      meta: { className: "w-[220px]" },
+      cell: ({ row }) => (
+        <Combobox
+          options={userOptions}
+          value={row.original.UserId}
+          onValueChange={(v) =>
+            handleChangeCouncil(row.original.Id, "UserId", v)
+          }
+          placeholder="Chọn thành viên"
+        />
+      ),
+    },
+    {
+      id: "RoleId",
+      header: "Vai trò",
+      meta: { className: "w-[160px]" },
+      cell: ({ row }) => (
+        <Combobox
+          options={COUNCIL_ROLES}
+          value={String(row.original.RoleId)}
+          onValueChange={(v) =>
+            handleChangeCouncil(row.original.Id, "RoleId", Number(v))
+          }
+          placeholder="Chọn vai trò"
+        />
+      ),
+    },
+    {
+      id: "AssignedStandardIds",
+      header: "Tiêu chuẩn phụ trách",
+      cell: ({ row }) => {
+        const role = Number(row.original.RoleId);
+        if (role === ROLE_HEAD) {
+          return (
+            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+              Tất cả TC
+            </span>
+          );
+        }
+        if (role === ROLE_SECRETARY) {
+          return (
+            <span className="text-xs text-gray-400 italic">
+              Không cần phân công
+            </span>
+          );
+        }
+        const selectedOptions: Option[] = (
+          row.original.AssignedStandardIds ?? []
+        ).map((id) => {
+          const s = standards.find((x) => x.Id === id);
+          return { value: id, label: s?.Code ?? id };
+        });
+        const allOptions: Option[] = standards.map((s) => ({
+          value: s.Id,
+          label: s.Code,
+        }));
+        return (
+          <MultipleSelector
+            value={selectedOptions}
+            defaultOptions={allOptions}
+            onChange={(opts) =>
+              handleChangeCouncil(
+                row.original.Id,
+                "AssignedStandardIds",
+                opts.map((o) => o.value),
+              )
+            }
+            placeholder="Chọn tiêu chuẩn..."
+            hidePlaceholderWhenSelected
+          />
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: () => <span className="flex justify-center">Xóa</span>,
+      meta: { className: "w-[60px] text-center" },
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDeleteCouncil(row.original.Id)}
+          >
+            <Trash className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      ),
+    },
+  ];
+}
 
 interface PopupCycleProps {
   cycle: Cycle | null;
@@ -85,11 +212,16 @@ const PopupCycle = ({
   });
 
   const [listCouncil, setListCouncil] = useState<Council[]>(
-    cycle?.ListCouncil || [],
+    (cycle?.ListCouncil || []).map((c) => ({
+      ...c,
+      AssignedStandardIds: c.AssignedStandardIds ?? [],
+    })),
   );
   const [listEvaluationSchedule, setListEvaluationSchedule] = useState<
     EvaluationSchedule[]
   >(cycle?.ListEvaluationSchedule || []);
+
+  const [standards, setStandards] = useState<StandardOption[]>([]);
 
   const [errors, setErrors] = useState<{
     name?: string;
@@ -102,13 +234,28 @@ const PopupCycle = ({
     evaluationPurpose?: string;
   }>({});
 
-  // --- Fetch user options via TanStack Query ---
+  // --- Fetch user options ---
   const { data: userResponse } = useQuery({
     queryKey: ["users", "combobox"],
     queryFn: () => userService.getAllCombobox(),
     enabled: isOpen,
   });
-  const userOptions = userResponse?.Data || [];
+  const userOptions = useMemo(
+    () => userResponse?.Data ?? [],
+    [userResponse?.Data],
+  );
+
+  // --- Fetch standards when standardSetId changes ---
+  useEffect(() => {
+    if (!formData.standardSetId) {
+      setStandards([]);
+      return;
+    }
+    standardService
+      .getByStandardSetId(formData.standardSetId)
+      .then((res) => setStandards(res.Data ?? []))
+      .catch(() => setStandards([]));
+  }, [formData.standardSetId]);
 
   // --- Sync form state when cycle prop changes ---
   useEffect(() => {
@@ -128,7 +275,12 @@ const PopupCycle = ({
         evaluationPurpose: cycle.EvaluationPurpose || "",
         standardSetId: cycle.StandardSetId || "",
       });
-      setListCouncil(cycle.ListCouncil || []);
+      setListCouncil(
+        (cycle.ListCouncil || []).map((c) => ({
+          ...c,
+          AssignedStandardIds: c.AssignedStandardIds ?? [],
+        })),
+      );
       setListEvaluationSchedule(cycle.ListEvaluationSchedule || []);
       setErrors({});
     }
@@ -184,7 +336,8 @@ const PopupCycle = ({
         Id: uuidv4(),
         CycleId: "",
         UserId: "",
-        RoleId: 1,
+        RoleId: ROLE_EVALUATOR,
+        AssignedStandardIds: [],
         IsActived: true,
         IsEdit: false,
         FolderUpload: "",
@@ -197,7 +350,11 @@ const PopupCycle = ({
   }, []);
 
   const handleChangeCouncil = useCallback(
-    (id: string, field: keyof Council, value: string | boolean) => {
+    (
+      id: string,
+      field: keyof Council,
+      value: string | number | boolean | string[],
+    ) => {
       setListCouncil((prev) =>
         prev.map((c) => (c.Id === id ? { ...c, [field]: value } : c)),
       );
@@ -234,6 +391,66 @@ const PopupCycle = ({
       );
     },
     [],
+  );
+
+  // --- Đ15 computed values ---
+  const d15 = useMemo(() => {
+    const totalMembers = listCouncil.length;
+    const evaluatorCounts: Record<string, number> = {};
+    const providerCounts: Record<string, number> = {};
+
+    for (const s of standards) {
+      evaluatorCounts[s.Id] = 0;
+      providerCounts[s.Id] = 0;
+    }
+
+    for (const m of listCouncil) {
+      const role = Number(m.RoleId);
+      // Chairman implicitly covers all standards
+      const effectiveIds =
+        role === ROLE_HEAD
+          ? standards.map((s) => s.Id)
+          : (m.AssignedStandardIds ?? []);
+
+      if (role === ROLE_EVALUATOR || role === ROLE_VICE) {
+        for (const id of effectiveIds) {
+          evaluatorCounts[id] = (evaluatorCounts[id] ?? 0) + 1;
+        }
+      }
+      if (role === ROLE_PROVIDER || role === ROLE_HEAD) {
+        for (const id of effectiveIds) {
+          providerCounts[id] = (providerCounts[id] ?? 0) + 1;
+        }
+      }
+    }
+
+    const insufficientEval = standards.filter(
+      (s) => (evaluatorCounts[s.Id] ?? 0) < 3,
+    );
+    const uncoveredProvider = standards.filter(
+      (s) => (providerCounts[s.Id] ?? 0) === 0,
+    );
+
+    return {
+      totalMembers,
+      enoughMembers: totalMembers >= 9,
+      evaluatorCounts,
+      providerCounts,
+      insufficientEval,
+      uncoveredProvider,
+    };
+  }, [listCouncil, standards]);
+
+  // --- Council TanStack table ---
+  const councilColumns = useMemo(
+    () =>
+      getCouncilColumns({
+        userOptions,
+        standards,
+        handleChangeCouncil,
+        handleDeleteCouncil,
+      }),
+    [userOptions, standards, handleChangeCouncil, handleDeleteCouncil],
   );
 
   // --- Validation ---
@@ -336,7 +553,7 @@ const PopupCycle = ({
         <div className="overflow-y-auto flex-1 p-4 space-y-4">
           {/* Basic info fields */}
           <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-6">
+            <div className="col-span-8">
               <Field>
                 <FieldLabel>
                   Kế hoạch <span className="text-red-500">*</span>
@@ -351,7 +568,7 @@ const PopupCycle = ({
               </Field>
             </div>
 
-            <div className="col-span-6">
+            <div className="col-span-4">
               <Field>
                 <FieldLabel>
                   Năm <span className="text-red-500">*</span>
@@ -489,6 +706,7 @@ const PopupCycle = ({
               <TabsTrigger value="schedule">Thời gian biểu</TabsTrigger>
             </TabsList>
 
+            {/* --- Purpose tab --- */}
             <TabsContent value="purpose">
               <Field>
                 <FieldLabel>
@@ -509,8 +727,87 @@ const PopupCycle = ({
               </Field>
             </TabsContent>
 
+            {/* --- Council tab --- */}
             <TabsContent value="council">
-              <div className="grid gap-2">
+              <div className="grid gap-3">
+                {/* Đ15 validation summary bar */}
+                {listCouncil.length > 0 && (
+                  <div className="rounded-lg border bg-gray-50 px-3 py-2.5 space-y-1 text-xs">
+                    <p className="font-semibold text-gray-700 mb-1">
+                      Kiểm tra Đ15
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={
+                          d15.enoughMembers
+                            ? "text-green-600 font-bold"
+                            : "text-red-500 font-bold"
+                        }
+                      >
+                        {d15.enoughMembers ? "✓" : "✗"}
+                      </span>
+                      <span>
+                        Tổng thành viên: <strong>{d15.totalMembers}</strong>
+                        {!d15.enoughMembers && (
+                          <span className="text-red-500 ml-1">
+                            (cần ≥ 9 — Đ15.k1)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {standards.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={
+                              d15.insufficientEval.length === 0
+                                ? "text-green-600 font-bold"
+                                : "text-amber-500 font-bold"
+                            }
+                          >
+                            {d15.insufficientEval.length === 0 ? "✓" : "⚠"}
+                          </span>
+                          <span>
+                            TC có &lt; 3 thành viên ĐG:{" "}
+                            {d15.insufficientEval.length === 0 ? (
+                              <span className="text-green-600">Tất cả đạt</span>
+                            ) : (
+                              <span className="text-amber-600">
+                                {d15.insufficientEval
+                                  .map((s) => s.Code)
+                                  .join(", ")}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={
+                              d15.uncoveredProvider.length === 0
+                                ? "text-green-600 font-bold"
+                                : "text-amber-500 font-bold"
+                            }
+                          >
+                            {d15.uncoveredProvider.length === 0 ? "✓" : "⚠"}
+                          </span>
+                          <span>
+                            TC chưa có người cung cấp MC:{" "}
+                            {d15.uncoveredProvider.length === 0 ? (
+                              <span className="text-green-600">Tất cả đạt</span>
+                            ) : (
+                              <span className="text-amber-600">
+                                {d15.uncoveredProvider
+                                  .map((s) => s.Code)
+                                  .join(", ")}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <Label>Danh sách hội đồng</Label>
                   <Button
@@ -522,106 +819,95 @@ const PopupCycle = ({
                     <Plus className="w-4 h-4" /> Thêm thành viên
                   </Button>
                 </div>
+
                 {errors.listCouncil && (
                   <div className="text-sm text-red-500 bg-red-50 p-2 rounded-lg border border-red-200">
                     {errors.listCouncil}
                   </div>
                 )}
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[300px]">Thành viên</TableHead>
-                        <TableHead className="w-[150px] text-center">
-                          Vai trò
-                        </TableHead>
-                        <TableHead className="w-[80px] text-center">
-                          Thao tác
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {listCouncil.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center h-24">
-                            Chưa có dữ liệu
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        listCouncil.map((council) => (
-                          <TableRow key={council.Id}>
-                            <TableCell>
-                              <Select
-                                value={council.UserId}
-                                onValueChange={(value) =>
-                                  handleChangeCouncil(
-                                    council.Id,
-                                    "UserId",
-                                    value,
-                                  )
-                                }
+
+                <DataTable
+                  columns={councilColumns}
+                  data={listCouncil}
+                  getRowId={(row) => row.Id}
+                  containerClassName="max-h-[400px] overflow-auto w-full relative"
+                  getRowClassName={(row) => {
+                    const role = Number(row.RoleId);
+                    const needsAssignment =
+                      role !== ROLE_HEAD &&
+                      role !== ROLE_SECRETARY &&
+                      standards.length > 0 &&
+                      (row.AssignedStandardIds ?? []).length === 0;
+                    return needsAssignment ? "bg-amber-50" : undefined;
+                  }}
+                />
+
+                {/* Working Group summary */}
+                {standards.length > 0 && listCouncil.length > 0 && (
+                  <div className="rounded-lg border p-3 bg-white">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">
+                      Tổng hợp Nhóm công tác
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border px-2 py-1 text-left font-medium text-gray-600">
+                              Tiêu chuẩn
+                            </th>
+                            <th className="border px-2 py-1 text-center font-medium text-gray-600">
+                              Thành viên ĐG
+                            </th>
+                            <th className="border px-2 py-1 text-center font-medium text-gray-600">
+                              Người cung cấp MC
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {standards.map((s) => {
+                            const evCnt = d15.evaluatorCounts[s.Id] ?? 0;
+                            const pvCnt = d15.providerCounts[s.Id] ?? 0;
+                            return (
+                              <tr
+                                key={s.Id}
+                                className={evCnt < 3 ? "bg-amber-50" : ""}
                               >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Chọn thành viên" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {userOptions.map((user) => (
-                                    <SelectItem
-                                      key={user.Value}
-                                      value={user.Value || ""}
-                                    >
-                                      {user.Text}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Select
-                                value={council.RoleId.toString()}
-                                onValueChange={(value) =>
-                                  handleChangeCouncil(
-                                    council.Id,
-                                    "RoleId",
-                                    value,
-                                  )
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Chọn vai trò" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="1">
-                                    Trưởng nhóm hội đồng
-                                  </SelectItem>
-                                  <SelectItem value="2">
-                                    Thành viên đánh giá
-                                  </SelectItem>
-                                  <SelectItem value="3">
-                                    Người cung cấp minh chứng
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteCouncil(council.Id)}
-                              >
-                                <Trash className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                                <td className="border px-2 py-1 font-medium text-gray-700">
+                                  {s.Code}
+                                </td>
+                                <td
+                                  className={`border px-2 py-1 text-center ${evCnt < 3
+                                    ? "text-red-500 font-semibold"
+                                    : "text-green-600"
+                                    }`}
+                                >
+                                  {evCnt}
+                                  {evCnt < 3 && (
+                                    <span className="ml-1 text-red-400 font-normal">
+                                      / 3
+                                    </span>
+                                  )}
+                                </td>
+                                <td
+                                  className={`border px-2 py-1 text-center ${pvCnt === 0
+                                    ? "text-amber-600 font-semibold"
+                                    : "text-green-600"
+                                    }`}
+                                >
+                                  {pvCnt}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
+            {/* --- Schedule tab --- */}
             <TabsContent value="schedule">
               <div className="grid gap-2">
                 <div className="flex justify-between items-center">

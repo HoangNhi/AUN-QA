@@ -14,6 +14,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request);
+        Task<List<ModelStandard>> GetByStandardSetId(Guid standardSetId);
 
         // gRPC Services
         IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(

@@ -91,6 +91,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Standard/update`,
       DELETE_LIST: `${CATALOG_BASE}/Standard/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Standard/get-all-combobox`,
+      GET_BY_STANDARD_SET_ID: `${CATALOG_BASE}/Standard/get-by-standard-set-id`,
     },
     StandardSet: {
       GET_LIST: `${CATALOG_BASE}/StandardSet/get-list`,

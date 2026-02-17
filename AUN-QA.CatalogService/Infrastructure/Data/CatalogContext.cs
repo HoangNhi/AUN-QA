@@ -54,6 +54,10 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.CycleId)
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
+            entity.Property(e => e.DelegatedAt).HasColumnType("datetime");
+            entity.Property(e => e.DelegatedBy).HasMaxLength(255);
+            entity.Property(e => e.DelegatedUntil).HasColumnType("datetime");
+            entity.Property(e => e.DelegationReason).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
             entity.Property(e => e.UserId)

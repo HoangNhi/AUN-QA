@@ -354,6 +354,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             return data;
         }
+
+        public async Task SubmitToApprove(EvidenceSubmitToApproveRequest request)
+        {
+            if (request.Ids.Any())
+            {
+
+            }
+        }
         #endregion
 
         #region Helper

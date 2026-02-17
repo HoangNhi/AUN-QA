@@ -400,6 +400,15 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 : result;
         }
 
+        public async Task<List<ModelStandard>> GetByStandardSetId(Guid standardSetId)
+        {
+            return await _context.Standards
+                .Where(x => x.StandardSetId == standardSetId && x.IsActived && !x.IsDeleted)
+                .OrderBy(x => x.Order)
+                .Select(x => new ModelStandard { Id = x.Id, StandardSetId = x.StandardSetId, Code = x.Code, Name = x.Name, Order = x.Order })
+                .ToListAsync();
+        }
+
         #region GRPC Services
         public async IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
             GetCriterionsForEvidenceStreamRequest request,

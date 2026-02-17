@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   className?: string;
   containerClassName?: string;
   getRowId?: (row: TData, index: number) => string;
+  getRowClassName?: (row: TData) => string | undefined;
   meta?: any;
 }
 
@@ -54,6 +55,7 @@ export function DataTable<TData, TValue>({
   className,
   containerClassName = "h-[calc(100vh-350px)] overflow-auto w-full relative",
   getRowId,
+  getRowClassName,
   meta,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
@@ -71,7 +73,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn("space-y-4 w-full", className)}>
       {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
-      <div className="relative w-full overflow-hidden rounded-md border flex flex-col bg-white">
+      <div className="relative w-full overflow-clip rounded-md border flex flex-col bg-white">
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
@@ -97,7 +99,7 @@ export function DataTable<TData, TValue>({
                       // - z-10: Nổi lên trên nội dung.
                       // - bg-white: Nền trắng đặc để che chữ chạy bên dưới.
                       // - shadow: Tạo đường kẻ mỏng bên dưới (thay cho border để không bị dày).
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-10 bg-white shadow-[0_1px_0_0_#e5e7eb]"
+                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-white shadow-[0_1px_0_0_#e5e7eb]"
                     >
                       {header.isPlaceholder
                         ? null
@@ -120,7 +122,10 @@ export function DataTable<TData, TValue>({
                     data-state={
                       rowSelection && row.getIsSelected() && "selected"
                     }
-                    className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                    className={cn(
+                      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                      getRowClassName?.(row.original),
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td

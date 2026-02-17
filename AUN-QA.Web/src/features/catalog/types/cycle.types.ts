@@ -35,6 +35,7 @@ export interface Council extends BaseRequest {
   CycleId: string;
   UserId: string;
   RoleId: number;
+  AssignedStandardIds: string[];
 }
 
 export interface EvaluationSchedule extends BaseRequest {

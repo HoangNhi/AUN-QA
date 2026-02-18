@@ -25,4 +25,13 @@
         SCORING_7 = 1, // Áp dụng cho AUN-QA
         PASS_FAIL = 2 // Áp dụng cho MOET
     }
+
+    public enum CycleStatus
+    {
+        Plan = 1,   // Lập kế hoạch
+        Do = 2,     // Thực hiện
+        Check = 3,  // Kiểm tra
+        Act = 4,    // Cải tiến
+        Finish = 5  // Kết thúc
+    }
 }

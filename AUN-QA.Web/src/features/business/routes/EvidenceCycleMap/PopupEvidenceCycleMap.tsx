@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -241,6 +242,9 @@ const PopupEvidenceCycleMap = ({
                 ? "Cập nhật Minh chứng theo chu kỳ"
                 : "Thêm mới Minh chứng theo chu kỳ"}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Biểu mẫu thêm hoặc cập nhật minh chứng theo chu kỳ đánh giá.
+            </DialogDescription>
           </DialogHeader>
 
           {/* Scrollable Body - Split View 6/6 */}

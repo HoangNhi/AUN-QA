@@ -3,6 +3,7 @@ using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Responses;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
@@ -414,6 +415,27 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             _context.Evidences.Update(evidence);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<VerifiedFileTypeCountResponse>> GetVerifiedFileTypeCountsAsync(Guid cycleId)
+        {
+            var result = await _context.EvidenceCycleMaps
+                .Where(ecm => !ecm.IsDeleted && ecm.CycleId == cycleId)
+                .Join(
+                    _context.Evidences.Where(e => !e.IsDeleted && e.Status == (int)EvidenceStatus.Verified),
+                    ecm => ecm.EvidenceId,
+                    e   => e.Id,
+                    (ecm, e) => e.FileTypeId
+                )
+                .GroupBy(fileTypeId => fileTypeId)
+                .Select(g => new VerifiedFileTypeCountResponse
+                {
+                    FileTypeId = g.Key,
+                    Count      = g.Count()
+                })
+                .ToListAsync();
+
+            return result;
         }
         #endregion
 

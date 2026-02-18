@@ -68,7 +68,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             var add = _mapper.Map<Entities.Cycle>(request);
             add.Id = Guid.NewGuid();
-            add.Status = 1; // Lập kế hoạch — always draft on creation
+            add.Status = (int)CycleStatus.Plan; // Lập kế hoạch — always draft on creation
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             add.IsActived = request.IsActived;
@@ -143,7 +143,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            if (update.Status >= 3)
+            if (update.Status >= (int)CycleStatus.Finish)
             {
                 throw new Exception("Chu kỳ đã kết thúc, không thể cập nhật");
             }
@@ -315,9 +315,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var res = _mapper.Map<ModelCycleGetListPaging>(x.Cycle);
                 res.StatusName = x.Cycle.Status switch
                 {
-                    1 => "Lập kế hoạch",
-                    2 => "Đang diễn ra",
-                    3 => "Đã kết thúc",
+                    (int)CycleStatus.Plan => "Lập kế hoạch",
+                    (int)CycleStatus.Do => "Thực hiện",
+                    (int)CycleStatus.Check => "Kiểm tra",
+                    (int)CycleStatus.Act => "Cải tiến",
+                    (int)CycleStatus.Finish => "Kết thúc",
                     _ => "Không xác định"
                 };
                 res.StandardSet = x.StandardSetName;
@@ -394,7 +396,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 throw new Exception("Chỉ Chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
             }
 
-            if (cycle.Status >= 3)
+            if (cycle.Status >= (int)CycleStatus.Finish)
                 throw new Exception("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
 
             cycle.Status += 1;

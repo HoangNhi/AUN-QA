@@ -121,6 +121,7 @@ export const API_ENDPOINTS = {
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/EvidenceCycleMap/get-all-combobox`,
       SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/submit-to-approve`,
       APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/approve`,
+      GET_VERIFIED_FILETYPE_COUNTS: `${BUSINESS_BASE}/EvidenceCycleMap/get-verified-filetype-counts`,
     },
     SurveyTemplate: {
       GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,

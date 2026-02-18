@@ -25,19 +25,31 @@ export type CriterionStatus = "satisfied" | "partial" | "empty";
 export type FilterMode = "all" | "satisfied" | "partial" | "empty";
 
 /** Determine criterion status based on requirements data */
-export const getCriterionStatus = (criterion: Criterion): CriterionStatus => {
+export const getCriterionStatus = (
+  criterion: Criterion,
+  countMap?: Map<string, number>,
+): CriterionStatus => {
   const reqs = criterion.CriterionRequirements;
   if (!reqs || reqs.length === 0) return "empty";
 
   const totalRequired = reqs.reduce((sum, r) => sum + (r.MinQuantity || 0), 0);
   if (totalRequired === 0) return "empty";
 
-  // Without evidence count data, we use requirement presence as proxy:
-  // "satisfied" = has requirements defined (all accounted for)
-  // For now, all criteria with requirements are "partial" since we can't verify evidence count
-  const mandatoryCount = reqs.filter((r) => r.IsMandatory).length;
-  if (mandatoryCount === 0) return "satisfied";
-  return "partial";
+  if (!countMap) {
+    // Fallback when no evidence data: treat any mandatory requirement as "partial"
+    const mandatoryCount = reqs.filter((r) => r.IsMandatory).length;
+    if (mandatoryCount === 0) return "satisfied";
+    return "partial";
+  }
+
+  // With evidence counts: check if all mandatory requirements are fully met
+  const mandatoryReqs = reqs.filter((r) => r.IsMandatory);
+  if (mandatoryReqs.length === 0) return "satisfied";
+
+  const allMet = mandatoryReqs.every(
+    (r) => (countMap.get(r.FileTypeId) ?? 0) >= (r.MinQuantity || 0),
+  );
+  return allMet ? "satisfied" : "partial";
 };
 
 /** Determine standard status based on its criteria */
@@ -45,7 +57,7 @@ export const getStandardStatus = (standard: Standard): CriterionStatus => {
   const criteria = standard.Criterions || [];
   if (criteria.length === 0) return "empty";
 
-  const statuses = criteria.map(getCriterionStatus);
+  const statuses = criteria.map((c) => getCriterionStatus(c));
   const satisfiedCount = statuses.filter((s) => s === "satisfied").length;
 
   if (satisfiedCount === criteria.length) return "satisfied";

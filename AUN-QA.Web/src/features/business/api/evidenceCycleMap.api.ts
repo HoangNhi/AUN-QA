@@ -12,6 +12,11 @@ import type {
   SubmitToApproveRequest,
 } from "../types/evidence-cycle-map.types";
 
+export interface VerifiedFileTypeCount {
+  FileTypeId: string;
+  Count: number;
+}
+
 // Backend response type (with underscore naming)
 interface BackendEvidenceCycleMapGetListPaging {
   Id: string;
@@ -133,6 +138,15 @@ export const evidenceCycleMapService = {
     return api.post<string>(
       API_ENDPOINTS.Business.EvidenceCycleMap.APPROVE,
       request,
+    );
+  },
+
+  getVerifiedFileTypeCounts: async (
+    cycleId: string,
+  ): Promise<ApiResponse<VerifiedFileTypeCount[]>> => {
+    return api.get<VerifiedFileTypeCount[]>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.GET_VERIFIED_FILETYPE_COUNTS,
+      { params: { cycleId } },
     );
   },
 };

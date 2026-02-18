@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  evidenceCycleMapService,
+  type VerifiedFileTypeCount,
+} from "@/features/business/api/evidenceCycleMap.api";
 import {
   ChevronRight,
   CheckCircle2,
@@ -25,6 +30,14 @@ import type {
   Standard,
   Criterion,
 } from "@/features/catalog/types/standard.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { fileTypeService } from "@/features/catalog/api/filetype.api";
+import type { ModelCombobox } from "@/types/base/base.types";
 
 // --- Props ---
 
@@ -195,6 +208,42 @@ const StandardCriteriaTable = ({
     isExternalMode ? "" : cycleId || "",
     isExternalMode ? undefined : fileTypeId,
   );
+
+  // Fetch VERIFIED evidence counts per FileType for the current cycle
+  const { data: verifiedCountsResponse } = useQuery({
+    queryKey: ["verifiedFileTypeCounts", cycleId],
+    queryFn: () => evidenceCycleMapService.getVerifiedFileTypeCounts(cycleId!),
+    enabled: !isExternalMode && !!cycleId,
+  });
+
+  const countMap = useMemo<Map<string, number>>(() => {
+    const map = new Map<string, number>();
+    if (verifiedCountsResponse?.Success && verifiedCountsResponse.Data) {
+      verifiedCountsResponse.Data.forEach((item: VerifiedFileTypeCount) => {
+        map.set(item.FileTypeId, item.Count);
+      });
+    }
+    return map;
+  }, [verifiedCountsResponse]);
+
+  // --- File Types Fetching ---
+  const { data: fileTypesResponse } = useQuery({
+    queryKey: ["fileTypesCombobox"],
+    queryFn: () => fileTypeService.getAllCombobox(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const fileTypeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (fileTypesResponse?.Success && fileTypesResponse.Data) {
+      fileTypesResponse.Data.forEach((ft: ModelCombobox) => {
+        if (ft.Value && ft.Text) {
+          map[ft.Value] = ft.Text;
+        }
+      });
+    }
+    return map;
+  }, [fileTypesResponse]);
 
   // --- Local state for external standards mode ---
   const [localExpandedIds, setLocalExpandedIds] = useState<
@@ -381,27 +430,26 @@ const StandardCriteriaTable = ({
               key={key}
               type="button"
               onClick={() => setFilterMode(filterMode === key ? "all" : key)}
-              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all cursor-pointer ${
-                filterMode === key
-                  ? ""
-                  : "bg-white border-slate-150 hover:bg-opacity-30"
-              }`}
+              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all cursor-pointer ${filterMode === key
+                ? ""
+                : "bg-white border-slate-150 hover:bg-opacity-30"
+                }`}
               style={
                 filterMode === key
                   ? {
-                      backgroundColor:
-                        colors === "emerald"
-                          ? "#ecfdf5"
-                          : colors === "amber"
-                            ? "#fffbeb"
-                            : "#fef2f2",
-                      borderColor:
-                        colors === "emerald"
-                          ? "#6ee7b7"
-                          : colors === "amber"
-                            ? "#fcd34d"
-                            : "#fca5a5",
-                    }
+                    backgroundColor:
+                      colors === "emerald"
+                        ? "#ecfdf5"
+                        : colors === "amber"
+                          ? "#fffbeb"
+                          : "#fef2f2",
+                    borderColor:
+                      colors === "emerald"
+                        ? "#6ee7b7"
+                        : colors === "amber"
+                          ? "#fcd34d"
+                          : "#fca5a5",
+                  }
                   : {}
               }
             >
@@ -555,11 +603,10 @@ const StandardCriteriaTable = ({
             <button
               type="button"
               onClick={() => setFilterAssigned((f) => !f)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                filterAssigned
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600"
-              }`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${filterAssigned
+                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600"
+                }`}
             >
               <span>{filterAssigned ? "★" : "☆"}</span>
               {filterAssigned ? "Đang lọc phân công" : "Chỉ xem TC của tôi"}
@@ -609,6 +656,8 @@ const StandardCriteriaTable = ({
                     ? assignedStandardIds.includes(std.Id)
                     : undefined
                 }
+                countMap={countMap}
+                fileTypeMap={fileTypeMap}
               />
             ))}
           </div>
@@ -627,19 +676,22 @@ const StandardRow = ({
   matchingCriterionIds,
   selectedFileTypeId,
   isAssigned,
+  countMap,
+  fileTypeMap,
 }: {
   standard: Standard;
   isExpanded: boolean;
   onToggle: () => void;
   matchingCriterionIds: Set<string>;
   selectedFileTypeId?: string;
-  /** undefined = no assignment mode, true = assigned, false = not assigned */
   isAssigned?: boolean;
+  countMap: Map<string, number>;
+  fileTypeMap: Record<string, string>;
 }) => {
   const criteria = standard.Criterions || [];
   const stdStatus = getStandardStatus(standard);
   const satisfiedInStd = criteria.filter(
-    (c) => getCriterionStatus(c) === "satisfied",
+    (c) => getCriterionStatus(c, countMap) === "satisfied",
   ).length;
   const matchInStd = criteria.filter((c) =>
     matchingCriterionIds.has(c.Id),
@@ -651,15 +703,14 @@ const StandardRow = ({
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors ${
-          isAssigned === true
-            ? "bg-blue-50/60 hover:bg-blue-100/50 border-l-3 border-l-blue-500"
-            : isAssigned === false
-              ? "opacity-55 hover:opacity-75 hover:bg-slate-50/80"
-              : matchInStd > 0
-                ? "hover:bg-violet-50/50"
-                : "hover:bg-slate-50/80"
-        }`}
+        className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors ${isAssigned === true
+          ? "bg-blue-50/60 hover:bg-blue-100/50 border-l-3 border-l-blue-500"
+          : isAssigned === false
+            ? "opacity-55 hover:opacity-75 hover:bg-slate-50/80"
+            : matchInStd > 0
+              ? "hover:bg-violet-50/50"
+              : "hover:bg-slate-50/80"
+          }`}
       >
         <div
           className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
@@ -702,6 +753,8 @@ const StandardRow = ({
               criterion={crit}
               isMatching={matchingCriterionIds.has(crit.Id)}
               selectedFileTypeId={selectedFileTypeId}
+              countMap={countMap}
+              fileTypeMap={fileTypeMap}
             />
           ))}
         </div>
@@ -716,26 +769,34 @@ const CriterionRow = ({
   criterion,
   isMatching,
   selectedFileTypeId,
+  countMap,
+  fileTypeMap,
 }: {
   criterion: Criterion;
   isMatching: boolean;
   selectedFileTypeId?: string;
+  countMap: Map<string, number>;
+  fileTypeMap: Record<string, string>;
 }) => {
-  const status = getCriterionStatus(criterion);
+  const status = getCriterionStatus(criterion, countMap);
   const reqs = criterion.CriterionRequirements || [];
   const totalRequired = reqs.reduce((sum, r) => sum + (r.MinQuantity || 0), 0);
 
+  const currentCount = reqs.reduce((sum, r) => {
+    const actual = countMap.get(r.FileTypeId) ?? 0;
+    return sum + Math.min(actual, r.MinQuantity || 0);
+  }, 0);
+
   return (
     <div
-      className={`relative pl-10 pr-3 py-2.5 border-t border-slate-100/80 transition-all duration-500 ${
-        isMatching
-          ? "bg-violet-50/70 ring-1 ring-inset ring-violet-200"
-          : status === "satisfied"
-            ? "bg-emerald-50/20"
-            : status === "partial"
-              ? "bg-amber-50/20"
-              : ""
-      }`}
+      className={`relative pl-10 pr-3 py-2.5 border-t border-slate-100/80 transition-all duration-500 ${isMatching
+        ? "bg-violet-50/70 ring-1 ring-inset ring-violet-200"
+        : status === "satisfied"
+          ? "bg-emerald-50/20"
+          : status === "partial"
+            ? "bg-amber-50/20"
+            : ""
+        }`}
       style={
         isMatching ? { animation: "highlight-pulse 1.5s ease-out" } : undefined
       }
@@ -770,39 +831,48 @@ const CriterionRow = ({
 
           {/* Progress */}
           <div className="flex items-center gap-3 mb-1.5">
-            <MiniBar current={0} total={totalRequired} />
+            <MiniBar current={currentCount} total={totalRequired} />
           </div>
 
           {/* File type requirements */}
           <div className="flex flex-wrap gap-1">
-            {reqs.map((req) => {
-              const isReqMatch =
-                selectedFileTypeId && req.FileTypeId === selectedFileTypeId;
-              return (
-                <span
-                  key={req.Id}
-                  className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-all duration-300 ${
-                    isReqMatch
-                      ? "bg-violet-100 border-violet-300 text-violet-700 shadow-sm font-semibold"
-                      : req.IsMandatory
-                        ? "bg-slate-50 border-slate-200 text-slate-500"
-                        : "bg-white border-dashed border-slate-200 text-slate-400"
-                  }`}
-                  style={
-                    isReqMatch
-                      ? { animation: "req-glow 1.5s ease-out" }
-                      : undefined
-                  }
-                >
-                  <FileText size={9} />
-                  <span className="font-mono font-bold">
-                    ×{req.MinQuantity}
-                  </span>
-                  {req.IsMandatory && <span className="text-red-400">*</span>}
-                  {isReqMatch && <Check size={9} className="text-violet-600" />}
-                </span>
-              );
-            })}
+            <TooltipProvider>
+              {reqs.map((req) => {
+                const isReqMatch =
+                  selectedFileTypeId && req.FileTypeId === selectedFileTypeId;
+                const fileTypeName = fileTypeMap[req.FileTypeId] || "Tài liệu";
+
+                return (
+                  <Tooltip key={req.Id}>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-all duration-300 cursor-default ${isReqMatch
+                          ? "bg-violet-100 border-violet-300 text-violet-700 shadow-sm font-semibold"
+                          : req.IsMandatory
+                            ? "bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300"
+                            : "bg-white border-dashed border-slate-200 text-slate-400 hover:border-slate-300"
+                          }`}
+                        style={
+                          isReqMatch
+                            ? { animation: "req-glow 1.5s ease-out" }
+                            : undefined
+                        }
+                      >
+                        <FileText size={9} />
+                        <span className="font-mono font-bold">
+                          ×{req.MinQuantity}
+                        </span>
+                        {req.IsMandatory && <span className="text-red-400">*</span>}
+                        {isReqMatch && <Check size={9} className="text-violet-600" />}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fileTypeName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </TooltipProvider>
           </div>
         </div>
       </div>

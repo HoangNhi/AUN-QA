@@ -29,77 +29,77 @@ export const getColumns = (
   canUpdate: boolean = true,
   canDelete: boolean = true,
 ): ColumnDef<CycleGetListPaging>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-  },
-  {
-    accessorKey: "Name",
-    header: "Kế hoạch",
-  },
-  {
-    accessorKey: "Year",
-    header: "Năm",
-  },
-  {
-    accessorKey: "StandardSet",
-    header: "Bộ tiêu chuẩn",
-  },
-  {
-    accessorKey: "StatusName",
-    header: "Trạng thái",
-  },
-  {
-    accessorKey: "StartDate",
-    header: "Ngày bắt đầu",
-    cell: ({ row }) => {
-      const date = row.getValue("StartDate");
-      if (!date) return "";
-      return format(date as string, "dd/MM/yyyy");
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
     },
-  },
-  {
-    accessorKey: "EndDate",
-    header: "Ngày kết thúc",
-    cell: ({ row }) => {
-      const date = row.getValue("EndDate");
-      if (!date) return "";
-      return format(date as string, "dd/MM/yyyy");
+    {
+      accessorKey: "Name",
+      header: "Kế hoạch",
     },
-  },
-  {
-    id: "actions",
-    meta: {
-      className: "text-center",
+    {
+      accessorKey: "Year",
+      header: "Năm",
     },
-    cell: ({ row }) => (
-      <ActionCell
-        row={row}
-        showPopupDetail={showPopupDetail}
-        deleteList={deleteList}
-        changeStatus={changeStatus}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
-      />
-    ),
-  },
-];
+    {
+      accessorKey: "StandardSet",
+      header: "Bộ tiêu chuẩn",
+    },
+    {
+      accessorKey: "StatusName",
+      header: "Trạng thái",
+    },
+    {
+      accessorKey: "StartDate",
+      header: "Ngày bắt đầu",
+      cell: ({ row }) => {
+        const date = row.getValue("StartDate");
+        if (!date) return "";
+        return format(date as string, "dd/MM/yyyy");
+      },
+    },
+    {
+      accessorKey: "EndDate",
+      header: "Ngày kết thúc",
+      cell: ({ row }) => {
+        const date = row.getValue("EndDate");
+        if (!date) return "";
+        return format(date as string, "dd/MM/yyyy");
+      },
+    },
+    {
+      id: "actions",
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => (
+        <ActionCell
+          row={row}
+          showPopupDetail={showPopupDetail}
+          deleteList={deleteList}
+          changeStatus={changeStatus}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+        />
+      ),
+    },
+  ];
 
 const ActionCell = ({
   row,
@@ -119,9 +119,26 @@ const ActionCell = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
-  const status = row.original.Status;
-  const canChangeStatus = canUpdate && String(status) !== "3";
-  const changeStatusLabel = String(status) === "1" ? "Bắt đầu" : "Kết thúc";
+  const status = Number(row.original.Status);
+  const canChangeStatus = canUpdate && status < 5;
+
+  let changeStatusLabel = "";
+  switch (status) {
+    case 1:
+      changeStatusLabel = "Thực hiện";
+      break;
+    case 2:
+      changeStatusLabel = "Kiểm tra";
+      break;
+    case 3:
+      changeStatusLabel = "Cải tiến";
+      break;
+    case 4:
+      changeStatusLabel = "Kết thúc";
+      break;
+    default:
+      changeStatusLabel = "";
+  }
 
   if (!canUpdate && !canDelete) return null;
 

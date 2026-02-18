@@ -3,6 +3,7 @@ using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Responses;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap;
 using Microsoft.AspNetCore.Mvc;
@@ -103,6 +104,17 @@ namespace AUN_QA.BusinessService.Controllers
 
             await _service.Approve(request);
             return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpGet, Route("get-verified-filetype-counts")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetVerifiedFileTypeCounts([FromQuery] Guid cycleId)
+        {
+            if (cycleId == Guid.Empty)
+                return Ok(new BaseResponse(false, 400, "cycleId không được để trống"));
+
+            var result = await _service.GetVerifiedFileTypeCountsAsync(cycleId);
+            return Ok(new BaseResponse<List<VerifiedFileTypeCountResponse>> { Data = result, Success = true });
         }
     }
 }

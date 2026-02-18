@@ -35,8 +35,11 @@ const EvidenceCycleMapPage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    submitToApprove,
+    approve,
     isFetching,
     isLoading,
+    isApproving,
   } = useEvidenceCycleMap();
 
   const { permission } = useOutletContext<{
@@ -60,6 +63,7 @@ const EvidenceCycleMapPage = () => {
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   useEffect(() => {
     setPageRequest((prev) => {
@@ -81,6 +85,15 @@ const EvidenceCycleMapPage = () => {
     );
     deleteList(ids);
     setShowDeleteConfirm(false);
+    setRowSelection({});
+  };
+
+  const handleSubmitToApprove = () => {
+    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
+      (item) => item.Id,
+    );
+    submitToApprove(ids);
+    setShowSubmitConfirm(false);
     setRowSelection({});
   };
 
@@ -181,6 +194,14 @@ const EvidenceCycleMapPage = () => {
               Thêm
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setShowSubmitConfirm(true)}
+            disabled={Object.keys(rowSelection).length === 0}
+          >
+            Gửi duyệt
+          </Button>
           {canDelete && (
             <Button
               size="sm"
@@ -214,6 +235,8 @@ const EvidenceCycleMapPage = () => {
           onOpenChange={onOpenChange}
           saveChange={saveChange}
           isLoading={isLoading}
+          onApprove={approve}
+          isApproving={isApproving}
         />
       )}
 
@@ -222,6 +245,17 @@ const EvidenceCycleMapPage = () => {
         onOpenChange={setShowDeleteConfirm}
         onConfirm={handleDelete}
         itemCount={Object.keys(rowSelection).length}
+      />
+
+      <ConfirmDeleteDialog
+        open={showSubmitConfirm}
+        onOpenChange={setShowSubmitConfirm}
+        onConfirm={handleSubmitToApprove}
+        itemCount={Object.keys(rowSelection).length}
+        title="Xác nhận gửi duyệt"
+        description={`Bạn có chắc chắn muốn gửi ${Object.keys(rowSelection).length} mục đã chọn để duyệt không?`}
+        confirmText="Gửi duyệt"
+        confirmVariant="default"
       />
     </div>
   );

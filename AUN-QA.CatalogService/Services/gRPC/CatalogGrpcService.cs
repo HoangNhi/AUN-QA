@@ -72,7 +72,6 @@ namespace AUN_QA.CatalogService.Services.gRPC
             {
                 UserId = Guid.Parse(request.UserId),
                 CycleId = Guid.Parse(request.CycleId),
-                Action = (CatalogService.DTOs.Common.ActionType)request.Action,
                 StandardId = !string.IsNullOrEmpty(request.StandardId) ? Guid.Parse(request.StandardId) : null,
                 AllowedRoles = request.AllowedRoles.Count > 0 ? request.AllowedRoles.ToList() : null
             });

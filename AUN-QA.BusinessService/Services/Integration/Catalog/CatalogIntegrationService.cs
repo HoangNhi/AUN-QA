@@ -87,13 +87,12 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             return response.Value;
         }
 
-        public async Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, int action, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default)
+        public async Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default)
         {
             var request = new CanUserDoActionInPdcaRequest
             {
                 CycleId = cycleId,
-                UserId = userId,
-                Action = action
+                UserId = userId
             };
             if (standardId != null)
                 request.StandardId = standardId;

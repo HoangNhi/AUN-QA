@@ -12,6 +12,7 @@ import {
   Zap,
   Filter,
   Layers,
+  User,
 } from "lucide-react";
 import {
   useStandardsWithCriteria,
@@ -40,6 +41,8 @@ interface StandardCriteriaTableProps {
   showSummaryCards?: boolean;
   /** New: toggle progress bar visibility (default true) */
   showProgressBar?: boolean;
+  /** Standard IDs assigned to the current user (Provider focus) */
+  assignedStandardIds?: string[];
 }
 
 // --- Small Sub-components ---
@@ -181,8 +184,11 @@ const StandardCriteriaTable = ({
   standards: externalStandards,
   showSummaryCards = true,
   showProgressBar = true,
+  assignedStandardIds = [],
 }: StandardCriteriaTableProps) => {
   const isExternalMode = !!externalStandards;
+  const [filterAssigned, setFilterAssigned] = useState(false);
+  const hasAssignment = assignedStandardIds.length > 0;
 
   // --- Hook-based mode (existing behavior) ---
   const hookResult = useStandardsWithCriteria(
@@ -237,6 +243,14 @@ const StandardCriteriaTable = ({
 
   // --- Unified state resolution ---
   const standards = externalStandards || hookResult.filteredStandards;
+
+  // --- Provider focus: filter to assigned standards ---
+  const displayedStandards = useMemo(() => {
+    if (filterAssigned && hasAssignment) {
+      return standards.filter((s) => assignedStandardIds.includes(s.Id));
+    }
+    return standards;
+  }, [standards, filterAssigned, hasAssignment, assignedStandardIds]);
   const expandedIds = isExternalMode
     ? localExpandedIds
     : hookResult.expandedStandardIds;
@@ -477,6 +491,45 @@ const StandardCriteriaTable = ({
         </div>
       )}
 
+      {/* Assignment Banner
+      {hasAssignment && (
+        <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 mb-3">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0 mt-0.5">
+              <User size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-blue-800 mb-0.5">
+                Phân công của bạn
+              </p>
+              <p className="text-xs text-blue-600">
+                Bạn được phân công cung cấp minh chứng cho{" "}
+                <strong>{assignedStandardIds.length} tiêu chuẩn</strong> (
+                {
+                  standards
+                    .filter((s) => assignedStandardIds.includes(s.Id))
+                    .flatMap((s) => s.Criterions || []).length
+                }{" "}
+                tiêu chí). Bạn vẫn có thể upload cho các tiêu chuẩn khác nếu
+                cần.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {standards
+                  .filter((s) => assignedStandardIds.includes(s.Id))
+                  .map((s) => (
+                    <span
+                      key={s.Id}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-200/60 text-blue-800 text-xs font-medium border border-blue-300"
+                    >
+                      ★ {s.Code}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )} */}
+
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-2">
@@ -497,28 +550,44 @@ const StandardCriteriaTable = ({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={expandAllFn}
-            className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
-          >
-            Mở tất cả
-          </button>
-          <span className="text-slate-300">|</span>
-          <button
-            type="button"
-            onClick={collapseAllFn}
-            className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
-          >
-            Thu gọn
-          </button>
+        <div className="flex items-center gap-2">
+          {hasAssignment && (
+            <button
+              type="button"
+              onClick={() => setFilterAssigned((f) => !f)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                filterAssigned
+                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600"
+              }`}
+            >
+              <span>{filterAssigned ? "★" : "☆"}</span>
+              {filterAssigned ? "Đang lọc phân công" : "Chỉ xem TC của tôi"}
+            </button>
+          )}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={expandAllFn}
+              className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
+            >
+              Mở tất cả
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
+              type="button"
+              onClick={collapseAllFn}
+              className="text-[10px] text-slate-500 hover:text-slate-700 px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors"
+            >
+              Thu gọn
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Standards Tree */}
       <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
-        {standards.length === 0 ? (
+        {displayedStandards.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Filter size={24} className="text-slate-300 mb-2" />
             <p className="text-sm text-slate-400">
@@ -527,7 +596,7 @@ const StandardCriteriaTable = ({
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {standards.map((std) => (
+            {displayedStandards.map((std) => (
               <StandardRow
                 key={std.Id}
                 standard={std}
@@ -535,6 +604,11 @@ const StandardCriteriaTable = ({
                 onToggle={() => toggle(std.Id)}
                 matchingCriterionIds={matchingCriterionIds}
                 selectedFileTypeId={selectedFileTypeId}
+                isAssigned={
+                  hasAssignment
+                    ? assignedStandardIds.includes(std.Id)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -552,12 +626,15 @@ const StandardRow = ({
   onToggle,
   matchingCriterionIds,
   selectedFileTypeId,
+  isAssigned,
 }: {
   standard: Standard;
   isExpanded: boolean;
   onToggle: () => void;
   matchingCriterionIds: Set<string>;
   selectedFileTypeId?: string;
+  /** undefined = no assignment mode, true = assigned, false = not assigned */
+  isAssigned?: boolean;
 }) => {
   const criteria = standard.Criterions || [];
   const stdStatus = getStandardStatus(standard);
@@ -575,7 +652,13 @@ const StandardRow = ({
         type="button"
         onClick={onToggle}
         className={`w-full flex items-center gap-2 px-3 py-2.5 transition-colors ${
-          matchInStd > 0 ? "hover:bg-violet-50/50" : "hover:bg-slate-50/80"
+          isAssigned === true
+            ? "bg-blue-50/60 hover:bg-blue-100/50 border-l-3 border-l-blue-500"
+            : isAssigned === false
+              ? "opacity-55 hover:opacity-75 hover:bg-slate-50/80"
+              : matchInStd > 0
+                ? "hover:bg-violet-50/50"
+                : "hover:bg-slate-50/80"
         }`}
       >
         <div
@@ -592,6 +675,11 @@ const StandardRow = ({
             <span className="text-[13px] font-semibold text-slate-700 truncate">
               {standard.Name}
             </span>
+            {isAssigned === true && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200 shrink-0">
+                ★ Phân công
+              </span>
+            )}
             {matchInStd > 0 && (
               <span className="text-[10px] font-semibold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded shrink-0 flex items-center gap-0.5">
                 <Zap size={8} />

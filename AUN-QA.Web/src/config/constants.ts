@@ -119,6 +119,8 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/EvidenceCycleMap/update`,
       DELETE_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/EvidenceCycleMap/get-all-combobox`,
+      SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/submit-to-approve`,
+      APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/approve`,
     },
     SurveyTemplate: {
       GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,

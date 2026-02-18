@@ -9,7 +9,7 @@ import { evidenceCycleMapService } from "@/features/business/api/evidenceCycleMa
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { EvidenceCycleMap, EvidenceCycleMapGetListPagingRequest } from "../types/evidence-cycle-map.types";
+import type { EvidenceCycleMap, EvidenceCycleMapGetListPagingRequest, ApproveRequest } from "../types/evidence-cycle-map.types";
 import type { Evidence } from "../types/evidence.types";
 
 export const useEvidenceCycleMap = () => {
@@ -86,6 +86,43 @@ export const useEvidenceCycleMap = () => {
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
+      );
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (request: ApproveRequest) =>
+      evidenceCycleMapService.approve(request),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Cập nhật trạng thái thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidenceCycleMaps"] });
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi cập nhật trạng thái"
+      );
+    },
+  });
+
+  const submitToApproveMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      evidenceCycleMapService.submitToApprove({ Ids: ids }),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Gửi duyệt thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidenceCycleMaps"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi gửi duyệt"
       );
     },
   });
@@ -186,6 +223,22 @@ export const useEvidenceCycleMap = () => {
     await deleteMutation.mutateAsync(ids);
   };
 
+  const submitToApprove = (ids: string[]) => {
+    submitToApproveMutation.mutate(ids);
+  };
+
+  const approve = async (id: string, status: number, reason?: string) => {
+    const result = await approveMutation.mutateAsync({
+      Id: id,
+      EvidenceStatus: status,
+      RejectionReason: reason,
+    });
+    if (result.Success) {
+      setIsOpen(false);
+      setEvidenceCycleMap(null);
+    }
+  };
+
   return {
     data,
     evidenceCycleMap,
@@ -199,7 +252,11 @@ export const useEvidenceCycleMap = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    submitToApprove,
+    approve,
     isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isSubmitting: submitToApproveMutation.isPending,
+    isApproving: approveMutation.isPending,
     isFetching,
   };
 };

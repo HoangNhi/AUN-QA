@@ -91,7 +91,6 @@ message GetFileTypesStreamRequest {
 message CanUserDoActionInPdcaRequest {
   string user_id = 1;
   string cycle_id = 2;
-  int32 action = 3;
   google.protobuf.StringValue standard_id = 4; // optional
   repeated int32 allowed_roles = 5;
 }

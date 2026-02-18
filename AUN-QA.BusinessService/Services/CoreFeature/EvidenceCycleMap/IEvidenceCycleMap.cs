@@ -1,4 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
 
@@ -12,5 +13,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
+        Task SubmitToApprove(EvidenceSubmitToApproveRequest request);
+        Task Approve(EvidenceCycleMapApproveRequest request);
     }
 }

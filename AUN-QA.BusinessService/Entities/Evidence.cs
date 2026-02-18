@@ -7,7 +7,23 @@ public partial class Evidence
 {
     public Guid Id { get; set; }
 
+    public string Code { get; set; } = null!;
+
     public string Name { get; set; } = null!;
+
+    public Guid FileTypeId { get; set; }
+
+    public DateTime? IssueDate { get; set; }
+
+    public string? IssuingAuthority { get; set; }
+
+    public DateTime? ExpiryDate { get; set; }
+
+    public string? Description { get; set; }
+
+    public int Status { get; set; }
+
+    public string? RejectionReason { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -21,19 +37,7 @@ public partial class Evidence
 
     public bool IsDeleted { get; set; }
 
-    public string Code { get; set; } = null!;
+    public DateTime? ApprovedAt { get; set; }
 
-    public int Status { get; set; }
-
-    public DateTime? IssueDate { get; set; }
-
-    public string? IssuingAuthority { get; set; }
-
-    public DateTime? ExpiryDate { get; set; }
-
-    public Guid FileTypeId { get; set; }
-
-    public string? RejectionReason { get; set; }
-
-    public string? Description { get; set; }
+    public string? ApprovedBy { get; set; }
 }

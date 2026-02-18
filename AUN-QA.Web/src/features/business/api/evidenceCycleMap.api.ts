@@ -1,10 +1,15 @@
 import api, { type ApiResponse } from "@/lib/api";
-import type { GetListPagingResponse, ModelCombobox } from "@/types/base/base.types";
+import type {
+  GetListPagingResponse,
+  ModelCombobox,
+} from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 import type {
+  ApproveRequest,
   EvidenceCycleMap,
   EvidenceCycleMapGetListPaging,
-  EvidenceCycleMapGetListPagingRequest
+  EvidenceCycleMapGetListPagingRequest,
+  SubmitToApproveRequest,
 } from "../types/evidence-cycle-map.types";
 
 // Backend response type (with underscore naming)
@@ -29,7 +34,7 @@ interface BackendEvidenceCycleMapGetListPaging {
 
 // Transform backend response to frontend naming convention
 const transformEvidenceCycleMapResponse = (
-  backendData: BackendEvidenceCycleMapGetListPaging
+  backendData: BackendEvidenceCycleMapGetListPaging,
 ): EvidenceCycleMapGetListPaging => ({
   Id: backendData.Id,
   EvidenceId: backendData.EvidenceId,
@@ -52,11 +57,14 @@ const transformEvidenceCycleMapResponse = (
 });
 
 export const evidenceCycleMapService = {
-  getList: async (request: EvidenceCycleMapGetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<EvidenceCycleMapGetListPaging>>> => {
-    const response = await api.post<GetListPagingResponse<BackendEvidenceCycleMapGetListPaging>>(
-      API_ENDPOINTS.Business.EvidenceCycleMap.GET_LIST,
-      request
-    );
+  getList: async (
+    request: EvidenceCycleMapGetListPagingRequest,
+  ): Promise<
+    ApiResponse<GetListPagingResponse<EvidenceCycleMapGetListPaging>>
+  > => {
+    const response = await api.post<
+      GetListPagingResponse<BackendEvidenceCycleMapGetListPaging>
+    >(API_ENDPOINTS.Business.EvidenceCycleMap.GET_LIST, request);
 
     // Transform backend response to frontend naming convention
     if (response.Success && response.Data) {
@@ -69,26 +77,62 @@ export const evidenceCycleMapService = {
       };
     }
 
-    return response as ApiResponse<GetListPagingResponse<EvidenceCycleMapGetListPaging>>;
+    return response as ApiResponse<
+      GetListPagingResponse<EvidenceCycleMapGetListPaging>
+    >;
   },
 
   getById: async (id: string): Promise<ApiResponse<EvidenceCycleMap>> => {
-    return api.get<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.GET_BY_ID, { params: { id } });
+    return api.get<EvidenceCycleMap>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.GET_BY_ID,
+      { params: { id } },
+    );
   },
 
-  insertWithEvidence: async (data: EvidenceCycleMap): Promise<ApiResponse<EvidenceCycleMap>> => {
-    return api.post<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.INSERT_WITH_EVIDENCE, data);
+  insertWithEvidence: async (
+    data: EvidenceCycleMap,
+  ): Promise<ApiResponse<EvidenceCycleMap>> => {
+    return api.post<EvidenceCycleMap>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.INSERT_WITH_EVIDENCE,
+      data,
+    );
   },
 
-  update: async (data: EvidenceCycleMap): Promise<ApiResponse<EvidenceCycleMap>> => {
-    return api.put<EvidenceCycleMap>(API_ENDPOINTS.Business.EvidenceCycleMap.UPDATE, data);
+  update: async (
+    data: EvidenceCycleMap,
+  ): Promise<ApiResponse<EvidenceCycleMap>> => {
+    return api.put<EvidenceCycleMap>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.UPDATE,
+      data,
+    );
   },
 
   deleteList: async (ids: string[]): Promise<ApiResponse<string>> => {
-    return api.delete<string>(API_ENDPOINTS.Business.EvidenceCycleMap.DELETE_LIST, { data: { ids } });
+    return api.delete<string>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.DELETE_LIST,
+      { data: { ids } },
+    );
   },
 
   getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
-      return api.get<ModelCombobox[]>(API_ENDPOINTS.Business.EvidenceCycleMap.GET_ALL_COMBOBOX);
-  }
+    return api.get<ModelCombobox[]>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.GET_ALL_COMBOBOX,
+    );
+  },
+
+  submitToApprove: async (
+    request: SubmitToApproveRequest,
+  ): Promise<ApiResponse<string>> => {
+    return api.post<string>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.SUBMIT_TO_APPROVE,
+      request,
+    );
+  },
+
+  approve: async (request: ApproveRequest): Promise<ApiResponse<string>> => {
+    return api.post<string>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.APPROVE,
+      request,
+    );
+  },
 };

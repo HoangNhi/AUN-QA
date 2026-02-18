@@ -363,12 +363,30 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 throw new Exception("Dữ liệu không tồn tại");
 
             var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+
+            // PCT HĐ chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ
+            var councilRecord = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == cycle.Id
+                && c.UserId == Guid.Parse(userId)
+                && !c.IsDeleted
+                && c.IsActived);
+
+            if (councilRecord != null
+                && (CouncilRole)councilRecord.RoleId == CouncilRole.ViceChairman
+                && !IsDelegationActive(councilRecord))
+            {
+                throw new Exception("Phó Chủ tịch Hội đồng chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ");
+            }
+
             var checkPermissionInPDCA = await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
             {
-                Action = ActionType.APPROVE,
                 CycleId = cycle.Id,
                 UserId = Guid.Parse(userId),
-                AllowedRoles = new List<int> { (int)CouncilRole.HeadOfCouncil, (int)CouncilRole.ViceChairman }
+                AllowedRoles = new List<int>
+                {
+                    (int)CouncilRole.HeadOfCouncil,
+                    (int)CouncilRole.ViceChairman
+                }
             });
 
             if (!checkPermissionInPDCA)
@@ -447,7 +465,6 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         /// <inheritdoc/>
         public async Task<bool> CanUserDoActionInPdcaAsync(PdcaActionCheckRequest request)
         {
-            // 1. Tìm bản ghi Council của user trong cycle này
             var council = await _context.Councils.FirstOrDefaultAsync(c =>
                 c.CycleId == request.CycleId
                 && c.UserId == request.UserId
@@ -457,45 +474,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (council == null)
                 return false;
 
-            // If specific roles are required, check role membership + delegation for ViceChairman
             if (request.AllowedRoles != null && request.AllowedRoles.Count > 0)
-            {
-                var allowedRole = (CouncilRole)council.RoleId;
-
-                // ViceChairman: only allowed if in the list AND delegation is active
-                if (allowedRole == CouncilRole.ViceChairman)
-                    return request.AllowedRoles.Contains(council.RoleId) && IsDelegationActive(council);
-
-                // All other roles: simple membership check
                 return request.AllowedRoles.Contains(council.RoleId);
-            }
 
-            var role = (CouncilRole)council.RoleId;
-
-            return role switch
-            {
-                // CT HĐ: toàn quyền, bỏ qua scope (Đ15.k5a — phụ trách tất cả TC)
-                CouncilRole.HeadOfCouncil => true,
-
-                // PCT HĐ: VIEW luôn được; ADD/UPDATE/DELETE/APPROVE chỉ khi được ủy quyền hợp lệ
-                CouncilRole.ViceChairman => request.Action == ActionType.VIEW
-                    || IsDelegationActive(council),
-
-                // Thư ký: toàn quyền (V/C/E/D/A trong PDCA)
-                CouncilRole.Secretary => true,
-
-                // Thành viên ĐG: VIEW/ADD/UPDATE/DELETE theo phạm vi TC phụ trách; không có APPROVE
-                CouncilRole.Evaluator => request.Action != ActionType.APPROVE
-                    && IsInScope(council.AssignedStandards, request.StandardId),
-
-                // Người cung cấp MC: VIEW/ADD theo phạm vi TC phụ trách; không UPDATE/DELETE/APPROVE
-                CouncilRole.EvidenceProvider =>
-                    (request.Action == ActionType.VIEW || request.Action == ActionType.ADD)
-                    && IsInScope(council.AssignedStandards, request.StandardId),
-
-                // Vai trò không xác định
-                _ => false
-            };
+            // Không giới hạn vai trò: bất kỳ thành viên HĐ đang hoạt động nào cũng được phép
+            return true;
         }
 
         /// <summary>

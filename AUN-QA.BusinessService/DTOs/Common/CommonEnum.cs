@@ -27,9 +27,11 @@ namespace AUN_QA.BusinessService.DTOs.Common
 
     public enum CouncilRole
     {
-        HeadOfCouncil = 1,
-        Evaluator = 2,
-        EvidenceProvider = 3
+        HeadOfCouncil    = 1,  // CTH — Chủ tịch HĐ
+        ViceChairman     = 2,  // PCT — Phó Chủ tịch HĐ
+        Secretary        = 3,  // TKY — Thư ký HĐ
+        Evaluator        = 4,  // TVH — Thành viên ĐG
+        EvidenceProvider = 5,  // PVD — Người cung cấp MC
     }
 
     public enum EvidenceStatus

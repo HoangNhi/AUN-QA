@@ -14,6 +14,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request);
         Task<List<ModelCombobox>> GetComboboxByUser();
+        Task ChangeStatusAsync(CycleChangeStatusRequest request);
         #endregion
 
         #region GRPC Services

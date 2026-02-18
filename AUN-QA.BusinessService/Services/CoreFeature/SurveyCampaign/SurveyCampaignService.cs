@@ -56,6 +56,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.VIEW);
+
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 
             #region Chủ đề khảo sát và nhóm câu hỏi
@@ -116,7 +118,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task Insert(SurveyCampaignRequest request)
         {
-            await ValidateHeadOfCouncil(request.CycleId.ToString());
+            await CheckPdcaPermissionAsync(request.CycleId.ToString(), (int)ActionType.ADD);
 
             var data = _context.SurveyCampaigns.Where(x =>
                 x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
@@ -201,7 +203,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task Update(SurveyCampaignRequest request)
         {
-            await ValidateHeadOfCouncil(request.CycleId.ToString());
+            await CheckPdcaPermissionAsync(request.CycleId.ToString(), (int)ActionType.UPDATE);
             var data = _context.SurveyCampaigns.Where(x =>
                x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
                 && !x.IsDeleted && x.Id != request.Id);
@@ -426,7 +428,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
-                await ValidateHeadOfCouncil(delete.CycleId.ToString());
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), (int)ActionType.DELETE);
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
@@ -440,6 +442,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
         {
+            if (request.CycleId.HasValue)
+                await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), (int)ActionType.VIEW);
+
             var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
 
             var query = _context.SurveyCampaigns
@@ -519,7 +524,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await ValidateHeadOfCouncil(data.CycleId.ToString());
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.APPROVE);
 
             switch (data.Status)
             {
@@ -787,6 +792,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 throw new Exception("Chiến dịch khảo sát không tồn tại");
             }
+            await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), (int)ActionType.VIEW);
             var allStakeholders = await _catalogService
                 .GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
                 {
@@ -835,6 +841,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request)
         {
+            var sessionCampaign = await _context.SurveyCampaigns.FindAsync(request.CampaignId)
+                ?? throw new Exception("Chiến dịch không tồn tại");
+            await CheckPdcaPermissionAsync(sessionCampaign.CycleId.ToString(), (int)ActionType.VIEW);
+
             var query = _context.SurveySessions
                 .Where(x => x.CampaignId == request.CampaignId && !x.IsDeleted);
 
@@ -877,7 +887,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await ValidateHeadOfCouncil(data.CycleId.ToString());
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.ADD);
 
             if (!request.StakeholderIds.Any())
             {
@@ -924,7 +934,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await ValidateHeadOfCouncil(data.CycleId.ToString());
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.ADD);
 
             var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
             {
@@ -976,7 +986,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(firstSession.CampaignId);
             if (campaign != null)
             {
-                await ValidateHeadOfCouncil(campaign.CycleId.ToString());
+                await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), (int)ActionType.DELETE);
             }
             else
             {
@@ -1014,7 +1024,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await ValidateHeadOfCouncil(data.CycleId.ToString());
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.UPDATE);
 
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (campaign == null)
@@ -1049,14 +1059,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         #endregion
 
         #region Helpers
-        private async Task ValidateHeadOfCouncil(string cycleId)
+        private async Task CheckPdcaPermissionAsync(string cycleId, int action)
         {
-            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
-            var isHeadOfCouncil = await _catalogService.IsUserInRoleAsync(cycleId, userId, ((int)CouncilRole.HeadOfCouncil));
-            if (!isHeadOfCouncil)
-            {
-                throw new Exception("Chỉ trưởng hội đồng mới có quyền thực hiện thao tác này");
-            }
+            var userId = _contextAccessor.HttpContext!.User.Claims
+                .FirstOrDefault(x => x.Type == "name")!.Value;
+            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, action);
+            if (!allowed)
+                throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
         }
         #endregion
     }

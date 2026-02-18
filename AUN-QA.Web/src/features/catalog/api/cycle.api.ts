@@ -41,4 +41,8 @@ export const cycleService = {
       API_ENDPOINTS.Catalog.Cycle.GET_COMBBOX_BY_USER,
     );
   },
+
+  changeStatus: async (id: string): Promise<ApiResponse<null>> => {
+    return api.put<null>(API_ENDPOINTS.Catalog.Cycle.CHANGE_STATUS, { Id: id });
+  },
 };

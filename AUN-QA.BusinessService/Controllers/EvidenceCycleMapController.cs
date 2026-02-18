@@ -20,7 +20,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost, Route("get-list")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -31,7 +31,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -42,7 +42,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost("insert-with-evidence")]
-        [AttributePermission(Action = ActionType.ADD)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> InsertWithEvidence([FromBody] EvidenceCycleMapRequest request)
         {
             if (!ModelState.IsValid)
@@ -53,7 +53,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPut, Route("update")]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Update(EvidenceCycleMapRequest request)
         {
             if (!ModelState.IsValid)
@@ -64,7 +64,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpDelete, Route("delete-list")]
-        [AttributePermission(Action = ActionType.DELETE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)

@@ -92,6 +92,23 @@ export const useCycle = () => {
     },
   });
 
+  const changeStatusMutation = useMutation({
+    mutationFn: (id: string) => cycleService.changeStatus(id),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Chuyển trạng thái thành công");
+        queryClient.invalidateQueries({ queryKey: ["cycles"] });
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi chuyển trạng thái"
+      );
+    },
+  });
+
   // 3. Handlers
   const getList = useCallback(() => {
     refetch();
@@ -155,6 +172,10 @@ export const useCycle = () => {
     await deleteMutation.mutateAsync(ids);
   };
 
+  const changeStatus = async (id: string) => {
+    await changeStatusMutation.mutateAsync(id);
+  };
+
   return {
     data,
     cycle,
@@ -168,7 +189,8 @@ export const useCycle = () => {
     onOpenChange,
     saveChange,
     deleteList,
-    isLoading: saveMutation.isPending || deleteMutation.isPending,
+    changeStatus,
+    isLoading: saveMutation.isPending || deleteMutation.isPending || changeStatusMutation.isPending,
     isFetching,
   };
 };

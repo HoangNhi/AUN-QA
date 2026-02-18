@@ -130,9 +130,9 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0"
+        className="p-0 z-[1000]"
         align="start"
-        style={{ width: "var(--radix-popover-trigger-width)" }}
+        style={{ minWidth: "var(--radix-popover-trigger-width)" }}
       >
         <Command>
           {showSearch && <CommandInput placeholder={searchPlaceholder} />}
@@ -159,7 +159,7 @@ export function Combobox({
                       )}
                       onSelect={(_) => {
                         const newValue = option.Value === value ? "" : option.Value;
-                        const newText = option.Value === value ? "" : option.Text;
+                        const newText = option.Value === value ? "" : (option.Text || "");
                         onValueChange(newValue, newText);
                         setOpen(false);
                       }}

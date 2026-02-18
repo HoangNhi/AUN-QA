@@ -68,6 +68,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             var add = _mapper.Map<Entities.Cycle>(request);
             add.Id = Guid.NewGuid();
+            add.Status = 1; // Lập kế hoạch — always draft on creation
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             add.IsActived = request.IsActived;
@@ -140,6 +141,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (update == null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
+            }
+
+            if (update.Status >= 3)
+            {
+                throw new Exception("Chu kỳ đã kết thúc, không thể cập nhật");
             }
 
             _mapper.Map(request, update);
@@ -349,6 +355,37 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
         }
+
+        public async Task ChangeStatusAsync(CycleChangeStatusRequest request)
+        {
+            var cycle = await _context.Cycles.FindAsync(request.Id);
+            if (cycle == null)
+                throw new Exception("Dữ liệu không tồn tại");
+
+            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+            var checkPermissionInPDCA = await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                Action = ActionType.APPROVE,
+                CycleId = cycle.Id,
+                UserId = Guid.Parse(userId),
+                AllowedRoles = new List<int> { (int)CouncilRole.HeadOfCouncil, (int)CouncilRole.ViceChairman }
+            });
+
+            if (!checkPermissionInPDCA)
+            {
+                throw new Exception("Chỉ Chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
+            }
+
+            if (cycle.Status >= 3)
+                throw new Exception("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
+
+            cycle.Status += 1;
+            cycle.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+            cycle.UpdatedAt = DateTime.Now;
+
+            _context.Cycles.Update(cycle);
+            await _context.SaveChangesAsync();
+        }
         #endregion
 
         #region GRPC Services
@@ -419,6 +456,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (council == null)
                 return false;
+
+            // If specific roles are required, check role membership + delegation for ViceChairman
+            if (request.AllowedRoles != null && request.AllowedRoles.Count > 0)
+            {
+                var allowedRole = (CouncilRole)council.RoleId;
+
+                // ViceChairman: only allowed if in the list AND delegation is active
+                if (allowedRole == CouncilRole.ViceChairman)
+                    return request.AllowedRoles.Contains(council.RoleId) && IsDelegationActive(council);
+
+                // All other roles: simple membership check
+                return request.AllowedRoles.Contains(council.RoleId);
+            }
 
             var role = (CouncilRole)council.RoleId;
 

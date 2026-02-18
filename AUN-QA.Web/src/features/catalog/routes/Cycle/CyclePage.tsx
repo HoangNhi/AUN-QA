@@ -36,6 +36,7 @@ const CyclePage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    changeStatus,
     isLoading,
     isFetching,
   } = useCycle();
@@ -49,10 +50,11 @@ const CyclePage = () => {
       getColumns(
         showPopupDetail,
         deleteList,
+        changeStatus,
         permission?.IsUpdated,
         permission?.IsDeleted,
       ),
-    [permission, showPopupDetail, deleteList],
+    [permission, showPopupDetail, deleteList, changeStatus],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(

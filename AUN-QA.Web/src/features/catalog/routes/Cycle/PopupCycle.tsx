@@ -95,6 +95,7 @@ function getCouncilColumns({
             handleChangeCouncil(row.original.Id, "UserId", v)
           }
           placeholder="Chọn thành viên"
+          modal
         />
       ),
     },
@@ -110,6 +111,7 @@ function getCouncilColumns({
             handleChangeCouncil(row.original.Id, "RoleId", Number(v))
           }
           placeholder="Chọn vai trò"
+          modal
         />
       ),
     },
@@ -657,6 +659,7 @@ const PopupCycle = ({
                     placeholder="Chọn bộ tiêu chuẩn"
                     searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
                     emptyText="Không tìm thấy bộ tiêu chuẩn."
+                    modal
                   />
                   {errors.standardSetId && (
                     <FieldError>{errors.standardSetId}</FieldError>
@@ -669,13 +672,14 @@ const PopupCycle = ({
               <Field>
                 <FieldLabel>Trạng thái</FieldLabel>
                 <FieldContent>
-                  <Combobox
-                    options={CYCLE_STATUS_OPTIONS}
-                    value={formData.status}
-                    onValueChange={(val) => updateField("status", val || "1")}
-                    placeholder="Chọn trạng thái"
-                    searchPlaceholder="Tìm kiếm trạng thái..."
-                    emptyText="Không tìm thấy trạng thái."
+                  <Input
+                    value={
+                      CYCLE_STATUS_OPTIONS.find(
+                        (o) => String(o.Value) === formData.status,
+                      )?.Text ?? formData.status
+                    }
+                    disabled
+                    readOnly
                   />
                 </FieldContent>
               </Field>
@@ -692,6 +696,7 @@ const PopupCycle = ({
                     placeholder="Chọn phạm vi"
                     searchPlaceholder="Tìm kiếm phạm vi..."
                     emptyText="Không tìm thấy phạm vi."
+                    modal
                   />
                 </FieldContent>
               </Field>

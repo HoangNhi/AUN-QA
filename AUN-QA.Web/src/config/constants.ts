@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Cycle/update`,
       DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
       GET_COMBBOX_BY_USER: `${CATALOG_BASE}/Cycle/get-combobox-by-user`,
+      CHANGE_STATUS: `${CATALOG_BASE}/Cycle/change-status`,
     },
     Stakeholder: {
       GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,

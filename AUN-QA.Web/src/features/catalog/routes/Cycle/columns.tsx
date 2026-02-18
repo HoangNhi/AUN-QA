@@ -25,6 +25,7 @@ import { format } from "date-fns";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
+  changeStatus: (id: string) => void,
   canUpdate: boolean = true,
   canDelete: boolean = true,
 ): ColumnDef<CycleGetListPaging>[] => [
@@ -92,6 +93,7 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
+        changeStatus={changeStatus}
         canUpdate={canUpdate}
         canDelete={canDelete}
       />
@@ -103,16 +105,23 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
+  changeStatus,
   canUpdate,
   canDelete,
 }: {
   row: Row<CycleGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
+  changeStatus: (id: string) => void;
   canUpdate: boolean;
   canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+
+  const status = row.original.Status;
+  const canChangeStatus = canUpdate && String(status) !== "3";
+  const changeStatusLabel = String(status) === "1" ? "Bắt đầu" : "Kết thúc";
 
   if (!canUpdate && !canDelete) return null;
 
@@ -134,6 +143,11 @@ const ActionCell = ({
               Cập nhật
             </DropdownMenuItem>
           )}
+          {canChangeStatus && (
+            <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
+              {changeStatusLabel}
+            </DropdownMenuItem>
+          )}
           {canDelete && (
             <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
               Xóa
@@ -142,6 +156,32 @@ const ActionCell = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Change Status Confirmation */}
+      <Dialog open={showStatusConfirm} onOpenChange={setShowStatusConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận chuyển trạng thái</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn {changeStatusLabel.toLowerCase()} chu kỳ này không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                changeStatus(row.original.Id);
+                setShowStatusConfirm(false);
+              }}
+            >
+              Xác nhận
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>

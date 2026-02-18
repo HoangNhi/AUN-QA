@@ -64,6 +64,21 @@ namespace AUN_QA.CatalogService.Services.gRPC
             return new BoolValue { Value = result };
         }
 
+        public override async Task<BoolValue> CanUserDoActionInPdca(
+            CanUserDoActionInPdcaRequest request,
+            ServerCallContext context)
+        {
+            var result = await _cycleService.CanUserDoActionInPdcaAsync(new CatalogService.DTOs.CoreFeature.Cycle.Requests.PdcaActionCheckRequest
+            {
+                UserId = Guid.Parse(request.UserId),
+                CycleId = Guid.Parse(request.CycleId),
+                Action = (CatalogService.DTOs.Common.ActionType)request.Action,
+                StandardId = !string.IsNullOrEmpty(request.StandardId) ? Guid.Parse(request.StandardId) : null,
+                AllowedRoles = request.AllowedRoles.Count > 0 ? request.AllowedRoles.ToList() : null
+            });
+            return new BoolValue { Value = result };
+        }
+
         #endregion
 
         #region Standard Service

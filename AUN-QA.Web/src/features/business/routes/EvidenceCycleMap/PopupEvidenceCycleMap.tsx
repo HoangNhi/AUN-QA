@@ -178,7 +178,7 @@ const PopupEvidenceCycleMap = ({
     // Construct data object with nested Evidence
     const saveData: EvidenceCycleMap = {
       Id: formData.id,
-      EvidenceId: formData.evidenceId || "",
+      EvidenceId: formData.evidenceId || uuidv4(),
       CycleId: formData.cycleId,
       ReviewStatus: evidenceCycleMap?.ReviewStatus || 1,
       Evidence: {
@@ -198,18 +198,10 @@ const PopupEvidenceCycleMap = ({
         IsEdit: evidenceCycleMap?.IsEdit || false,
         IsActived: evidenceCycleMap?.IsActived ?? true,
         FolderUpload: folderUpload,
-        CreatedBy: evidenceCycleMap?.Evidence?.CreatedBy,
-        CreatedAt: evidenceCycleMap?.Evidence?.CreatedAt,
-        UpdatedBy: evidenceCycleMap?.Evidence?.UpdatedBy,
-        UpdatedAt: evidenceCycleMap?.Evidence?.UpdatedAt,
       },
       IsEdit: evidenceCycleMap?.IsEdit || false,
       IsActived: evidenceCycleMap?.IsActived ?? true,
       FolderUpload: folderUpload,
-      CreatedBy: evidenceCycleMap?.CreatedBy,
-      CreatedAt: evidenceCycleMap?.CreatedAt,
-      UpdatedBy: evidenceCycleMap?.UpdatedBy,
-      UpdatedAt: evidenceCycleMap?.UpdatedAt,
     };
 
     saveChange(saveData, isAddMore);

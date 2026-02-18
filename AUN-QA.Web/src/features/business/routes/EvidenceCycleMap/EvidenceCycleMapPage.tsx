@@ -16,7 +16,10 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS, EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import {
+  EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS,
+  EVIDENCE_STATUS_OPTIONS,
+} from "@/constants/business.constants";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -118,7 +121,7 @@ const EvidenceCycleMapPage = () => {
             onValueChange={(val) => {
               setPageRequest({
                 ...pageRequest,
-                CycleId: val,
+                CycleId: val ? val : undefined,
                 PageIndex: 1,
               });
             }}

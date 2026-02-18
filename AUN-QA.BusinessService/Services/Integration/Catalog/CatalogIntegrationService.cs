@@ -86,6 +86,23 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             var response = await _grpcClient.IsUserInRoleAsync(request, cancellationToken: cancellationToken);
             return response.Value;
         }
+
+        public async Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, int action, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default)
+        {
+            var request = new CanUserDoActionInPdcaRequest
+            {
+                CycleId = cycleId,
+                UserId = userId,
+                Action = action
+            };
+            if (standardId != null)
+                request.StandardId = standardId;
+            if (allowedRoles != null)
+                request.AllowedRoles.AddRange(allowedRoles);
+
+            var response = await _grpcClient.CanUserDoActionInPdcaAsync(request, cancellationToken: cancellationToken);
+            return response.Value;
+        }
         #endregion
 
         #region Standard Service

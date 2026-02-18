@@ -58,6 +58,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), (int)ActionType.VIEW);
+
             var result = _mapper.Map<EvidenceCycleMapRequest>(data);
 
             // Load Evidence details
@@ -78,6 +80,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), (int)ActionType.ADD);
+
                 // Validate duplicate name or code
                 var data = _context.Evidences.Where(x =>
                     (x.Name == request.Evidence.Name || x.Code == request.Evidence.Code)
@@ -155,6 +159,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), (int)ActionType.UPDATE);
+
                 #region Evidence
                 var update = await _context.Evidences.FindAsync(request.Evidence.Id);
                 if (update == null)
@@ -262,6 +268,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), (int)ActionType.DELETE);
+
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
@@ -273,6 +281,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
+            if (request.CycleId.HasValue)
+                await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), (int)ActionType.VIEW);
+
             var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
 
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
@@ -365,6 +376,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         #endregion
 
         #region Helper
+        private async Task CheckPdcaPermissionAsync(string cycleId, int action)
+        {
+            var userId = _contextAccessor.HttpContext!.User.Claims
+                .FirstOrDefault(x => x.Type == "name")!.Value;
+            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, action);
+            if (!allowed)
+                throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+        }
+
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
             var result = await _context.EvidenceAttachments

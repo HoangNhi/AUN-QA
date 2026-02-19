@@ -116,5 +116,27 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.GetVerifiedFileTypeCountsAsync(cycleId);
             return Ok(new BaseResponse<List<VerifiedFileTypeCountResponse>> { Data = result, Success = true });
         }
+
+        [HttpPost, Route("get-verified-for-reuse")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetVerifiedForReuse([FromBody] VerifiedEvidenceForReuseRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetVerifiedForReuseAsync(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("reuse-verified-evidence")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ReuseVerifiedEvidence([FromBody] ReuseVerifiedEvidenceRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.ReuseVerifiedEvidenceAsync(request);
+            return Ok(new BaseResponse(true, 200));
+        }
     }
 }

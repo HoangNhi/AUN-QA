@@ -226,6 +226,22 @@ const StandardCriteriaTable = ({
     return map;
   }, [verifiedCountsResponse]);
 
+  const evidenceMap = useMemo<Map<string, { name: string; code: string }[]>>(
+    () => {
+      const map = new Map<string, { name: string; code: string }[]>();
+      if (verifiedCountsResponse?.Success && verifiedCountsResponse.Data) {
+        verifiedCountsResponse.Data.forEach((item: VerifiedFileTypeCount) => {
+          map.set(
+            item.FileTypeId,
+            (item.Evidences ?? []).map((e) => ({ name: e.Name, code: e.Code })),
+          );
+        });
+      }
+      return map;
+    },
+    [verifiedCountsResponse],
+  );
+
   // --- File Types Fetching ---
   const { data: fileTypesResponse } = useQuery({
     queryKey: ["fileTypesCombobox"],
@@ -657,6 +673,7 @@ const StandardCriteriaTable = ({
                     : undefined
                 }
                 countMap={countMap}
+                evidenceMap={evidenceMap}
                 fileTypeMap={fileTypeMap}
               />
             ))}
@@ -677,6 +694,7 @@ const StandardRow = ({
   selectedFileTypeId,
   isAssigned,
   countMap,
+  evidenceMap,
   fileTypeMap,
 }: {
   standard: Standard;
@@ -686,6 +704,7 @@ const StandardRow = ({
   selectedFileTypeId?: string;
   isAssigned?: boolean;
   countMap: Map<string, number>;
+  evidenceMap: Map<string, { name: string; code: string }[]>;
   fileTypeMap: Record<string, string>;
 }) => {
   const criteria = standard.Criterions || [];
@@ -754,6 +773,7 @@ const StandardRow = ({
               isMatching={matchingCriterionIds.has(crit.Id)}
               selectedFileTypeId={selectedFileTypeId}
               countMap={countMap}
+              evidenceMap={evidenceMap}
               fileTypeMap={fileTypeMap}
             />
           ))}
@@ -770,12 +790,14 @@ const CriterionRow = ({
   isMatching,
   selectedFileTypeId,
   countMap,
+  evidenceMap,
   fileTypeMap,
 }: {
   criterion: Criterion;
   isMatching: boolean;
   selectedFileTypeId?: string;
   countMap: Map<string, number>;
+  evidenceMap: Map<string, { name: string; code: string }[]>;
   fileTypeMap: Record<string, string>;
 }) => {
   const status = getCriterionStatus(criterion, countMap);
@@ -860,14 +882,29 @@ const CriterionRow = ({
                       >
                         <FileText size={9} />
                         <span className="font-mono font-bold">
-                          ×{req.MinQuantity}
+                          {countMap.get(req.FileTypeId) ?? 0}/{req.MinQuantity}
                         </span>
                         {req.IsMandatory && <span className="text-red-400">*</span>}
                         {isReqMatch && <Check size={9} className="text-violet-600" />}
                       </span>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fileTypeName}</p>
+                    <TooltipContent className="max-w-xs">
+                      <p className="font-medium">{fileTypeName}</p>
+                      {(evidenceMap.get(req.FileTypeId) ?? []).length > 0 ? (
+                        <div className="mt-1 border-t border-white/20 pt-1 space-y-0.5">
+                          {(evidenceMap.get(req.FileTypeId) ?? []).map(
+                            (ev, idx) => (
+                              <p key={idx} className="text-xs opacity-90">
+                                ✓ {ev.code} — {ev.name}
+                              </p>
+                            ),
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mt-0.5 text-xs opacity-70">
+                          Chưa có minh chứng
+                        </p>
+                      )}
                     </TooltipContent>
                   </Tooltip>
                 );

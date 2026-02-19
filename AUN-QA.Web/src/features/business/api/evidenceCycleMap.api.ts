@@ -9,13 +9,43 @@ import type {
   EvidenceCycleMap,
   EvidenceCycleMapGetListPaging,
   EvidenceCycleMapGetListPagingRequest,
+  ModelVerifiedEvidenceForReuse,
+  ReuseVerifiedEvidenceRequest,
   SubmitToApproveRequest,
+  VerifiedEvidenceForReuseRequest,
 } from "../types/evidence-cycle-map.types";
+
+export interface EvidenceSummary {
+  Name: string;
+  Code: string;
+}
 
 export interface VerifiedFileTypeCount {
   FileTypeId: string;
   Count: number;
+  Evidences: EvidenceSummary[];
 }
+
+// Backend response type for reuse list (with underscore naming)
+interface BackendVerifiedEvidenceForReuse {
+  Id: string;
+  EvidenceId: string;
+  Evidence_Name: string;
+  Evidence_Code: string;
+  FileTypeId?: string;
+  CreatedAt?: string;
+}
+
+const transformVerifiedForReuseResponse = (
+  b: BackendVerifiedEvidenceForReuse,
+): ModelVerifiedEvidenceForReuse => ({
+  Id: b.Id,
+  EvidenceId: b.EvidenceId,
+  evidenceName: b.Evidence_Name,
+  evidenceCode: b.Evidence_Code,
+  FileTypeId: b.FileTypeId,
+  CreatedAt: b.CreatedAt,
+});
 
 // Backend response type (with underscore naming)
 interface BackendEvidenceCycleMapGetListPaging {
@@ -148,5 +178,37 @@ export const evidenceCycleMapService = {
       API_ENDPOINTS.Business.EvidenceCycleMap.GET_VERIFIED_FILETYPE_COUNTS,
       { params: { cycleId } },
     );
+  },
+
+  getVerifiedForReuse: async (
+    request: VerifiedEvidenceForReuseRequest,
+  ): Promise<ApiResponse<GetListPagingResponse<ModelVerifiedEvidenceForReuse>>> => {
+    const res = await api.post<GetListPagingResponse<BackendVerifiedEvidenceForReuse>>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.GET_VERIFIED_FOR_REUSE,
+      request,
+    );
+    if (res.Success && res.Data) {
+      return {
+        ...res,
+        Data: {
+          ...res.Data,
+          Data: res.Data.Data.map(transformVerifiedForReuseResponse),
+        },
+      };
+    }
+    return res as unknown as ApiResponse<GetListPagingResponse<ModelVerifiedEvidenceForReuse>>;
+  },
+
+  reuseVerifiedEvidence: async (
+    request: ReuseVerifiedEvidenceRequest,
+  ): Promise<ApiResponse<null>> => {
+    const res = await api.post<null>(
+      API_ENDPOINTS.Business.EvidenceCycleMap.REUSE_VERIFIED_EVIDENCE,
+      request,
+    );
+    if (!res.Success) {
+      throw new Error(res.Message || "Tái sử dụng minh chứng thất bại");
+    }
+    return res;
   },
 };

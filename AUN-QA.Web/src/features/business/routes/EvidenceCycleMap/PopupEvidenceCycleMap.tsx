@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCcw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -30,7 +30,8 @@ import { cycleService } from "@/features/catalog/api/cycle.api";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import type { EvidenceCycleMap } from "../../types/evidence-cycle-map.types";
+import type { EvidenceCycleMap, ModelVerifiedEvidenceForReuse } from "../../types/evidence-cycle-map.types";
+import PopupReuseEvidence from "./PopupReuseEvidence";
 
 interface PopupEvidenceCycleMapProps {
   evidenceCycleMap: EvidenceCycleMap | null;
@@ -98,6 +99,9 @@ const PopupEvidenceCycleMap = ({
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionError, setRejectionError] = useState("");
+
+  // Reuse evidence popup state
+  const [showReusePopup, setShowReusePopup] = useState(false);
 
   const cycleId_Change = async (val: string) => {
     if (val) {
@@ -273,9 +277,24 @@ const PopupEvidenceCycleMap = ({
 
                   {/* Name */}
                   <Field>
-                    <FieldLabel>
-                      Tên minh chứng <span className="text-red-500">*</span>
-                    </FieldLabel>
+                    <div className="flex items-center justify-between">
+                      <FieldLabel>
+                        Tên minh chứng <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      {!isPending && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowReusePopup(true)}
+                          disabled={!formData.cycleId}
+                          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5" />
+                          Tái sử dụng minh chứng cũ
+                        </Button>
+                      )}
+                    </div>
+
                     <FieldContent>
                       <Input
                         value={formData.name}
@@ -473,7 +492,6 @@ const PopupEvidenceCycleMap = ({
                         placeholder="Chọn chu kỳ"
                         searchPlaceholder="Tìm kiếm chu kỳ..."
                         emptyText="Không tìm thấy chu kỳ."
-                        readonly={isPending}
                       />
                       {errors.cycleId && (
                         <FieldError>{errors.cycleId}</FieldError>
@@ -641,6 +659,30 @@ const PopupEvidenceCycleMap = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PopupReuseEvidence
+        isOpen={showReusePopup}
+        onOpenChange={setShowReusePopup}
+        targetCycleId={formData.cycleId}
+        onReuseSuccess={(evidence: ModelVerifiedEvidenceForReuse) => {
+          setFormData((prev) => ({
+            ...prev,
+            evidenceId: evidence.EvidenceId,
+            name: evidence.evidenceName,
+            code: evidence.evidenceCode,
+            fileTypeId: evidence.FileTypeId || "",
+            description: evidence.Description || "",
+            issueDate: evidence.IssueDate
+              ? format(new Date(evidence.IssueDate), "yyyy-MM-dd")
+              : "",
+            expiryDate: evidence.ExpiryDate
+              ? format(new Date(evidence.ExpiryDate), "yyyy-MM-dd")
+              : "",
+            issuingAuthority: evidence.IssuingAuthority || "",
+            status: "3",
+          }));
+        }}
+      />
     </>
   );
 };

@@ -264,7 +264,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
-                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.Secretary));
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
@@ -419,23 +419,108 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<List<VerifiedFileTypeCountResponse>> GetVerifiedFileTypeCountsAsync(Guid cycleId)
         {
-            var result = await _context.EvidenceCycleMaps
+            var data = await _context.EvidenceCycleMaps
                 .Where(ecm => !ecm.IsDeleted && ecm.CycleId == cycleId)
                 .Join(
                     _context.Evidences.Where(e => !e.IsDeleted && e.Status == (int)EvidenceStatus.Verified),
                     ecm => ecm.EvidenceId,
                     e   => e.Id,
-                    (ecm, e) => e.FileTypeId
+                    (ecm, e) => new { e.FileTypeId, e.Name, e.Code }
                 )
-                .GroupBy(fileTypeId => fileTypeId)
+                .ToListAsync();
+
+            return data
+                .GroupBy(x => x.FileTypeId)
                 .Select(g => new VerifiedFileTypeCountResponse
                 {
                     FileTypeId = g.Key,
-                    Count      = g.Count()
+                    Count      = g.Count(),
+                    Evidences  = g.Select(x => new EvidenceSummary { Name = x.Name, Code = x.Code }).ToList()
                 })
+                .ToList();
+        }
+        public async Task<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> GetVerifiedForReuseAsync(VerifiedEvidenceForReuseRequest request)
+        {
+            var query = _context.Evidences
+                .Where(e => !e.IsDeleted && e.Status == (int)EvidenceStatus.Verified)
+                .Where(e => !request.TargetCycleId.HasValue ||
+                            !_context.EvidenceCycleMaps.Any(x =>
+                                x.EvidenceId == e.Id &&
+                                x.CycleId == request.TargetCycleId.Value &&
+                                !x.IsDeleted &&
+                                x.IsActived))
+                .Select(e => new ModelVerifiedEvidenceForReuse
+                {
+                    Id               = e.Id,
+                    EvidenceId       = e.Id,
+                    Evidence_Name    = e.Name,
+                    Evidence_Code    = e.Code,
+                    FileTypeId       = e.FileTypeId,
+                    CreatedAt        = e.CreatedAt,
+                    Description      = e.Description,
+                    IssueDate        = e.IssueDate,
+                    ExpiryDate       = e.ExpiryDate,
+                    IssuingAuthority = e.IssuingAuthority,
+                });
+
+            if (!string.IsNullOrEmpty(request.TextSearch))
+            {
+                query = query.Where(x =>
+                    x.Evidence_Name.Contains(request.TextSearch) ||
+                    x.Evidence_Code.Contains(request.TextSearch));
+            }
+
+            if (request.FileTypeId.HasValue)
+            {
+                query = query.Where(x => x.FileTypeId == request.FileTypeId.Value);
+            }
+
+            var totalRow = await query.CountAsync();
+
+            var data = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((request.PageIndex - 1) * request.PageSize)
+                .Take(request.PageSize)
                 .ToListAsync();
 
-            return result;
+            return new GetListPagingResponse<ModelVerifiedEvidenceForReuse>
+            {
+                PageIndex = request.PageIndex,
+                PageSize  = request.PageSize,
+                TotalRow  = totalRow,
+                Data      = data
+            };
+        }
+
+        public async Task ReuseVerifiedEvidenceAsync(ReuseVerifiedEvidenceRequest request)
+        {
+            await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+
+            var evidence = await _context.Evidences.FindAsync(request.EvidenceId);
+            if (evidence == null || evidence.Status != (int)EvidenceStatus.Verified)
+                throw new Exception("Chỉ có thể tái sử dụng minh chứng đã được duyệt");
+
+            var existing = await _context.EvidenceCycleMaps
+                .FirstOrDefaultAsync(x => x.EvidenceId == request.EvidenceId
+                                          && x.CycleId == request.TargetCycleId
+                                          && !x.IsDeleted);
+            if (existing != null)
+                throw new Exception("Minh chứng này đã được liên kết với chu kỳ hiện tại");
+
+            var cycleMap = new Entities.EvidenceCycleMap
+            {
+                Id           = Guid.NewGuid(),
+                EvidenceId   = request.EvidenceId,
+                CycleId      = request.TargetCycleId,
+                ReviewStatus = (int)EvidenceCycleMapReviewStatus.NotStarted,
+                CreatedBy    = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System",
+                CreatedAt    = DateTime.Now,
+                IsActived    = true,
+                IsDeleted    = false
+            };
+
+            await _context.EvidenceCycleMaps.AddAsync(cycleMap);
+            await _context.SaveChangesAsync();
         }
         #endregion
 

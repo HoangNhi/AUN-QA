@@ -17,5 +17,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         Task SubmitToApprove(EvidenceSubmitToApproveRequest request);
         Task Approve(EvidenceCycleMapApproveRequest request);
         Task<List<VerifiedFileTypeCountResponse>> GetVerifiedFileTypeCountsAsync(Guid cycleId);
+        Task<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> GetVerifiedForReuseAsync(VerifiedEvidenceForReuseRequest request);
+        Task ReuseVerifiedEvidenceAsync(ReuseVerifiedEvidenceRequest request);
     }
 }

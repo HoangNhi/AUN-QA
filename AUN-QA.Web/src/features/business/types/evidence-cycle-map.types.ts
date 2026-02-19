@@ -59,3 +59,29 @@ export interface ApproveRequest {
   EvidenceStatus: number;
   RejectionReason?: string;
 }
+
+export interface VerifiedEvidenceForReuseRequest {
+  PageIndex: number;
+  PageSize: number;
+  TextSearch?: string;
+  FileTypeId?: string;
+  TargetCycleId?: string;
+}
+
+export interface ModelVerifiedEvidenceForReuse {
+  Id: string;
+  EvidenceId: string;
+  evidenceName: string; // transformed from Evidence_Name
+  evidenceCode: string; // transformed from Evidence_Code
+  FileTypeId?: string;
+  CreatedAt?: string;
+  Description?: string;
+  IssueDate?: string;
+  ExpiryDate?: string;
+  IssuingAuthority?: string;
+}
+
+export interface ReuseVerifiedEvidenceRequest {
+  EvidenceId: string;
+  TargetCycleId: string;
+}

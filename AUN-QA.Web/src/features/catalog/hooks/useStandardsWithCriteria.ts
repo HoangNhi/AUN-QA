@@ -21,13 +21,14 @@ export const getRequirementSummary = (
   };
 };
 
-export type CriterionStatus = "satisfied" | "partial" | "empty";
-export type FilterMode = "all" | "satisfied" | "partial" | "empty";
+export type CriterionStatus = "satisfied" | "pending" | "partial" | "empty";
+export type FilterMode = "all" | "satisfied" | "pending" | "partial" | "empty";
 
 /** Determine criterion status based on requirements data */
 export const getCriterionStatus = (
   criterion: Criterion,
   countMap?: Map<string, number>,
+  pendingCountMap?: Map<string, number>,
 ): CriterionStatus => {
   const reqs = criterion.CriterionRequirements;
   if (!reqs || reqs.length === 0) return "empty";
@@ -42,26 +43,43 @@ export const getCriterionStatus = (
     return "partial";
   }
 
-  // With evidence counts: check if all mandatory requirements are fully met
+  // With evidence counts: check if all mandatory requirements are fully met by verified evidence
   const mandatoryReqs = reqs.filter((r) => r.IsMandatory);
   if (mandatoryReqs.length === 0) return "satisfied";
 
-  const allMet = mandatoryReqs.every(
+  const allMetVerified = mandatoryReqs.every(
     (r) => (countMap.get(r.FileTypeId) ?? 0) >= (r.MinQuantity || 0),
   );
-  return allMet ? "satisfied" : "partial";
+  if (allMetVerified) return "satisfied";
+
+  // Check if criteria would be met when combining verified + pending evidence
+  if (pendingCountMap) {
+    const allMetWithPending = mandatoryReqs.every(
+      (r) =>
+        (countMap.get(r.FileTypeId) ?? 0) +
+          (pendingCountMap.get(r.FileTypeId) ?? 0) >=
+        (r.MinQuantity || 0),
+    );
+    if (allMetWithPending) return "pending";
+  }
+
+  return "partial";
 };
 
 /** Determine standard status based on its criteria */
-export const getStandardStatus = (standard: Standard): CriterionStatus => {
+export const getStandardStatus = (
+  standard: Standard,
+  countMap?: Map<string, number>,
+  pendingCountMap?: Map<string, number>,
+): CriterionStatus => {
   const criteria = standard.Criterions || [];
   if (criteria.length === 0) return "empty";
 
-  const statuses = criteria.map((c) => getCriterionStatus(c));
+  const statuses = criteria.map((c) => getCriterionStatus(c, countMap, pendingCountMap));
   const satisfiedCount = statuses.filter((s) => s === "satisfied").length;
 
   if (satisfiedCount === criteria.length) return "satisfied";
-  if (satisfiedCount > 0 || statuses.some((s) => s === "partial")) return "partial";
+  if (satisfiedCount > 0 || statuses.some((s) => s === "partial" || s === "pending")) return "partial";
   return "empty";
 };
 

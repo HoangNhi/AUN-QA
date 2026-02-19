@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -21,19 +22,21 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
-import type { Evidence } from "@/features/business/types/evidence.types";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
-import { cycleService } from "@/features/catalog/api/cycle.api";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import MultiStandardSetPanel from "@/features/catalog/components/MultiStandardSetPanel";
+import type { Evidence } from "@/features/business/types/evidence.types";
 
 interface PopupEvidenceProps {
   evidence: Evidence | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   saveChange: (evidence: Evidence, isAddMore: boolean) => void;
-  isLoading: boolean;
+  isLoading?: boolean;
+  onApprove: (id: string, status: number, reason?: string) => void;
+  isApproving?: boolean;
 }
 
 const PopupEvidence = ({
@@ -42,6 +45,8 @@ const PopupEvidence = ({
   onOpenChange,
   saveChange,
   isLoading,
+  onApprove,
+  isApproving,
 }: PopupEvidenceProps) => {
   // --- Form state ---
   const [formData, setFormData] = useState({
@@ -59,7 +64,6 @@ const PopupEvidence = ({
     fileTypeId: evidence?.FileTypeId || "",
     description: evidence?.Description || "",
     rejectionReason: evidence?.RejectionReason || "",
-    cycleId: evidence?.CycleId || "",
   });
 
   const [fileTypeName, setFileTypeName] = useState<string>("");
@@ -70,14 +74,23 @@ const PopupEvidence = ({
   const [listAttachment, setListAttachment] = useState<Attachment[]>(
     evidence?.ListAttachment || [],
   );
+
   const [errors, setErrors] = useState<{
     name?: string;
     code?: string;
     fileTypeId?: string;
-    cycleId?: string;
     issueDate?: string;
     expiryDate?: string;
+    attachment?: string;
   }>({});
+
+  const isPending = formData.status === "2" || formData.status === "3";
+
+  // Approve/Reject dialog state
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionError, setRejectionError] = useState("");
 
   // --- Sync form state when evidence prop changes ---
   useEffect(() => {
@@ -97,7 +110,6 @@ const PopupEvidence = ({
         fileTypeId: evidence.FileTypeId || "",
         description: evidence.Description || "",
         rejectionReason: evidence.RejectionReason || "",
-        cycleId: evidence.CycleId || "",
       });
       setFolderUpload(evidence.FolderUpload || uuidv4());
       setListAttachment(evidence.ListAttachment || []);
@@ -116,11 +128,17 @@ const PopupEvidence = ({
     }
   };
 
+  const handleAttachmentChange = (attachments: Attachment[]) => {
+    setListAttachment(attachments);
+    if (errors.attachment) {
+      setErrors((prev) => ({ ...prev, attachment: undefined }));
+    }
+  };
+
   // --- Validation ---
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
 
-    // Required field validation
     if (!formData.name.trim()) {
       newErrors.name = "Tên minh chứng không được để trống";
     }
@@ -133,11 +151,6 @@ const PopupEvidence = ({
       newErrors.fileTypeId = "Vui lòng chọn loại tài liệu";
     }
 
-    if (!formData.cycleId) {
-      newErrors.cycleId = "Vui lòng chọn kế hoạch";
-    }
-
-    // Date range validation
     if (
       formData.issueDate &&
       formData.expiryDate &&
@@ -147,12 +160,19 @@ const PopupEvidence = ({
       toast.error("Ngày hết hạn phải sau ngày ban hành");
     }
 
+    if (!isPending) {
+      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
+      if (listAttachment.length === 0 && pendingFiles.length === 0) {
+        newErrors.attachment = "Vui lòng tải lên ít nhất một tệp đính kèm";
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   // --- Submission ---
-  const onSubmit = async (isAddMore: boolean) => {
+  const onSubmit = async (isAddMore: boolean, status: number) => {
     if (!validateForm()) {
       return;
     }
@@ -160,19 +180,17 @@ const PopupEvidence = ({
     // Upload files first
     await uploadRef.current?.upload();
 
-    // Construct evidence object
     const evidenceData: Evidence = {
       Id: formData.id,
       Name: formData.name,
       Code: formData.code,
-      Status: parseInt(formData.status),
+      Status: status,
       IssueDate: formData.issueDate || undefined,
       IssuingAuthority: formData.issuingAuthority || undefined,
       ExpiryDate: formData.expiryDate || undefined,
       FileTypeId: formData.fileTypeId,
       Description: formData.description || undefined,
       RejectionReason: formData.rejectionReason || undefined,
-      CycleId: formData.cycleId,
       AttachmentIds: listAttachment.map((a) => a.Id),
       ListAttachment: listAttachment,
       IsEdit: evidence?.IsEdit || false,
@@ -184,224 +202,365 @@ const PopupEvidence = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-6xl max-h-[95vh] flex flex-col min-h-0 overflow-hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader className="border-b pb-2">
-          <DialogTitle>
-            {evidence?.IsEdit ? "Cập nhật Minh chứng" : "Thêm mới Minh chứng"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="sm:max-w-6xl max-h-[95vh] flex flex-col min-h-0 overflow-hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="border-b pb-2">
+            <DialogTitle>
+              {evidence?.IsEdit
+                ? "Cập nhật Minh chứng"
+                : "Thêm mới Minh chứng"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Biểu mẫu thêm hoặc cập nhật minh chứng.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Scrollable Body - Split View 5/7 */}
-        <div className="flex-1 p-4 min-h-0 flex flex-col overflow-hidden">
-          <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
-            {/* LEFT COLUMN - General Information */}
-            <div className="col-span-5 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-                {/* Name */}
-                <Field>
-                  <FieldLabel>
-                    Tên minh chứng <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => updateField("name", e.target.value)}
-                      placeholder="Ví dụ: Quy định về đào tạo năm 2024"
-                    />
-                    {errors.name && <FieldError>{errors.name}</FieldError>}
-                  </FieldContent>
-                </Field>
+          {/* Scrollable Body - Split View 5/7 */}
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
+              {/* LEFT COLUMN - General Information */}
+              <div className="col-span-5 flex flex-col min-h-0">
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
+                  {/* Rejection reason (read-only, shown when rejected) */}
+                  {formData.status === "4" && (
+                    <Field>
+                      <FieldLabel>
+                        Lý do không duyệt{" "}
+                        <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <FieldContent>
+                        <Textarea
+                          value={formData.rejectionReason}
+                          placeholder="Lý do không duyệt"
+                          readOnly={true}
+                          className="bg-muted cursor-not-allowed"
+                          rows={4}
+                        />
+                      </FieldContent>
+                    </Field>
+                  )}
 
-                {/* Code and File Type Row */}
-                <div className="grid grid-cols-2 gap-4">
+                  {/* Name */}
                   <Field>
                     <FieldLabel>
-                      Mã minh chứng <span className="text-red-500">*</span>
+                      Tên minh chứng <span className="text-red-500">*</span>
                     </FieldLabel>
                     <FieldContent>
                       <Input
-                        value={formData.code}
-                        onChange={(e) => updateField("code", e.target.value)}
-                        placeholder="HC.01.02"
+                        value={formData.name}
+                        onChange={(e) => updateField("name", e.target.value)}
+                        placeholder="Ví dụ: Quy định về đào tạo năm 2024"
+                        readOnly={isPending}
+                        className={
+                          isPending ? "bg-muted cursor-not-allowed" : ""
+                        }
                       />
-                      {errors.code && <FieldError>{errors.code}</FieldError>}
+                      {errors.name && <FieldError>{errors.name}</FieldError>}
                     </FieldContent>
                   </Field>
 
+                  {/* Code and File Type Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel>
+                        Mã minh chứng <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <FieldContent>
+                        <Input
+                          value={formData.code}
+                          onChange={(e) => updateField("code", e.target.value)}
+                          placeholder="HC.01.02"
+                          readOnly={isPending}
+                          className={
+                            isPending ? "bg-muted cursor-not-allowed" : ""
+                          }
+                        />
+                        {errors.code && (
+                          <FieldError>{errors.code}</FieldError>
+                        )}
+                      </FieldContent>
+                    </Field>
+
+                    <Field>
+                      <FieldLabel>
+                        Loại tài liệu <span className="text-red-500">*</span>
+                      </FieldLabel>
+                      <FieldContent>
+                        <Combobox
+                          fetchOptions={async () => {
+                            const res = await fileTypeService.getAllCombobox();
+                            return (res.Data || []).map((t) => ({
+                              Value: t.Value ?? "",
+                              Text: t.Text ?? "",
+                            }));
+                          }}
+                          value={formData.fileTypeId}
+                          onValueChange={(val, text) => {
+                            updateField("fileTypeId", val || "");
+                            setFileTypeName(text || "");
+                          }}
+                          placeholder="Chọn loại tài liệu"
+                          searchPlaceholder="Tìm kiếm loại tài liệu..."
+                          emptyText="Không tìm thấy loại tài liệu."
+                          readonly={isPending}
+                        />
+                        {errors.fileTypeId && (
+                          <FieldError>{errors.fileTypeId}</FieldError>
+                        )}
+                      </FieldContent>
+                    </Field>
+                  </div>
+
+                  {/* Attachments */}
                   <Field>
                     <FieldLabel>
-                      Loại tài liệu <span className="text-red-500">*</span>
+                      Tệp đính kèm <span className="text-red-500">*</span>
                     </FieldLabel>
                     <FieldContent>
-                      <Combobox
-                        fetchOptions={async () => {
-                          const res = await fileTypeService.getAllCombobox();
-                          return (res.Data || []).map((t) => ({
-                            Value: t.Value ?? "",
-                            Text: t.Text ?? "",
-                          }));
-                        }}
-                        value={formData.fileTypeId}
-                        onValueChange={(val, text) => {
-                          updateField("fileTypeId", val || "");
-                          setFileTypeName(text || "");
-                        }}
-                        placeholder="Chọn loại tài liệu"
-                        searchPlaceholder="Tìm kiếm loại tài liệu..."
-                        emptyText="Không tìm thấy loại tài liệu."
+                      <UploadFile
+                        ref={uploadRef}
+                        listAttachment={listAttachment}
+                        folderUpload={folderUpload}
+                        setListAttachment={handleAttachmentChange}
+                        readonly={isPending}
+                        hasError={!!errors.attachment}
                       />
-                      {errors.fileTypeId && (
-                        <FieldError>{errors.fileTypeId}</FieldError>
-                      )}
-                    </FieldContent>
-                  </Field>
-                </div>
-
-                {/* Cycle Selection */}
-                <Field>
-                  <FieldLabel>
-                    Chu kỳ <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      fetchOptions={async () => {
-                        const res = await cycleService.getComboboxByUser();
-                        return (res.Data || []).map((t) => ({
-                          Value: t.Value ?? "",
-                          Text: t.Text ?? "",
-                        }));
-                      }}
-                      value={formData.cycleId}
-                      onValueChange={(val) => updateField("cycleId", val || "")}
-                      placeholder="Chọn chu kỳ"
-                      searchPlaceholder="Tìm kiếm chu kỳ..."
-                      emptyText="Không tìm thấy chu kỳ."
-                    />
-                    {errors.cycleId && (
-                      <FieldError>{errors.cycleId}</FieldError>
-                    )}
-                  </FieldContent>
-                </Field>
-
-                {/* Attachments */}
-                <Field>
-                  <FieldLabel>
-                    Tệp đính kèm <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <UploadFile
-                      ref={uploadRef}
-                      listAttachment={listAttachment}
-                      folderUpload={folderUpload}
-                      setListAttachment={setListAttachment}
-                    />
-                  </FieldContent>
-                </Field>
-
-                {/* Description */}
-                <Field>
-                  <FieldLabel>Mô tả tóm tắt</FieldLabel>
-                  <FieldContent>
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        updateField("description", e.target.value)
-                      }
-                      placeholder="Nội dung chính..."
-                      rows={3}
-                    />
-                  </FieldContent>
-                </Field>
-
-                {/* Issue Date and Issuing Authority Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel>Ngày ban hành</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        type="date"
-                        value={formData.issueDate}
-                        onChange={(e) =>
-                          updateField("issueDate", e.target.value)
-                        }
-                      />
-                      {errors.issueDate && (
-                        <FieldError>{errors.issueDate}</FieldError>
+                      {errors.attachment && (
+                        <FieldError>{errors.attachment}</FieldError>
                       )}
                     </FieldContent>
                   </Field>
 
+                  {/* Description */}
                   <Field>
-                    <FieldLabel>Cơ quan ban hành</FieldLabel>
+                    <FieldLabel>Mô tả tóm tắt</FieldLabel>
                     <FieldContent>
-                      <Input
-                        value={formData.issuingAuthority}
+                      <Textarea
+                        value={formData.description}
                         onChange={(e) =>
-                          updateField("issuingAuthority", e.target.value)
+                          updateField("description", e.target.value)
                         }
-                        placeholder="Tên cơ quan"
+                        placeholder="Nội dung chính..."
+                        rows={3}
+                        readOnly={isPending}
+                        className={
+                          isPending
+                            ? "bg-muted cursor-not-allowed resize-none"
+                            : ""
+                        }
                       />
                     </FieldContent>
                   </Field>
-                </div>
 
-                {/* Expiry Date and Status Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel>Ngày hết hạn</FieldLabel>
-                    <FieldContent>
-                      <Input
-                        type="date"
-                        value={formData.expiryDate}
-                        onChange={(e) =>
-                          updateField("expiryDate", e.target.value)
-                        }
-                      />
-                      {errors.expiryDate && (
-                        <FieldError>{errors.expiryDate}</FieldError>
-                      )}
-                    </FieldContent>
-                  </Field>
+                  {/* Issue Date and Expiry Date Row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field>
+                      <FieldLabel>Ngày ban hành</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          type="date"
+                          value={formData.issueDate}
+                          onChange={(e) =>
+                            updateField("issueDate", e.target.value)
+                          }
+                          readOnly={isPending}
+                          className={
+                            isPending ? "bg-muted cursor-not-allowed" : ""
+                          }
+                        />
+                        {errors.issueDate && (
+                          <FieldError>{errors.issueDate}</FieldError>
+                        )}
+                      </FieldContent>
+                    </Field>
+
+                    <Field>
+                      <FieldLabel>Ngày hết hạn</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          type="date"
+                          value={formData.expiryDate}
+                          onChange={(e) =>
+                            updateField("expiryDate", e.target.value)
+                          }
+                          readOnly={isPending}
+                          className={
+                            isPending ? "bg-muted cursor-not-allowed" : ""
+                          }
+                        />
+                        {errors.expiryDate && (
+                          <FieldError>{errors.expiryDate}</FieldError>
+                        )}
+                      </FieldContent>
+                    </Field>
+                  </div>
+
+                  {/* Issuing Authority - full width */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field className="col-span-2">
+                      <FieldLabel>Cơ quan ban hành</FieldLabel>
+                      <FieldContent>
+                        <Input
+                          value={formData.issuingAuthority}
+                          onChange={(e) =>
+                            updateField("issuingAuthority", e.target.value)
+                          }
+                          placeholder="Tên cơ quan"
+                          readOnly={isPending}
+                          className={
+                            isPending ? "bg-muted cursor-not-allowed" : ""
+                          }
+                        />
+                      </FieldContent>
+                    </Field>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* RIGHT COLUMN - Criteria Satisfaction */}
-            <div className="col-span-7 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-2">
-                <MultiStandardSetPanel
-                  selectedFileTypeId={formData.fileTypeId}
-                  selectedFileTypeName={fileTypeName}
-                />
+              {/* RIGHT COLUMN - Criteria Satisfaction */}
+              <div className="col-span-7 flex flex-col min-h-0">
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-2">
+                  <MultiStandardSetPanel
+                    selectedFileTypeId={formData.fileTypeId}
+                    selectedFileTypeName={fileTypeName}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <DialogFooter className="border-t pt-2">
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isLoading}>
-              Hủy bỏ
+          {/* Footer */}
+          <DialogFooter className="border-t pt-2">
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isLoading}>
+                Hủy bỏ
+              </Button>
+            </DialogClose>
+
+            {formData.status === "2" ? (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setRejectionReason("");
+                    setRejectionError("");
+                    setShowRejectDialog(true);
+                  }}
+                  disabled={isLoading || isApproving}
+                >
+                  Không duyệt
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => setShowApproveConfirm(true)}
+                  disabled={isLoading || isApproving}
+                >
+                  Duyệt
+                </Button>
+              </>
+            ) : (
+              <>
+                {formData.status !== "3" && (
+                  <Button
+                    onClick={() => onSubmit(false, 1)}
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Lưu
+                  </Button>
+                )}
+                {!evidence?.IsEdit && (
+                  <Button
+                    onClick={() => onSubmit(false, 2)}
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Lưu và gửi
+                  </Button>
+                )}
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDeleteDialog
+        open={showApproveConfirm}
+        onOpenChange={setShowApproveConfirm}
+        onConfirm={() => {
+          onApprove(evidence!.Id, 3);
+          setShowApproveConfirm(false);
+        }}
+        title="Xác nhận duyệt"
+        description="Bạn có chắc chắn muốn duyệt minh chứng này không?"
+        confirmText="Duyệt"
+        confirmVariant="default"
+        isLoading={isApproving}
+        stopAutoClose={true}
+      />
+
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent
+          className="sm:max-w-md"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Lý do không duyệt</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Field>
+              <FieldLabel>
+                Lý do <span className="text-red-500">*</span>
+              </FieldLabel>
+              <FieldContent>
+                <Textarea
+                  value={rejectionReason}
+                  onChange={(e) => {
+                    setRejectionReason(e.target.value);
+                    if (e.target.value.trim()) setRejectionError("");
+                  }}
+                  placeholder="Nhập lý do không duyệt..."
+                  rows={4}
+                />
+                {rejectionError && <FieldError>{rejectionError}</FieldError>}
+              </FieldContent>
+            </Field>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={isApproving}>
+                Hủy bỏ
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={isApproving}
+              onClick={() => {
+                if (!rejectionReason.trim()) {
+                  setRejectionError("Vui lòng nhập lý do không duyệt");
+                  return;
+                }
+                onApprove(evidence!.Id, 4, rejectionReason.trim());
+                setShowRejectDialog(false);
+              }}
+            >
+              {isApproving && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Xác nhận
             </Button>
-          </DialogClose>
-          <Button onClick={() => onSubmit(false)} disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Lưu
-          </Button>
-          {!evidence?.IsEdit && (
-            <Button onClick={() => onSubmit(true)} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu và thêm tiếp
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

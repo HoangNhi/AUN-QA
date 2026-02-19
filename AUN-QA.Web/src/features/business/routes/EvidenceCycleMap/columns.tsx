@@ -27,6 +27,7 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   canUpdate: boolean = true,
   canDelete: boolean = true,
+  fileTypeMap?: Record<string, string>,
 ): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
   {
     id: "select",
@@ -59,6 +60,14 @@ export const getColumns = (
   {
     accessorKey: "cycleName",
     header: "Kế hoạch",
+  },
+  {
+    accessorKey: "fileTypeId",
+    header: "Loại tài liệu",
+    cell: ({ row }) => {
+      const name = fileTypeMap?.[row.original.fileTypeId ?? ""];
+      return <span>{name ?? "-"}</span>;
+    },
   },
   {
     accessorKey: "evidenceStatus",

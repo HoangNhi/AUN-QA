@@ -20,6 +20,11 @@ const EvidencePage = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    submitToApprove,
+    onApprove,
+    isLoading,
+    isSubmitting,
+    isApproving,
     isFetching,
   } = useEvidence();
 
@@ -46,6 +51,7 @@ const EvidencePage = () => {
         totalRow={data.TotalRow}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
+        submitToApprove={submitToApprove}
         rowSelection={rowSelection}
         setRowSelection={setRowSelection}
         pageRequest={pageRequest}
@@ -54,6 +60,7 @@ const EvidencePage = () => {
         canAdd={permission?.IsAdded}
         canDelete={permission?.IsDeleted}
         isLoading={isFetching}
+        isSubmitting={isSubmitting}
       />
       {isOpen && (
         <PopupEvidence
@@ -62,6 +69,9 @@ const EvidencePage = () => {
           isOpen={isOpen}
           onOpenChange={onOpenChange}
           saveChange={saveChange}
+          isLoading={isLoading}
+          onApprove={onApprove}
+          isApproving={isApproving}
         />
       )}
     </div>

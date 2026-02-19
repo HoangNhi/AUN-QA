@@ -23,6 +23,7 @@ export interface EvidenceSummary {
 export interface VerifiedFileTypeCount {
   FileTypeId: string;
   Count: number;
+  PendingCount: number;
   Evidences: EvidenceSummary[];
 }
 
@@ -34,6 +35,8 @@ interface BackendVerifiedEvidenceForReuse {
   Evidence_Code: string;
   FileTypeId?: string;
   CreatedAt?: string;
+  FolderUpload?: string;
+  ListAttachment?: any[];
 }
 
 const transformVerifiedForReuseResponse = (
@@ -45,6 +48,8 @@ const transformVerifiedForReuseResponse = (
   evidenceCode: b.Evidence_Code,
   FileTypeId: b.FileTypeId,
   CreatedAt: b.CreatedAt,
+  FolderUpload: b.FolderUpload,
+  ListAttachment: b.ListAttachment,
 });
 
 // Backend response type (with underscore naming)
@@ -58,6 +63,7 @@ interface BackendEvidenceCycleMapGetListPaging {
   Evidence_Name?: string;
   Evidence_Code?: string;
   Evidence_Status?: number;
+  Evidence_FileTypeId?: string;
   CycleName?: string;
   CreatedAt?: string;
   CreatedBy?: string;
@@ -80,6 +86,7 @@ const transformEvidenceCycleMapResponse = (
   evidenceName: backendData.Evidence_Name,
   evidenceCode: backendData.Evidence_Code,
   evidenceStatus: backendData.Evidence_Status,
+  fileTypeId: backendData.Evidence_FileTypeId,
   cycleName: backendData.CycleName,
   CreatedAt: backendData.CreatedAt ?? "",
   CreatedBy: backendData.CreatedBy ?? "",

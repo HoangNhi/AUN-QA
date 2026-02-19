@@ -9,5 +9,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests
         public int? ReviewStatus { get; set; }
 
         public int? EvidenceStatus { get; set; }
+
+        public Guid? FileTypeId { get; set; }
     }
 }

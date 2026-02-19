@@ -20,6 +20,7 @@ import React, {
 
 export interface UploadFileProps {
   noUpload?: boolean;
+  readonly?: boolean;
   listAttachment?: Attachment[];
   setListAttachment?: (attachments: Attachment[]) => void;
   multiFile?: boolean;
@@ -28,6 +29,7 @@ export interface UploadFileProps {
   fileSizeLimit?: number;
   folderUpload?: string;
   onSuccess?: () => void;
+  hasError?: boolean;
 }
 
 export interface UploadFileRef {
@@ -39,6 +41,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
   (
     {
       noUpload = false,
+      readonly = false,
       listAttachment = [],
       setListAttachment,
       multiFile = true,
@@ -47,6 +50,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       fileSizeLimit = 10,
       folderUpload = "DefaultFolder",
       onSuccess,
+      hasError = false,
     },
     ref
   ) => {
@@ -113,8 +117,9 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     const handlePreview = (file: Attachment) => {
-      // TODO: Add preview logic here
-      console.log("Visual preview", file);
+      const url = getFileUrl(file.FileUrl);
+      if (!url) return;
+      window.open(url, "_blank", "noopener,noreferrer");
     };
 
     const handleDownload = async (file: Attachment) => {
@@ -169,14 +174,16 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                       >
                         <Download size={16} />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteAttachment(file.Id)}
-                        className="text-gray-400 hover:text-red-500"
-                        title="Xóa"
-                      >
-                        <Trash size={16} />
-                      </button>
+                      {!readonly && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(file.Id)}
+                          className="text-gray-400 hover:text-red-500"
+                          title="Xóa"
+                        >
+                          <Trash size={16} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -186,8 +193,8 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         )}
 
         {/* Dropzone Area */}
-        {!noUpload && (
-          <div className="border-2 border-dashed rounded-lg p-4 bg-gray-50 transition-colors hover:border-blue-400">
+        {!noUpload && !readonly && (
+          <div className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasError ? "border-red-400 bg-red-50 hover:border-red-500" : "bg-gray-50 hover:border-blue-400"}`}>
             <input
               type="file"
               ref={fileInputRef}

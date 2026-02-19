@@ -12,7 +12,7 @@ export interface Evidence extends BaseRequest {
     FileTypeId: string;
     Description?: string;
     RejectionReason?: string;
-    CycleId: string;
+    CycleId?: string;
     AttachmentIds?: string[];
     ListAttachment?: Attachment[];
 }
@@ -29,4 +29,10 @@ export interface EvidenceGetListPagingRequest extends GetListPagingRequest {
     Status?: number;
     CycleId?: string;
     FileTypeId?: string;
+}
+
+export interface EvidenceApproveRequest {
+    Id: string;
+    EvidenceStatus: number; // 3=Verified, 4=Rejected
+    RejectionReason?: string;
 }

@@ -12,5 +12,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos
         public DateTime? IssueDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public string? IssuingAuthority { get; set; }
+        public Guid? FolderUpload { get; set; }
+        public List<Base.ModelAttachment> ListAttachment { get; set; } = new List<Base.ModelAttachment>();
     }
 }

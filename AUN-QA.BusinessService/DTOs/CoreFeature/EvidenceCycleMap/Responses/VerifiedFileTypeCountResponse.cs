@@ -10,6 +10,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Responses
     {
         public Guid FileTypeId { get; set; }
         public int Count { get; set; }
+        public int PendingCount { get; set; }
         public List<EvidenceSummary> Evidences { get; set; } = [];
     }
 }

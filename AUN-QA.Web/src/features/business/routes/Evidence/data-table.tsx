@@ -47,6 +47,7 @@ interface DataTableProps<TData, TValue> {
   totalRow: number;
   showPopupDetail?: (id: string, isEdit: boolean) => void;
   deleteList?: (ids: string[]) => void;
+  submitToApprove?: (ids: string[]) => void;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
   pageRequest: GetListPagingRequest;
@@ -55,6 +56,7 @@ interface DataTableProps<TData, TValue> {
   canAdd?: boolean;
   canDelete?: boolean;
   isLoading?: boolean;
+  isSubmitting?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,6 +65,7 @@ export function DataTable<TData, TValue>({
   totalRow,
   showPopupDetail,
   deleteList,
+  submitToApprove,
   rowSelection,
   setRowSelection,
   pageRequest,
@@ -71,6 +74,7 @@ export function DataTable<TData, TValue>({
   canAdd = true,
   canDelete = true,
   isLoading = false,
+  isSubmitting = false,
 }: DataTableProps<TData, TValue>) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
@@ -108,6 +112,28 @@ export function DataTable<TData, TValue>({
           {canAdd && (
             <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
               Thêm
+            </Button>
+          )}
+          {submitToApprove && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                isSubmitting ||
+                table.getSelectedRowModel().rows.length === 0
+              }
+              onClick={() =>
+                submitToApprove(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id),
+                )
+              }
+            >
+              {isSubmitting && (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              )}
+              Gửi duyệt
             </Button>
           )}
           {canDelete && (

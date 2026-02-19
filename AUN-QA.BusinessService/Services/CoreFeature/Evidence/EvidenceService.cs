@@ -222,36 +222,47 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             }).OrderBy(x => x.Text).ToList();
         }
 
-        public async Task SubmitForReview(SubmitForReviewRequest request)
+        public async Task SubmitForReview(EvidenceSubmitToApproveRequest request)
         {
             if (!request.Ids.Any())
-            {
                 throw new Exception("Không có minh chứng để gửi duyệt");
-            }
 
             foreach (var id in request.Ids)
             {
                 var evidence = await _context.Evidences.FindAsync(id);
                 if (evidence == null)
-                {
                     throw new Exception("Minh chứng không tồn tại");
-                }
 
-                if (evidence.Status != ((int)EvidenceStatus.Draft))
-                {
+                if (evidence.Status != (int)EvidenceStatus.Draft)
                     continue;
-                }
 
                 evidence.Status = (int)EvidenceStatus.Pending;
-                evidence.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+                evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                 evidence.UpdatedAt = DateTime.Now;
                 _context.Evidences.Update(evidence);
             }
+
+            await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateApprovalStatus(EvidenceRequest request)
+        public async Task Approve(EvidenceApproveRequest request)
         {
+            var evidence = await _context.Evidences.FindAsync(request.Id);
+            if (evidence == null)
+                throw new Exception("Minh chứng không tồn tại");
 
+            if (evidence.Status != (int)EvidenceStatus.Pending)
+                throw new Exception("Chỉ được duyệt minh chứng đang chờ duyệt");
+
+            evidence.Status = request.EvidenceStatus;
+            evidence.RejectionReason = request.RejectionReason;
+            evidence.ApprovedAt = DateTime.Now;
+            evidence.ApprovedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            evidence.UpdatedAt = DateTime.Now;
+
+            _context.Evidences.Update(evidence);
+            await _context.SaveChangesAsync();
         }
         #endregion
 

@@ -9,5 +9,7 @@
         public int? Evidence_Status { get; set; }
 
         public string? CycleName { get; set; }
+
+        public Guid? Evidence_FileTypeId { get; set; }
     }
 }

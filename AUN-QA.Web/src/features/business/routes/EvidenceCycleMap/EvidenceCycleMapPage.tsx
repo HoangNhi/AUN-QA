@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useOutletContext } from "react-router-dom";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
@@ -16,10 +17,8 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import {
-  EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS,
-  EVIDENCE_STATUS_OPTIONS,
-} from "@/constants/business.constants";
+import { fileTypeService } from "@/features/catalog/api/filetype.api";
+import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -46,6 +45,16 @@ const EvidenceCycleMapPage = () => {
     permission: GetPermissionByUser | null;
   }>();
 
+  const { data: fileTypesData } = useQuery({
+    queryKey: ["fileTypesCombobox"],
+    queryFn: () => fileTypeService.getAllCombobox(),
+  });
+  const fileTypeMap = useMemo<Record<string, string>>(() => {
+    return Object.fromEntries(
+      (fileTypesData?.Data ?? []).map((t) => [t.Value ?? "", t.Text ?? ""]),
+    );
+  }, [fileTypesData]);
+
   const columns = useMemo(
     () =>
       getColumns(
@@ -53,8 +62,9 @@ const EvidenceCycleMapPage = () => {
         deleteList,
         permission?.IsUpdated,
         permission?.IsDeleted,
+        fileTypeMap,
       ),
-    [permission, showPopupDetail, deleteList],
+    [permission, showPopupDetail, deleteList, fileTypeMap],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(
@@ -111,8 +121,8 @@ const EvidenceCycleMapPage = () => {
                 ...pageRequest,
                 PageIndex: 1,
                 TextSearch: "",
-                ReviewStatus: undefined,
                 CycleId: undefined,
+                FileTypeId: undefined,
                 EvidenceStatus: undefined,
               });
               setSearchTerm("");
@@ -144,18 +154,24 @@ const EvidenceCycleMapPage = () => {
           />
 
           <Combobox
-            options={EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS}
-            value={pageRequest.ReviewStatus?.toString()}
+            fetchOptions={async () => {
+              const res = await fileTypeService.getAllCombobox();
+              return (res.Data || []).map((t) => ({
+                Value: t.Value ?? "",
+                Text: t.Text ?? "",
+              }));
+            }}
+            value={pageRequest.FileTypeId}
             onValueChange={(val) => {
               setPageRequest({
                 ...pageRequest,
-                ReviewStatus: val ? Number(val) : undefined,
+                FileTypeId: val ? val : undefined,
                 PageIndex: 1,
               });
             }}
-            placeholder="Tất cả trạng thái duyệt"
-            searchPlaceholder="Tìm kiếm trạng thái duyệt..."
-            emptyText="Không tìm thấy trạng thái."
+            placeholder="Tất cả loại tài liệu"
+            searchPlaceholder="Tìm kiếm loại tài liệu..."
+            emptyText="Không tìm thấy loại tài liệu."
           />
 
           <Combobox

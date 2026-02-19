@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
 import { Loader2, RefreshCcw } from "lucide-react";
@@ -31,6 +32,7 @@ import { standardSetService } from "@/features/catalog/api/standardset.api";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import type { EvidenceCycleMap, ModelVerifiedEvidenceForReuse } from "../../types/evidence-cycle-map.types";
+import { evidenceCycleMapService } from "../../api/evidenceCycleMap.api";
 import PopupReuseEvidence from "./PopupReuseEvidence";
 
 interface PopupEvidenceCycleMapProps {
@@ -90,6 +92,7 @@ const PopupEvidenceCycleMap = ({
     cycleId?: string;
     issueDate?: string;
     expiryDate?: string;
+    attachment?: string;
   }>({});
 
   const isPending = formData.status === "2" || formData.status === "3";
@@ -102,6 +105,26 @@ const PopupEvidenceCycleMap = ({
 
   // Reuse evidence popup state
   const [showReusePopup, setShowReusePopup] = useState(false);
+  const [pendingReuseEvidence, setPendingReuseEvidence] =
+    useState<ModelVerifiedEvidenceForReuse | null>(null);
+  const queryClient = useQueryClient();
+
+  const reuseMutation = useMutation({
+    mutationFn: () =>
+      evidenceCycleMapService.reuseVerifiedEvidence({
+        EvidenceId: pendingReuseEvidence!.EvidenceId,
+        TargetCycleId: formData.cycleId,
+      }),
+    onSuccess: () => {
+      toast.success("Tái sử dụng minh chứng thành công");
+      queryClient.invalidateQueries({ queryKey: ["evidenceCycleMapList"] });
+      setPendingReuseEvidence(null);
+      onOpenChange(false);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Có lỗi xảy ra");
+    },
+  });
 
   const cycleId_Change = async (val: string) => {
     if (val) {
@@ -160,6 +183,13 @@ const PopupEvidenceCycleMap = ({
     }
   };
 
+  const handleAttachmentChange = (attachments: Attachment[]) => {
+    setListAttachment(attachments);
+    if (errors.attachment) {
+      setErrors((prev) => ({ ...prev, attachment: undefined }));
+    }
+  };
+
   // --- Validation ---
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
@@ -187,6 +217,13 @@ const PopupEvidenceCycleMap = ({
     ) {
       newErrors.expiryDate = "Ngày hết hạn phải sau ngày ban hành";
       toast.error("Ngày hết hạn phải sau ngày ban hành");
+    }
+
+    if (!isPending) {
+      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
+      if (listAttachment.length === 0 && pendingFiles.length === 0) {
+        newErrors.attachment = "Vui lòng tải lên ít nhất một tệp đính kèm";
+      }
     }
 
     setErrors(newErrors);
@@ -224,10 +261,14 @@ const PopupEvidenceCycleMap = ({
         IsEdit: evidenceCycleMap?.IsEdit || false,
         IsActived: evidenceCycleMap?.IsActived ?? true,
         FolderUpload: folderUpload,
+        CreatedBy: evidenceCycleMap?.Evidence?.CreatedBy ?? "",
+        CreatedAt: evidenceCycleMap?.Evidence?.CreatedAt ?? "",
       },
       IsEdit: evidenceCycleMap?.IsEdit || false,
       IsActived: evidenceCycleMap?.IsActived ?? true,
       FolderUpload: folderUpload,
+      CreatedBy: evidenceCycleMap?.CreatedBy ?? "",
+      CreatedAt: evidenceCycleMap?.CreatedAt ?? "",
     };
 
     saveChange(saveData, isAddMore);
@@ -235,7 +276,13 @@ const PopupEvidenceCycleMap = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) setPendingReuseEvidence(null);
+          onOpenChange(open);
+        }}
+      >
         <DialogContent
           className="sm:max-w-6xl max-h-[95vh] flex flex-col min-h-0 overflow-hidden"
           onPointerDownOutside={(e) => e.preventDefault()}
@@ -257,6 +304,16 @@ const PopupEvidenceCycleMap = ({
               {/* LEFT COLUMN - General Information */}
               <div className="col-span-6 flex flex-col min-h-0">
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
+                  {pendingReuseEvidence && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      <span className="mt-0.5 shrink-0">⚠️</span>
+                      <span>
+                        Đang xem trước minh chứng sẽ tái sử dụng. Nhấn{" "}
+                        <strong>Xác nhận tái sử dụng</strong> để lưu, hoặc{" "}
+                        <strong>Huỷ xem trước</strong> để chọn lại.
+                      </span>
+                    </div>
+                  )}
                   {evidenceCycleMap?.Evidence?.Status === 4 && (
                     <Field>
                       <FieldLabel>
@@ -364,20 +421,17 @@ const PopupEvidenceCycleMap = ({
                       Tệp đính kèm <span className="text-red-500">*</span>
                     </FieldLabel>
                     <FieldContent>
-                      <div
-                        className={
-                          isPending
-                            ? "pointer-events-none opacity-60 select-none"
-                            : ""
-                        }
-                      >
-                        <UploadFile
-                          ref={uploadRef}
-                          listAttachment={listAttachment}
-                          folderUpload={folderUpload}
-                          setListAttachment={setListAttachment}
-                        />
-                      </div>
+                      <UploadFile
+                        ref={uploadRef}
+                        listAttachment={listAttachment}
+                        folderUpload={folderUpload}
+                        setListAttachment={handleAttachmentChange}
+                        readonly={isPending}
+                        hasError={!!errors.attachment}
+                      />
+                      {errors.attachment && (
+                        <FieldError>{errors.attachment}</FieldError>
+                      )}
                     </FieldContent>
                   </Field>
 
@@ -529,6 +583,12 @@ const PopupEvidenceCycleMap = ({
                     selectedFileTypeId={formData.fileTypeId}
                     assignedStandardIds={assignedStandardIds}
                   />
+                  {formData.cycleId && (
+                    <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
+                      Tiêu chí lọc theo loại tài liệu đã chọn.
+                      Tiến độ cập nhật sau khi minh chứng được phê duyệt.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -536,56 +596,109 @@ const PopupEvidenceCycleMap = ({
 
           {/* Footer */}
           <DialogFooter className="border-t pt-2">
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isLoading}>
-                Hủy bỏ
-              </Button>
-            </DialogClose>
-
-            {formData.status === "2" ? (
+            {pendingReuseEvidence ? (
               <>
                 <Button
-                  variant="destructive"
+                  variant="outline"
+                  disabled={reuseMutation.isPending}
                   onClick={() => {
-                    setRejectionReason("");
-                    setRejectionError("");
-                    setShowRejectDialog(true);
+                    setPendingReuseEvidence(null);
+                    setFormData({
+                      id: evidenceCycleMap?.Id || uuidv4(),
+                      evidenceId: evidenceCycleMap?.EvidenceId || "",
+                      name: evidenceCycleMap?.Evidence?.Name || "",
+                      code: evidenceCycleMap?.Evidence?.Code || "",
+                      status:
+                        evidenceCycleMap?.Evidence?.Status?.toString() || "1",
+                      issueDate: evidenceCycleMap?.Evidence?.IssueDate
+                        ? format(
+                          new Date(evidenceCycleMap.Evidence.IssueDate),
+                          "yyyy-MM-dd",
+                        )
+                        : "",
+                      issuingAuthority:
+                        evidenceCycleMap?.Evidence?.IssuingAuthority || "",
+                      expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
+                        ? format(
+                          new Date(evidenceCycleMap.Evidence.ExpiryDate),
+                          "yyyy-MM-dd",
+                        )
+                        : "",
+                      fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
+                      description:
+                        evidenceCycleMap?.Evidence?.Description || "",
+                      rejectionReason:
+                        evidenceCycleMap?.Evidence?.RejectionReason || "",
+                      cycleId: formData.cycleId,
+                    });
                   }}
-                  disabled={isLoading || isApproving}
                 >
-                  Không duyệt
+                  Huỷ xem trước
                 </Button>
                 <Button
-                  variant="default"
-                  onClick={() => setShowApproveConfirm(true)}
-                  disabled={isLoading || isApproving}
+                  onClick={() => reuseMutation.mutate()}
+                  disabled={reuseMutation.isPending}
                 >
-                  Duyệt
+                  {reuseMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Xác nhận tái sử dụng
                 </Button>
               </>
             ) : (
               <>
-                {formData.status !== "3" && (
-                  <Button
-                    onClick={() => onSubmit(false, 1)}
-                    disabled={isLoading}
-                  >
-                    {isLoading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Lưu
+                <DialogClose asChild>
+                  <Button variant="outline" disabled={isLoading}>
+                    Hủy bỏ
                   </Button>
-                )}
-                {!evidenceCycleMap?.IsEdit && (
-                  <Button
-                    onClick={() => onSubmit(false, 2)}
-                    disabled={isLoading}
-                  >
-                    {isLoading && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                </DialogClose>
+
+                {formData.status === "2" ? (
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setRejectionReason("");
+                        setRejectionError("");
+                        setShowRejectDialog(true);
+                      }}
+                      disabled={isLoading || isApproving}
+                    >
+                      Không duyệt
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={() => setShowApproveConfirm(true)}
+                      disabled={isLoading || isApproving}
+                    >
+                      Duyệt
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {formData.status !== "3" && (
+                      <Button
+                        onClick={() => onSubmit(false, 1)}
+                        disabled={isLoading}
+                      >
+                        {isLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Lưu
+                      </Button>
                     )}
-                    Lưu và gửi
-                  </Button>
+                    {!evidenceCycleMap?.IsEdit && (
+                      <Button
+                        onClick={() => onSubmit(false, 2)}
+                        disabled={isLoading}
+                      >
+                        {isLoading && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Lưu và gửi
+                      </Button>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -665,6 +778,7 @@ const PopupEvidenceCycleMap = ({
         onOpenChange={setShowReusePopup}
         targetCycleId={formData.cycleId}
         onReuseSuccess={(evidence: ModelVerifiedEvidenceForReuse) => {
+          setPendingReuseEvidence(evidence);
           setFormData((prev) => ({
             ...prev,
             evidenceId: evidence.EvidenceId,
@@ -681,6 +795,24 @@ const PopupEvidenceCycleMap = ({
             issuingAuthority: evidence.IssuingAuthority || "",
             status: "3",
           }));
+
+          // Handle potential casing issues (PascalCase from C# vs camelCase from JSON serialization)
+          const rawAttachments = (evidence as any).ListAttachment || (evidence as any).listAttachment || [];
+          const normalizedAttachments: Attachment[] = rawAttachments.map((att: any) => ({
+            Id: att.Id || att.id,
+            ReferenceType: att.ReferenceType || att.referenceType,
+            RelatedId: att.RelatedId || att.relatedId,
+            FileName: att.FileName || att.fileName,
+            FileExtension: att.FileExtension || att.fileExtension,
+            FileSize: att.FileSize || att.fileSize,
+            FileUrl: att.FileUrl || att.fileUrl,
+            FullFileName: att.FullFileName || att.fullFileName,
+          }));
+
+          const rawFolder = (evidence as any).FolderUpload || (evidence as any).folderUpload;
+
+          setFolderUpload(rawFolder || uuidv4());
+          setListAttachment(normalizedAttachments);
         }}
       />
     </>

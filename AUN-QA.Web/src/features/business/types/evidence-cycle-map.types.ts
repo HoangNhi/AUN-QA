@@ -3,6 +3,7 @@ import type {
   GetListPagingRequest,
 } from "@/types/base/base.types";
 import type { Evidence } from "./evidence.types";
+import type { Attachment } from "@/features/file/types/uploadfile.types";
 
 // EvidenceCycleMap - junction table linking evidence to cycles and criteria
 export interface EvidenceCycleMap extends BaseRequest {
@@ -30,6 +31,7 @@ export interface EvidenceCycleMapGetListPaging extends BaseRequest {
   evidenceCode?: string; // Backend: Evidence_Code
   evidenceStatus?: number; // Backend: Evidence_Status
   cycleName?: string; // Backend: CycleName
+  fileTypeId?: string; // Backend: Evidence_FileTypeId
 }
 
 // Request type for filtering
@@ -37,6 +39,7 @@ export interface EvidenceCycleMapGetListPagingRequest extends GetListPagingReque
   ReviewStatus?: number;
   CycleId?: string;
   EvidenceStatus?: number;
+  FileTypeId?: string;
 }
 
 // For criteria mapping in the popup form
@@ -79,6 +82,8 @@ export interface ModelVerifiedEvidenceForReuse {
   IssueDate?: string;
   ExpiryDate?: string;
   IssuingAuthority?: string;
+  FolderUpload?: string;
+  ListAttachment?: Attachment[];
 }
 
 export interface ReuseVerifiedEvidenceRequest {

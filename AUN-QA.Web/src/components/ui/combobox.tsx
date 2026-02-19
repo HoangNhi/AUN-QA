@@ -59,7 +59,7 @@ export function Combobox({
   className,
   disabled = false,
   readonly = false,
-  modal = false,
+  modal = true,
   showSearch = true,
   eagerLoading = true,
 }: ComboboxProps) {

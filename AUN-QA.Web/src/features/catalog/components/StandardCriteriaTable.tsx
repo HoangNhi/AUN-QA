@@ -11,6 +11,7 @@ import {
   XCircle,
   ShieldCheck,
   ShieldAlert,
+  Clock,
   FileText,
   Check,
   X,
@@ -65,13 +66,14 @@ const Badge = ({
   variant = "default",
 }: {
   children: React.ReactNode;
-  variant?: "default" | "green" | "red" | "amber";
+  variant?: "default" | "green" | "red" | "amber" | "blue";
 }) => {
   const styles: Record<string, string> = {
     default: "bg-slate-100 text-slate-600 border-slate-200",
     green: "bg-emerald-50 text-emerald-700 border-emerald-200",
     red: "bg-red-50 text-red-600 border-red-200",
     amber: "bg-amber-50 text-amber-700 border-amber-200",
+    blue: "bg-blue-50 text-blue-700 border-blue-200",
   };
   return (
     <span
@@ -143,26 +145,63 @@ const StatusIcon = ({
 }) => {
   if (status === "satisfied")
     return <CheckCircle2 size={size} className="text-emerald-500" />;
+  if (status === "pending")
+    return <Clock size={size} className="text-blue-400" />;
   if (status === "partial")
     return <MinusCircle size={size} className="text-amber-500" />;
   return <XCircle size={size} className="text-slate-300" />;
 };
 
-const MiniBar = ({ current, total }: { current: number; total: number }) => {
+const MiniBar = ({
+  current,
+  total,
+  projected,
+}: {
+  current: number;
+  total: number;
+  projected?: number;
+}) => {
   const pct =
     total === 0 ? 0 : Math.min(100, Math.round((current / total) * 100));
+  const projectedPct =
+    projected !== undefined && total > 0
+      ? Math.min(100, Math.round((projected / total) * 100))
+      : pct;
+  const ghostPct = Math.max(0, projectedPct - pct);
+
   const bg =
     pct === 100 ? "bg-emerald-500" : pct > 0 ? "bg-amber-400" : "bg-slate-200";
+
   return (
     <div className="flex items-center gap-2 flex-1">
-      <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden">
+      <div className="h-1.5 flex-1 bg-slate-100 rounded-full overflow-hidden flex">
         <div
-          className={`h-full rounded-full transition-all duration-500 ${bg}`}
+          className={`h-full transition-all duration-500 ${bg} ${ghostPct > 0 ? "rounded-l-full" : "rounded-full"}`}
           style={{ width: `${pct}%` }}
         />
+        {ghostPct > 0 && (
+          <div
+            className="h-full"
+            style={{
+              width: `${ghostPct}%`,
+              background: "rgba(124, 58, 237, 0.45)",
+              animation: "projected-pulse 2s ease-in-out infinite",
+              borderRadius: projectedPct >= 100 ? "0 9999px 9999px 0" : "0",
+            }}
+          />
+        )}
       </div>
-      <span className="text-[10px] font-mono text-slate-400 tabular-nums whitespace-nowrap">
-        {current}/{total}
+      <span className="text-[10px] font-mono tabular-nums whitespace-nowrap">
+        {ghostPct > 0 ? (
+          <>
+            <span className="text-violet-600 font-semibold">{projected}</span>
+            <span className="text-slate-400">/{total}</span>
+          </>
+        ) : (
+          <span className="text-slate-400">
+            {current}/{total}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -183,6 +222,10 @@ const AnimationStyles = () => (
     @keyframes fade-in-up {
       0% { opacity: 0; transform: translateY(4px); }
       100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes projected-pulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 0.8; }
     }
   `}</style>
 );
@@ -221,6 +264,16 @@ const StandardCriteriaTable = ({
     if (verifiedCountsResponse?.Success && verifiedCountsResponse.Data) {
       verifiedCountsResponse.Data.forEach((item: VerifiedFileTypeCount) => {
         map.set(item.FileTypeId, item.Count);
+      });
+    }
+    return map;
+  }, [verifiedCountsResponse]);
+
+  const pendingCountMap = useMemo<Map<string, number>>(() => {
+    const map = new Map<string, number>();
+    if (verifiedCountsResponse?.Success && verifiedCountsResponse.Data) {
+      verifiedCountsResponse.Data.forEach((item: VerifiedFileTypeCount) => {
+        if (item.PendingCount > 0) map.set(item.FileTypeId, item.PendingCount);
       });
     }
     return map;
@@ -306,8 +359,25 @@ const StandardCriteriaTable = ({
     setLocalAutoExpandEnabled(false);
   }, [externalStandards]);
 
+  // --- Filter mode and filtered standards (must be declared before "const standards") ---
+  const { filterMode, setFilterMode } = hookResult;
+
+  // Compute filtered standards locally so filter buttons use correct evidence-aware status
+  const filteredStandardsLocal = useMemo(() => {
+    const src = hookResult.standardsWithCriteria;
+    if (filterMode === "all") return src;
+    return src
+      .map((std) => ({
+        ...std,
+        Criterions: (std.Criterions || []).filter(
+          (c) => getCriterionStatus(c, countMap, pendingCountMap) === filterMode,
+        ),
+      }))
+      .filter((std) => (std.Criterions || []).length > 0);
+  }, [hookResult.standardsWithCriteria, filterMode, countMap, pendingCountMap]);
+
   // --- Unified state resolution ---
-  const standards = externalStandards || hookResult.filteredStandards;
+  const standards = externalStandards || filteredStandardsLocal;
 
   // --- Provider focus: filter to assigned standards ---
   const displayedStandards = useMemo(() => {
@@ -379,8 +449,27 @@ const StandardCriteriaTable = ({
     hookResult.autoExpandMatching,
   ]);
 
-  // Stats for summary cards (hook mode only)
-  const { stats, filterMode, setFilterMode } = hookResult;
+  // Recompute stats using actual verified + pending evidence counts (fixes bug where stats ignored countMap)
+  const stats = useMemo(() => {
+    const allCriteria = hookResult.standardsWithCriteria.flatMap(
+      (s) => s.Criterions || [],
+    );
+    return {
+      totalCriteria: allCriteria.length,
+      satisfiedCriteria: allCriteria.filter(
+        (c) => getCriterionStatus(c, countMap, pendingCountMap) === "satisfied",
+      ).length,
+      pendingCriteria: allCriteria.filter(
+        (c) => getCriterionStatus(c, countMap, pendingCountMap) === "pending",
+      ).length,
+      partialCriteria: allCriteria.filter(
+        (c) => getCriterionStatus(c, countMap, pendingCountMap) === "partial",
+      ).length,
+      emptyCriteria: allCriteria.filter(
+        (c) => getCriterionStatus(c, countMap, pendingCountMap) === "empty",
+      ).length,
+    };
+  }, [hookResult.standardsWithCriteria, countMap, pendingCountMap]);
 
   // --- Loading / Error / Empty states (hook mode only) ---
   if (!isExternalMode) {
@@ -424,24 +513,36 @@ const StandardCriteriaTable = ({
                 icon: ShieldCheck,
                 count: stats.satisfiedCriteria,
                 label: "Đạt",
-                colors: "emerald",
+                bg: "#d1fae5",
+                activeBg: "#ecfdf5",
+                activeBorder: "#6ee7b7",
+                iconColor: "#059669",
+                textColor: "#047857",
               },
               {
                 key: "partial" as FilterMode,
                 icon: ShieldAlert,
                 count: stats.partialCriteria,
                 label: "Thiếu",
-                colors: "amber",
+                bg: "#fef3c7",
+                activeBg: "#fffbeb",
+                activeBorder: "#fcd34d",
+                iconColor: "#d97706",
+                textColor: "#b45309",
               },
               {
-                key: "empty" as FilterMode,
-                icon: XCircle,
-                count: stats.emptyCriteria,
-                label: "Chưa có",
-                colors: "red",
+                key: "pending" as FilterMode,
+                icon: Clock,
+                count: stats.pendingCriteria,
+                label: "Chờ duyệt",
+                bg: "#dbeafe",
+                activeBg: "#eff6ff",
+                activeBorder: "#93c5fd",
+                iconColor: "#2563eb",
+                textColor: "#1d4ed8",
               },
             ] as const
-          ).map(({ key, icon: Icon, count, label, colors }) => (
+          ).map(({ key, icon: Icon, count, label, bg, activeBg, activeBorder, iconColor, textColor }) => (
             <button
               key={key}
               type="button"
@@ -452,70 +553,26 @@ const StandardCriteriaTable = ({
                 }`}
               style={
                 filterMode === key
-                  ? {
-                    backgroundColor:
-                      colors === "emerald"
-                        ? "#ecfdf5"
-                        : colors === "amber"
-                          ? "#fffbeb"
-                          : "#fef2f2",
-                    borderColor:
-                      colors === "emerald"
-                        ? "#6ee7b7"
-                        : colors === "amber"
-                          ? "#fcd34d"
-                          : "#fca5a5",
-                  }
+                  ? { backgroundColor: activeBg, borderColor: activeBorder }
                   : {}
               }
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                style={{
-                  backgroundColor:
-                    colors === "emerald"
-                      ? "#d1fae5"
-                      : colors === "amber"
-                        ? "#fef3c7"
-                        : "#fee2e2",
-                }}
+                style={{ backgroundColor: bg }}
               >
-                <Icon
-                  size={16}
-                  style={{
-                    color:
-                      colors === "emerald"
-                        ? "#059669"
-                        : colors === "amber"
-                          ? "#d97706"
-                          : "#ef4444",
-                  }}
-                />
+                <Icon size={16} style={{ color: iconColor }} />
               </div>
               <div className="text-left">
                 <div
                   className="text-lg font-bold leading-none"
-                  style={{
-                    color:
-                      colors === "emerald"
-                        ? "#047857"
-                        : colors === "amber"
-                          ? "#b45309"
-                          : "#dc2626",
-                  }}
+                  style={{ color: textColor }}
                 >
                   {count}
                 </div>
                 <div
                   className="text-[10px] font-medium opacity-70"
-                  style={{
-                    color:
-                      colors === "emerald"
-                        ? "#059669"
-                        : colors === "amber"
-                          ? "#d97706"
-                          : "#ef4444",
-                  }}
+                  style={{ color: iconColor }}
                 >
                   {label}
                 </div>
@@ -535,16 +592,32 @@ const StandardCriteriaTable = ({
               </span>
               <span className="text-[11px] font-bold text-slate-700">
                 {stats.satisfiedCriteria}/{stats.totalCriteria} tiêu chí
+                {stats.pendingCriteria > 0 && (
+                  <span className="text-blue-500 font-normal ml-1">
+                    ({stats.pendingCriteria} chờ duyệt)
+                  </span>
+                )}
               </span>
             </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex">
               <div
-                className="h-full rounded-full transition-all duration-700 ease-out"
+                className="h-full transition-all duration-700 ease-out"
                 style={{
                   width: `${stats.totalCriteria ? Math.round((stats.satisfiedCriteria / stats.totalCriteria) * 100) : 0}%`,
                   background: "linear-gradient(90deg, #10b981, #34d399)",
+                  borderRadius: stats.pendingCriteria > 0 ? "9999px 0 0 9999px" : "9999px",
                 }}
               />
+              {stats.pendingCriteria > 0 && (
+                <div
+                  className="h-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${stats.totalCriteria ? Math.round((stats.pendingCriteria / stats.totalCriteria) * 100) : 0}%`,
+                    background: "#93c5fd",
+                    borderRadius: stats.satisfiedCriteria > 0 ? "0 9999px 9999px 0" : "9999px",
+                  }}
+                />
+              )}
             </div>
           </div>
           <ProgressRing
@@ -673,6 +746,7 @@ const StandardCriteriaTable = ({
                     : undefined
                 }
                 countMap={countMap}
+                pendingCountMap={pendingCountMap}
                 evidenceMap={evidenceMap}
                 fileTypeMap={fileTypeMap}
               />
@@ -694,6 +768,7 @@ const StandardRow = ({
   selectedFileTypeId,
   isAssigned,
   countMap,
+  pendingCountMap,
   evidenceMap,
   fileTypeMap,
 }: {
@@ -704,14 +779,32 @@ const StandardRow = ({
   selectedFileTypeId?: string;
   isAssigned?: boolean;
   countMap: Map<string, number>;
+  pendingCountMap: Map<string, number>;
   evidenceMap: Map<string, { name: string; code: string }[]>;
   fileTypeMap: Record<string, string>;
 }) => {
   const criteria = standard.Criterions || [];
-  const stdStatus = getStandardStatus(standard);
+  const stdStatus = getStandardStatus(standard, countMap, pendingCountMap);
   const satisfiedInStd = criteria.filter(
-    (c) => getCriterionStatus(c, countMap) === "satisfied",
+    (c) => getCriterionStatus(c, countMap, pendingCountMap) === "satisfied",
   ).length;
+  const projectedSatisfiedInStd = selectedFileTypeId
+    ? criteria.filter((c) => {
+        const cReqs = c.CriterionRequirements || [];
+        const totalReq = cReqs.reduce(
+          (sum, r) => sum + (r.MinQuantity || 0),
+          0,
+        );
+        if (totalReq === 0) return false;
+        const projected = cReqs.reduce((sum, r) => {
+          const actual = countMap.get(r.FileTypeId) ?? 0;
+          const simulated =
+            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+          return sum + Math.min(simulated, r.MinQuantity || 0);
+        }, 0);
+        return projected >= totalReq;
+      }).length
+    : satisfiedInStd;
   const matchInStd = criteria.filter((c) =>
     matchingCriterionIds.has(c.Id),
   ).length;
@@ -759,7 +852,11 @@ const StandardRow = ({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 w-28">
-          <MiniBar current={satisfiedInStd} total={criteria.length} />
+          <MiniBar
+            current={satisfiedInStd}
+            total={criteria.length}
+            projected={selectedFileTypeId ? projectedSatisfiedInStd : undefined}
+          />
         </div>
       </button>
 
@@ -773,6 +870,7 @@ const StandardRow = ({
               isMatching={matchingCriterionIds.has(crit.Id)}
               selectedFileTypeId={selectedFileTypeId}
               countMap={countMap}
+              pendingCountMap={pendingCountMap}
               evidenceMap={evidenceMap}
               fileTypeMap={fileTypeMap}
             />
@@ -790,6 +888,7 @@ const CriterionRow = ({
   isMatching,
   selectedFileTypeId,
   countMap,
+  pendingCountMap,
   evidenceMap,
   fileTypeMap,
 }: {
@@ -797,10 +896,11 @@ const CriterionRow = ({
   isMatching: boolean;
   selectedFileTypeId?: string;
   countMap: Map<string, number>;
+  pendingCountMap: Map<string, number>;
   evidenceMap: Map<string, { name: string; code: string }[]>;
   fileTypeMap: Record<string, string>;
 }) => {
-  const status = getCriterionStatus(criterion, countMap);
+  const status = getCriterionStatus(criterion, countMap, pendingCountMap);
   const reqs = criterion.CriterionRequirements || [];
   const totalRequired = reqs.reduce((sum, r) => sum + (r.MinQuantity || 0), 0);
 
@@ -809,15 +909,34 @@ const CriterionRow = ({
     return sum + Math.min(actual, r.MinQuantity || 0);
   }, 0);
 
+  // Projected count: simulate +1 evidence of selected file type
+  const projectedCount =
+    selectedFileTypeId !== undefined
+      ? reqs.reduce((sum, r) => {
+          const actual = countMap.get(r.FileTypeId) ?? 0;
+          const simulated =
+            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+          return sum + Math.min(simulated, r.MinQuantity || 0);
+        }, 0)
+      : currentCount;
+
+  const wouldComplete =
+    selectedFileTypeId !== undefined &&
+    projectedCount >= totalRequired &&
+    totalRequired > 0 &&
+    currentCount < totalRequired;
+
   return (
     <div
       className={`relative pl-10 pr-3 py-2.5 border-t border-slate-100/80 transition-all duration-500 ${isMatching
         ? "bg-violet-50/70 ring-1 ring-inset ring-violet-200"
         : status === "satisfied"
           ? "bg-emerald-50/20"
-          : status === "partial"
-            ? "bg-amber-50/20"
-            : ""
+          : status === "pending"
+            ? "bg-blue-50/20"
+            : status === "partial"
+              ? "bg-amber-50/20"
+              : ""
         }`}
       style={
         isMatching ? { animation: "highlight-pulse 1.5s ease-out" } : undefined
@@ -836,6 +955,7 @@ const CriterionRow = ({
               {criterion.Code}
             </span>
             {status === "satisfied" && <Badge variant="green">Đủ MC</Badge>}
+            {status === "pending" && <Badge variant="blue">Chờ duyệt</Badge>}
             {status === "partial" && <Badge variant="amber">Thiếu MC</Badge>}
             {status === "empty" && <Badge variant="red">Chưa có MC</Badge>}
             {isMatching && (
@@ -846,6 +966,14 @@ const CriterionRow = ({
                 <Zap size={9} /> Phù hợp
               </span>
             )}
+            {wouldComplete && (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-800 bg-violet-200 border border-violet-300 px-1.5 py-0.5 rounded-md"
+                style={{ animation: "fade-in-up 0.3s ease-out" }}
+              >
+                <Check size={9} className="text-violet-700" /> Sẽ đạt
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-600 leading-relaxed mb-1.5">
             {criterion.Name}
@@ -853,7 +981,11 @@ const CriterionRow = ({
 
           {/* Progress */}
           <div className="flex items-center gap-3 mb-1.5">
-            <MiniBar current={currentCount} total={totalRequired} />
+            <MiniBar
+              current={currentCount}
+              total={totalRequired}
+              projected={selectedFileTypeId ? projectedCount : undefined}
+            />
           </div>
 
           {/* File type requirements */}

@@ -81,5 +81,27 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
+
+        [HttpPost, Route("submit-to-approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> SubmitToApprove([FromBody] EvidenceSubmitToApproveRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SubmitForReview(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Approve([FromBody] EvidenceApproveRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.Approve(request);
+            return Ok(new BaseResponse(true, 200));
+        }
     }
 }

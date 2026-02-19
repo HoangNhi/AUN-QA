@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -41,8 +40,6 @@ const PopupReuseEvidence = ({
   });
   const [searchTrigger, setSearchTrigger] = useState(0);
 
-  const queryClient = useQueryClient();
-
   const { data: fileTypesData } = useQuery({
     queryKey: ["fileTypesCombobox"],
     queryFn: () => fileTypeService.getAllCombobox(),
@@ -63,23 +60,6 @@ const PopupReuseEvidence = ({
     enabled: isOpen,
   });
 
-  const reuseMutation = useMutation({
-    mutationFn: (evidence: ModelVerifiedEvidenceForReuse) =>
-      evidenceCycleMapService.reuseVerifiedEvidence({
-        EvidenceId: evidence.EvidenceId,
-        TargetCycleId: targetCycleId,
-      }),
-    onSuccess: (_data, evidence) => {
-      toast.success("Tái sử dụng minh chứng thành công");
-      queryClient.invalidateQueries({ queryKey: ["evidenceCycleMapList"] });
-      onReuseSuccess(evidence);
-      onOpenChange(false);
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Có lỗi xảy ra");
-    },
-  });
-
   const handleSearch = () => {
     setPageRequest((prev) => ({
       ...prev,
@@ -92,15 +72,15 @@ const PopupReuseEvidence = ({
 
   const handleSelectEvidence = useCallback(
     (evidence: ModelVerifiedEvidenceForReuse) => {
-      reuseMutation.mutate(evidence);
+      onReuseSuccess(evidence);
+      onOpenChange(false);
     },
-    [reuseMutation],
+    [onReuseSuccess, onOpenChange],
   );
 
   const columns = useMemo(
-    () =>
-      getReuseColumns(handleSelectEvidence, reuseMutation.isPending, fileTypeMap),
-    [handleSelectEvidence, reuseMutation.isPending, fileTypeMap],
+    () => getReuseColumns(handleSelectEvidence, false, fileTypeMap),
+    [handleSelectEvidence, fileTypeMap],
   );
 
   const list = data?.Data?.Data ?? [];

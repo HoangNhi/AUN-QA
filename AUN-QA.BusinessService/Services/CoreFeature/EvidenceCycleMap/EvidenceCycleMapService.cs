@@ -296,6 +296,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                             Evidence_Name = e.Name,
                             Evidence_Code = e.Code,
                             Evidence_Status = e.Status,
+                            Evidence_FileTypeId = e.FileTypeId,
                             CreatedAt = ecm.CreatedAt,
                             CreatedBy = ecm.CreatedBy,
                             UpdatedAt = ecm.UpdatedAt,
@@ -323,6 +324,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             if (request.EvidenceStatus.HasValue)
             {
                 query = query.Where(x => x.Evidence_Status == request.EvidenceStatus.Value);
+            }
+
+            if (request.FileTypeId.HasValue)
+            {
+                query = query.Where(x => x.Evidence_FileTypeId == request.FileTypeId.Value);
             }
 
             var totalRow = await query.CountAsync();
@@ -419,7 +425,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<List<VerifiedFileTypeCountResponse>> GetVerifiedFileTypeCountsAsync(Guid cycleId)
         {
-            var data = await _context.EvidenceCycleMaps
+            var verifiedData = await _context.EvidenceCycleMaps
                 .Where(ecm => !ecm.IsDeleted && ecm.CycleId == cycleId)
                 .Join(
                     _context.Evidences.Where(e => !e.IsDeleted && e.Status == (int)EvidenceStatus.Verified),
@@ -429,15 +435,47 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 )
                 .ToListAsync();
 
-            return data
+            var pendingData = await _context.EvidenceCycleMaps
+                .Where(ecm => !ecm.IsDeleted && ecm.CycleId == cycleId)
+                .Join(
+                    _context.Evidences.Where(e => !e.IsDeleted && e.Status == (int)EvidenceStatus.Pending),
+                    ecm => ecm.EvidenceId,
+                    e   => e.Id,
+                    (ecm, e) => new { e.FileTypeId }
+                )
+                .ToListAsync();
+
+            var pendingMap = pendingData
+                .GroupBy(x => x.FileTypeId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var result = verifiedData
                 .GroupBy(x => x.FileTypeId)
                 .Select(g => new VerifiedFileTypeCountResponse
                 {
-                    FileTypeId = g.Key,
-                    Count      = g.Count(),
-                    Evidences  = g.Select(x => new EvidenceSummary { Name = x.Name, Code = x.Code }).ToList()
+                    FileTypeId   = g.Key,
+                    Count        = g.Count(),
+                    PendingCount = pendingMap.GetValueOrDefault(g.Key, 0),
+                    Evidences    = g.Select(x => new EvidenceSummary { Name = x.Name, Code = x.Code }).ToList()
                 })
                 .ToList();
+
+            // Include file types that have only pending evidence (no verified yet)
+            foreach (var kv in pendingMap)
+            {
+                if (!result.Any(r => r.FileTypeId == kv.Key))
+                {
+                    result.Add(new VerifiedFileTypeCountResponse
+                    {
+                        FileTypeId   = kv.Key,
+                        Count        = 0,
+                        PendingCount = kv.Value,
+                        Evidences    = []
+                    });
+                }
+            }
+
+            return result;
         }
         public async Task<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> GetVerifiedForReuseAsync(VerifiedEvidenceForReuseRequest request)
         {
@@ -482,6 +520,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .Skip((request.PageIndex - 1) * request.PageSize)
                 .Take(request.PageSize)
                 .ToListAsync();
+
+            // Populate attachments
+            var evidenceIds = data.Select(x => x.EvidenceId).ToList();
+            var attachments = await _context.EvidenceAttachments
+                .Where(x => evidenceIds.Contains(x.RelatedId) && x.IsActived && !x.IsDeleted)
+                .ToListAsync();
+
+            foreach (var item in data)
+            {
+                item.ListAttachment = attachments
+                    .Where(x => x.RelatedId == item.EvidenceId)
+                    .Select(x => _mapper.Map<ModelAttachment>(x))
+                    .ToList();
+            }
 
             return new GetListPagingResponse<ModelVerifiedEvidenceForReuse>
             {

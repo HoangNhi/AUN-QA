@@ -1,11 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
 import { PopupSession } from "./components/PopupSession";
 import { DataTable } from "@/components/ui/data-table";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { Button } from "@/components/ui/Button";
 import {
   InputGroup,
@@ -38,10 +36,6 @@ const SurveyCampaignPage = () => {
     isLoading,
   } = useSurveyCampaign();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   const [isPopupSessionOpen, setIsPopupSessionOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<{
     id: string;
@@ -60,16 +54,8 @@ const SurveyCampaignPage = () => {
         deleteList,
         showPopupSession,
         handleChangeStatus,
-        permission?.IsUpdated,
-        permission?.IsDeleted,
       ),
-    [
-      permission,
-      showPopupDetail,
-      deleteList,
-      showPopupSession,
-      handleChangeStatus,
-    ],
+    [showPopupDetail, deleteList, showPopupSession, handleChangeStatus],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(
@@ -89,9 +75,6 @@ const SurveyCampaignPage = () => {
       };
     });
   }, [debouncedSearchTerm, setPageRequest]);
-
-  const canAdd = permission?.IsAdded;
-  const canDelete = permission?.IsDeleted;
 
   const handleDelete = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -178,21 +161,17 @@ const SurveyCampaignPage = () => {
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail("", false)}>
-              Thêm
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={Object.keys(rowSelection).length === 0}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail("", false)}>
+            Thêm
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={Object.keys(rowSelection).length === 0}
+          >
+            Xóa
+          </Button>
         </div>
       </div>
 

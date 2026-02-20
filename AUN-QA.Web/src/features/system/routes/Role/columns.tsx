@@ -26,8 +26,6 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   showPopupPermission: (id: string) => void,
-  isUpdated?: boolean,
-  isDeleted?: boolean,
 ): ColumnDef<Role>[] => [
   {
     id: "select",
@@ -80,8 +78,6 @@ export const getColumns = (
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
         showPopupPermission={showPopupPermission}
-        isUpdated={isUpdated}
-        isDeleted={isDeleted}
       />
     ),
   },
@@ -92,15 +88,11 @@ const ActionCell = ({
   showPopupDetail,
   deleteList,
   showPopupPermission,
-  isUpdated,
-  isDeleted,
 }: {
   row: Row<Role>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
   showPopupPermission: (id: string) => void;
-  isUpdated?: boolean;
-  isDeleted?: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -115,25 +107,19 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {isUpdated && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {isUpdated && (
-            <DropdownMenuItem
-              onClick={() => showPopupPermission(row.original.Id)}
-            >
-              Phân quyền
-            </DropdownMenuItem>
-          )}
-          {isDeleted && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => showPopupPermission(row.original.Id)}
+          >
+            Phân quyền
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -53,8 +53,6 @@ interface DataTableProps<TData, TValue> {
   pageRequest: GetListPagingRequest;
   setPageRequest?: (pageRequest: GetListPagingRequest) => void;
   getList?: (pageRequest: GetListPagingRequest) => void;
-  canAdd?: boolean;
-  canDelete?: boolean;
   isLoading?: boolean;
   isSubmitting?: boolean;
 }
@@ -71,8 +69,6 @@ export function DataTable<TData, TValue>({
   pageRequest,
   setPageRequest,
   getList,
-  canAdd = true,
-  canDelete = true,
   isLoading = false,
   isSubmitting = false,
 }: DataTableProps<TData, TValue>) {
@@ -109,18 +105,15 @@ export function DataTable<TData, TValue>({
       )}
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-              Thêm
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+            Thêm
+          </Button>
           {submitToApprove && (
             <Button
               size="sm"
               variant="outline"
               disabled={
-                isSubmitting ||
-                table.getSelectedRowModel().rows.length === 0
+                isSubmitting || table.getSelectedRowModel().rows.length === 0
               }
               onClick={() =>
                 submitToApprove(
@@ -136,15 +129,13 @@ export function DataTable<TData, TValue>({
               Gửi duyệt
             </Button>
           )}
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Xóa
+          </Button>
         </div>
         <InputGroup className="col-span-1">
           <InputGroupInput

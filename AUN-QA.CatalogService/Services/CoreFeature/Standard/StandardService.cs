@@ -61,6 +61,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
+                && x.StandardSetId == request.StandardSetId
                 && !x.IsDeleted
             );
 
@@ -110,6 +111,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
+                && x.StandardSetId == request.StandardSetId
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (data.Any())

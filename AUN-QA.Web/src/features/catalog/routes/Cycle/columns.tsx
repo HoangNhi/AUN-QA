@@ -26,101 +26,93 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   changeStatus: (id: string) => void,
-  canUpdate: boolean = true,
-  canDelete: boolean = true,
 ): ColumnDef<CycleGetListPaging>[] => [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+  },
+  {
+    accessorKey: "Name",
+    header: "Kế hoạch",
+  },
+  {
+    accessorKey: "Year",
+    header: "Năm",
+  },
+  {
+    accessorKey: "StandardSet",
+    header: "Bộ tiêu chuẩn",
+  },
+  {
+    accessorKey: "StatusName",
+    header: "Trạng thái",
+  },
+  {
+    accessorKey: "StartDate",
+    header: "Ngày bắt đầu",
+    cell: ({ row }) => {
+      const date = row.getValue("StartDate");
+      if (!date) return "";
+      return format(date as string, "dd/MM/yyyy");
     },
-    {
-      accessorKey: "Name",
-      header: "Kế hoạch",
+  },
+  {
+    accessorKey: "EndDate",
+    header: "Ngày kết thúc",
+    cell: ({ row }) => {
+      const date = row.getValue("EndDate");
+      if (!date) return "";
+      return format(date as string, "dd/MM/yyyy");
     },
-    {
-      accessorKey: "Year",
-      header: "Năm",
+  },
+  {
+    id: "actions",
+    meta: {
+      className: "text-center",
     },
-    {
-      accessorKey: "StandardSet",
-      header: "Bộ tiêu chuẩn",
-    },
-    {
-      accessorKey: "StatusName",
-      header: "Trạng thái",
-    },
-    {
-      accessorKey: "StartDate",
-      header: "Ngày bắt đầu",
-      cell: ({ row }) => {
-        const date = row.getValue("StartDate");
-        if (!date) return "";
-        return format(date as string, "dd/MM/yyyy");
-      },
-    },
-    {
-      accessorKey: "EndDate",
-      header: "Ngày kết thúc",
-      cell: ({ row }) => {
-        const date = row.getValue("EndDate");
-        if (!date) return "";
-        return format(date as string, "dd/MM/yyyy");
-      },
-    },
-    {
-      id: "actions",
-      meta: {
-        className: "text-center",
-      },
-      cell: ({ row }) => (
-        <ActionCell
-          row={row}
-          showPopupDetail={showPopupDetail}
-          deleteList={deleteList}
-          changeStatus={changeStatus}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
-        />
-      ),
-    },
-  ];
+    cell: ({ row }) => (
+      <ActionCell
+        row={row}
+        showPopupDetail={showPopupDetail}
+        deleteList={deleteList}
+        changeStatus={changeStatus}
+      />
+    ),
+  },
+];
 
 const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
   changeStatus,
-  canUpdate,
-  canDelete,
 }: {
   row: Row<CycleGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
   changeStatus: (id: string) => void;
-  canUpdate: boolean;
-  canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
   const status = Number(row.original.Status);
-  const canChangeStatus = canUpdate && status < 5;
+  const canChangeStatus = status < 5;
 
   let changeStatusLabel = "";
   switch (status) {
@@ -140,8 +132,6 @@ const ActionCell = ({
       changeStatusLabel = "";
   }
 
-  if (!canUpdate && !canDelete) return null;
-
   return (
     <>
       <DropdownMenu>
@@ -153,23 +143,19 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
           {canChangeStatus && (
             <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
               {changeStatusLabel}
             </DropdownMenuItem>
           )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -179,7 +165,8 @@ const ActionCell = ({
           <DialogHeader>
             <DialogTitle>Xác nhận chuyển trạng thái</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn {changeStatusLabel.toLowerCase()} chu kỳ này không?
+              Bạn có chắc chắn muốn {changeStatusLabel.toLowerCase()} chu kỳ này
+              không?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

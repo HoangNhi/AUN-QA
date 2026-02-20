@@ -1,6 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
-import { useOutletContext } from "react-router-dom";
 import { useCycle } from "@/features/catalog/hooks/useCycle";
 import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -41,20 +39,9 @@ const CyclePage = () => {
     isFetching,
   } = useCycle();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   const columns = useMemo(
-    () =>
-      getColumns(
-        showPopupDetail,
-        deleteList,
-        changeStatus,
-        permission?.IsUpdated,
-        permission?.IsDeleted,
-      ),
-    [permission, showPopupDetail, deleteList, changeStatus],
+    () => getColumns(showPopupDetail, deleteList, changeStatus),
+    [showPopupDetail, deleteList, changeStatus],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(
@@ -82,9 +69,6 @@ const CyclePage = () => {
       };
     });
   }, [debouncedSearchTerm, yearTerm, setPageRequest]);
-
-  const canAdd = permission?.IsAdded;
-  const canDelete = permission?.IsDeleted;
 
   const handleDelete = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -192,21 +176,17 @@ const CyclePage = () => {
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail("", false)}>
-              Thêm
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={Object.keys(rowSelection).length === 0}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail("", false)}>
+            Thêm
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={Object.keys(rowSelection).length === 0}
+          >
+            Xóa
+          </Button>
         </div>
       </div>
 

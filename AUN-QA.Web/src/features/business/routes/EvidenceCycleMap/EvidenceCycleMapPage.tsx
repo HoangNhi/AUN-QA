@@ -1,11 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useOutletContext } from "react-router-dom";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
 import { DataTable } from "@/components/ui/data-table";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { Button } from "@/components/ui/Button";
 import {
   InputGroup,
@@ -41,10 +39,6 @@ const EvidenceCycleMapPage = () => {
     isApproving,
   } = useEvidenceCycleMap();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   const { data: fileTypesData } = useQuery({
     queryKey: ["fileTypesCombobox"],
     queryFn: () => fileTypeService.getAllCombobox(),
@@ -56,15 +50,8 @@ const EvidenceCycleMapPage = () => {
   }, [fileTypesData]);
 
   const columns = useMemo(
-    () =>
-      getColumns(
-        showPopupDetail,
-        deleteList,
-        permission?.IsUpdated,
-        permission?.IsDeleted,
-        fileTypeMap,
-      ),
-    [permission, showPopupDetail, deleteList, fileTypeMap],
+    () => getColumns(showPopupDetail, deleteList, fileTypeMap),
+    [showPopupDetail, deleteList, fileTypeMap],
   );
 
   const [searchTerm, setSearchTerm] = useState<string>(
@@ -85,9 +72,6 @@ const EvidenceCycleMapPage = () => {
       };
     });
   }, [debouncedSearchTerm, setPageRequest]);
-
-  const canAdd = permission?.IsAdded;
-  const canDelete = permission?.IsDeleted;
 
   const handleDelete = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -205,11 +189,9 @@ const EvidenceCycleMapPage = () => {
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail("", false)}>
-              Thêm
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail("", false)}>
+            Thêm
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -218,16 +200,14 @@ const EvidenceCycleMapPage = () => {
           >
             Gửi duyệt
           </Button>
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={Object.keys(rowSelection).length === 0}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={Object.keys(rowSelection).length === 0}
+          >
+            Xóa
+          </Button>
         </div>
       </div>
 

@@ -1,6 +1,4 @@
 import { useMemo, useState, useEffect } from "react";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
-import { useOutletContext } from "react-router-dom";
 import { useEvidence } from "@/features/business/hooks/useEvidence";
 import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
@@ -49,10 +47,6 @@ const EvidencePage = () => {
     isFetching,
   } = useEvidence();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || "",
   );
@@ -75,18 +69,9 @@ const EvidencePage = () => {
     (item) => item.Id,
   );
 
-  const canAdd = permission?.IsAdded;
-  const canDelete = permission?.IsDeleted;
-
   const columns = useMemo(
-    () =>
-      getColumns(
-        showPopupDetail,
-        deleteList,
-        permission?.IsUpdated,
-        permission?.IsDeleted,
-      ),
-    [permission, showPopupDetail, deleteList],
+    () => getColumns(showPopupDetail, deleteList),
+    [showPopupDetail, deleteList],
   );
 
   return (
@@ -165,11 +150,9 @@ const EvidencePage = () => {
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail("", false)}>
-              Thêm
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail("", false)}>
+            Thêm
+          </Button>
           <Button
             size="sm"
             variant="secondary"
@@ -178,16 +161,14 @@ const EvidencePage = () => {
           >
             Gửi duyệt
           </Button>
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={selectedIds.length === 0}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={selectedIds.length === 0}
+          >
+            Xóa
+          </Button>
         </div>
       </div>
 

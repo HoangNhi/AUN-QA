@@ -64,8 +64,6 @@ interface DataTableProps<TData, TValue> {
   pageRequest: SurveyTemplateGetListPagingRequest;
   setPageRequest?: (pageRequest: SurveyTemplateGetListPagingRequest) => void;
   getList?: (pageRequest: SurveyTemplateGetListPagingRequest) => void;
-  canAdd?: boolean;
-  canDelete?: boolean;
   isLoading?: boolean;
 }
 
@@ -80,12 +78,10 @@ export function DataTable<TData, TValue>({
   pageRequest,
   setPageRequest,
   getList,
-  canAdd = true,
-  canDelete = true,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || ""
+    pageRequest.TextSearch || "",
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -176,21 +172,17 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-              Thêm
-            </Button>
-          )}
-          {canDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={table.getSelectedRowModel().rows.length === 0}
-            >
-              Xóa
-            </Button>
-          )}
+          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+            Thêm
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={table.getSelectedRowModel().rows.length === 0}
+          >
+            Xóa
+          </Button>
         </div>
       </div>
       <div className="relative overflow-hidden rounded-md border">
@@ -210,7 +202,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -235,7 +227,7 @@ export function DataTable<TData, TValue>({
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -297,7 +289,7 @@ export function DataTable<TData, TValue>({
                   (pageRequest.PageIndex - 1) * pageRequest.PageSize + 1
                 } - ${Math.min(
                   pageRequest.PageIndex * pageRequest.PageSize,
-                  totalRow
+                  totalRow,
                 )}`
               : "0 - 0"}{" "}
             trong {totalRow} mục
@@ -332,7 +324,7 @@ export function DataTable<TData, TValue>({
                 deleteList?.(
                   table
                     .getSelectedRowModel()
-                    .rows.map((row) => (row.original as { Id: string }).Id)
+                    .rows.map((row) => (row.original as { Id: string }).Id),
                 );
                 setShowDeleteConfirm(false);
                 table.resetRowSelection();

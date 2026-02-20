@@ -1,10 +1,8 @@
 import { useMemo, useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
 import { useSurveyTemplate } from "../../hooks/useSurveyTemplate";
 import { getColumns } from "./columns";
 import PopupSurveyTemplate from "./PopupSurveyTemplate";
 import { DataTable } from "@/components/ui/data-table";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/Button";
 import {
@@ -43,10 +41,6 @@ const SurveyTemplatePage = () => {
     isLoading,
   } = useSurveyTemplate();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   // Filter state
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || "",
@@ -66,14 +60,8 @@ const SurveyTemplatePage = () => {
   }, [debouncedSearchTerm, pageRequest, setPageRequest]);
 
   const columns = useMemo(
-    () =>
-      getColumns(
-        showPopupDetail,
-        deleteList,
-        permission?.IsUpdated ?? true,
-        permission?.IsDeleted ?? true,
-      ),
-    [permission, showPopupDetail, deleteList],
+    () => getColumns(showPopupDetail, deleteList),
+    [showPopupDetail, deleteList],
   );
 
   // Get selected row IDs for delete
@@ -98,9 +86,6 @@ const SurveyTemplatePage = () => {
       PageIndex: 1,
     });
   };
-
-  const canAdd = permission?.IsAdded ?? true;
-  const canDelete = permission?.IsDeleted ?? true;
 
   return (
     <div className="container mx-auto space-y-4">
@@ -149,21 +134,17 @@ const SurveyTemplatePage = () => {
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2">
-        {canAdd && (
-          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-            Thêm
-          </Button>
-        )}
-        {canDelete && (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={selectedRowIds.length === 0}
-          >
-            Xóa
-          </Button>
-        )}
+        <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+          Thêm
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={selectedRowIds.length === 0}
+        >
+          Xóa
+        </Button>
       </div>
 
       {/* Data Table */}

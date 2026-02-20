@@ -25,8 +25,6 @@ import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  canUpdate: boolean = true,
-  canDelete: boolean = true,
 ): ColumnDef<EvidenceGetListPaging>[] => [
   {
     id: "select",
@@ -99,8 +97,6 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
       />
     ),
   },
@@ -110,18 +106,12 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  canUpdate,
-  canDelete,
 }: {
   row: Row<EvidenceGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  canUpdate: boolean;
-  canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  if (!canUpdate && !canDelete) return null;
 
   return (
     <>
@@ -134,18 +124,14 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -26,8 +26,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  isUpdated?: boolean,
-  isDeleted?: boolean
 ): ColumnDef<Menu>[] => [
   {
     id: "select",
@@ -72,7 +70,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanView}
           onCheckedChange={(value) => (row.original.CanView = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -88,7 +85,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanAdd}
           onCheckedChange={(value) => (row.original.CanAdd = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -104,7 +100,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanUpdate}
           onCheckedChange={(value) => (row.original.CanUpdate = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -120,7 +115,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanDelete}
           onCheckedChange={(value) => (row.original.CanDelete = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -136,7 +130,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanApprove}
           onCheckedChange={(value) => (row.original.CanApprove = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -152,7 +145,6 @@ export const getColumns = (
         <Checkbox
           checked={row.original.CanAnalyze}
           onCheckedChange={(value) => (row.original.CanAnalyze = !!value)}
-          disabled={!isUpdated}
         />
       );
     },
@@ -173,8 +165,6 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        isUpdated={isUpdated}
-        isDeleted={isDeleted}
       />
     ),
   },
@@ -184,14 +174,10 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  isUpdated,
-  isDeleted,
 }: {
   row: Row<Menu>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  isUpdated?: boolean;
-  isDeleted?: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -206,18 +192,14 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {isUpdated && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {isDeleted && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

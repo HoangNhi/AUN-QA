@@ -10,7 +10,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         Task Insert(EvidenceRequest request);
         Task Update(EvidenceRequest request);
         Task DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelEvidenceGetListPaging>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelEvidenceGetListPaging>> GetList(EvidenceGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task SubmitForReview(EvidenceSubmitToApproveRequest request);
         Task Approve(EvidenceApproveRequest request);

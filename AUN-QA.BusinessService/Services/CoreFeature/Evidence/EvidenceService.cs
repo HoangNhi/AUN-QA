@@ -167,7 +167,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelEvidenceGetListPaging>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelEvidenceGetListPaging>> GetList(EvidenceGetListPagingRequest request)
         {
             var fileTypes = await _catalogService.GetFileTypesStreamAsync(new CatalogService.Protos.GetFileTypesStreamRequest()).ToListAsync();
             var fileTypeDict = fileTypes.ToDictionary(f => f.Id, f => f.Name);
@@ -176,7 +176,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             if (!string.IsNullOrEmpty(request.TextSearch))
             {
-                query = query.Where(x => x.Name.Contains(request.TextSearch));
+                query = query.Where(x =>
+                    (x.Name ?? string.Empty).Contains(request.TextSearch)
+                    || (x.Code ?? string.Empty).Contains(request.TextSearch));
+            }
+
+            if (request.Status.HasValue)
+            {
+                query = query.Where(x => x.Status == request.Status.Value);
+            }
+
+            if (request.FileTypeId.HasValue)
+            {
+                query = query.Where(x => x.FileTypeId == request.FileTypeId.Value);
             }
 
             var totalRow = await query.CountAsync();

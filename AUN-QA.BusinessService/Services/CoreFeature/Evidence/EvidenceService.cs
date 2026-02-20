@@ -8,6 +8,7 @@ using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 {
@@ -52,13 +53,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         public async Task Insert(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
-                x.Name == request.Name
+                (x.Name == request.Name || x.Code == request.Code)
                 && !x.IsDeleted
             );
 
             if (data.Any())
             {
-                throw new Exception("Tên minh chứng đã tồn tại");
+                throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Evidence>(request);
@@ -94,7 +95,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             if (data.Any())
             {
-                throw new Exception("Tên minh chứng đã tồn tại");
+                throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
             }
 
             var update = await _context.Evidences.FindAsync(request.Id);
@@ -156,6 +157,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 if (delete == null)
                 {
                     throw new Exception("Dữ liệu không tồn tại");
+                }
+
+                if (delete.Status == ((int)EvidenceStatus.Pending) || delete.Status == ((int)EvidenceStatus.Verified))
+                {
+                    throw new Exception("Không được xóa minh chứng đang chờ duyệt hoặc đã duyệt");
                 }
 
                 delete.IsDeleted = true;

@@ -45,6 +45,10 @@ public partial class BusinessContext : DbContext
             entity.ToTable("Evidence");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)

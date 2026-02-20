@@ -44,7 +44,7 @@ const Router: FC = () => {
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/filetype" element={<FileTypePage />} />
           <Route path="/evidence" element={<EvidencePage />} />
-          <Route path="/evidence-cycle-map" element={<EvidenceCycleMapPage />} />
+          <Route path="/evidencecyclemap" element={<EvidenceCycleMapPage />} />
           <Route path="/systemgroup" element={<SystemGroupPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/role" element={<RolePage />} />

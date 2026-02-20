@@ -81,5 +81,16 @@ namespace AUN_QA.CatalogService.Controllers
             var result = await _service.GetComboboxByUser();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
+
+        [HttpPut("change-status")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ChangeStatus([FromBody] CycleChangeStatusRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.ChangeStatusAsync(request);
+            return Ok(new BaseResponse(true, 200));
+        }
     }
 }

@@ -34,8 +34,6 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   showPopupSession: (id: string, name: string) => void,
   changeStatus: (id: string) => Promise<void>,
-  canUpdate: boolean = true,
-  canDelete: boolean = true,
 ): ColumnDef<SurveyCampaignGetListPaging>[] => [
   {
     id: "select",
@@ -118,8 +116,6 @@ export const getColumns = (
         deleteList={deleteList}
         showPopupSession={showPopupSession}
         changeStatus={changeStatus}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
       />
     ),
   },
@@ -131,22 +127,15 @@ const ActionCell = ({
   deleteList,
   showPopupSession,
   changeStatus,
-  canUpdate,
-  canDelete,
 }: {
   row: Row<SurveyCampaignGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
   showPopupSession: (id: string, name: string) => void;
   changeStatus: (id: string) => Promise<void>;
-  canUpdate: boolean;
-  canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
-
-  // Restore variable definitions
-  if (!canUpdate && !canDelete) return null;
 
   const status = row.original.Status;
   const isDraft = status === 1;
@@ -165,14 +154,12 @@ const ActionCell = ({
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
 
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              <SquarePen className="mr-2 h-4 w-4" />
-              Cập nhật
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            <SquarePen className="mr-2 h-4 w-4" />
+            Cập nhật
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => showPopupSession(row.original.Id, row.original.Name)}
           >
@@ -180,7 +167,7 @@ const ActionCell = ({
             Người tham gia
           </DropdownMenuItem>
 
-          {!isCompleted && canUpdate && (
+          {!isCompleted && (
             <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
               {isDraft ? (
                 <>
@@ -196,15 +183,13 @@ const ActionCell = ({
             </DropdownMenuItem>
           )}
 
-          {canDelete && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                <span className="text-red-500">Xóa</span>
-              </DropdownMenuItem>
-            </>
-          )}
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+              <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+              <span className="text-red-500">Xóa</span>
+            </DropdownMenuItem>
+          </>
         </DropdownMenuContent>
       </DropdownMenu>
 

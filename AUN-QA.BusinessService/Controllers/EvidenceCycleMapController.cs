@@ -1,7 +1,9 @@
 ﻿using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Responses;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap;
 using Microsoft.AspNetCore.Mvc;
@@ -20,40 +22,40 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost, Route("get-list")]
-        [AttributePermission(Action = ActionType.VIEW)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetList(request);
-            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceCycleMap>> { Data = result, Success = true });
+            return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> { Data = result, Success = true });
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
             var result = await _service.GetById(request);
-            return Ok(new BaseResponse<ModelEvidenceCycleMap> { Data = result, Success = true });
+            return Ok(new BaseResponse<EvidenceCycleMapRequest> { Data = result, Success = true });
         }
 
-        [HttpPost("insert")]
-        [AttributePermission(Action = ActionType.ADD)]
-        public async Task<IActionResult> Insert([FromBody] EvidenceCycleMapRequest request)
+        [HttpPost("insert-with-evidence")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> InsertWithEvidence([FromBody] EvidenceCycleMapRequest request)
         {
             if (!ModelState.IsValid)
                 return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
 
-            await _service.Insert(request);
+            await _service.InsertWithEvidence(request);
             return Ok(new BaseResponse(true, 200));
         }
 
         [HttpPut, Route("update")]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Update(EvidenceCycleMapRequest request)
         {
             if (!ModelState.IsValid)
@@ -64,7 +66,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpDelete, Route("delete-list")]
-        [AttributePermission(Action = ActionType.DELETE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
@@ -80,6 +82,61 @@ namespace AUN_QA.BusinessService.Controllers
         {
             var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("submit-to-approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> SubmitToApprove([FromBody] EvidenceSubmitToApproveRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.SubmitToApprove(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Approve(EvidenceCycleMapApproveRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.Approve(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpGet, Route("get-verified-filetype-counts")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetVerifiedFileTypeCounts([FromQuery] Guid cycleId)
+        {
+            if (cycleId == Guid.Empty)
+                return Ok(new BaseResponse(false, 400, "cycleId không được để trống"));
+
+            var result = await _service.GetVerifiedFileTypeCountsAsync(cycleId);
+            return Ok(new BaseResponse<List<VerifiedFileTypeCountResponse>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("get-verified-for-reuse")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetVerifiedForReuse([FromBody] VerifiedEvidenceForReuseRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            var result = await _service.GetVerifiedForReuseAsync(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("reuse-verified-evidence")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ReuseVerifiedEvidence([FromBody] ReuseVerifiedEvidenceRequest request)
+        {
+            if (!ModelState.IsValid)
+                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
+
+            await _service.ReuseVerifiedEvidenceAsync(request);
+            return Ok(new BaseResponse(true, 200));
         }
     }
 }

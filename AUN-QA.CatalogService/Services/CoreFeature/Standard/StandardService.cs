@@ -61,6 +61,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
+                && x.StandardSetId == request.StandardSetId
                 && !x.IsDeleted
             );
 
@@ -110,6 +111,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         {
             var data = _context.Standards.Where(x =>
                 (x.Code == request.Code || x.Name == request.Name)
+                && x.StandardSetId == request.StandardSetId
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (data.Any())
@@ -311,15 +313,31 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request)
         {
-            var cycle = await _context.Cycles
-                .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
-            if (cycle == null)
+            Guid targetStandardSetId;
+
+            if (request.StandardSetId.HasValue && request.StandardSetId.Value != Guid.Empty)
             {
-                throw new Exception("Chu kỳ không tồn tại");
+                var standardSet = await _context.StandardSets
+                    .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
+                if (standardSet == null)
+                {
+                    throw new Exception("Bộ tiêu chuẩn không tồn tại");
+                }
+                targetStandardSetId = standardSet.Id;
+            }
+            else
+            {
+                var cycle = await _context.Cycles
+                    .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
+                if (cycle == null)
+                {
+                    throw new Exception("Chu kỳ không tồn tại");
+                }
+                targetStandardSetId = cycle.StandardSetId;
             }
 
             var standards = await _context.Standards
-                .Where(x => x.StandardSetId == cycle.StandardSetId && !x.IsDeleted && x.IsActived)
+                .Where(x => x.StandardSetId == targetStandardSetId && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
 
@@ -342,11 +360,17 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             var criterionIds = criteria.Select(x => x.Id).ToList();
 
-            var requirements = await _context.CriterionRequirements
-                .Where(x => criterionIds.Contains(x.CriterionId)
-                    && x.FileTypeId == request.FileTypeId
-                    && !x.IsDeleted && x.IsActived)
-                .ToListAsync();
+            var hasFileTypeFilter = request.FileTypeId.HasValue && request.FileTypeId.Value != Guid.Empty;
+
+            var requirementsQuery = _context.CriterionRequirements
+                .Where(x => criterionIds.Contains(x.CriterionId) && !x.IsDeleted && x.IsActived);
+
+            if (hasFileTypeFilter)
+            {
+                requirementsQuery = requirementsQuery.Where(x => x.FileTypeId == request.FileTypeId.Value);
+            }
+
+            var requirements = await requirementsQuery.ToListAsync();
 
             var requirementsByCriterion = requirements
                 .GroupBy(x => x.CriterionId)
@@ -356,9 +380,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             foreach (var standard in result)
             {
-                var standardCriteria = criteria
-                    .Where(x => x.StandardId == standard.Id && requirementsByCriterion.ContainsKey(x.Id))
-                    .ToList();
+                var standardCriteria = hasFileTypeFilter
+                    ? criteria.Where(x => x.StandardId == standard.Id && requirementsByCriterion.ContainsKey(x.Id)).ToList()
+                    : criteria.Where(x => x.StandardId == standard.Id).ToList();
 
                 var mappedCriteria = _mapper.Map<List<CriterionRequest>>(standardCriteria);
 
@@ -373,7 +397,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 standard.Criterions = mappedCriteria;
             }
 
-            return result.Where(x => x.Criterions.Any()).ToList();
+            return hasFileTypeFilter
+                ? result.Where(x => x.Criterions.Any()).ToList()
+                : result;
+        }
+
+        public async Task<List<ModelStandard>> GetByStandardSetId(Guid standardSetId)
+        {
+            return await _context.Standards
+                .Where(x => x.StandardSetId == standardSetId && x.IsActived && !x.IsDeleted)
+                .OrderBy(x => x.Order)
+                .Select(x => new ModelStandard { Id = x.Id, StandardSetId = x.StandardSetId, Code = x.Code, Name = x.Name, Order = x.Order })
+                .ToListAsync();
         }
 
         #region GRPC Services

@@ -19,6 +19,8 @@ interface ConfirmDeleteDialogProps {
   itemCount?: number;
   isLoading?: boolean;
   stopAutoClose?: boolean;
+  confirmText?: string;
+  confirmVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 }
 
 export function ConfirmDeleteDialog({
@@ -30,6 +32,8 @@ export function ConfirmDeleteDialog({
   itemCount = 1,
   isLoading = false,
   stopAutoClose = false,
+  confirmText = "Xóa",
+  confirmVariant = "destructive",
 }: ConfirmDeleteDialogProps) {
   const defaultDescription =
     itemCount > 1
@@ -52,7 +56,7 @@ export function ConfirmDeleteDialog({
             </Button>
           </DialogClose>
           <Button
-            variant="destructive"
+            variant={confirmVariant}
             disabled={isLoading}
             onClick={() => {
               onConfirm();
@@ -62,7 +66,7 @@ export function ConfirmDeleteDialog({
             }}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Xóa
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

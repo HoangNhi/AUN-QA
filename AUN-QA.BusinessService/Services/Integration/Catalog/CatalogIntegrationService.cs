@@ -86,6 +86,22 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             var response = await _grpcClient.IsUserInRoleAsync(request, cancellationToken: cancellationToken);
             return response.Value;
         }
+
+        public async Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default)
+        {
+            var request = new CanUserDoActionInPdcaRequest
+            {
+                CycleId = cycleId,
+                UserId = userId
+            };
+            if (standardId != null)
+                request.StandardId = standardId;
+            if (allowedRoles != null)
+                request.AllowedRoles.AddRange(allowedRoles);
+
+            var response = await _grpcClient.CanUserDoActionInPdcaAsync(request, cancellationToken: cancellationToken);
+            return response.Value;
+        }
         #endregion
 
         #region Standard Service
@@ -108,6 +124,21 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                     Description = item.Description,
                     Order = item.Order
                 };
+            }
+        }
+        #endregion
+
+        #region FileType Service
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            // Gọi gRPC
+            using var call = _grpcClient.GetFileTypesStream(request, cancellationToken: cancellationToken);
+
+            // Đọc stream từ gRPC và convert sang Model của mình
+            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            {
+                // Mapping: Proto -> DTO
+                yield return item;
             }
         }
         #endregion

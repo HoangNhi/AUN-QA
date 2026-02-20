@@ -380,3 +380,7 @@ FodyWeavers.xsd
 /.agents
 /.claude
 CLAUDE.md
+/.vscode
+/.mcp.json
+/package-lock.json
+/package.json

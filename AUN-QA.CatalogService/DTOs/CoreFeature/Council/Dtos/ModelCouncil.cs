@@ -6,8 +6,9 @@
         public Guid CycleId { get; set; }
         public Guid UserId { get; set; }
         /// <summary>
-        /// 1. Trưởng hội đồng, 2. Thành viên đánh giá, 3. Người cung cấp minh chứng
+        /// 1=Chủ tịch HĐ, 2=Phó CT HĐ, 3=Thư ký, 4=Thành viên ĐG, 5=Người cung cấp MC
         /// </summary>
         public int RoleId { get; set; }
+        public List<Guid> AssignedStandardIds { get; set; } = new();
     }
 }

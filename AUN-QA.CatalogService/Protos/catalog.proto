@@ -14,6 +14,9 @@ service CatalogProto {
 
   rpc IsUserInRole (IsUserInRoleRequest) returns (google.protobuf.BoolValue);
   rpc GetUserRole (GetUserRoleRequest) returns (google.protobuf.Int32Value);
+  rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
+
+  rpc CanUserDoActionInPdca (CanUserDoActionInPdcaRequest) returns (google.protobuf.BoolValue);
 }
 
 message GetStakeholdersStreamRequest {
@@ -70,4 +73,24 @@ message CriterionInfo {
 message GetCriterionsForEvidenceStreamRequest {
   string file_type_id = 1;
   string cycle_id = 2;
+}
+
+// FileType
+message FileTypeInfo {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  optional string description = 4;
+}
+
+message GetFileTypesStreamRequest {
+  google.protobuf.StringValue id = 1;
+}
+
+// PDCA Permission Check
+message CanUserDoActionInPdcaRequest {
+  string user_id = 1;
+  string cycle_id = 2;
+  google.protobuf.StringValue standard_id = 4; // optional
+  repeated int32 allowed_roles = 5;
 }

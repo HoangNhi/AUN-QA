@@ -11,6 +11,7 @@ using AutoMapper;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 
 namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 {
@@ -67,6 +68,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             var add = _mapper.Map<Entities.Cycle>(request);
             add.Id = Guid.NewGuid();
+            add.Status = (int)CycleStatus.Plan; // Lập kế hoạch — always draft on creation
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             add.IsActived = request.IsActived;
@@ -84,6 +86,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
+                if (request.ListCouncil.Count < 9)
+                {
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var council in request.ListCouncil)
@@ -135,6 +143,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            if (update.Status >= (int)CycleStatus.Finish)
+            {
+                throw new Exception("Chu kỳ đã kết thúc, không thể cập nhật");
+            }
+
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
@@ -167,6 +180,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
                     throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                }
+
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
+                if (request.ListCouncil.Count < 9)
+                {
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var item in request.ListCouncil)
@@ -296,9 +315,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var res = _mapper.Map<ModelCycleGetListPaging>(x.Cycle);
                 res.StatusName = x.Cycle.Status switch
                 {
-                    1 => "Lập kế hoạch",
-                    2 => "Đang diễn ra",
-                    3 => "Đã kết thúc",
+                    (int)CycleStatus.Plan => "Lập kế hoạch",
+                    (int)CycleStatus.Do => "Thực hiện",
+                    (int)CycleStatus.Check => "Kiểm tra",
+                    (int)CycleStatus.Act => "Cải tiến",
+                    (int)CycleStatus.Finish => "Kết thúc",
                     _ => "Không xác định"
                 };
                 res.StandardSet = x.StandardSetName;
@@ -335,6 +356,55 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                         };
 
             return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
+        }
+
+        public async Task ChangeStatusAsync(CycleChangeStatusRequest request)
+        {
+            var cycle = await _context.Cycles.FindAsync(request.Id);
+            if (cycle == null)
+                throw new Exception("Dữ liệu không tồn tại");
+
+            var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+
+            // PCT HĐ chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ
+            var councilRecord = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == cycle.Id
+                && c.UserId == Guid.Parse(userId)
+                && !c.IsDeleted
+                && c.IsActived);
+
+            if (councilRecord != null
+                && (CouncilRole)councilRecord.RoleId == CouncilRole.ViceChairman
+                && !IsDelegationActive(councilRecord))
+            {
+                throw new Exception("Phó Chủ tịch Hội đồng chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ");
+            }
+
+            var checkPermissionInPDCA = await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = cycle.Id,
+                UserId = Guid.Parse(userId),
+                AllowedRoles = new List<int>
+                {
+                    (int)CouncilRole.HeadOfCouncil,
+                    (int)CouncilRole.ViceChairman
+                }
+            });
+
+            if (!checkPermissionInPDCA)
+            {
+                throw new Exception("Chỉ Chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
+            }
+
+            if (cycle.Status >= (int)CycleStatus.Finish)
+                throw new Exception("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
+
+            cycle.Status += 1;
+            cycle.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
+            cycle.UpdatedAt = DateTime.Now;
+
+            _context.Cycles.Update(cycle);
+            await _context.SaveChangesAsync();
         }
         #endregion
 
@@ -390,6 +460,71 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 return null;
             return council.RoleId;
         }
+        #endregion
+
+        #region PDCA Permissions
+
+        /// <inheritdoc/>
+        public async Task<bool> CanUserDoActionInPdcaAsync(PdcaActionCheckRequest request)
+        {
+            var council = await _context.Councils.FirstOrDefaultAsync(c =>
+                c.CycleId == request.CycleId
+                && c.UserId == request.UserId
+                && !c.IsDeleted
+                && c.IsActived);
+
+            if (council == null)
+                return false;
+
+            if (request.AllowedRoles != null && request.AllowedRoles.Count > 0)
+                return request.AllowedRoles.Contains(council.RoleId);
+
+            // Không giới hạn vai trò: bất kỳ thành viên HĐ đang hoạt động nào cũng được phép
+            return true;
+        }
+
+        /// <summary>
+        /// Kiểm tra ủy quyền của PCT HĐ còn hiệu lực hay không.
+        /// Hợp lệ khi: IsDelegated = true VÀ (DelegatedUntil == null HOẶC chưa hết hạn).
+        /// </summary>
+        private static bool IsDelegationActive(Entities.Council council)
+        {
+            if (!council.IsDelegated)
+                return false;
+
+            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.UtcNow)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Kiểm tra phạm vi tiêu chuẩn phụ trách.
+        /// - Nếu standardId == null: không cần lọc phạm vi → true.
+        /// - Nếu standardId có giá trị: AssignedStandards JSON phải chứa standardId đó.
+        /// - Nếu AssignedStandards rỗng/null: user chưa được phân công TC nào → false khi có standardId.
+        /// </summary>
+        private static bool IsInScope(string? assignedStandardsJson, Guid? standardId)
+        {
+            // Không lọc phạm vi nếu không chỉ định TC cụ thể
+            if (standardId == null)
+                return true;
+
+            if (string.IsNullOrWhiteSpace(assignedStandardsJson))
+                return false;
+
+            try
+            {
+                var assignedIds = JsonSerializer.Deserialize<List<Guid>>(assignedStandardsJson);
+                return assignedIds != null && assignedIds.Contains(standardId.Value);
+            }
+            catch
+            {
+                // JSON không hợp lệ → an toàn là từ chối
+                return false;
+            }
+        }
+
         #endregion
     }
 }

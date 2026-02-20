@@ -1,6 +1,5 @@
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
@@ -26,8 +25,6 @@ import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  canUpdate: boolean = true,
-  canDelete: boolean = true
 ): ColumnDef<EvidenceGetListPaging>[] => [
   {
     id: "select",
@@ -63,7 +60,7 @@ export const getColumns = (
     cell: ({ row }) => {
       const status = row.getValue("Status") as number;
       const statusOption = EVIDENCE_STATUS_OPTIONS.find(
-        (opt) => opt.Value === status.toString()
+        (opt) => opt.Value === status.toString(),
       );
       const statusText = statusOption?.Text || "N/A";
 
@@ -78,7 +75,9 @@ export const getColumns = (
       const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
 
       return (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+        >
           {statusText}
         </span>
       );
@@ -87,23 +86,6 @@ export const getColumns = (
   {
     accessorKey: "FileTypeName",
     header: "Loại tài liệu",
-  },
-  {
-    accessorKey: "IssueDate",
-    header: "Ngày ban hành",
-    cell: ({ row }) => {
-      const date = row.getValue("IssueDate") as string | undefined;
-      if (!date) return "";
-      try {
-        return format(new Date(date), "dd/MM/yyyy");
-      } catch {
-        return "";
-      }
-    },
-  },
-  {
-    accessorKey: "CycleName",
-    header: "Kế hoạch",
   },
   {
     id: "actions",
@@ -115,8 +97,6 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
       />
     ),
   },
@@ -126,18 +106,12 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  canUpdate,
-  canDelete,
 }: {
   row: Row<EvidenceGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  canUpdate: boolean;
-  canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  if (!canUpdate && !canDelete) return null;
 
   return (
     <>
@@ -150,18 +124,14 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

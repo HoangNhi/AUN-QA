@@ -3,6 +3,14 @@ import type { GetListStandardWithCriteriaRequest, Standard, StandardGetListPagin
 import type { GetListPagingResponse, ModelCombobox } from "@/types/base/base.types";
 import { API_ENDPOINTS } from "@/config/constants";
 
+export interface StandardOption {
+    Id: string;
+    StandardSetId: string;
+    Code: string;
+    Name: string;
+    Order: number;
+}
+
 export const standardService = {
     getList: async (request: StandardGetListPagingRequest): Promise<ApiResponse<GetListPagingResponse<Standard>>> => {
         return api.post<GetListPagingResponse<Standard>>(API_ENDPOINTS.Catalog.Standard.GET_LIST, request);
@@ -30,5 +38,9 @@ export const standardService = {
 
     getAllCombobox: async (): Promise<ApiResponse<ModelCombobox[]>> => {
         return api.get<ModelCombobox[]>(API_ENDPOINTS.Catalog.Standard.GET_ALL_COMBOBOX);
-    }
+    },
+
+    getByStandardSetId: async (standardSetId: string): Promise<ApiResponse<StandardOption[]>> => {
+        return api.get<StandardOption[]>(API_ENDPOINTS.Catalog.Standard.GET_BY_STANDARD_SET_ID, { params: { standardSetId } });
+    },
 };

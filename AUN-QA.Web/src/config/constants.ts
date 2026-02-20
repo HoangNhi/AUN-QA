@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Cycle/update`,
       DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
       GET_COMBBOX_BY_USER: `${CATALOG_BASE}/Cycle/get-combobox-by-user`,
+      CHANGE_STATUS: `${CATALOG_BASE}/Cycle/change-status`,
     },
     Stakeholder: {
       GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,
@@ -91,6 +92,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Standard/update`,
       DELETE_LIST: `${CATALOG_BASE}/Standard/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Standard/get-all-combobox`,
+      GET_BY_STANDARD_SET_ID: `${CATALOG_BASE}/Standard/get-by-standard-set-id`,
     },
     StandardSet: {
       GET_LIST: `${CATALOG_BASE}/StandardSet/get-list`,
@@ -109,14 +111,21 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/Evidence/update`,
       DELETE_LIST: `${BUSINESS_BASE}/Evidence/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
+      SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/Evidence/submit-to-approve`,
+      APPROVE: `${BUSINESS_BASE}/Evidence/approve`,
     },
     EvidenceCycleMap: {
       GET_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/get-list`,
       GET_BY_ID: `${BUSINESS_BASE}/EvidenceCycleMap/get-by-id`,
-      INSERT: `${BUSINESS_BASE}/EvidenceCycleMap/insert`,
+      INSERT_WITH_EVIDENCE: `${BUSINESS_BASE}/EvidenceCycleMap/insert-with-evidence`,
       UPDATE: `${BUSINESS_BASE}/EvidenceCycleMap/update`,
       DELETE_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/delete-list`,
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/EvidenceCycleMap/get-all-combobox`,
+      SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/submit-to-approve`,
+      APPROVE: `${BUSINESS_BASE}/EvidenceCycleMap/approve`,
+      GET_VERIFIED_FILETYPE_COUNTS: `${BUSINESS_BASE}/EvidenceCycleMap/get-verified-filetype-counts`,
+      GET_VERIFIED_FOR_REUSE: `${BUSINESS_BASE}/EvidenceCycleMap/get-verified-for-reuse`,
+      REUSE_VERIFIED_EVIDENCE: `${BUSINESS_BASE}/EvidenceCycleMap/reuse-verified-evidence`,
     },
     SurveyTemplate: {
       GET_LIST: `${BUSINESS_BASE}/SurveyTemplate/get-list`,

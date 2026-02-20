@@ -24,7 +24,7 @@ namespace AUN_QA.BusinessService.Controllers
 
         #region SurveyCampaign
         [HttpPost, Route("get-list")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(SurveyCampaignGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -35,7 +35,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -46,7 +46,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost("insert")]
-        [AttributePermission(Action = ActionType.ADD)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Insert([FromBody] SurveyCampaignRequest request)
         {
             if (!ModelState.IsValid)
@@ -57,7 +57,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPut, Route("update")]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Update(SurveyCampaignRequest request)
         {
             if (!ModelState.IsValid)
@@ -68,7 +68,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpDelete, Route("delete-list")]
-        [AttributePermission(Action = ActionType.DELETE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
@@ -87,7 +87,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost("change-status")]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> ChangeStatus([FromBody] GetByIdRequest request)
         {
             if (!ModelState.IsValid)
@@ -119,7 +119,7 @@ namespace AUN_QA.BusinessService.Controllers
 
         #region Session
         [HttpPost, Route("get-stakeholder-not-in-campaign")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
         {
             if (!ModelState.IsValid)
@@ -130,7 +130,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost, Route("get-list-session")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetListSession(SurveySessionGetListPagingRequest request)
         {
             if (!ModelState.IsValid)
@@ -141,7 +141,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost, Route("add-list-stakeholder-to-campaign")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
         {
             if (!ModelState.IsValid)
@@ -152,7 +152,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost, Route("add-all-stakeholder-to-campaign")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
         {
             if (!ModelState.IsValid)
@@ -163,7 +163,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpDelete, Route("delete-list-session")]
-        [AttributePermission(Action = ActionType.DELETE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteListSession([FromBody] DeleteListRequest request)
         {
             if (!ModelState.IsValid)
@@ -174,7 +174,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost("send-survey-invitation")]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> SendSurveyInvitation([FromBody] GetByIdRequest request)
         {
             if (!ModelState.IsValid)

@@ -32,3 +32,12 @@ export const CYCLE_SCOPE_OPTIONS: ModelCombobox[] = [
   { Value: "1", Text: "Cấp chương trình" },
   { Value: "2", Text: "Cấp cơ sở" },
 ];
+
+// Council roles — matches CouncilRole enum in BE (RBAC §5.1)
+export const COUNCIL_ROLES: ModelCombobox[] = [
+  { Value: "1", Text: "Chủ tịch HĐ" },
+  { Value: "2", Text: "Phó Chủ tịch HĐ" },
+  { Value: "3", Text: "Thư ký" },
+  { Value: "4", Text: "Thành viên ĐG" },
+  { Value: "5", Text: "Người cung cấp MC" },
+];

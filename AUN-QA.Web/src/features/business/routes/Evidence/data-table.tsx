@@ -47,14 +47,14 @@ interface DataTableProps<TData, TValue> {
   totalRow: number;
   showPopupDetail?: (id: string, isEdit: boolean) => void;
   deleteList?: (ids: string[]) => void;
+  submitToApprove?: (ids: string[]) => void;
   rowSelection?: RowSelectionState;
   setRowSelection?: OnChangeFn<RowSelectionState>;
   pageRequest: GetListPagingRequest;
   setPageRequest?: (pageRequest: GetListPagingRequest) => void;
   getList?: (pageRequest: GetListPagingRequest) => void;
-  canAdd?: boolean;
-  canDelete?: boolean;
   isLoading?: boolean;
+  isSubmitting?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -63,14 +63,14 @@ export function DataTable<TData, TValue>({
   totalRow,
   showPopupDetail,
   deleteList,
+  submitToApprove,
   rowSelection,
   setRowSelection,
   pageRequest,
   setPageRequest,
   getList,
-  canAdd = true,
-  canDelete = true,
   isLoading = false,
+  isSubmitting = false,
 }: DataTableProps<TData, TValue>) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState(pageRequest.TextSearch);
@@ -105,20 +105,37 @@ export function DataTable<TData, TValue>({
       )}
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">
-          {canAdd && (
-            <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-              Thêm
-            </Button>
-          )}
-          {canDelete && (
+          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+            Thêm
+          </Button>
+          {submitToApprove && (
             <Button
               size="sm"
-              variant="destructive"
-              onClick={() => setShowDeleteConfirm(true)}
+              variant="outline"
+              disabled={
+                isSubmitting || table.getSelectedRowModel().rows.length === 0
+              }
+              onClick={() =>
+                submitToApprove(
+                  table
+                    .getSelectedRowModel()
+                    .rows.map((row) => (row.original as { Id: string }).Id),
+                )
+              }
             >
-              Xóa
+              {isSubmitting && (
+                <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+              )}
+              Gửi duyệt
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Xóa
+          </Button>
         </div>
         <InputGroup className="col-span-1">
           <InputGroupInput

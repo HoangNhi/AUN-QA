@@ -13,6 +13,18 @@ public partial class Council
 
     public int RoleId { get; set; }
 
+    public string? AssignedStandards { get; set; }
+
+    public bool IsDelegated { get; set; }
+
+    public DateTime? DelegatedAt { get; set; }
+
+    public DateTime? DelegatedUntil { get; set; }
+
+    public string? DelegatedBy { get; set; }
+
+    public string? DelegationReason { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public string CreatedBy { get; set; } = null!;

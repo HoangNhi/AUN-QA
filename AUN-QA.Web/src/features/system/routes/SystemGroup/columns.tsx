@@ -26,8 +26,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  isUpdated?: boolean,
-  isDeleted?: boolean
 ): ColumnDef<SystemGroupGetListPaging>[] => [
   {
     id: "select",
@@ -77,8 +75,6 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        isUpdated={isUpdated}
-        isDeleted={isDeleted}
       />
     ),
   },
@@ -88,14 +84,10 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  isUpdated,
-  isDeleted,
 }: {
   row: Row<SystemGroupGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  isUpdated?: boolean;
-  isDeleted?: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -110,18 +102,14 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {isUpdated && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {isDeleted && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

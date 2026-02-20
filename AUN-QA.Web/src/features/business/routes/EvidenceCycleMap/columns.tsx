@@ -1,6 +1,5 @@
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
@@ -19,15 +18,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import type { EvidenceCycleMapGetListPaging } from "@/features/business/types/evidence.types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS } from "@/constants/business.constants";
+import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import type { EvidenceCycleMapGetListPaging } from "../../types/evidence-cycle-map.types";
 
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  canUpdate: boolean = true,
-  canDelete: boolean = true
+  fileTypeMap?: Record<string, string>,
 ): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
   {
     id: "select",
@@ -50,57 +48,50 @@ export const getColumns = (
     ),
   },
   {
-    accessorKey: "EvidenceCode",
+    accessorKey: "evidenceCode",
     header: "Mã MC",
   },
   {
-    accessorKey: "EvidenceName",
+    accessorKey: "evidenceName",
     header: "Tên minh chứng",
   },
   {
-    accessorKey: "CycleName",
+    accessorKey: "cycleName",
     header: "Kế hoạch",
   },
   {
-    accessorKey: "ReviewStatus",
-    header: "Trạng thái xét duyệt",
+    accessorKey: "fileTypeId",
+    header: "Loại tài liệu",
     cell: ({ row }) => {
-      const status = row.getValue("ReviewStatus") as number;
-      const statusOption = EVIDENCE_CYCLE_MAP_REVIEW_STATUS_OPTIONS.find(
-        (opt) => opt.Value === status.toString()
+      const name = fileTypeMap?.[row.original.fileTypeId ?? ""];
+      return <span>{name ?? "-"}</span>;
+    },
+  },
+  {
+    accessorKey: "evidenceStatus",
+    header: "Trạng thái minh chứng",
+    cell: ({ row }) => {
+      const status = row.getValue("evidenceStatus") as number;
+      const statusOption = EVIDENCE_STATUS_OPTIONS.find(
+        (opt) => opt.Value === status?.toString(),
       );
       const statusText = statusOption?.Text || "N/A";
 
       const statusColors: Record<number, string> = {
-        1: "bg-gray-100 text-gray-700", // Chưa bắt đầu
-        2: "bg-yellow-100 text-yellow-700", // Đang tiến hành
-        3: "bg-green-100 text-green-700", // Hoàn thành
+        1: "bg-gray-100 text-gray-700",
+        2: "bg-yellow-100 text-yellow-700",
+        3: "bg-green-100 text-green-700",
       };
 
       const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
 
       return (
-        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+        >
           {statusText}
         </span>
       );
-    },
-  },
-  {
-    accessorKey: "FinalDecisionBy",
-    header: "Người quyết định",
-  },
-  {
-    accessorKey: "FinalDecisionAt",
-    header: "Ngày quyết định",
-    cell: ({ row }) => {
-      const date = row.getValue("FinalDecisionAt") as string | undefined;
-      if (!date) return "";
-      try {
-        return format(new Date(date), "dd/MM/yyyy");
-      } catch {
-        return "";
-      }
     },
   },
   {
@@ -113,8 +104,6 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
       />
     ),
   },
@@ -124,18 +113,12 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  canUpdate,
-  canDelete,
 }: {
   row: Row<EvidenceCycleMapGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  canUpdate: boolean;
-  canDelete: boolean;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  if (!canUpdate && !canDelete) return null;
 
   return (
     <>
@@ -148,18 +131,14 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
-            </DropdownMenuItem>
-          )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -93,5 +93,13 @@ namespace AUN_QA.CatalogService.Controllers
             var result = await _service.GetAllForCombobox();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
+
+        [HttpGet, Route("get-by-standard-set-id")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetByStandardSetId([FromQuery] Guid standardSetId)
+        {
+            var result = await _service.GetByStandardSetId(standardSetId);
+            return Ok(new BaseResponse<List<ModelStandard>> { Data = result, Success = true });
+        }
     }
 }

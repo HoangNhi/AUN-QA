@@ -25,8 +25,7 @@ import { format } from "date-fns";
 export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
-  canUpdate: boolean = true,
-  canDelete: boolean = true,
+  changeStatus: (id: string) => void,
 ): ColumnDef<CycleGetListPaging>[] => [
   {
     id: "select",
@@ -92,8 +91,7 @@ export const getColumns = (
         row={row}
         showPopupDetail={showPopupDetail}
         deleteList={deleteList}
-        canUpdate={canUpdate}
-        canDelete={canDelete}
+        changeStatus={changeStatus}
       />
     ),
   },
@@ -103,18 +101,36 @@ const ActionCell = ({
   row,
   showPopupDetail,
   deleteList,
-  canUpdate,
-  canDelete,
+  changeStatus,
 }: {
   row: Row<CycleGetListPaging>;
   showPopupDetail: (id: string, isEdit: boolean) => void;
   deleteList: (ids: string[]) => void;
-  canUpdate: boolean;
-  canDelete: boolean;
+  changeStatus: (id: string) => void;
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
-  if (!canUpdate && !canDelete) return null;
+  const status = Number(row.original.Status);
+  const canChangeStatus = status < 5;
+
+  let changeStatusLabel = "";
+  switch (status) {
+    case 1:
+      changeStatusLabel = "Thực hiện";
+      break;
+    case 2:
+      changeStatusLabel = "Kiểm tra";
+      break;
+    case 3:
+      changeStatusLabel = "Cải tiến";
+      break;
+    case 4:
+      changeStatusLabel = "Kết thúc";
+      break;
+    default:
+      changeStatusLabel = "";
+  }
 
   return (
     <>
@@ -127,21 +143,49 @@ const ActionCell = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
-          {canUpdate && (
-            <DropdownMenuItem
-              onClick={() => showPopupDetail(row.original.Id, true)}
-            >
-              Cập nhật
+          <DropdownMenuItem
+            onClick={() => showPopupDetail(row.original.Id, true)}
+          >
+            Cập nhật
+          </DropdownMenuItem>
+          {canChangeStatus && (
+            <DropdownMenuItem onClick={() => setShowStatusConfirm(true)}>
+              {changeStatusLabel}
             </DropdownMenuItem>
           )}
-          {canDelete && (
-            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
-              Xóa
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+            Xóa
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Change Status Confirmation */}
+      <Dialog open={showStatusConfirm} onOpenChange={setShowStatusConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận chuyển trạng thái</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn {changeStatusLabel.toLowerCase()} chu kỳ này
+              không?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              onClick={() => {
+                changeStatus(row.original.Id);
+                setShowStatusConfirm(false);
+              }}
+            >
+              Xác nhận
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>

@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
-import { useOutletContext } from "react-router-dom";
-import type { GetPermissionByUser } from "@/features/system/types/role.types";
 import PopupDetail from "./PopupDetail";
 import { useMenu } from "@/features/system/hooks/useMenu";
 
@@ -23,19 +21,9 @@ const MenuPage = () => {
     isFetching,
   } = useMenu();
 
-  const { permission } = useOutletContext<{
-    permission: GetPermissionByUser | null;
-  }>();
-
   const columns = useMemo(
-    () =>
-      getColumns(
-        showPopupDetail,
-        deleteList,
-        permission?.IsUpdated,
-        permission?.IsDeleted
-      ),
-    [permission, deleteList, showPopupDetail]
+    () => getColumns(showPopupDetail, deleteList),
+    [deleteList, showPopupDetail],
   );
 
   return (
@@ -51,8 +39,6 @@ const MenuPage = () => {
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
         getList={getList}
-        canAdd={permission?.IsAdded}
-        canDelete={permission?.IsDeleted}
         isLoading={isFetching}
       />
       {isOpen && (

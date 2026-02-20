@@ -38,7 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       systemGroup
         ?.filter((g) => !g.ParentId)
         ?.sort((a, b) => a.Sort - b.Sort) || [],
-    [systemGroup]
+    [systemGroup],
   );
 
   return (
@@ -70,7 +70,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="data-[active=true]:bg-muted data-[active=true]:font-bold"
               >
                 <Link className="font-medium" to="/">
-                  Trang chủ
+                  <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
+                    Trang chủ
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -79,7 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {rootGroups.map((group) => {
               // Find direct menus for this group
               const groupMenus = menu?.filter(
-                (item) => item.SystemGroupId === group.Id
+                (item) => item.SystemGroupId === group.Id,
               );
               // Find child groups (Level 2)
               const childGroups = systemGroup
@@ -105,8 +107,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   menu?.some(
                     (item) =>
                       item.SystemGroupId === subGroup.Id &&
-                      isPathActive(item.Controller)
-                  )
+                      isPathActive(item.Controller),
+                  ),
                 );
 
               return (
@@ -124,7 +126,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         className="font-medium data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-bold"
                         isActive={isGroupActive}
                       >
-                        {group.Name}
+                        <span className="min-w-0 flex-1 whitespace-normal wrap-break-word leading-snug">
+                          {group.Name}
+                        </span>
                         <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
@@ -142,10 +146,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 to={item.Controller}
                                 className={cn(
                                   isPathActive(item.Controller) &&
-                                    "bg-primary/10 text-primary font-bold block w-full rounded-md p-2"
+                                    "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                 )}
                               >
-                                {item.Name}
+                                <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
+                                  {item.Name}
+                                </span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
@@ -154,14 +160,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {/* Level 2: Sub Groups */}
                         {childGroups?.map((subGroup) => {
                           const subGroupMenus = menu?.filter(
-                            (item) => item.SystemGroupId === subGroup.Id
+                            (item) => item.SystemGroupId === subGroup.Id,
                           );
 
                           if (!subGroupMenus?.length) return null;
 
                           // Determine if any child menu (Level 3) is active
                           const isSubGroupActive = subGroupMenus.some((item) =>
-                            isPathActive(item.Controller)
+                            isPathActive(item.Controller),
                           );
 
                           return (
@@ -176,7 +182,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     isActive={isSubGroupActive}
                                   >
                                     {/* Manual indentation to match siblings in SidebarMenuSub */}
-                                    <span className=" flex-1">
+                                    <span className="min-w-0 flex-1 whitespace-normal wrap-break-word leading-snug">
                                       {subGroup.Name}
                                     </span>
                                     <ChevronRight className="ml-auto transition-transform group-data-[state=open]/sub-collapsible:rotate-90" />
@@ -191,7 +197,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         <SidebarMenuSubButton
                                           asChild
                                           isActive={isPathActive(
-                                            item.Controller
+                                            item.Controller,
                                           )}
                                           className="pl-2"
                                         >
@@ -199,10 +205,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             to={item.Controller}
                                             className={cn(
                                               isPathActive(item.Controller) &&
-                                                "bg-primary/10 text-primary font-bold block w-full rounded-md p-2"
+                                                "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                             )}
                                           >
-                                            {item.Name}
+                                            <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
+                                              {item.Name}
+                                            </span>
                                           </Link>
                                         </SidebarMenuSubButton>
                                       </SidebarMenuSubItem>

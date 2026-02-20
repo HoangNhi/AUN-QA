@@ -11,6 +11,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         {
             CreateMap<Entities.Evidence, ModelEvidence>().ReverseMap();
             CreateMap<Entities.Evidence, EvidenceRequest>().ReverseMap();
+            CreateMap<Entities.Evidence, ModelEvidenceGetListPaging>();
 
             CreateMap<Entities.EvidenceAttachment, ModelAttachment>().ReverseMap();
         }

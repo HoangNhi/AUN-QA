@@ -9,6 +9,7 @@ import { evidenceService } from "@/features/business/api/evidence.api";
 import type {
   Evidence,
   EvidenceGetListPagingRequest,
+  EvidenceApproveRequest,
 } from "@/features/business/types/evidence.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -92,6 +93,44 @@ export const useEvidence = () => {
     },
   });
 
+  const submitMutation = useMutation({
+    mutationFn: (ids: string[]) => evidenceService.submitToApprove(ids),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Gửi duyệt thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidences"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi gửi duyệt"
+      );
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (request: EvidenceApproveRequest) =>
+      evidenceService.approve(request),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Thao tác thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidences"] });
+        setIsOpen(false);
+        setEvidence(null);
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi duyệt minh chứng"
+      );
+    },
+  });
+
   // 3. Handlers
   const getList = useCallback(() => {
     refetch();
@@ -113,7 +152,6 @@ export const useEvidence = () => {
         Code: "",
         Status: 1,
         FileTypeId: "",
-        CycleId: "",
         IsEdit: isEdit,
         IsActived: true,
       });
@@ -136,7 +174,6 @@ export const useEvidence = () => {
           Code: "",
           Status: 1,
           FileTypeId: "",
-          CycleId: "",
           IsEdit: false,
           IsActived: true,
         });
@@ -149,6 +186,18 @@ export const useEvidence = () => {
 
   const deleteList = async (ids: string[]) => {
     await deleteMutation.mutateAsync(ids);
+  };
+
+  const submitToApprove = async (ids: string[]) => {
+    await submitMutation.mutateAsync(ids);
+  };
+
+  const onApprove = async (id: string, status: number, reason?: string) => {
+    await approveMutation.mutateAsync({
+      Id: id,
+      EvidenceStatus: status,
+      RejectionReason: reason,
+    });
   };
 
   return {
@@ -164,7 +213,11 @@ export const useEvidence = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    submitToApprove,
+    onApprove,
     isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isSubmitting: submitMutation.isPending,
+    isApproving: approveMutation.isPending,
     isFetching,
   };
 };

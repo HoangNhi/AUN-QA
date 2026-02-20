@@ -28,11 +28,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests
 
         public string? Description { get; set; }
 
-        #region Different 
-        public Guid CycleId { get; set; }
-
-        #endregion
-
         #region Attachment
         public List<Guid> AttachmentIds { get; set; } = new List<Guid>();
 
@@ -52,9 +47,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests
 
             RuleFor(x => x.FileTypeId)
                 .NotEmpty().WithMessage("Loại tài liệu không được để trống");
-
-            RuleFor(x => x.CycleId)
-                .NotEmpty().WithMessage("Chu kỳ không được để trống");
         }
     }
 }

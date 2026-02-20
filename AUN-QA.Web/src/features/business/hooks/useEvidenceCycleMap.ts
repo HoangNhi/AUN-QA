@@ -6,13 +6,11 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { evidenceCycleMapService } from "@/features/business/api/evidenceCycleMap.api";
-import type {
-  EvidenceCycleMap,
-  EvidenceCycleMapGetListPagingRequest,
-} from "@/features/business/types/evidence.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
+import type { EvidenceCycleMap, EvidenceCycleMapGetListPagingRequest, ApproveRequest } from "../types/evidence-cycle-map.types";
+import type { Evidence } from "../types/evidence.types";
 
 export const useEvidenceCycleMap = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,7 +53,7 @@ export const useEvidenceCycleMap = () => {
     mutationFn: (data: EvidenceCycleMap) => {
       return data.IsEdit
         ? evidenceCycleMapService.update(data)
-        : evidenceCycleMapService.insert(data);
+        : evidenceCycleMapService.insertWithEvidence(data);
     },
     onSuccess: (response, variables) => {
       if (response.Success) {
@@ -92,6 +90,43 @@ export const useEvidenceCycleMap = () => {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: (request: ApproveRequest) =>
+      evidenceCycleMapService.approve(request),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Cập nhật trạng thái thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidenceCycleMaps"] });
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi cập nhật trạng thái"
+      );
+    },
+  });
+
+  const submitToApproveMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      evidenceCycleMapService.submitToApprove({ Ids: ids }),
+    onSuccess: (response) => {
+      if (response.Success) {
+        toast.success("Gửi duyệt thành công");
+        queryClient.invalidateQueries({ queryKey: ["evidenceCycleMaps"] });
+        setRowSelection({});
+      } else {
+        toast.error(response.Message);
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi gửi duyệt"
+      );
+    },
+  });
+
   // 3. Handlers
   const getList = useCallback(() => {
     refetch();
@@ -107,17 +142,34 @@ export const useEvidenceCycleMap = () => {
         toast.error(response?.Message);
       }
     } else {
+      // For new records, create with nested Evidence object
+      const newEvidence: Evidence = {
+        Id: uuidv4(),
+        Name: "",
+        Code: "",
+        Status: 1,
+        FileTypeId: "",
+        CycleId: "",
+        IsEdit: false,
+        IsActived: true,
+        AttachmentIds: [],
+        ListAttachment: [],
+        FolderUpload: uuidv4(),
+        CreatedBy: "",
+        CreatedAt: "",
+      };
+
       setEvidenceCycleMap({
         Id: id,
         EvidenceId: "",
         CycleId: "",
         ReviewStatus: 1,
-        Name: "",
-        Code: "",
-        Status: 1,
-        FileTypeId: "",
+        Evidence: newEvidence,
         IsEdit: isEdit,
         IsActived: true,
+        FolderUpload: uuidv4(),
+        CreatedBy: "",
+        CreatedAt: "",
       });
       setIsOpen(true);
     }
@@ -132,17 +184,33 @@ export const useEvidenceCycleMap = () => {
     const result = await saveMutation.mutateAsync(saveData);
     if (result.Success) {
       if (isAddMore) {
+        const newEvidence: Evidence = {
+          Id: uuidv4(),
+          Name: "",
+          Code: "",
+          Status: 1,
+          FileTypeId: "",
+          CycleId: "",
+          IsEdit: false,
+          IsActived: true,
+          AttachmentIds: [],
+          ListAttachment: [],
+          FolderUpload: uuidv4(),
+          CreatedBy: "",
+          CreatedAt: "",
+        };
+
         setEvidenceCycleMap({
           Id: uuidv4(),
           EvidenceId: "",
           CycleId: "",
           ReviewStatus: 1,
-          Name: "",
-          Code: "",
-          Status: 1,
-          FileTypeId: "",
+          Evidence: newEvidence,
           IsEdit: false,
           IsActived: true,
+          FolderUpload: uuidv4(),
+          CreatedBy: "",
+          CreatedAt: "",
         });
       } else {
         setIsOpen(false);
@@ -153,6 +221,22 @@ export const useEvidenceCycleMap = () => {
 
   const deleteList = async (ids: string[]) => {
     await deleteMutation.mutateAsync(ids);
+  };
+
+  const submitToApprove = (ids: string[]) => {
+    submitToApproveMutation.mutate(ids);
+  };
+
+  const approve = async (id: string, status: number, reason?: string) => {
+    const result = await approveMutation.mutateAsync({
+      Id: id,
+      EvidenceStatus: status,
+      RejectionReason: reason,
+    });
+    if (result.Success) {
+      setIsOpen(false);
+      setEvidenceCycleMap(null);
+    }
   };
 
   return {
@@ -168,7 +252,11 @@ export const useEvidenceCycleMap = () => {
     onOpenChange,
     saveChange,
     deleteList,
+    submitToApprove,
+    approve,
     isLoading: saveMutation.isPending || deleteMutation.isPending,
+    isSubmitting: submitToApproveMutation.isPending,
+    isApproving: approveMutation.isPending,
     isFetching,
   };
 };

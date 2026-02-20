@@ -33,7 +33,7 @@ interface ComboboxProps {
   transformData?: (data: any) => ModelCombobox[];
 
   value?: string;
-  onValueChange: (value: string) => void;
+  onValueChange: (value: string, text?: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
@@ -59,7 +59,7 @@ export function Combobox({
   className,
   disabled = false,
   readonly = false,
-  modal = false,
+  modal = true,
   showSearch = true,
   eagerLoading = true,
 }: ComboboxProps) {
@@ -130,9 +130,9 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0"
+        className="p-0 z-[1000]"
         align="start"
-        style={{ width: "var(--radix-popover-trigger-width)" }}
+        style={{ minWidth: "var(--radix-popover-trigger-width)" }}
       >
         <Command>
           {showSearch && <CommandInput placeholder={searchPlaceholder} />}
@@ -158,9 +158,9 @@ export function Combobox({
                         value === option.Value && "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
-                        onValueChange(
-                          option.Value === value ? "" : option.Value,
-                        );
+                        const newValue = option.Value === value ? "" : option.Value;
+                        const newText = option.Value === value ? "" : (option.Text || "");
+                        onValueChange(newValue, newText);
                         setOpen(false);
                       }}
                     >

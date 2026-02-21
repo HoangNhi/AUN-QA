@@ -73,7 +73,7 @@ describe("FileViewerDialog layout", () => {
     );
 
     expect(await screen.findByTestId("pdf-scroll-container")).toHaveClass(
-      "overflow-y-auto",
+      "overflow-hidden",
     );
   });
 
@@ -128,6 +128,27 @@ describe("FileViewerDialog layout", () => {
       "src",
       expect.stringContaining("zoom=100"),
     );
+  });
+
+  it("keeps outer pdf container non-scroll to avoid double scrollbars", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 8,
+            FullFileName: "x.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/x.pdf",
+          } as any
+        }
+      />,
+    );
+
+    const container = await screen.findByTestId("pdf-scroll-container");
+    expect(container).toHaveClass("overflow-hidden");
+    expect(container).not.toHaveClass("overflow-y-auto");
   });
 
   it("renders video wrapper with viewport-safe max height", () => {

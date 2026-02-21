@@ -318,12 +318,12 @@ const FileViewerDialog = ({
       return (
         <div
           data-testid="pdf-scroll-container"
-          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
+          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
         >
           <iframe
             src={blobUrl! + pdfHash}
             title={file?.FullFileName}
-            className="w-full min-h-[85vh] border-0 bg-transparent"
+            className="w-full h-full border-0 bg-transparent"
           />
         </div>
       );

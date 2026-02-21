@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import FileViewerDialog from "./file-viewer-dialog";
 import { fileService } from "@/features/file/api/uploadfile.api";
 
@@ -34,7 +34,7 @@ describe("FileViewerDialog layout", () => {
     );
   });
 
-  it("keeps scroll canvas for pdf", () => {
+  it("uses non-scroll canvas for pdf to avoid nested scrollbars", () => {
     render(
       <FileViewerDialog
         isOpen
@@ -50,7 +50,84 @@ describe("FileViewerDialog layout", () => {
       />,
     );
 
-    expect(screen.getByTestId("preview-canvas")).toHaveClass("overflow-auto");
+    expect(screen.getByTestId("preview-canvas")).toHaveClass("overflow-hidden");
+    expect(screen.getByTestId("preview-canvas")).not.toHaveClass(
+      "overflow-auto",
+    );
+  });
+
+  it("renders dedicated pdf scroll container", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 5,
+            FullFileName: "x.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/x.pdf",
+          } as any
+        }
+      />,
+    );
+
+    expect(await screen.findByTestId("pdf-scroll-container")).toHaveClass(
+      "overflow-y-auto",
+    );
+  });
+
+  it("keeps pdf container within dialog viewport", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 6,
+            FullFileName: "x.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/x.pdf",
+          } as any
+        }
+      />,
+    );
+
+    const container = await screen.findByTestId("pdf-scroll-container");
+    expect(container).toHaveClass("max-h-[85vh]");
+    expect(container).toHaveClass("max-w-[95vw]");
+  });
+
+  it("applies zoom value to pdf iframe source", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 7,
+            FullFileName: "x.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/x.pdf",
+          } as any
+        }
+      />,
+    );
+
+    const frame = await screen.findByTitle("x.pdf");
+    expect(frame).toHaveAttribute("src", expect.stringContaining("zoom=100"));
+
+    fireEvent.click(screen.getByTitle("Zoom In"));
+    expect(await screen.findByTitle("x.pdf")).toHaveAttribute(
+      "src",
+      expect.stringContaining("zoom=110"),
+    );
+
+    fireEvent.click(screen.getByTitle("Zoom Out"));
+    expect(await screen.findByTitle("x.pdf")).toHaveAttribute(
+      "src",
+      expect.stringContaining("zoom=100"),
+    );
   });
 
   it("renders video wrapper with viewport-safe max height", () => {

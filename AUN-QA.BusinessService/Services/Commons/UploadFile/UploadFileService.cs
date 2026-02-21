@@ -45,5 +45,22 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             var response = await _fileProtoClient.DeleteDataAsync(request);
             return response.Success;
         }
+
+        public async Task<ModelFilePreview> PreviewFileAsync(string fileUrl, string mode = "internal")
+        {
+            var response = await _fileProtoClient.PreviewFileAsync(new PreviewFileRequest
+            {
+                FileUrl = fileUrl,
+                Mode = mode
+            });
+
+            return new ModelFilePreview
+            {
+                FileContent = response.FileContent.ToByteArray(),
+                ContentType = response.ContentType,
+                FileName = response.FileName,
+                HasWatermark = response.HasWatermark
+            };
+        }
     }
 }

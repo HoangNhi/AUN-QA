@@ -71,5 +71,20 @@ namespace AUN_QA.FileService.Services.Grpc
 
             return Task.FromResult(response);
         }
+
+        public override Task<PreviewFileResponse> PreviewFile(PreviewFileRequest request, ServerCallContext context)
+        {
+            var result = _uploadFileService.PreviewFile(request.FileUrl);
+
+            var response = new PreviewFileResponse
+            {
+                FileContent = Google.Protobuf.ByteString.CopyFrom(result.FileContent),
+                ContentType = result.ContentType,
+                FileName = result.FileName,
+                HasWatermark = result.HasWatermark
+            };
+
+            return Task.FromResult(response);
+        }
     }
 }

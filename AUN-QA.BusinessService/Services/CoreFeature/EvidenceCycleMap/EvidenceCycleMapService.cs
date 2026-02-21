@@ -196,6 +196,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 #region Thêm tài liệu đính kèm
                 var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                    && !x.IsDeleted
                                     && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToList();
 
                 // Xóa các file không còn trong danh sách

@@ -37,7 +37,12 @@ namespace AUN_QA.FileService.Configs
                     });
             });
 
-            builder.Services.AddGrpc();
+            const int grpcMaxMessageSize = 128 * 1024 * 1024; // 128 MB
+            builder.Services.AddGrpc(options =>
+            {
+                options.MaxReceiveMessageSize = grpcMaxMessageSize;
+                options.MaxSendMessageSize = grpcMaxMessageSize;
+            });
         }
     }
 }

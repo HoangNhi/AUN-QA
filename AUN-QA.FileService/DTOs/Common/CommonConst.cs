@@ -5,8 +5,8 @@
         public static string[] _fileHinhAnhValid = new string[] { ".jpg", ".png", ".jpeg" };
         public static string _fileHinhAnhValidString = "Ảnh (jpg, png, jpeg)";
 
-        public static string[] _fileVideoValid = new string[] { ".avi", ".wmv", ".mp4" };
-        public static string _fileVideoValidString = "Video (avi, wmv, mp4)";
+        public static string[] _fileVideoValid = new string[] { ".mp4" };
+        public static string _fileVideoValidString = "Video (mp4)";
 
         public static string[] _fileAudioValid = new string[] { ".mp3", ".mp4", ".wma", ".wav", ".m4a" };
         public static string _fileAudioValidString = "Audio (mp3, mp4, wma, wav, m4a)";

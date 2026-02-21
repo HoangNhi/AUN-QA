@@ -4,7 +4,7 @@ import type { UploadFileRequest, Attachment } from "../types/uploadfile.types";
 
 export const fileService = {
   uploadFile: async (
-    request: UploadFileRequest
+    request: UploadFileRequest,
   ): Promise<ApiResponse<Attachment[]>> => {
     const formData = new FormData();
 
@@ -21,10 +21,20 @@ export const fileService = {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+        timeout: 300000,
+      },
     );
   },
   downloadFile: (url: string) => {
     return api.downloadFile(API_ENDPOINTS.File.UploadFile.GET + url);
+  },
+  previewFile: async (
+    attachmentId: string,
+    mode: "internal" | "external" = "internal",
+  ): Promise<Blob> => {
+    const response = await api.downloadFile(
+      API_ENDPOINTS.Business.Evidence.PREVIEW(attachmentId, mode),
+    );
+    return response.data;
   },
 };

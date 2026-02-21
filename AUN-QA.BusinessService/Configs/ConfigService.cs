@@ -89,9 +89,16 @@ namespace AUN_QA.BusinessService.Configs
                 o.Address = new Uri("http://SystemService");
             });
 
+            const int grpcMaxMessageSize = 128 * 1024 * 1024; // 128 MB
+
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
                 o.Address = new Uri("http://FileService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.MaxReceiveMessageSize = grpcMaxMessageSize;
+                o.MaxSendMessageSize = grpcMaxMessageSize;
             });
 
             builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>

@@ -10,6 +10,7 @@ service FileProto {
   rpc UploadData (UploadDataRequest) returns (UploadDataResponse);
   rpc DeleteData (DeleteDataRequest) returns (DeleteDataResponse);
   rpc UploadAvatar (UploadAvatarRequest) returns (UploadAvatarResponse);
+  rpc PreviewFile (PreviewFileRequest) returns (PreviewFileResponse);
 }
 
 message UploadDataRequest {
@@ -49,4 +50,16 @@ message UploadAvatarRequest{
 
 message UploadAvatarResponse{
 	string newImage = 1;
+}
+
+message PreviewFileRequest {
+  string file_url = 1;
+  string mode = 2;
+}
+
+message PreviewFileResponse {
+  bytes file_content = 1;
+  string content_type = 2;
+  string file_name = 3;
+  bool has_watermark = 4;
 }

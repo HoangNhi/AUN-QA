@@ -1,6 +1,7 @@
 ﻿using AUN_QA.FileService.DTOs.Base;
 using AUN_QA.FileService.DTOs.Common;
 using AutoDependencyRegistration.Attributes;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 {
@@ -157,7 +158,57 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             return path;
         }
 
+        public ModelFilePreview PreviewFile(string fileUrl)
+        {
+            if (string.IsNullOrWhiteSpace(fileUrl))
+            {
+                throw new Exception("Đường dẫn tệp không hợp lệ");
+            }
+
+            var normalizedRelativePath = fileUrl
+                .Replace("\\", Path.DirectorySeparatorChar.ToString())
+                .Replace("/", Path.DirectorySeparatorChar.ToString())
+                .TrimStart(Path.DirectorySeparatorChar);
+
+            var webRootPath = _webHostEnvironment.WebRootPath;
+            var absolutePath = Path.GetFullPath(Path.Combine(webRootPath, normalizedRelativePath));
+            var fullWebRootPath = Path.GetFullPath(webRootPath);
+
+            if (!absolutePath.StartsWith(fullWebRootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Đường dẫn tệp không hợp lệ");
+            }
+
+            if (!File.Exists(absolutePath))
+            {
+                throw new Exception("Tệp không tồn tại");
+            }
+
+            var fileContent = File.ReadAllBytes(absolutePath);
+            var fileName = Path.GetFileName(absolutePath);
+            var contentType = GetContentType(absolutePath);
+
+            return new ModelFilePreview
+            {
+                FileContent = fileContent,
+                ContentType = contentType,
+                FileName = fileName,
+                HasWatermark = false
+            };
+        }
+
         #region Private methods
+        private string GetContentType(string filePath)
+        {
+            var provider = new FileExtensionContentTypeProvider();
+            if (provider.TryGetContentType(filePath, out var contentType))
+            {
+                return contentType;
+            }
+
+            return "application/octet-stream";
+        }
+
         List<ModelAttachment> SyncUploadFile(string sourceDirPath, string destinationDirPath, string relativeDirPath = "")
         {
             try
@@ -179,51 +230,22 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                         foreach (string f in arrFiles)
                         {
                             FileInfo info = new FileInfo(f);
-                            //Kiểm tra nếu file tồn tại thì thêm số đánh dấu: file(1).pdf
-                            string tempFileName = Path.GetFileNameWithoutExtension(f);
-                            //Bỏ ký tự đặc biệt
-                            tempFileName = RemoveSign(tempFileName);
-                            //Bỏ ký tự tiếng việt
-                            tempFileName = RemoveSign4VietnameseString(tempFileName);
+                            string tempFileName = Path.GetFileNameWithoutExtension(f); // Tên gốc để lưu vào DB (Original name)
+                            
+                            // Sử dụng UUID làm tên file vật lý tĩnh trên đĩa để chống bypass đuôi và chống ghi đè
+                            string uuidFileName = Guid.NewGuid().ToString() + info.Extension;
+                            string destDirPath = Path.Combine(destinationDirPath, uuidFileName);
 
-                            bool isLoop = true;
-                            int counter = 0;
-                            while (isLoop)
-                            {
-                                string tempFileNameWithExtension = tempFileName + info.Extension;
-                                string tempFilePath = Path.Combine(destinationDirPath, tempFileNameWithExtension);
-                                //Nếu tên file đã tồn tại thì tạo tên file mới.
-                                if (File.Exists(tempFilePath))
-                                {
-                                    counter += 1;
-                                    tempFileName = Path.GetFileNameWithoutExtension(f) + "(" + counter.ToString() + ")"; //new name
-                                }
-                                else
-                                    isLoop = false;
-
-                            }
-                            //Xác định destFileName   
-                            if (counter <= 0)
-                            {
-                                tempFileName = Path.GetFileNameWithoutExtension(f);
-                                //Bỏ ký tự đặc biệt
-                                tempFileName = RemoveSign(tempFileName);
-                                //Bỏ ký tự tiếng việt
-                                tempFileName = RemoveSign4VietnameseString(tempFileName);
-                            }
-
-                            string destDirPath = Path.Combine(destinationDirPath, tempFileName + info.Extension);
-
-                            //Copy file
+                            //Copy file tới đường dẫn mới (mang tên UUID)
                             if (File.Exists(f))
                             {
                                 File.Copy(f, destDirPath, true);
-                                //Lấy thông tin file.
+                                // Lưu thông tin Tên Gốc (FileName) và URL mới cho database lưu trữ
                                 ModelAttachment tepDinhKem = new ModelAttachment();
                                 tepDinhKem.FileName = tempFileName;
                                 tepDinhKem.FileSize = info.Length;
                                 tepDinhKem.FileExtension = info.Extension;
-                                tepDinhKem.FileUrl = relativeDirPath + "/" + tepDinhKem.FileName + tepDinhKem.FileExtension;
+                                tepDinhKem.FileUrl = relativeDirPath + "/" + uuidFileName; // Logical Path chứa UUID
 
                                 lstAttachment.Add(tepDinhKem);
                             }
@@ -241,65 +263,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             }
         }
 
-        string[] VietnameseSigns = new string[]
-        {
 
-            "aAeEoOuUiIdDyY",
-
-            "áàạảãâấầậẩẫăắằặẳẵ",
-
-            "ÁÀẠẢÃÂẤẦẬẨẪĂẮẰẶẲẴ",
-
-            "éèẹẻẽêếềệểễ",
-
-            "ÉÈẸẺẼÊẾỀỆỂỄ",
-
-            "óòọỏõôốồộổỗơớờợởỡ",
-
-            "ÓÒỌỎÕÔỐỒỘỔỖƠỚỜỢỞỠ",
-
-            "úùụủũưứừựửữ",
-
-            "ÚÙỤỦŨƯỨỪỰỬỮ",
-
-            "íìịỉĩ",
-
-            "ÍÌỊỈĨ",
-
-            "đ",
-
-            "Đ",
-
-            "ýỳỵỷỹ",
-
-            "ÝỲỴỶỸ"
-        };
-
-        string RemoveSign4VietnameseString(string str)
-        {
-            for (int i = 1; i < VietnameseSigns.Length; i++)
-            {
-                for (int j = 0; j < VietnameseSigns[i].Length; j++)
-                    str = str.Replace(VietnameseSigns[i][j], VietnameseSigns[0][i - 1]);
-            }
-            return str;
-        }
-
-        string RemoveSign(string input)
-        {
-            string[] strS = { "'", "~", "@", "#", "%", "^", "&", "`", "../", "\\", ":", "*", "?", "<", ">", "|", ",", "-", "+" };
-            int iSeek = 0;
-            for (int i = 0; i <= strS.Length - 1; i++)
-            {
-                iSeek = input.IndexOf(strS[i]);
-                if (iSeek != -1)
-                {
-                    input = input.Replace(input.Substring(input.IndexOf(strS[i]), 1), "_");
-                }
-            }
-
-            return input;
-        }
 
         #endregion
     }

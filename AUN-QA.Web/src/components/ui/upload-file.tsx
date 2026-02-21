@@ -1,6 +1,7 @@
 import { fileService } from "@/features/file/api/uploadfile.api";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { getFileUrl } from "@/lib/utils";
+import FileViewerDialog from "@/components/ui/file-viewer-dialog";
 import {
   Paperclip,
   Trash,
@@ -10,6 +11,7 @@ import {
   Eye,
   Download,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import React, {
   useState,
@@ -30,6 +32,7 @@ export interface UploadFileProps {
   folderUpload?: string;
   onSuccess?: () => void;
   hasError?: boolean;
+  viewerMode?: "internal" | "external";
 }
 
 export interface UploadFileRef {
@@ -51,10 +54,12 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       folderUpload = "DefaultFolder",
       onSuccess,
       hasError = false,
+      viewerMode = "internal",
     },
-    ref
+    ref,
   ) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [viewerFile, setViewerFile] = useState<Attachment | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => ({
@@ -75,18 +80,26 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       Array.from(files).forEach((file) => {
         const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
         if (!fileValidate.includes(fileExt)) {
-          errors.push(`Tệp "${file.name}" không hợp lệ.`);
+          errors.push(
+            `Tệp "${file.name}" không hợp lệ (chỉ chấp nhận: ${fileValidateText}).`,
+          );
           return;
         }
         if (file.size > fileSizeLimit * 1024 * 1024) {
-          errors.push(`Tệp "${file.name}" quá lớn.`);
+          errors.push(
+            `Tệp "${file.name}" quá lớn (tối đa ${fileSizeLimit}MB).`,
+          );
           return;
         }
         validFiles.push(file);
       });
 
+      if (errors.length > 0) {
+        toast.error(errors.join(" "));
+      }
+
       setSelectedFiles((prev) =>
-        multiFile ? [...prev, ...validFiles] : validFiles
+        multiFile ? [...prev, ...validFiles] : validFiles,
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
@@ -117,9 +130,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     const handlePreview = (file: Attachment) => {
-      const url = getFileUrl(file.FileUrl);
-      if (!url) return;
-      window.open(url, "_blank", "noopener,noreferrer");
+      setViewerFile(file);
     };
 
     const handleDownload = async (file: Attachment) => {
@@ -194,7 +205,9 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
 
         {/* Dropzone Area */}
         {!noUpload && !readonly && (
-          <div className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasError ? "border-red-400 bg-red-50 hover:border-red-500" : "bg-gray-50 hover:border-blue-400"}`}>
+          <div
+            className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasError ? "border-red-400 bg-red-50 hover:border-red-500" : "bg-gray-50 hover:border-blue-400"}`}
+          >
             <input
               type="file"
               ref={fileInputRef}
@@ -240,9 +253,16 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
             )}
           </div>
         )}
+
+        <FileViewerDialog
+          isOpen={!!viewerFile}
+          onClose={() => setViewerFile(null)}
+          file={viewerFile}
+          mode={viewerMode}
+        />
       </div>
     );
-  }
+  },
 );
 
 export default UploadFile;

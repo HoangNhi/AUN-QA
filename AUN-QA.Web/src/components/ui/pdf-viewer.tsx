@@ -9,8 +9,15 @@ interface PdfViewerProps {
 
 export function PdfViewer({ fileUrl, zoom }: PdfViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const zoomRef = useRef(zoom);
   const [error, setError] = useState<string | null>(null);
 
+  // Keep ref up to date to avoid re-rendering entire PDF on zoom changes
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  // Effect 1: Render the PDF ONCE when the fileUrl changes
   useEffect(() => {
     let cancelled = false;
 
@@ -23,23 +30,36 @@ export function PdfViewer({ fileUrl, zoom }: PdfViewerProps) {
 
       try {
         const pdf = await getDocument(fileUrl).promise;
+        const fragment = document.createDocumentFragment();
+
+        // Use higher base render scale for sharper zoom quality
+        const renderScale = typeof window !== "undefined" ? Math.max(window.devicePixelRatio || 1, 1.5) : 1.5;
 
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
           const page = await pdf.getPage(pageNumber);
-          const viewport = page.getViewport({ scale: zoom / 100 });
+          const viewport = page.getViewport({ scale: renderScale });
           const canvas = document.createElement("canvas");
           const context = canvas.getContext("2d");
           if (!context) continue;
 
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
-          canvas.className = "mx-auto mb-4 bg-white shadow-sm";
 
-          container.appendChild(canvas);
+          const baseWidth = viewport.width / renderScale;
+          canvas.dataset.baseWidth = baseWidth.toString();
+
+          // Set initial size based on the current zoom level to avoid flash jump
+          canvas.style.width = `${Math.floor(baseWidth * (zoomRef.current / 100))}px`;
+          canvas.style.height = "auto";
+          canvas.className = "mx-auto mb-4 bg-white shadow-sm transition-all duration-200 ease-out";
+
+          fragment.appendChild(canvas);
           await page.render({ canvasContext: context, viewport }).promise;
 
           if (cancelled) return;
         }
+
+        container.appendChild(fragment);
       } catch {
         if (!cancelled) {
           setError("Không thể hiển thị PDF.");
@@ -52,7 +72,21 @@ export function PdfViewer({ fileUrl, zoom }: PdfViewerProps) {
     return () => {
       cancelled = true;
     };
-  }, [fileUrl, zoom]);
+  }, [fileUrl]); // Removed zoom dependency to eliminate flashing
+
+  // Effect 2: Update canvas dimensions instantly when zoom changes
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const canvases = container.querySelectorAll("canvas");
+    canvases.forEach((canvas) => {
+      const baseWidth = parseFloat(canvas.dataset.baseWidth || "0");
+      if (baseWidth) {
+        canvas.style.width = `${Math.floor(baseWidth * (zoom / 100))}px`;
+      }
+    });
+  }, [zoom]);
 
   return (
     <div

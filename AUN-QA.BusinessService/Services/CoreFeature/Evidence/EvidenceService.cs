@@ -50,6 +50,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             return result;
         }
 
+        public async Task<ModelFilePreview> PreviewAttachment(Guid attachmentId, string mode)
+        {
+            var attachment = await _context.EvidenceAttachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == attachmentId && x.IsActived && !x.IsDeleted);
+
+            if (attachment == null)
+            {
+                throw new Exception("Tệp đính kèm không tồn tại");
+            }
+
+            return await _uploadFileService.PreviewFileAsync(attachment.FileUrl, mode);
+        }
+
         public async Task Insert(EvidenceRequest request)
         {
             var data = _context.Evidences.Where(x =>
@@ -119,6 +133,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             #region Thêm tài liệu đính kèm
             var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                && !x.IsDeleted
                                 && !request.AttachmentIds.Any(y => y == x.Id)).ToList();
 
             // Xóa các file không còn trong danh sách

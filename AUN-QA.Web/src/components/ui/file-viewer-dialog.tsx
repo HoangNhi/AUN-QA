@@ -127,6 +127,33 @@ const FileViewerDialog = ({
   const viewerType = useMemo(() => getFileViewerType(fileExt || ""), [fileExt]);
   const shouldUseScrollableCanvas = ["office"].includes(viewerType);
 
+  // Global wheel listener for Ctrl + Scroll zoom
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Intercept Ctrl + Scroll
+      if (e.ctrlKey) {
+        e.preventDefault(); // Prevent browser page zoom
+
+        // Zoom the preview content if supported
+        if (["office", "image", "pdf"].includes(viewerType)) {
+          if (e.deltaY < 0) {
+            setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP));
+          } else {
+            setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP));
+          }
+        }
+      }
+    };
+
+    // Use { passive: false } so preventDefault() works to override browser zoom
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, [isOpen, viewerType]);
+
   useEffect(() => {
     if (!isOpen || !file) return;
 
@@ -328,15 +355,6 @@ const FileViewerDialog = ({
           data-testid="pdf-scroll-container"
           className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-hidden rounded-xl bg-[#2b2b2b] shadow-2xl ring-1 ring-black/5"
           tabIndex={0}
-          onWheel={(event) => {
-            if (!event.ctrlKey) return;
-            event.preventDefault();
-            if (event.deltaY < 0) {
-              increaseZoom();
-            } else {
-              decreaseZoom();
-            }
-          }}
           onKeyDown={(event) => {
             if (!event.ctrlKey) return;
 
@@ -473,8 +491,8 @@ const FileViewerDialog = ({
                   <span className="uppercase tracking-wider">
                     {fileExt || "unknown"}{" "}
                     {viewerType !== "video" &&
-                    viewerType !== "office" &&
-                    viewerType !== "image"
+                      viewerType !== "office" &&
+                      viewerType !== "image"
                       ? ""
                       : `- ${viewerType}`}
                   </span>

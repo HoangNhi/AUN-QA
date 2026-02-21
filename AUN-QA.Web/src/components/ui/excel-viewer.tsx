@@ -16,7 +16,7 @@ interface ExcelViewerProps {
   zoom?: number; // 50-200, default 100
 }
 
-const MAX_ROWS = 1000;
+const MAX_ROWS = 100;
 
 function buildRows(ws: XLSX.WorkSheet): {
   rows: CellMeta[][];
@@ -25,6 +25,7 @@ function buildRows(ws: XLSX.WorkSheet): {
 } {
   const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
   const colCount = range.e.c - range.s.c + 1;
+  const maxRowIndex = Math.min(range.e.r, range.s.r + MAX_ROWS - 1);
 
   // Derive column widths from ColInfo (wch = character width)
   const colWidths: number[] = Array.from({ length: colCount }, (_, i) => {
@@ -55,7 +56,7 @@ function buildRows(ws: XLSX.WorkSheet): {
 
   const rows: CellMeta[][] = [];
 
-  for (let r = range.s.r; r <= range.e.r; r++) {
+  for (let r = range.s.r; r <= maxRowIndex; r++) {
     const row: CellMeta[] = [];
     for (let c = range.s.c; c <= range.e.c; c++) {
       const mergeInfo = mergeMap.get(`${r},${c}`);
@@ -76,8 +77,8 @@ function buildRows(ws: XLSX.WorkSheet): {
     rows.push(row);
   }
 
-  const truncated = rows.length > MAX_ROWS;
-  return { rows: rows.slice(0, MAX_ROWS), colWidths, truncated };
+  const truncated = range.e.r - range.s.r + 1 > MAX_ROWS;
+  return { rows, colWidths, truncated };
 }
 
 export function ExcelViewer({

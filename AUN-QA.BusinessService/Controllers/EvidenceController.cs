@@ -41,6 +41,14 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse<ModelEvidence> { Data = result, Success = true });
         }
 
+        [HttpGet, Route("preview/{attachmentId}")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> PreviewAttachment([FromRoute] Guid attachmentId, [FromQuery] string mode = "internal")
+        {
+            var result = await _service.PreviewAttachment(attachmentId, mode);
+            return File(result.FileContent, result.ContentType, result.FileName);
+        }
+
         [HttpPost("insert")]
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Insert([FromBody] EvidenceRequest request)

@@ -31,7 +31,10 @@ import { cycleService } from "@/features/catalog/api/cycle.api";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
-import type { EvidenceCycleMap, ModelVerifiedEvidenceForReuse } from "../../types/evidence-cycle-map.types";
+import type {
+  EvidenceCycleMap,
+  ModelVerifiedEvidenceForReuse,
+} from "../../types/evidence-cycle-map.types";
 import { evidenceCycleMapService } from "../../api/evidenceCycleMap.api";
 import PopupReuseEvidence from "./PopupReuseEvidence";
 
@@ -237,7 +240,13 @@ const PopupEvidenceCycleMap = ({
     }
 
     // Upload files first
-    await uploadRef.current?.upload();
+    const uploadSuccess = await uploadRef.current?.upload();
+    if (!uploadSuccess) {
+      toast.error(
+        "Tải tệp thất bại. Vui lòng kiểm tra định dạng MP4 hoặc dung lượng tối đa 100MB.",
+      );
+      return;
+    }
 
     // Construct data object with nested Evidence
     const saveData: EvidenceCycleMap = {
@@ -426,6 +435,18 @@ const PopupEvidenceCycleMap = ({
                         listAttachment={listAttachment}
                         folderUpload={folderUpload}
                         setListAttachment={handleAttachmentChange}
+                        fileValidate={[
+                          ".jpg",
+                          ".png",
+                          ".pdf",
+                          ".doc",
+                          ".docx",
+                          ".xls",
+                          ".xlsx",
+                          ".mp4",
+                        ]}
+                        fileValidateText=".jpg, .png, .pdf, .doc, .docx, .xls, .xlsx, .mp4"
+                        fileSizeLimit={100}
                         readonly={isPending}
                         hasError={!!errors.attachment}
                       />
@@ -585,8 +606,8 @@ const PopupEvidenceCycleMap = ({
                   />
                   {formData.cycleId && (
                     <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                      Tiêu chí lọc theo loại tài liệu đã chọn.
-                      Tiến độ cập nhật sau khi minh chứng được phê duyệt.
+                      Tiêu chí lọc theo loại tài liệu đã chọn. Tiến độ cập nhật
+                      sau khi minh chứng được phê duyệt.
                     </p>
                   )}
                 </div>
@@ -612,17 +633,17 @@ const PopupEvidenceCycleMap = ({
                         evidenceCycleMap?.Evidence?.Status?.toString() || "1",
                       issueDate: evidenceCycleMap?.Evidence?.IssueDate
                         ? format(
-                          new Date(evidenceCycleMap.Evidence.IssueDate),
-                          "yyyy-MM-dd",
-                        )
+                            new Date(evidenceCycleMap.Evidence.IssueDate),
+                            "yyyy-MM-dd",
+                          )
                         : "",
                       issuingAuthority:
                         evidenceCycleMap?.Evidence?.IssuingAuthority || "",
                       expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
                         ? format(
-                          new Date(evidenceCycleMap.Evidence.ExpiryDate),
-                          "yyyy-MM-dd",
-                        )
+                            new Date(evidenceCycleMap.Evidence.ExpiryDate),
+                            "yyyy-MM-dd",
+                          )
                         : "",
                       fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
                       description:
@@ -797,19 +818,25 @@ const PopupEvidenceCycleMap = ({
           }));
 
           // Handle potential casing issues (PascalCase from C# vs camelCase from JSON serialization)
-          const rawAttachments = (evidence as any).ListAttachment || (evidence as any).listAttachment || [];
-          const normalizedAttachments: Attachment[] = rawAttachments.map((att: any) => ({
-            Id: att.Id || att.id,
-            ReferenceType: att.ReferenceType || att.referenceType,
-            RelatedId: att.RelatedId || att.relatedId,
-            FileName: att.FileName || att.fileName,
-            FileExtension: att.FileExtension || att.fileExtension,
-            FileSize: att.FileSize || att.fileSize,
-            FileUrl: att.FileUrl || att.fileUrl,
-            FullFileName: att.FullFileName || att.fullFileName,
-          }));
+          const rawAttachments =
+            (evidence as any).ListAttachment ||
+            (evidence as any).listAttachment ||
+            [];
+          const normalizedAttachments: Attachment[] = rawAttachments.map(
+            (att: any) => ({
+              Id: att.Id || att.id,
+              ReferenceType: att.ReferenceType || att.referenceType,
+              RelatedId: att.RelatedId || att.relatedId,
+              FileName: att.FileName || att.fileName,
+              FileExtension: att.FileExtension || att.fileExtension,
+              FileSize: att.FileSize || att.fileSize,
+              FileUrl: att.FileUrl || att.fileUrl,
+              FullFileName: att.FullFileName || att.fullFileName,
+            }),
+          );
 
-          const rawFolder = (evidence as any).FolderUpload || (evidence as any).folderUpload;
+          const rawFolder =
+            (evidence as any).FolderUpload || (evidence as any).folderUpload;
 
           setFolderUpload(rawFolder || uuidv4());
           setListAttachment(normalizedAttachments);

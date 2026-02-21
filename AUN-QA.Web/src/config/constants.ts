@@ -113,6 +113,10 @@ export const API_ENDPOINTS = {
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
       SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/Evidence/submit-to-approve`,
       APPROVE: `${BUSINESS_BASE}/Evidence/approve`,
+      PREVIEW: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) => `${BUSINESS_BASE}/Evidence/preview/${attachmentId}?mode=${mode}`,
     },
     EvidenceCycleMap: {
       GET_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/get-list`,

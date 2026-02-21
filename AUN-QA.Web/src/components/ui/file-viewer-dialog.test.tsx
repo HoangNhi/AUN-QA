@@ -7,6 +7,12 @@ vi.mock("@/features/file/api/uploadfile.api", () => ({
   fileService: { previewFile: vi.fn() },
 }));
 
+vi.mock("@/components/ui/pdf-viewer", () => ({
+  PdfViewer: ({ zoom }: { zoom: number }) => (
+    <div data-testid="pdf-canvas-viewer">PDF Zoom: {zoom}%</div>
+  ),
+}));
+
 beforeEach(() => {
   vi.mocked(fileService.previewFile).mockResolvedValue(new Blob(["x"]));
 });
@@ -98,6 +104,47 @@ describe("FileViewerDialog layout", () => {
     expect(container).toHaveClass("max-w-[95vw]");
   });
 
+  it("renders canvas-based pdf viewer instead of iframe zoom layer", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 11,
+            FullFileName: "artifact.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/artifact.pdf",
+          } as any
+        }
+      />,
+    );
+
+    expect(await screen.findByTestId("pdf-canvas-viewer")).toBeInTheDocument();
+    expect(screen.queryByTestId("pdf-zoom-layer")).not.toBeInTheDocument();
+  });
+
+  it("updates pdf zoom indicator when clicking zoom buttons", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 12,
+            FullFileName: "zoom.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/zoom.pdf",
+          } as any
+        }
+      />,
+    );
+
+    expect(await screen.findByText("100%")).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle("Zoom In"));
+    expect(await screen.findByText("110%")).toBeInTheDocument();
+  });
+
   it("applies zoom value to pdf iframe source", async () => {
     render(
       <FileViewerDialog
@@ -114,20 +161,35 @@ describe("FileViewerDialog layout", () => {
       />,
     );
 
-    const frame = await screen.findByTitle("x.pdf");
-    expect(frame).toHaveAttribute("src", expect.stringContaining("zoom=100"));
+    expect(await screen.findByText("100%")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTitle("Zoom In"));
-    expect(await screen.findByTitle("x.pdf")).toHaveAttribute(
-      "src",
-      expect.stringContaining("zoom=110"),
-    );
+    expect(await screen.findByText("110%")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTitle("Zoom Out"));
-    expect(await screen.findByTitle("x.pdf")).toHaveAttribute(
-      "src",
-      expect.stringContaining("zoom=100"),
+    expect(await screen.findByText("100%")).toBeInTheDocument();
+  });
+
+  it("supports ctrl+wheel zoom for pdf", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 9,
+            FullFileName: "wheel.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/wheel.pdf",
+          } as any
+        }
+      />,
     );
+
+    const container = await screen.findByTestId("pdf-scroll-container");
+    fireEvent.wheel(container, { ctrlKey: true, deltaY: -120 });
+
+    expect(await screen.findByText("110%")).toBeInTheDocument();
   });
 
   it("keeps outer pdf container non-scroll to avoid double scrollbars", async () => {

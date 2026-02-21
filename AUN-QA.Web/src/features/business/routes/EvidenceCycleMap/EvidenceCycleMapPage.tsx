@@ -10,13 +10,13 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { SearchIcon } from "lucide-react";
-import { useDebounce } from "@/hooks/use-debounce";
+import { Search } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import { Input } from "@/components/ui/input";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -57,21 +57,12 @@ const EvidenceCycleMapPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>(
     pageRequest.TextSearch || "",
   );
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-
   useEffect(() => {
-    setPageRequest((prev) => {
-      if (prev.TextSearch === debouncedSearchTerm) return prev;
-      return {
-        ...prev,
-        TextSearch: debouncedSearchTerm,
-        PageIndex: 1,
-      };
-    });
-  }, [debouncedSearchTerm, setPageRequest]);
+    // Only text search has been changed to manual trigger. Other filters are still auto.
+  }, [setPageRequest]);
 
   const handleDelete = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -173,17 +164,35 @@ const EvidenceCycleMapPage = () => {
             emptyText="Không tìm thấy trạng thái."
           />
 
-          <InputGroup className="col-span-1 bg-background">
-            <InputGroupInput
-              placeholder="Tìm kiếm..."
+          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
+            <Input
+              placeholder="Tên hoặc mã minh chứng..."
               value={searchTerm || ""}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10!"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setPageRequest({
+                    ...pageRequest,
+                    TextSearch: searchTerm,
+                    PageIndex: 1,
+                  });
+                }
+              }}
+              className="-me-px rounded-r-none shadow-none focus-visible:z-1"
             />
-            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
+            <Button
+              onClick={() => {
+                setPageRequest({
+                  ...pageRequest,
+                  TextSearch: searchTerm,
+                  PageIndex: 1,
+                });
+              }}
+              className="rounded-l-none"
+            >
+              <Search className="h-4 w-4 mr-1.5" />
+            </Button>
+          </div>
         </div>
       </div>
 

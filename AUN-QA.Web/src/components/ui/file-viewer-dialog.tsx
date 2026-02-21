@@ -59,30 +59,6 @@ function formatFileSize(bytes?: number) {
   return (kb / 1024).toFixed(1) + " MB";
 }
 
-const DocumentShell = ({
-  children,
-  zoom = 100,
-}: {
-  children: React.ReactNode;
-  zoom?: number;
-}) => (
-  <div className="bg-[#f8f9fa] w-[850px] max-w-[95vw] max-h-[85vh] rounded-xl shadow-2xl overflow-hidden flex flex-col border border-white/20 ring-1 ring-black/5">
-    {/* Page canvas */}
-    <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
-      <div
-        className="bg-white shadow-sm ring-1 ring-zinc-200 min-h-[800px] p-10 md:p-16 mx-auto relative transition-transform duration-300 ease-out origin-top"
-        style={{
-          transform: `scale(${zoom / 100})`,
-          // Add margin when zooming in so it doesn't clip the bottom of the scroll container
-          marginBottom: zoom > 100 ? `${(zoom - 100) * 8}px` : "0",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  </div>
-);
-
 const FileViewerDialog = ({
   isOpen,
   onClose,
@@ -125,7 +101,7 @@ const FileViewerDialog = ({
     file?.FileExtension || file?.FullFileName?.split(".").pop()?.toLowerCase();
 
   const viewerType = useMemo(() => getFileViewerType(fileExt || ""), [fileExt]);
-  const shouldUseScrollableCanvas = ["office"].includes(viewerType);
+  const shouldUseScrollableCanvas = false;
 
   // Global wheel listener for Ctrl + Scroll zoom
   useEffect(() => {
@@ -232,11 +208,75 @@ const FileViewerDialog = ({
               officeContainerRef.current as HTMLElement,
               undefined,
               {
-                inWrapper: false,
+                inWrapper: true,
                 ignoreWidth: false,
                 ignoreHeight: false,
+                ignoreLastRenderedPageBreak: false,
+                breakPages: true,
               },
             );
+
+            // Post-process to physically split the DOM into separate sections for visual pagination
+            const wrapper = officeContainerRef.current.querySelector(
+              ".docx-wrapper",
+            );
+            if (wrapper) {
+              const sections = Array.from(
+                wrapper.querySelectorAll("section.docx"),
+              );
+
+              sections.forEach((section) => {
+                let currentSection = section;
+                const children = Array.from(section.children);
+
+                children.forEach((child) => {
+                  if (child instanceof HTMLElement) {
+                    // docx-preview adds page-break-before to paragraphs or inserts <br style="page-break-before...">
+                    const style = child.getAttribute("style") || "";
+                    const hasPageBreak =
+                      style.includes("page-break-before: always") ||
+                      style.includes("break-before: page") ||
+                      child.querySelector(
+                        '[style*="page-break-before: always"]',
+                      ) !== null ||
+                      child.querySelector('[style*="break-before: page"]') !==
+                      null;
+
+                    if (hasPageBreak && currentSection.children.length > 0) {
+                      // Create a new visual page container
+                      const newSection = document.createElement("section");
+                      newSection.className = section.className;
+                      Array.from(section.attributes).forEach((attr) => {
+                        if (attr.name !== "style") {
+                          newSection.setAttribute(attr.name, attr.value);
+                        }
+                      });
+                      newSection.setAttribute(
+                        "style",
+                        section.getAttribute("style") || "",
+                      );
+
+                      // Strip break styling so it doesn't cause layout issues in the new physical block
+                      if (
+                        style.includes("page-break-before") ||
+                        style.includes("break-before")
+                      ) {
+                        child.style.pageBreakBefore = "auto";
+                        child.style.breakBefore = "auto";
+                      }
+
+                      // Insert the new page section
+                      currentSection.parentNode?.insertBefore(
+                        newSection,
+                        currentSection.nextSibling,
+                      );
+                      currentSection = newSection;
+                    }
+                  }
+                  currentSection.appendChild(child);
+                });
+              });
+            }
           } else if (["xlsx", "xls"].includes(extension)) {
             // Parse xlsx — does NOT need a DOM ref
             const buffer = await officeBlob.arrayBuffer();
@@ -273,6 +313,75 @@ const FileViewerDialog = ({
       renderOfficeFile();
     }
   }, [officeBlob, viewerType, fileExt]);
+
+  const handlePrint = () => {
+    if (!file) return;
+
+    // Handle PDF printing
+    if (viewerType === "pdf" && blobUrl) {
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = blobUrl;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.print();
+          setTimeout(() => iframe.remove(), 2000);
+        }, 100);
+      };
+      return;
+    }
+
+    // Handle Office formats printing
+    if (viewerType === "office") {
+      let printContent = "";
+      const isWord = ["docx", "doc"].includes(fileExt?.replace(".", "") || "");
+      const isExcel = ["xlsx", "xls"].includes(fileExt?.replace(".", "") || "");
+
+      if (isWord && officeContainerRef.current) {
+        printContent = officeContainerRef.current.innerHTML;
+      } else if (isExcel) {
+        const excelContainer = document.getElementById("excel-print-container");
+        if (excelContainer) {
+          printContent = excelContainer.innerHTML;
+        }
+      }
+
+      if (printContent) {
+        const printWindow = window.open("", "_blank");
+        if (printWindow) {
+          printWindow.document.write(`
+            <html>
+              <head>
+                <title>In tài liệu</title>
+                <style>
+                  body { font-family: sans-serif; padding: 20px; margin: 0; background: white; }
+                  table { border-collapse: collapse; width: 100%; border: 1px solid #ddd; font-size: 14px; }
+                  th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+                  @media print {
+                    @page { margin: 0; }
+                    body { padding: 1.5cm; }
+                    .docx-wrapper { background: transparent !important; padding: 0 !important; }
+                    .docx-wrapper > section.docx { box-shadow: none !important; margin: 0 !important; min-height: auto !important; }
+                  }
+                </style>
+              </head>
+              <body>
+                ${printContent}
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          // Use setTimeout to allow DOM reflow and stylesheet to apply
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+          }, 500);
+        }
+      }
+    }
+  };
 
   const handleDownload = async () => {
     if (!file) return;
@@ -437,20 +546,27 @@ const FileViewerDialog = ({
         );
       }
 
-      // Word / other office — keep existing DocumentShell + officeContainerRef
+      // Word / other office — native docx-preview wrapper
       return (
-        <DocumentShell zoom={zoom}>
+        <div
+          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-auto rounded-xl bg-[#f8f9fa] shadow-2xl ring-1 ring-black/5 custom-scrollbar relative"
+          tabIndex={0}
+        >
           {isLoading && (
-            <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex flex-col items-center justify-center text-sm text-gray-600 font-medium gap-3">
+            <div className="absolute inset-0 z-10 bg-[#f8f9fa]/80 backdrop-blur-sm flex flex-col items-center justify-center text-sm text-gray-600 font-medium gap-3">
               <Loader2 className="size-8 animate-spin text-blue-500" />
               <p>Đang vẽ tài liệu...</p>
             </div>
           )}
           <div
             ref={officeContainerRef}
-            className="w-full overflow-x-auto text-sm text-left text-slate-800"
+            className="w-full min-h-full transition-transform duration-300 ease-out origin-top [&>.docx-wrapper]:!bg-transparent [&>.docx-wrapper]:!p-4 md:[&>.docx-wrapper]:!p-8 [&>.docx-wrapper>section.docx]:!bg-white [&>.docx-wrapper>section.docx]:!shadow-xl [&>.docx-wrapper>section.docx]:!mb-8 [&>.docx-wrapper>section.docx]:!mx-auto"
+            style={{
+              transform: `scale(${zoom / 100})`,
+              marginBottom: zoom > 100 ? `${(zoom - 100) * 8}px` : "0",
+            }}
           />
-        </DocumentShell>
+        </div>
       );
     }
 
@@ -526,16 +642,18 @@ const FileViewerDialog = ({
                 </div>
               )}
 
-              {/* Print Button Wrapper */}
-              {["office", "image", "pdf"].includes(viewerType) && (
+              {/* Print Button Wrapper - Temporarily Hidden */}
+              {/* 
+              {["office", "pdf"].includes(viewerType) && (
                 <button
-                  disabled
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md cursor-not-allowed"
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md"
                 >
                   <Printer className="size-4" />
                   <span className="hidden sm:inline">In</span>
                 </button>
               )}
+              */}
 
               <button
                 onClick={handleDownload}

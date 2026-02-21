@@ -4,11 +4,7 @@ import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import PopupEvidence from "./PopupEvidence";
 import { Button } from "@/components/ui/Button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Combobox } from "@/components/ui/combobox";
@@ -134,17 +130,35 @@ const EvidencePage = () => {
             emptyText="Không tìm thấy trạng thái."
           />
 
-          <InputGroup className="col-span-1 bg-background md:col-span-2">
-            <InputGroupInput
+          <div className="flex rounded-md shadow-xs col-span-1 bg-background md:col-span-2">
+            <Input
               placeholder="Tìm kiếm..."
               value={searchTerm || ""}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10!"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setPageRequest((prev) => ({
+                    ...prev,
+                    TextSearch: searchTerm,
+                    PageIndex: 1,
+                  }));
+                }
+              }}
+              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
             />
-            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
+            <Button
+              onClick={() => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  TextSearch: searchTerm,
+                  PageIndex: 1,
+                }));
+              }}
+              className="rounded-l-none"
+            >
+              <SearchIcon className="h-4 w-4 mr-1.5" />
+            </Button>
+          </div>
         </div>
       </div>
 

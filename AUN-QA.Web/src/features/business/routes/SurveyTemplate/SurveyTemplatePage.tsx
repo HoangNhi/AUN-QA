@@ -5,20 +5,8 @@ import PopupSurveyTemplate from "./PopupSurveyTemplate";
 import { DataTable } from "@/components/ui/data-table";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/Button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { SearchIcon } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
@@ -118,33 +106,53 @@ const SurveyTemplatePage = () => {
             emptyText="Không tìm thấy loại đối tượng."
           />
 
-          <InputGroup className="col-span-1 bg-background">
-            <InputGroupInput
+          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
+            <Input
               placeholder="Tìm kiếm..."
               value={searchTerm || ""}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="!pl-10"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setPageRequest?.({
+                    ...pageRequest,
+                    TextSearch: searchTerm,
+                    PageIndex: 1,
+                  });
+                }
+              }}
+              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
             />
-            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
+            <Button
+              onClick={() => {
+                setPageRequest?.({
+                  ...pageRequest,
+                  TextSearch: searchTerm,
+                  PageIndex: 1,
+                });
+              }}
+              className="rounded-l-none"
+            >
+              <SearchIcon className="h-4 w-4 mr-1.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
-          Thêm
-        </Button>
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={() => setShowDeleteConfirm(true)}
-          disabled={selectedRowIds.length === 0}
-        >
-          Xóa
-        </Button>
+      <div className="grid grid-cols-3 items-center justify-between">
+        <div className="col-span-2 flex items-center gap-2">
+          <Button size="sm" onClick={() => showPopupDetail?.("", false)}>
+            Thêm
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={selectedRowIds.length === 0}
+          >
+            Xóa
+          </Button>
+        </div>
       </div>
 
       {/* Data Table */}
@@ -156,7 +164,7 @@ const SurveyTemplatePage = () => {
         setRowSelection={setRowSelection}
         pageRequest={pageRequest}
         setPageRequest={setPageRequest}
-        onRefresh={() => getList?.(pageRequest)}
+        onRefresh={() => getList?.()}
         isLoading={isFetching}
       />
 
@@ -173,25 +181,12 @@ const SurveyTemplatePage = () => {
       )}
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa {selectedRowIds.length} mục đã chọn
-              không? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDelete}>
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        itemCount={selectedRowIds.length}
+      />
     </div>
   );
 };

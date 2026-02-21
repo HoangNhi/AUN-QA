@@ -4,7 +4,7 @@ import { Download, Loader2, XIcon } from "lucide-react";
 import { fileService } from "@/features/file/api/uploadfile.api";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { getFileViewerType } from "@/lib/file-utils";
-import { getFileUrl } from "@/lib/utils";
+import { cn, getFileUrl } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import {
@@ -21,6 +21,8 @@ import {
 import { renderAsync } from "docx-preview";
 import * as XLSX from "xlsx";
 import { ExcelViewer } from "@/components/ui/excel-viewer";
+
+const XLSX_PREVIEW_MAX_ROWS = 100;
 
 interface FileViewerDialogProps {
   isOpen: boolean;
@@ -98,10 +100,23 @@ const FileViewerDialog = ({
     setZoom(100);
   }, [file]);
 
+  useEffect(() => {
+    if (isOpen) return;
+
+    setOfficeBlob(null);
+    setWorkbook(null);
+    setActiveSheet("");
+
+    if (officeContainerRef.current) {
+      officeContainerRef.current.innerHTML = "";
+    }
+  }, [isOpen]);
+
   const fileExt =
     file?.FileExtension || file?.FullFileName?.split(".").pop()?.toLowerCase();
 
   const viewerType = useMemo(() => getFileViewerType(fileExt || ""), [fileExt]);
+  const shouldUseScrollableCanvas = ["office", "pdf"].includes(viewerType);
 
   useEffect(() => {
     if (!isOpen || !file) return;
@@ -138,7 +153,7 @@ const FileViewerDialog = ({
 
         if (viewerType === "office") {
           setOfficeBlob(blob);
-          // don't really need a url for office blob since we use arraybuffer directly, but let's keep it for download consistency
+          return;
         }
 
         const url = URL.createObjectURL(blob);
@@ -189,9 +204,13 @@ const FileViewerDialog = ({
           } else if (["xlsx", "xls"].includes(extension)) {
             // Parse xlsx — does NOT need a DOM ref
             const buffer = await officeBlob.arrayBuffer();
-            const wb = XLSX.read(buffer, { type: "array" });
+            const wb = XLSX.read(buffer, {
+              type: "array",
+              sheetRows: XLSX_PREVIEW_MAX_ROWS,
+            });
             setWorkbook(wb);
             setActiveSheet(wb.SheetNames[0]);
+            setOfficeBlob(null);
           } else {
             if (officeContainerRef.current) {
               officeContainerRef.current.innerHTML = `
@@ -477,7 +496,13 @@ const FileViewerDialog = ({
           </div>
 
           {/* Main Canvas Area */}
-          <div className="flex-1 overflow-auto flex items-center justify-center relative p-4 md:p-8">
+          <div
+            data-testid="preview-canvas"
+            className={cn(
+              "flex-1 flex items-center justify-center relative p-4 md:p-8",
+              shouldUseScrollableCanvas ? "overflow-auto" : "overflow-hidden",
+            )}
+          >
             {renderContent()}
           </div>
         </DialogPrimitive.Content>

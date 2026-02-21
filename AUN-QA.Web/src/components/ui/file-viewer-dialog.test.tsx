@@ -7,7 +7,7 @@ vi.mock("@/features/file/api/uploadfile.api", () => ({
 }));
 
 describe("FileViewerDialog layout", () => {
-  it("uses non-scroll canvas for image/video preview", () => {
+  it("uses non-scroll canvas for image", () => {
     render(
       <FileViewerDialog
         isOpen
@@ -24,5 +24,27 @@ describe("FileViewerDialog layout", () => {
     );
 
     expect(screen.getByTestId("preview-canvas")).toHaveClass("overflow-hidden");
+    expect(screen.getByTestId("preview-canvas")).not.toHaveClass(
+      "overflow-auto",
+    );
+  });
+
+  it("keeps scroll canvas for pdf", () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 2,
+            FullFileName: "x.pdf",
+            FileExtension: "pdf",
+            FileUrl: "/x.pdf",
+          } as any
+        }
+      />,
+    );
+
+    expect(screen.getByTestId("preview-canvas")).toHaveClass("overflow-auto");
   });
 });

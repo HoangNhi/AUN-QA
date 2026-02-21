@@ -116,7 +116,7 @@ const FileViewerDialog = ({
     file?.FileExtension || file?.FullFileName?.split(".").pop()?.toLowerCase();
 
   const viewerType = useMemo(() => getFileViewerType(fileExt || ""), [fileExt]);
-  const shouldUseScrollableCanvas = ["office", "pdf"].includes(viewerType);
+  const shouldUseScrollableCanvas = ["office"].includes(viewerType);
 
   useEffect(() => {
     if (!isOpen || !file) return;
@@ -313,14 +313,19 @@ const FileViewerDialog = ({
     }
 
     if (viewerType === "pdf") {
+      const pdfHash = `#toolbar=0&navpanes=0&view=FitH&zoom=${zoom}`;
+
       return (
-        <DocumentShell zoom={zoom}>
+        <div
+          data-testid="pdf-scroll-container"
+          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-y-auto overflow-x-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
+        >
           <iframe
-            src={blobUrl! + "#toolbar=0&navpanes=0&view=FitH"}
+            src={blobUrl! + pdfHash}
             title={file?.FullFileName}
-            className="w-full min-h-[800px] border-0 bg-transparent"
+            className="w-full min-h-[85vh] border-0 bg-transparent"
           />
-        </DocumentShell>
+        </div>
       );
     }
 

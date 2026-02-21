@@ -391,6 +391,11 @@ const FileViewerDialog = ({
         {/* A dark translucent blur background */}
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-zinc-950/85 backdrop-blur-md transition-opacity animate-in fade-in duration-200" />
         <DialogPrimitive.Content className="fixed inset-0 z-50 flex flex-col pointer-events-auto bg-transparent focus:outline-none">
+          {/* Screen-reader title (visually hidden — visual title is in the header bar) */}
+          <DialogPrimitive.Title className="sr-only">
+            {file?.FullFileName ?? "Xem trước tệp"}
+          </DialogPrimitive.Title>
+
           {/* Sleek Header */}
           <div className="flex items-center justify-between px-4 h-16 bg-gradient-to-b from-black/50 to-transparent shrink-0 relative z-10 w-full">
             <div className="flex items-center gap-4 text-white">

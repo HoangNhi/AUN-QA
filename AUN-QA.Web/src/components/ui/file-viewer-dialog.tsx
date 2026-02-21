@@ -167,14 +167,15 @@ const FileViewerDialog = ({
   }, [file, isOpen, mode, viewerType]);
 
   useEffect(() => {
-    if (viewerType === "office" && officeBlob && officeContainerRef.current) {
+    if (viewerType === "office" && officeBlob) {
       const extension = fileExt?.replace(".", "") || "";
 
       const renderOfficeFile = async () => {
         setIsLoading(true);
         try {
           if (["docx", "doc"].includes(extension)) {
-            // Render docx
+            // Render docx — needs the DOM ref to be mounted
+            if (!officeContainerRef.current) return;
             await renderAsync(
               officeBlob,
               officeContainerRef.current as HTMLElement,
@@ -186,7 +187,7 @@ const FileViewerDialog = ({
               },
             );
           } else if (["xlsx", "xls"].includes(extension)) {
-            // Parse xlsx once
+            // Parse xlsx — does NOT need a DOM ref
             const buffer = await officeBlob.arrayBuffer();
             const wb = XLSX.read(buffer, { type: "array" });
             setWorkbook(wb);

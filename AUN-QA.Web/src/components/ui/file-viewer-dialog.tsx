@@ -327,9 +327,10 @@ const FileViewerDialog = ({
     if (viewerType === "image") {
       return (
         <img
+          data-testid="image-preview"
           src={blobUrl!}
           alt={file?.FullFileName}
-          className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ease-out"
+          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl ring-1 ring-white/10 transition-transform duration-300 ease-out"
           style={{
             transform: `scale(${zoom / 100})`,
             transformOrigin: "center",
@@ -340,11 +341,14 @@ const FileViewerDialog = ({
 
     if (viewerType === "video") {
       return (
-        <div className="w-full max-w-5xl rounded-2xl overflow-hidden bg-black shadow-[0_0_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10">
+        <div
+          data-testid="video-preview-wrapper"
+          className="w-full max-w-5xl max-h-full rounded-2xl overflow-hidden bg-black shadow-[0_0_50px_rgba(0,0,0,0.5)] ring-1 ring-white/10"
+        >
           <video
             controls
             src={blobUrl!}
-            className="w-full aspect-video object-contain"
+            className="w-full max-h-full aspect-video object-contain"
             autoPlay
           />
         </div>

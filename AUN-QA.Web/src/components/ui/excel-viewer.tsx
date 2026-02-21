@@ -123,7 +123,7 @@ export function ExcelViewer({
       )}
 
       {/* Scrollable grid area */}
-      <div className="flex-1 overflow-auto relative">
+      <div id="excel-print-container" className="flex-1 overflow-auto relative">
         <table
           className="border-collapse text-sm"
           style={{ fontSize: `${zoom}%` }}

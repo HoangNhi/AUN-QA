@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import FileViewerDialog from "./file-viewer-dialog";
 import { fileService } from "@/features/file/api/uploadfile.api";
+import { renderAsync } from "docx-preview";
+
+vi.mock("docx-preview", () => ({
+  renderAsync: vi.fn(),
+}));
 
 vi.mock("@/features/file/api/uploadfile.api", () => ({
   fileService: { previewFile: vi.fn() },
@@ -22,7 +27,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 1,
@@ -44,7 +49,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 2,
@@ -66,7 +71,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 5,
@@ -87,7 +92,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 6,
@@ -108,7 +113,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 11,
@@ -128,7 +133,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 12,
@@ -149,7 +154,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 7,
@@ -174,7 +179,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 9,
@@ -196,7 +201,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 8,
@@ -217,7 +222,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 3,
@@ -238,7 +243,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => {}}
+        onClose={() => { }}
         file={
           {
             Id: 4,
@@ -252,5 +257,34 @@ describe("FileViewerDialog layout", () => {
 
     const image = await screen.findByTestId("image-preview");
     expect(image).toHaveClass("max-h-full");
+  });
+
+  it("calls renderAsync with correct pagination options for docx files", async () => {
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => { }}
+        file={
+          {
+            Id: 21,
+            FullFileName: "test.docx",
+            FileExtension: "docx",
+            FileUrl: "/test.docx",
+          } as any
+        }
+      />,
+    );
+
+    await vi.waitFor(() => {
+      expect(renderAsync).toHaveBeenCalledWith(
+        expect.any(Blob),
+        expect.any(HTMLElement),
+        undefined,
+        expect.objectContaining({
+          ignoreLastRenderedPageBreak: false,
+          breakPages: true,
+        }),
+      );
+    });
   });
 });

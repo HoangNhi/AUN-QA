@@ -384,3 +384,6 @@ CLAUDE.md
 /.mcp.json
 /package-lock.json
 /package.json
+/.agent
+/AUN-QA.FileService/wwwroot/Deleted
+/docs

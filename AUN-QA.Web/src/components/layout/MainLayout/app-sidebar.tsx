@@ -71,7 +71,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               >
                 <Link className="font-medium" to="/">
                   <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
-                    Trang chủ
+                    TỔNG QUAN
                   </span>
                 </Link>
               </SidebarMenuButton>
@@ -146,7 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 to={item.Controller}
                                 className={cn(
                                   isPathActive(item.Controller) &&
-                                    "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
+                                  "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                 )}
                               >
                                 <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
@@ -205,7 +205,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             to={item.Controller}
                                             className={cn(
                                               isPathActive(item.Controller) &&
-                                                "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
+                                              "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                             )}
                                           >
                                             <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">

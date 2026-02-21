@@ -21,8 +21,12 @@ import {
 import { renderAsync } from "docx-preview";
 import * as XLSX from "xlsx";
 import { ExcelViewer } from "@/components/ui/excel-viewer";
+import { PdfViewer } from "@/components/ui/pdf-viewer";
 
 const XLSX_PREVIEW_MAX_ROWS = 100;
+const ZOOM_MIN = 50;
+const ZOOM_MAX = 200;
+const ZOOM_STEP = 10;
 
 interface FileViewerDialogProps {
   isOpen: boolean;
@@ -94,6 +98,11 @@ const FileViewerDialog = ({
   const [activeSheet, setActiveSheet] = useState<string>("");
   const objectUrlRef = useRef<string | null>(null);
   const officeContainerRef = useRef<HTMLDivElement>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
+
+  const increaseZoom = () => setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP));
+  const decreaseZoom = () => setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP));
+  const resetZoom = () => setZoom(100);
 
   // Reset zoom when file changes
   useEffect(() => {
@@ -313,18 +322,43 @@ const FileViewerDialog = ({
     }
 
     if (viewerType === "pdf") {
-      const pdfHash = `#toolbar=0&navpanes=0&view=FitH&zoom=${zoom}`;
-
       return (
         <div
+          ref={pdfContainerRef}
           data-testid="pdf-scroll-container"
-          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
+          className="w-full max-w-[95vw] h-full max-h-[85vh] overflow-hidden rounded-xl bg-[#2b2b2b] shadow-2xl ring-1 ring-black/5"
+          tabIndex={0}
+          onWheel={(event) => {
+            if (!event.ctrlKey) return;
+            event.preventDefault();
+            if (event.deltaY < 0) {
+              increaseZoom();
+            } else {
+              decreaseZoom();
+            }
+          }}
+          onKeyDown={(event) => {
+            if (!event.ctrlKey) return;
+
+            if (event.key === "+" || event.key === "=") {
+              event.preventDefault();
+              increaseZoom();
+              return;
+            }
+
+            if (event.key === "-" || event.key === "_") {
+              event.preventDefault();
+              decreaseZoom();
+              return;
+            }
+
+            if (event.key === "0") {
+              event.preventDefault();
+              resetZoom();
+            }
+          }}
         >
-          <iframe
-            src={blobUrl! + pdfHash}
-            title={file?.FullFileName}
-            className="w-full h-full border-0 bg-transparent"
-          />
+          <PdfViewer fileUrl={blobUrl!} zoom={zoom} />
         </div>
       );
     }
@@ -455,7 +489,7 @@ const FileViewerDialog = ({
               {["office", "image", "pdf"].includes(viewerType) && (
                 <div className="hidden md:flex items-center gap-1 bg-white/10 rounded-lg p-1 mr-4 backdrop-blur-md">
                   <button
-                    onClick={() => setZoom((z) => Math.max(50, z - 10))}
+                    onClick={decreaseZoom}
                     className="p-1.5 text-zinc-300 hover:text-white hover:bg-white/10 rounded transition-colors"
                     title="Zoom Out"
                   >
@@ -465,7 +499,7 @@ const FileViewerDialog = ({
                     {zoom}%
                   </span>
                   <button
-                    onClick={() => setZoom((z) => Math.min(200, z + 10))}
+                    onClick={increaseZoom}
                     className="p-1.5 text-zinc-300 hover:text-white hover:bg-white/10 rounded transition-colors"
                     title="Zoom In"
                   >

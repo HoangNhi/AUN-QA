@@ -1,6 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
 
-namespace AUN_QA.BusinessService.DTOs.Base
+namespace AUN_QA.Shared.DTOs.Base
 {
     public class GetByIdRequest
     {

@@ -1,5 +1,6 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
-using AUN_QA.SystemService.DTOs.Common;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Dtos;
@@ -25,9 +26,6 @@ namespace AUN_QA.SystemService.Controllers
         [AllowAnonymous]
         public IActionResult Login(LoginRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = _service.Login(request, GetClientIpAddress());
             return Ok(new BaseResponse<LoginResponse> { Data = result, Success = true });
         }
@@ -36,9 +34,6 @@ namespace AUN_QA.SystemService.Controllers
         [AllowAnonymous]
         public IActionResult RefreshToken(RefreshTokenRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = _service.RefreshToken(request, GetClientIpAddress());
             return Ok(new BaseResponse<ModelToken> { Data = result, Success = true });
         }

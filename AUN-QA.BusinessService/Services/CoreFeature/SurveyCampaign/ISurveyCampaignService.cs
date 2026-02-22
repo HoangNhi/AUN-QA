@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;

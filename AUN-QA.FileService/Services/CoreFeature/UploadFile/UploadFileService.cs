@@ -1,7 +1,9 @@
-﻿using AUN_QA.FileService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.FileService.DTOs.Base;
 using AUN_QA.FileService.DTOs.Common;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.AspNetCore.StaticFiles;
+
 
 namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 {
@@ -17,6 +19,11 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 
         public async Task Insert(List<IFormFile> files, string FolderName)
         {
+            if (string.IsNullOrWhiteSpace(FolderName) || FolderName.Contains("..") || FolderName.Contains("/") || FolderName.Contains("\\"))
+            {
+                throw new Exception("ThÆ° má»¥c lÆ°u trá»¯ khÃ´ng há»£p lá»‡");
+            }
+
             var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files/Temp/" + FolderName);
             if (Directory.Exists(folderPath))
             {
@@ -42,13 +49,22 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                 }
                 else
                 {
-                    throw new Exception("Upload file không thành công");
+                    throw new Exception("Upload file khÃ´ng thÃ nh cÃ´ng");
                 }
             }
         }
 
         public List<ModelAttachment> UploadData(object lienKetId, string servicePath, string folderName, string tempFolder)
         {
+            if (string.IsNullOrWhiteSpace(tempFolder) || tempFolder.Contains("..") || tempFolder.Contains("/") || tempFolder.Contains("\\"))
+            {
+                throw new Exception("ThÆ° má»¥c lÆ°u trá»¯ táº¡m khÃ´ng há»£p lá»‡");
+            }
+            if (string.IsNullOrWhiteSpace(folderName) || folderName.Contains("..") || folderName.Contains("/") || folderName.Contains("\\"))
+            {
+                throw new Exception("ThÆ° má»¥c lÆ°u trá»¯ chÃ­nh khÃ´ng há»£p lá»‡");
+            }
+
             List<ModelAttachment> result = new List<ModelAttachment>();
             string sourceDirPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files\\Temp\\" + tempFolder);
             string destinationDirPath = Path.Combine(_webHostEnvironment.WebRootPath, servicePath, folderName + "\\" + lienKetId.ToString());
@@ -129,29 +145,29 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             if (Directory.Exists(folderUploadPath))
             {
                 string[] arrFiles = Directory.GetFiles(folderUploadPath);
-                if (arrFiles.Count() > 0) //có đính kèm
+                if (arrFiles.Count() > 0) //cÃ³ Ä‘Ã­nh kÃ¨m
                 {
                     FileInfo info = new FileInfo(arrFiles[0]);
                     string fileName = Guid.NewGuid().ToString() + info.Extension;
                     string avataPath = Path.Combine(_webHostEnvironment.WebRootPath, "System\\Avatar");
-                    //Kiểm tra nếu thư mục chưa tồn tại thì tạo mới.
+                    //Kiá»ƒm tra náº¿u thÆ° má»¥c chÆ°a tá»“n táº¡i thÃ¬ táº¡o má»›i.
                     if (!Directory.Exists(avataPath))
                     {
                         Directory.CreateDirectory(avataPath);
                     }
 
-                    //Xóa ảnh cũ nếu tồn tại
+                    //XÃ³a áº£nh cÅ© náº¿u tá»“n táº¡i
                     if (File.Exists(avataPath + "\\" + oldImage))
                     {
                         File.Delete(avataPath + "\\" + oldImage);
                     }
 
-                    //Copy ảnh mới
+                    //Copy áº£nh má»›i
                     File.Move(arrFiles[0], avataPath + "\\" + fileName, true);
                     path = "System\\Avatar\\" + fileName;
                 }
 
-                //Xóa thư mục tạm.
+                //XÃ³a thÆ° má»¥c táº¡m.
                 Directory.Delete(folderUploadPath, true);
             }
 
@@ -162,7 +178,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         {
             if (string.IsNullOrWhiteSpace(fileUrl))
             {
-                throw new Exception("Đường dẫn tệp không hợp lệ");
+                throw new Exception("ÄÆ°á»ng dáº«n tá»‡p khÃ´ng há»£p lá»‡");
             }
 
             var normalizedRelativePath = fileUrl
@@ -176,12 +192,12 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 
             if (!absolutePath.StartsWith(fullWebRootPath, StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception("Đường dẫn tệp không hợp lệ");
+                throw new Exception("ÄÆ°á»ng dáº«n tá»‡p khÃ´ng há»£p lá»‡");
             }
 
             if (!File.Exists(absolutePath))
             {
-                throw new Exception("Tệp không tồn tại");
+                throw new Exception("Tá»‡p khÃ´ng tá»“n táº¡i");
             }
 
             var fileContent = File.ReadAllBytes(absolutePath);
@@ -219,47 +235,47 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                 if (Directory.Exists(sourceDirPath))
                 {
                     string[] arrFiles = Directory.GetFiles(sourceDirPath);
-                    if (arrFiles.Count() > 0) //có đính kèm
+                    if (arrFiles.Count() > 0) //cÃ³ Ä‘Ã­nh kÃ¨m
                     {
-                        //Kiểm tra nếu thư mục chưa tồn tại thì tạo mới.
+                        //Kiá»ƒm tra náº¿u thÆ° má»¥c chÆ°a tá»“n táº¡i thÃ¬ táº¡o má»›i.
                         if (!Directory.Exists(destinationDirPath))
                         {
                             Directory.CreateDirectory(destinationDirPath);
                         }
-                        //Copy file qua thư mục mới
+                        //Copy file qua thÆ° má»¥c má»›i
                         foreach (string f in arrFiles)
                         {
                             FileInfo info = new FileInfo(f);
-                            string tempFileName = Path.GetFileNameWithoutExtension(f); // Tên gốc để lưu vào DB (Original name)
+                            string tempFileName = Path.GetFileNameWithoutExtension(f); // TÃªn gá»‘c Ä‘á»ƒ lÆ°u vÃ o DB (Original name)
                             
-                            // Sử dụng UUID làm tên file vật lý tĩnh trên đĩa để chống bypass đuôi và chống ghi đè
+                            // Sá»­ dá»¥ng UUID lÃ m tÃªn file váº­t lÃ½ tÄ©nh trÃªn Ä‘Ä©a Ä‘á»ƒ chá»‘ng bypass Ä‘uÃ´i vÃ  chá»‘ng ghi Ä‘Ã¨
                             string uuidFileName = Guid.NewGuid().ToString() + info.Extension;
                             string destDirPath = Path.Combine(destinationDirPath, uuidFileName);
 
-                            //Copy file tới đường dẫn mới (mang tên UUID)
+                            //Copy file tá»›i Ä‘Æ°á»ng dáº«n má»›i (mang tÃªn UUID)
                             if (File.Exists(f))
                             {
                                 File.Copy(f, destDirPath, true);
-                                // Lưu thông tin Tên Gốc (FileName) và URL mới cho database lưu trữ
+                                // LÆ°u thÃ´ng tin TÃªn Gá»‘c (FileName) vÃ  URL má»›i cho database lÆ°u trá»¯
                                 ModelAttachment tepDinhKem = new ModelAttachment();
                                 tepDinhKem.FileName = tempFileName;
                                 tepDinhKem.FileSize = info.Length;
                                 tepDinhKem.FileExtension = info.Extension;
-                                tepDinhKem.FileUrl = relativeDirPath + "/" + uuidFileName; // Logical Path chứa UUID
+                                tepDinhKem.FileUrl = relativeDirPath + "/" + uuidFileName; // Logical Path chá»©a UUID
 
                                 lstAttachment.Add(tepDinhKem);
                             }
                         }
                     }
-                    //Xóa thư mục tạm.
+                    //XÃ³a thÆ° má»¥c táº¡m.
                     Directory.Delete(sourceDirPath, true);
                 }
 
                 return lstAttachment;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
         }
 

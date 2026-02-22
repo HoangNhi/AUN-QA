@@ -1,4 +1,4 @@
-using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
@@ -34,7 +34,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
             var data = await _context.Roles.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("DÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
             }
 
             return _mapper.Map<ModelRole>(data);
@@ -49,7 +49,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new Exception("TÃƒÂªn gÃ¡Â»Âi Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
             }
 
             var add = _mapper.Map<Entities.Role>(request);
@@ -72,13 +72,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new Exception("TÃƒÂªn gÃ¡Â»Âi Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
             }
 
             var update = await _context.Roles.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("DÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
             }
 
             _mapper.Map(request, update);
@@ -98,7 +98,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 var delete = await _context.Roles.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new Exception("DÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
                 }
 
                 delete.IsDeleted = true;
@@ -127,13 +127,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
-            var result = data.Select(x => new ModelCombobox
+            var result = await _context.Roles.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived)
+            .Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),
-            }).OrderBy(x => x.Text).ToList();
-
+            })
+            .OrderBy(x => x.Text).ToListAsync();
             return result;
         }
 

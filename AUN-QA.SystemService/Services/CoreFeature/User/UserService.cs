@@ -1,4 +1,4 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
@@ -34,10 +34,10 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
         public async Task<ModelUser> GetById(GetByIdRequest request)
         {
-            var data = await _context.Users.FindAsync(request.Id);
+            var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
             }
 
             var result = _mapper.Map<ModelUser>(data);
@@ -51,12 +51,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                throw new Exception("Người dùng chưa xác thực");
+                throw new Exception("NgÆ°á»i dÃ¹ng chÆ°a xÃ¡c thá»±c");
             }
-            var data = await _context.Users.FirstOrDefaultAsync(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
+            var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
             }
             var result = _mapper.Map<ModelUser>(data);
             return result;
@@ -71,7 +71,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
+                throw new Exception("TÃªn Ä‘Äƒng nháº­p hoáº·c email Ä‘Ã£ tá»“n táº¡i");
             }
 
             var add = _mapper.Map<Entities.User>(request);
@@ -96,13 +96,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
+                throw new Exception("TÃªn Ä‘Äƒng nháº­p hoáº·c email Ä‘Ã£ tá»“n táº¡i");
             }
 
             var update = await _context.Users.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
             }
 
             var oldPassword = update.Password;
@@ -134,7 +134,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 var delete = await _context.Users.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
                 }
 
                 delete.IsDeleted = true;
@@ -176,13 +176,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.Users.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
-            var result = data.Select(x => new ModelCombobox
+            var result = await _context.Users.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived)
+            .Select(x => new ModelCombobox
             {
                 Text = $"[{x.Username}] - {x.Fullname}",
                 Value = x.Id.ToString(),
-            }).OrderBy(x => x.Sort).ToList();
-
+            })
+            .OrderBy(x => x.Sort).ToListAsync();
             return result;
         }
 
@@ -192,7 +192,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                throw new Exception("Người dùng không có quyền thực hiện hành động này");
+                throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n hÃ nh Ä‘á»™ng nÃ y");
             }
 
             var userId = Guid.Parse(currentUserId);
@@ -203,13 +203,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Email đã tồn tại");
+                throw new Exception("Email Ä‘Ã£ tá»“n táº¡i");
             }
 
             var update = await _context.Users.FindAsync(userId);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
             }
 
             _mapper.Map(request, update);
@@ -235,14 +235,14 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var update = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.Username == _contextAccessor.HttpContext.User.Identity.Name && x.IsDeleted == false);
             if (update == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
             }
 
-            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("Xác nhận mật khẩu mới không đúng");
+            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("XÃ¡c nháº­n máº­t kháº©u má»›i khÃ´ng Ä‘Ãºng");
 
-            // Nếu đổi mật khẩu thì cập nhật lại mật khẩu mới
+            // Náº¿u Ä‘á»•i máº­t kháº©u thÃ¬ cáº­p nháº­t láº¡i máº­t kháº©u má»›i
             var pass = Encrypt_DecryptHelper.EncodePassword(request.OldPassword, update.PasswordSalt);
-            if (!pass.Equals(update.Password)) throw new Exception("Mật khẩu cũ không đúng");
+            if (!pass.Equals(update.Password)) throw new Exception("Máº­t kháº©u cÅ© khÃ´ng Ä‘Ãºng");
 
             var salt = Encrypt_DecryptHelper.GenerateSalt();
             update.PasswordSalt = salt;

@@ -1,5 +1,7 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
@@ -25,9 +27,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> { Data = result, Success = true });
         }
@@ -36,9 +35,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<EvidenceCycleMapRequest> { Data = result, Success = true });
         }
@@ -47,9 +43,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> InsertWithEvidence([FromBody] EvidenceCycleMapRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.InsertWithEvidence(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -58,9 +51,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Update(EvidenceCycleMapRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Update(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -69,9 +59,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.DeleteList(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -88,9 +75,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> SubmitToApprove([FromBody] EvidenceSubmitToApproveRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.SubmitToApprove(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -99,9 +83,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Approve(EvidenceCycleMapApproveRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Approve(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -111,7 +92,7 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> GetVerifiedFileTypeCounts([FromQuery] Guid cycleId)
         {
             if (cycleId == Guid.Empty)
-                return Ok(new BaseResponse(false, 400, "cycleId không được để trống"));
+                return Ok(new BaseResponse(false, 400, "cycleId khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"));
 
             var result = await _service.GetVerifiedFileTypeCountsAsync(cycleId);
             return Ok(new BaseResponse<List<VerifiedFileTypeCountResponse>> { Data = result, Success = true });
@@ -121,9 +102,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetVerifiedForReuse([FromBody] VerifiedEvidenceForReuseRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetVerifiedForReuseAsync(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> { Data = result, Success = true });
         }
@@ -132,9 +110,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> ReuseVerifiedEvidence([FromBody] ReuseVerifiedEvidenceRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.ReuseVerifiedEvidenceAsync(request);
             return Ok(new BaseResponse(true, 200));
         }

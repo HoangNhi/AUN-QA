@@ -1,4 +1,4 @@
-namespace AUN_QA.SystemService.DTOs.Base
+namespace AUN_QA.Shared.DTOs.Base
 {
     public class GetListPagingResponse<T>
     {

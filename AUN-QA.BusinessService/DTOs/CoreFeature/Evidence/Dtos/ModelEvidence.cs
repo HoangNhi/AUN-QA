@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos
 {

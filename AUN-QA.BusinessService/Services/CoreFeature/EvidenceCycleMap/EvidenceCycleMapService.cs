@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
@@ -54,7 +54,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         #region PDCA - DO: EvidenceCycleMap
         public async Task<EvidenceCycleMapRequest> GetById(GetByIdRequest request)
         {
-            var data = await _context.EvidenceCycleMaps.FindAsync(request.Id);
+            var data = await _context.EvidenceCycleMaps.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -65,7 +65,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var result = _mapper.Map<EvidenceCycleMapRequest>(data);
 
             // Load Evidence details
-            var evidence = await _context.Evidences.FindAsync(data.EvidenceId);
+            var evidence = await _context.Evidences.AsNoTracking().FirstOrDefaultAsync(x => x.Id == data.EvidenceId);
             if (evidence != null)
             {
                 result.Evidence = _mapper.Map<EvidenceRequest>(evidence);
@@ -195,9 +195,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 _context.Evidences.Update(update);
 
                 #region Thêm tài liệu đính kèm
-                var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                var ListDinhKemCanXoa = await _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
                                     && !x.IsDeleted
-                                    && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToList();
+                                    && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToListAsync();
 
                 // Xóa các file không còn trong danh sách
                 await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
@@ -376,12 +376,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             {
                 foreach (var item in request.Ids)
                 {
-                    var evidenceCycleMap = _context.EvidenceCycleMaps.Find(item);
+                    var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(item);
                     if (evidenceCycleMap is not null)
                     {
                         await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
-                        var evidence = _context.Evidences.Find(evidenceCycleMap.EvidenceId);
+                        var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
                         if (evidence is not null)
                         {
                             if (evidence.Status == ((int)EvidenceStatus.Draft))
@@ -401,7 +401,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task Approve(EvidenceCycleMapApproveRequest request)
         {
-            var evidenceCycleMap = _context.EvidenceCycleMaps.Find(request.Id);
+            var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(request.Id);
             if (evidenceCycleMap is null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -409,7 +409,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary));
 
-            var evidence = _context.Evidences.Find(evidenceCycleMap.EvidenceId);
+            var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
             if (evidence is null)
             {
                 throw new Exception("Dữ liệu không tồn tại");
@@ -592,11 +592,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
-            var result = await _context.EvidenceAttachments
+            var attachments = await _context.EvidenceAttachments
+                .AsNoTracking()
                 .Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
-                .Select(x => _mapper.Map<ModelAttachment>(x))
                 .ToListAsync();
-            return result;
+
+            return attachments.Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
         }
         #endregion
     }

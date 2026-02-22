@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using FluentValidation;
 
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests
@@ -19,10 +20,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests
         public SurveyScoreRequestValidator()
         {
             RuleFor(x => x.QuestionId)
-                .NotEmpty().WithMessage("Câu hỏi không được để trống");
+                .NotEmpty().WithMessage("CÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
 
             RuleFor(x => x.Score)
-                .InclusiveBetween(1, 5).WithMessage("Điểm số phải từ 1 đến 5");
+                .InclusiveBetween(1, 5).WithMessage("Äiá»ƒm sá»‘ pháº£i tá»« 1 Ä‘áº¿n 5");
         }
     }
 }

@@ -1,4 +1,4 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
@@ -31,26 +31,30 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<StandardRequest> GetById(GetByIdRequest request)
         {
-            var data = await _context.Standards.FindAsync(request.Id);
+            var data = await _context.Standards.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
             }
 
             var result = _mapper.Map<StandardRequest>(data);
             var criteria = await _context.Criteria
+                .AsNoTracking()
                 .Where(x => x.StandardId == data.Id && !x.IsDeleted)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
 
             result.Criterions = _mapper.Map<List<CriterionRequest>>(criteria);
 
+            var criterionIds = criteria.Select(c => c.Id).ToList();
+            var allOptions = await _context.CriterionRequirements
+                .AsNoTracking()
+                .Where(x => criterionIds.Contains(x.CriterionId) && !x.IsDeleted)
+                .ToListAsync();
+
             foreach (var criterion in result.Criterions)
             {
-                var options = await _context.CriterionRequirements
-                    .Where(x => x.CriterionId == criterion.Id && !x.IsDeleted)
-                    .ToListAsync();
-
+                var options = allOptions.Where(x => x.CriterionId == criterion.Id).ToList();
                 criterion.CriterionRequirements = _mapper.Map<List<CriterionRequirementRequest>>(options);
             }
 
@@ -67,7 +71,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new Exception("MÃ£ hoáº·c tÃªn tiÃªu chuáº©n Ä‘Ã£ tá»“n táº¡i");
             }
 
             var add = _mapper.Map<Entities.Standard>(request);
@@ -78,7 +82,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             #region Criterions
             if (!request.Criterions.Any())
             {
-                throw new Exception("Tiêu chí không được để trống");
+                throw new Exception("TiÃªu chÃ­ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             }
 
             foreach (var criterion in request.Criterions)
@@ -116,13 +120,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new Exception("MÃ£ hoáº·c tÃªn tiÃªu chuáº©n Ä‘Ã£ tá»“n táº¡i");
             }
 
             var update = await _context.Standards.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
             }
 
             _mapper.Map(request, update);
@@ -241,7 +245,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 var delete = await _context.Standards.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
                 }
 
                 delete.IsDeleted = true;
@@ -318,25 +322,28 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             if (request.StandardSetId.HasValue && request.StandardSetId.Value != Guid.Empty)
             {
                 var standardSet = await _context.StandardSets
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
                 if (standardSet == null)
                 {
-                    throw new Exception("Bộ tiêu chuẩn không tồn tại");
+                    throw new Exception("Bá»™ tiÃªu chuáº©n khÃ´ng tá»“n táº¡i");
                 }
                 targetStandardSetId = standardSet.Id;
             }
             else
             {
                 var cycle = await _context.Cycles
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
                 if (cycle == null)
                 {
-                    throw new Exception("Chu kỳ không tồn tại");
+                    throw new Exception("Chu ká»³ khÃ´ng tá»“n táº¡i");
                 }
                 targetStandardSetId = cycle.StandardSetId;
             }
 
             var standards = await _context.Standards
+                .AsNoTracking()
                 .Where(x => x.StandardSetId == targetStandardSetId && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
@@ -349,6 +356,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var standardIds = standards.Select(x => x.Id).ToList();
 
             var criteria = await _context.Criteria
+                .AsNoTracking()
                 .Where(x => standardIds.Contains(x.StandardId) && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
@@ -363,6 +371,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var hasFileTypeFilter = request.FileTypeId.HasValue && request.FileTypeId.Value != Guid.Empty;
 
             var requirementsQuery = _context.CriterionRequirements
+                .AsNoTracking()
                 .Where(x => criterionIds.Contains(x.CriterionId) && !x.IsDeleted && x.IsActived);
 
             if (hasFileTypeFilter)
@@ -423,7 +432,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             if (!Guid.TryParse(request.FileTypeId, out var fileTypeId))
                 yield break;
 
-            // Query with joins: Cycle → StandardSet → Standard → Criterion → CriterionRequirement
+            // Query with joins: Cycle â†’ StandardSet â†’ Standard â†’ Criterion â†’ CriterionRequirement
             var query = from criterion in _context.Criteria
                         join standard in _context.Standards on criterion.StandardId equals standard.Id
                         join standardSet in _context.StandardSets on standard.StandardSetId equals standardSet.Id

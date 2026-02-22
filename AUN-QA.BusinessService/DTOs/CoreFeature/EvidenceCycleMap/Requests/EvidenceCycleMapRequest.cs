@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using FluentValidation;
@@ -27,10 +28,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests
         public EvidenceCycleMapRequestValidator()
         {
             RuleFor(x => x.CycleId)
-                .NotEmpty().WithMessage("Chu kỳ không được để trống");
+                .NotEmpty().WithMessage("Chu ká»³ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
 
             RuleFor(x => x.EvidenceId)
-                .NotEmpty().WithMessage("Bằng chứng không được để trống");
+                .NotEmpty().WithMessage("Báº±ng chá»©ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             
             RuleFor(x => x.Evidence)
                 .SetValidator(new EvidenceRequestValidator()!)

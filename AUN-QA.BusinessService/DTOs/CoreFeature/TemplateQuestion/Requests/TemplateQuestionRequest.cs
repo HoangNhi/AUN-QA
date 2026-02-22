@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using FluentValidation;
 
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests
@@ -21,13 +22,13 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests
         public TemplateQuestionRequestValidator()
         {
             RuleFor(x => x.CategoryId)
-                .NotEmpty().WithMessage("Nhóm câu hỏi không được để trống");
+                .NotEmpty().WithMessage("NhÃ³m cÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
 
             RuleFor(x => x.Content)
-                .NotEmpty().WithMessage("Câu hỏi không được để trống");
+                .NotEmpty().WithMessage("CÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
 
             RuleFor(x => x.Sort)
-                .GreaterThanOrEqualTo(0).WithMessage("Thứ tự câu hỏi không được để trống");
+                .GreaterThanOrEqualTo(0).WithMessage("Thá»© tá»± cÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
         }
     }
 }

@@ -1,4 +1,4 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.FileType.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.FileType.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -33,7 +33,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             var data = await _context.FileTypes.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
             }
 
             return _mapper.Map<ModelFileType>(data);
@@ -48,7 +48,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên loại tệp đã tồn tại");
+                throw new Exception("MÃ£ hoáº·c tÃªn loáº¡i tá»‡p Ä‘Ã£ tá»“n táº¡i");
             }
 
             var add = _mapper.Map<Entities.FileType>(request);
@@ -68,13 +68,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên loại tệp đã tồn tại");
+                throw new Exception("MÃ£ hoáº·c tÃªn loáº¡i tá»‡p Ä‘Ã£ tá»“n táº¡i");
             }
 
             var update = await _context.FileTypes.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
             }
 
             _mapper.Map(request, update);
@@ -93,7 +93,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
                 var delete = await _context.FileTypes.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
                 }
 
                 delete.IsDeleted = true;

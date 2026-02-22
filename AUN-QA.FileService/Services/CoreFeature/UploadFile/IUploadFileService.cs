@@ -1,4 +1,5 @@
-﻿using AUN_QA.FileService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.FileService.DTOs.Base;
 
 namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 {

@@ -162,7 +162,7 @@ export const PopupSession = ({
           </DialogHeader>
 
           <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
-            <div className="h-full overflow-y-auto px-6 py-4">
+            <div className="h-full px-6 py-4">
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-3 items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -225,7 +225,6 @@ export const PopupSession = ({
                   onRefresh={refetch}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
-                  containerClassName="h-[30vh] overflow-auto w-full relative"
                 />
               </div>
             </div>

@@ -1,5 +1,7 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.CatalogService.Helpers;
@@ -23,9 +25,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(CycleGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelCycleGetListPaging>> { Data = result, Success = true });
         }
@@ -34,9 +33,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelCycle> { Data = result, Success = true });
         }
@@ -45,9 +41,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Insert([FromBody] CycleRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Insert(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -56,9 +49,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.UPDATE)]
         public async Task<IActionResult> Update(CycleRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Update(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -67,9 +57,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.DELETE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.DeleteList(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -86,9 +73,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> ChangeStatus([FromBody] CycleChangeStatusRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.ChangeStatusAsync(request);
             return Ok(new BaseResponse(true, 200));
         }

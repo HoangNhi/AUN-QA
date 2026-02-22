@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace AUN_QA.CatalogService.DTOs.Common
+namespace AUN_QA.Shared.Common
 {
     public static class CommonFunc
     {

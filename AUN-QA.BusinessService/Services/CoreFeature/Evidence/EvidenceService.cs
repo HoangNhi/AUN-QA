@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
@@ -38,14 +38,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         #region CRUD
         public async Task<ModelEvidence> GetById(GetByIdRequest request)
         {
-            var data = await _context.Evidences.FindAsync(request.Id);
+            var data = await _context.Evidences.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelEvidence>(data);
-            result.ListAttachment = GetAllAttachment(data.Id);
+            result.ListAttachment = await GetAllAttachmentAsync(data.Id);
 
             return result;
         }
@@ -66,48 +66,57 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
         public async Task Insert(EvidenceRequest request)
         {
-            var data = _context.Evidences.Where(x =>
+            var isDuplicate = await _context.Evidences.AsNoTracking().AnyAsync(x =>
                 (x.Name == request.Name || x.Code == request.Code)
                 && !x.IsDeleted
             );
 
-            if (data.Any())
+            if (isDuplicate)
             {
                 throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
             }
 
-            var add = _mapper.Map<Entities.Evidence>(request);
-            add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
-            add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
-            add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
-            await _context.Evidences.AddAsync(add);
-
-            #region Thêm tài liệu đính kèm
-            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
-            foreach (var attachment in lstAttachment)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
-                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
-                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                addAttachment.CreatedAt = DateTime.Now;
-                addAttachment.IsActived = true;
-                addAttachment.IsDeleted = false;
+                var add = _mapper.Map<Entities.Evidence>(request);
+                add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+                add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
+                add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                add.CreatedAt = DateTime.Now;
+                await _context.Evidences.AddAsync(add);
 
-                await _context.EvidenceAttachments.AddAsync(addAttachment);
+                // Thêm tài liệu đính kèm
+                List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(add.Id.ToString(), "Evidence", request.FolderUpload);
+                foreach (var attachment in lstAttachment)
+                {
+                    Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                    addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+                    addAttachment.CreatedBy = add.CreatedBy;
+                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.IsActived = true;
+                    addAttachment.IsDeleted = false;
+
+                    await _context.EvidenceAttachments.AddAsync(addAttachment);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-            #endregion
-
-            await _context.SaveChangesAsync();
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task Update(EvidenceRequest request)
         {
-            var data = _context.Evidences.Where(x =>
+            var isDuplicate = await _context.Evidences.AsNoTracking().AnyAsync(x =>
                 (x.Name == request.Name || x.Code == request.Code)
                 && !x.IsDeleted && x.Id != request.Id);
 
-            if (data.Any())
+            if (isDuplicate)
             {
                 throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
             }
@@ -123,45 +132,58 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
             }
 
-            _mapper.Map(request, update);
-
-            update.Status = (int)EvidenceStatus.Draft;
-            update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
-
-            _context.Evidences.Update(update);
-
-            #region Thêm tài liệu đính kèm
-            var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
-                                && !x.IsDeleted
-                                && !request.AttachmentIds.Any(y => y == x.Id)).ToList();
-
-            // Xóa các file không còn trong danh sách
-            await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
-            foreach (var attachment in ListDinhKemCanXoa)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                attachment.UpdatedAt = DateTime.Now;
-                attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                attachment.IsDeleted = true;
+                _mapper.Map(request, update);
 
-                _context.EvidenceAttachments.Update(attachment);
+                update.Status = (int)EvidenceStatus.Draft;
+                update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                update.UpdatedAt = DateTime.Now;
+
+                _context.Evidences.Update(update);
+
+                // Cập nhật tài liệu đính kèm
+                var listDinhKemCanXoa = await _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                    && !x.IsDeleted
+                                    && !request.AttachmentIds.Any(y => y == x.Id)).ToListAsync();
+
+                // Xóa các file không còn trong danh sách
+                if (listDinhKemCanXoa.Any())
+                {
+                    await _uploadFileService.DeleteDataAsync(listDinhKemCanXoa.Select(x => x.FileUrl).ToList());
+                    foreach (var attachment in listDinhKemCanXoa)
+                    {
+                        attachment.UpdatedAt = DateTime.Now;
+                        attachment.UpdatedBy = update.UpdatedBy;
+                        attachment.IsDeleted = true;
+
+                        _context.EvidenceAttachments.Update(attachment);
+                    }
+                }
+                
+                // Thêm mới các file trong danh sách
+                List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+                foreach (var attachment in lstAttachment)
+                {
+                    Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
+                    addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+                    addAttachment.CreatedBy = update.UpdatedBy;
+                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.IsActived = true;
+                    addAttachment.IsDeleted = false;
+
+                    await _context.EvidenceAttachments.AddAsync(addAttachment);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-            // Thêm mới các file trong danh sách
-            List<ModelAttachment> lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
-            foreach (var attachment in lstAttachment)
+            catch
             {
-                Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
-                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
-                addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                addAttachment.CreatedAt = DateTime.Now;
-                addAttachment.IsActived = true;
-                addAttachment.IsDeleted = false;
-
-                await _context.EvidenceAttachments.AddAsync(addAttachment);
+                await transaction.RollbackAsync();
+                throw;
             }
-            #endregion
-
-            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteList(DeleteListRequest request)
@@ -247,12 +269,16 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.Evidences.Where(x => !x.IsDeleted && x.IsActived == true).ToListAsync();
-            return data.Select(x => new ModelCombobox
-            {
-                Text = x.Name,
-                Value = x.Id.ToString()
-            }).OrderBy(x => x.Text).ToList();
+            return await _context.Evidences
+                .AsNoTracking()
+                .Where(x => !x.IsDeleted && x.IsActived == true)
+                .Select(x => new ModelCombobox
+                {
+                    Text = x.Name,
+                    Value = x.Id.ToString()
+                })
+                .OrderBy(x => x.Text)
+                .ToListAsync();
         }
 
         public async Task SubmitForReview(EvidenceSubmitToApproveRequest request)
@@ -300,11 +326,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         #endregion
 
         #region Helper
-        private List<ModelAttachment> GetAllAttachment(Guid Id)
+        private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
-            var result = _context.EvidenceAttachments.Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
-                .Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
-            return result;
+            var attachments = await _context.EvidenceAttachments
+                .AsNoTracking()
+                .Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
+                .ToListAsync();
+
+            return attachments.Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
         }
         #endregion
     }

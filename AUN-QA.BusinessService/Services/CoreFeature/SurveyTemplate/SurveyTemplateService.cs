@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
@@ -32,7 +32,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<ModelSurveyTemplate> GetById(GetByIdRequest request)
         {
-            var data = await _context.SurveyTemplates.FindAsync(request.Id);
+            var data = await _context.SurveyTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -42,6 +42,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
             // 1. Get raw data
             var topics = await _context.TemplateTopics
+                .AsNoTracking()
                 .Where(x => x.TemplateId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -49,6 +50,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var topicIds = topics.Select(x => x.Id).ToList();
 
             var categories = await _context.TemplateCategories
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -56,11 +58,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var categoryIds = categories.Select(x => x.Id).ToList();
 
             var questions = await _context.TemplateQuestions
+                .AsNoTracking()
                 .Where(x => categoryIds.Contains(x.CategoryId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
 
             var textQuestions = await _context.TemplateTextQuestions
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .ToListAsync();
 
@@ -89,6 +93,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<ModelSurveyTemplate> Insert(SurveyTemplateRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             var data = _context.SurveyTemplates.Where(x =>
                 x.Title == request.Title
                 && !x.IsDeleted
@@ -172,11 +179,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             #endregion
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
             return _mapper.Map<ModelSurveyTemplate>(add);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<ModelSurveyTemplate> Update(SurveyTemplateRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             var data = _context.SurveyTemplates.Where(x =>
                 x.Title == request.Title
                 && !x.IsDeleted && x.Id != request.Id);
@@ -394,8 +412,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             #endregion
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return _mapper.Map<ModelSurveyTemplate>(update);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<string> DeleteList(DeleteListRequest request)
@@ -455,16 +480,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<List<ModelCombobox>> GetAllForCombobox(SurveyTemplateGetComboboxRequest request)
         {
-            var data = await _context.SurveyTemplates.Where(
-                x => !x.IsDeleted && x.IsActived == true
-                && (request.StakeholderType == null || x.StakeholderType == request.StakeholderType)
-            ).ToListAsync();
-
-            return data.Select(x => new ModelCombobox
-            {
-                Text = x.Title,
-                Value = x.Id.ToString()
-            }).OrderBy(x => x.Text).ToList();
+            return await _context.SurveyTemplates
+                .AsNoTracking()
+                .Where(
+                    x => !x.IsDeleted && x.IsActived == true
+                    && (request.StakeholderType == null || x.StakeholderType == request.StakeholderType)
+                )
+                .Select(x => new ModelCombobox
+                {
+                    Text = x.Title,
+                    Value = x.Id.ToString()
+                })
+                .OrderBy(x => x.Text)
+                .ToListAsync();
         }
     }
 }

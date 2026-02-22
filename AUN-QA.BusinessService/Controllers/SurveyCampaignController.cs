@@ -1,5 +1,7 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
@@ -27,9 +29,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(SurveyCampaignGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> { Data = result, Success = true });
         }
@@ -38,9 +37,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<SurveyCampaignRequest> { Data = result, Success = true });
         }
@@ -49,9 +45,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Insert([FromBody] SurveyCampaignRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Insert(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -60,9 +53,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Update(SurveyCampaignRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Update(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -71,9 +61,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.DeleteList(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -90,9 +77,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> ChangeStatus([FromBody] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.ChangeStatus(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -109,9 +93,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> SubmitSurvey([FromBody] SurveySubmissionRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.SubmitSurvey(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -122,9 +103,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetStakeholdersNotInCampaign(GetStakeholdersNotInCampaignRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetStakeholdersNotInCampaign(request);
             return Ok(new BaseResponse<GetListPagingResponse<StakeholderDto>> { Data = result, Success = true });
         }
@@ -133,9 +111,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetListSession(SurveySessionGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetListSession(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelSurveySession>> { Data = result, Success = true });
         }
@@ -144,9 +119,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddListStakeholderToCampaign(AddListStakeholderToCampaignRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.AddListStakeholderToCampaign(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -155,9 +127,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddAllStakeholderToCampaign(AddAllStakeholderToCampaignRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.AddAllStakeholderToCampaign(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -166,9 +135,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteListSession([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.DeleteListSession(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -177,9 +143,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> SendSurveyInvitation([FromBody] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.SendSurveyInvitation(request);
             return Ok(new BaseResponse(true, 200));
         }

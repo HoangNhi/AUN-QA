@@ -1,5 +1,6 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Protos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -20,7 +21,7 @@ namespace AUN_QA.BusinessService.Helpers
                 var userId = context.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {
-                    throw new Exception();
+                    throw new UnauthorizedAccessException();
                 }
 
                 var controllerName = ((Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor)context.ActionDescriptor).ControllerName.ToLower();
@@ -41,13 +42,33 @@ namespace AUN_QA.BusinessService.Helpers
                     context.Result = new ForbidResult();
                 }
             }
+            catch (UnauthorizedAccessException)
+            {
+                var response = new BaseResponse<string>
+                {
+                    Success = false,
+                    StatusCode = 401,
+                    Message = "Bạn chưa đăng nhập"
+                };
+                context.Result = new JsonResult(response);
+            }
+            catch (Grpc.Core.RpcException)
+            {
+                var response = new BaseResponse<string>
+                {
+                    Success = false,
+                    StatusCode = 503,
+                    Message = "Dịch vụ xác thực quyền đang bảo trì"
+                };
+                context.Result = new JsonResult(response);
+            }
             catch (Exception)
             {
                 var response = new BaseResponse<string>
                 {
                     Success = false,
-                    StatusCode = 403,
-                    Message = "Bạn không có quyền truy cập"
+                    StatusCode = 500,
+                    Message = "Đã xảy ra lỗi hệ thống khi kiểm tra quyền"
                 };
                 context.Result = new JsonResult(response);
             }

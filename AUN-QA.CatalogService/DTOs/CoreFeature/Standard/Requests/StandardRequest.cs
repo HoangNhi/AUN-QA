@@ -1,3 +1,4 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using FluentValidation;
@@ -26,16 +27,16 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests
         public StandardRequestValidator()
         {
             RuleFor(x => x.StandardSetId)
-                .NotEmpty().WithMessage("Bộ tiêu chuẩn không được để trống");
+                .NotEmpty().WithMessage("BÃ¡Â»â„¢ tiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
 
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("Mã tiêu chuẩn không được để trống");
+                .NotEmpty().WithMessage("MÃƒÂ£ tiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Tên tiêu chuẩn không được để trống");
+                .NotEmpty().WithMessage("TÃƒÂªn tiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
 
             RuleFor(x => x.Order)
-                .GreaterThanOrEqualTo(0).WithMessage("Thứ tự phải lớn hơn hoặc bằng 0");
+                .GreaterThanOrEqualTo(0).WithMessage("ThÃ¡Â»Â© tÃ¡Â»Â± phÃ¡ÂºÂ£i lÃ¡Â»â€ºn hÃ†Â¡n hoÃ¡ÂºÂ·c bÃ¡ÂºÂ±ng 0");
 
             RuleForEach(x => x.Criterions).SetValidator(new CriterionRequestValidator());
         }

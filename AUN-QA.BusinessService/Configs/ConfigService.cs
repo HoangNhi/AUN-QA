@@ -1,4 +1,6 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
@@ -35,22 +37,21 @@ namespace AUN_QA.BusinessService.Configs
             ));
 
             //MAPPER
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            var mappingConfig = new MapperConfiguration(mc =>
+            builder.Services.AddAutoMapper(mc =>
             {
-                mc.AddMaps(AppDomain.CurrentDomain.GetAssemblies());
+                mc.AddMaps(typeof(ConfigService).Assembly);
                 mc.CreateMap<DateOnly?, DateTime?>().ConvertUsing(new DateTimeTypeConverter());
                 mc.CreateMap<DateTime?, DateOnly?>().ConvertUsing(new DateOnlyTypeConverter());
-            }, loggerFactory);
-            IMapper mapper = mappingConfig.CreateMapper();
-            builder.Services.AddSingleton(mapper);
+            });
 
             //FLUENT
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
-                options.SuppressModelStateInvalidFilter = true;
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errorMsg = CommonFunc.GetModelStateAPI(context.ModelState);
+                    return new OkObjectResult(new BaseResponse(false, 400, errorMsg));
+                };
             });
             builder.Services.AddMvc()
                 .AddFluentValidation(config =>

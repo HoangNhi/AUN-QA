@@ -1,4 +1,5 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.SystemService.DTOs.Base;
 using FluentValidation;
 
 namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
@@ -25,16 +26,16 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
         public UserRequestValidator()
         {
             RuleFor(x => x.Username)
-                .NotEmpty().WithMessage("Tên tài khoản không được để trống");
+                .NotEmpty().WithMessage("TÃªn tÃ i khoáº£n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             RuleFor(x => x.Fullname)
-                .NotEmpty().WithMessage("Họ và tên không được để trống");
+                .NotEmpty().WithMessage("Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Mật khẩu không được để trống");
+                .NotEmpty().WithMessage("Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             RuleFor(x => x.RoleId)
-                .NotEmpty().WithMessage("Vai trò không được để trống");
+                .NotEmpty().WithMessage("Vai trÃ² khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email không được để trống")
-                .EmailAddress().WithMessage("Email không hợp lệ");
+                .NotEmpty().WithMessage("Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
+                .EmailAddress().WithMessage("Email khÃ´ng há»£p lá»‡");
         }
     }
 }

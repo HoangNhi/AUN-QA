@@ -1,4 +1,4 @@
-﻿using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;

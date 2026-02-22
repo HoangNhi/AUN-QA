@@ -1,5 +1,7 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests;
 using AUN_QA.CatalogService.Helpers;
@@ -24,9 +26,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(StakeholderGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelStakeholderGetListPaging>> { Data = result, Success = true });
         }
@@ -35,9 +34,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelStakeholder> { Data = result, Success = true });
         }
@@ -46,9 +42,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Insert([FromBody] StakeholderRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelStakeholder> { Data = result, Success = true });
         }
@@ -57,9 +50,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.UPDATE)]
         public async Task<IActionResult> Update(StakeholderRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelStakeholder> { Data = result, Success = true });
         }
@@ -68,9 +58,6 @@ namespace AUN_QA.CatalogService.Controllers
         [AttributePermission(Action = ActionType.DELETE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }

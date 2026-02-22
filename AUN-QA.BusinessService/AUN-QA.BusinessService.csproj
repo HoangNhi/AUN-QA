@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\AUN-QA.Shared\AUN-QA.Shared.csproj" />
   </ItemGroup>
 
     <ItemGroup>

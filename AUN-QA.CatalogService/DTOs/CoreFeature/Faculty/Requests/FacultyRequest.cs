@@ -1,3 +1,4 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using FluentValidation;
 
@@ -14,7 +15,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests
         public FacultyRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Tên khoa không được để trống");
+                .NotEmpty().WithMessage("TÃƒÂªn khoa khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 
 namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
 {

@@ -1,4 +1,4 @@
-﻿using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
 
 namespace AUN_QA.CatalogService.DTOs.CoreFeature.StandardSet.Dtos

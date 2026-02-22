@@ -1,4 +1,4 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 

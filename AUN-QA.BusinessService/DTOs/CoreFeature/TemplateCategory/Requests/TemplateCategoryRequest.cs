@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests;
 using FluentValidation;
 
@@ -21,9 +22,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests
     {
         public TemplateCategoryRequestValidator()
         {
-            RuleFor(x => x.TopicId).NotEmpty().WithMessage("Chủ đề không được để trống");
-            RuleFor(x => x.Name).NotEmpty().WithMessage("Tên danh mục không được để trống");
-            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thứ tự sắp xếp không được nhỏ hơn 0");
+            RuleFor(x => x.TopicId).NotEmpty().WithMessage("Chá»§ Ä‘á» khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+            RuleFor(x => x.Name).NotEmpty().WithMessage("TÃªn danh má»¥c khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thá»© tá»± sáº¯p xáº¿p khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n 0");
 
             RuleForEach(x => x.ListQuestion).SetValidator(new TemplateQuestionRequestValidator());
         }

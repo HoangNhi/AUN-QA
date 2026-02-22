@@ -1,3 +1,4 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
 using FluentValidation;
@@ -11,8 +12,8 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.StandardSet.Requests
         public string Name { get; set; } = null!;
 
         /// <summary>
-        /// 1. SCORING_7: Áp dụng cho AUN-QA
-        /// 2. PASS_FAIL: Áp dụng cho MOET
+        /// 1. SCORING_7: ÃƒÂp dÃ¡Â»Â¥ng cho AUN-QA
+        /// 2. PASS_FAIL: ÃƒÂp dÃ¡Â»Â¥ng cho MOET
         /// </summary>
         public int EvaluationMode { get; set; } = ((int)StandardSet_EvaluationMode.SCORING_7);
     }
@@ -22,13 +23,13 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.StandardSet.Requests
         public StandardSetRequestValidator()
         {
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("Mã bộ tiêu chuẩn không được để trống");
+                .NotEmpty().WithMessage("MÃƒÂ£ bÃ¡Â»â„¢ tiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Tên bộ tiêu chuẩn không được để trống");
+                .NotEmpty().WithMessage("TÃƒÂªn bÃ¡Â»â„¢ tiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
 
             RuleFor(x => x.EvaluationMode)
-                .NotEmpty().WithMessage("Chế độ đánh giá không hợp lệ");
+                .NotEmpty().WithMessage("ChÃ¡ÂºÂ¿ Ã„â€˜Ã¡Â»â„¢ Ã„â€˜ÃƒÂ¡nh giÃƒÂ¡ khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡");
         }
     }
 }

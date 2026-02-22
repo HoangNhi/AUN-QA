@@ -1,4 +1,4 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using System.Net;
 using System.Text.Json;
 
@@ -8,11 +8,13 @@ namespace AUN_QA.SystemService.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<GlobalExceptionHandler> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptionHandler> logger)
+        public GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptionHandler> logger, IWebHostEnvironment env)
         {
             _next = next;
             _logger = logger;
+            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -29,7 +31,7 @@ namespace AUN_QA.SystemService.Middlewares
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
+            _logger.LogError(exception, "Lá»—i há»‡ thá»‘ng: {Message}", exception.Message);
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.OK;
@@ -38,7 +40,7 @@ namespace AUN_QA.SystemService.Middlewares
             {
                 Success = false,
                 StatusCode = context.Response.StatusCode,
-                Message = exception.Message // In production, you might want to hide the actual exception message
+                Message = _env.IsDevelopment() ? exception.Message : "ÄÃ£ xáº£y ra lá»—i há»‡ thá»‘ng. Vui lÃ²ng thá»­ láº¡i sau."
             };
 
             var json = JsonSerializer.Serialize(response);

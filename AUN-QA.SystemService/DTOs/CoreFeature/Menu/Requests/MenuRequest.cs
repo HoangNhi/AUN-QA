@@ -1,3 +1,4 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.Base;
 using FluentValidation;
 
@@ -35,11 +36,11 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.Menu.Requests
         public MenuRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Tên menu không được để trống");
+                .NotEmpty().WithMessage("TÃƒÂªn menu khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
             RuleFor(x => x.Controller)
-                .NotEmpty().WithMessage("Controller không được để trống");
+                .NotEmpty().WithMessage("Controller khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
             RuleFor(x => x.SystemGroupId)
-                .NotEmpty().WithMessage("Nhóm hệ thống không được để trống");
+                .NotEmpty().WithMessage("NhÃƒÂ³m hÃ¡Â»â€¡ thÃ¡Â»â€˜ng khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
         }
     }
 }

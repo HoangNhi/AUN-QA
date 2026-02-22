@@ -1,4 +1,7 @@
-﻿using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.Common;
+using AUN_QA.Shared.Common;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
@@ -23,7 +26,6 @@ namespace AUN_QA.CatalogService.Configs
             });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             //DATABASE
             builder.Services.AddDbContext<CatalogContext>(options =>
@@ -34,22 +36,21 @@ namespace AUN_QA.CatalogService.Configs
             ));
 
             //MAPPER
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            var mappingConfig = new MapperConfiguration(mc =>
+            builder.Services.AddAutoMapper(mc =>
             {
-                mc.AddMaps(AppDomain.CurrentDomain.GetAssemblies());
+                mc.AddMaps(typeof(ConfigService).Assembly);
                 mc.CreateMap<DateOnly?, DateTime?>().ConvertUsing(new DateTimeTypeConverter());
                 mc.CreateMap<DateTime?, DateOnly?>().ConvertUsing(new DateOnlyTypeConverter());
-            }, loggerFactory);
-            IMapper mapper = mappingConfig.CreateMapper();
-            builder.Services.AddSingleton(mapper);
+            });
 
             //FLUENT
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
-                options.SuppressModelStateInvalidFilter = true;
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errorMsg = CommonFunc.GetModelStateAPI(context.ModelState);
+                    return new OkObjectResult(new BaseResponse(false, 400, errorMsg));
+                };
             });
             builder.Services.AddMvc()
                 .AddFluentValidation(config =>

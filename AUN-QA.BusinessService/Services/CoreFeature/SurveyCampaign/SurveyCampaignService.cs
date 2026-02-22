@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
@@ -30,6 +30,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         private readonly ICatalogIntegrationService _catalogService;
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         public SurveyCampaignService(
             BusinessContext context,
@@ -37,7 +38,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             IHttpContextAccessor contextAccessor,
             ICatalogIntegrationService catalogService,
             IBackgroundTaskQueue taskQueue,
-            IEmailService emailService)
+            IEmailService emailService,
+            IConfiguration configuration)
         {
             _context = context;
             _mapper = mapper;
@@ -45,12 +47,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _catalogService = catalogService;
             _taskQueue = taskQueue;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         #region SurveyCampaign
         public async Task<SurveyCampaignRequest> GetById(GetByIdRequest request)
         {
-            var data = await _context.SurveyCampaigns.FindAsync(request.Id);
+            var data = await _context.SurveyCampaigns.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
                 throw new Exception("Không tìm thấy dữ liệu");
@@ -63,6 +66,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             #region Chủ đề khảo sát và nhóm câu hỏi
             // 1. Get raw data
             var topics = await _context.TemplateTopics
+                .AsNoTracking()
                 .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -70,6 +74,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var topicIds = topics.Select(x => x.Id).ToList();
 
             var categories = await _context.TemplateCategories
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -77,11 +82,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var categoryIds = categories.Select(x => x.Id).ToList();
 
             var questions = await _context.TemplateQuestions
+                .AsNoTracking()
                 .Where(x => categoryIds.Contains(x.CategoryId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
 
             var textQuestions = await _context.TemplateTextQuestions
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .ToListAsync();
 
@@ -108,6 +115,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             #region Người tham gia
             var stakeholderDtos = await _context.SurveySessions
+                .AsNoTracking()
                 .Where(x => x.CampaignId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.StakeholderName)
                 .ToListAsync();
@@ -118,6 +126,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task Insert(SurveyCampaignRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary));
 
             var data = _context.SurveyCampaigns.Where(x =>
@@ -199,10 +210,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             #endregion
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task Update(SurveyCampaignRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary));
             var data = _context.SurveyCampaigns.Where(x =>
                x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
@@ -416,6 +437,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             #endregion
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task DeleteList(DeleteListRequest request)
@@ -561,7 +589,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                             var emailTasks = batch.Select(async session =>
                             {
                                 string subject = $"Mời tham gia khảo sát: {campaignName}";
-                                string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+                                string link = $"{_configuration["App:BaseUrl"]}/survey/do-survey?token={session.Token}";
 
                                 string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaignName, link);
 
@@ -1033,7 +1061,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
 
             string subject = $"Mời tham gia khảo sát: {campaign.Name}";
-            string link = $"http://localhost:5173/survey/do-survey?token={session.Token}";
+            string link = $"{_configuration["App:BaseUrl"]}/survey/do-survey?token={session.Token}";
             string body = EmailTemplateHelper.GetSurveyInvitationBody(session.StakeholderName, campaign.Name, link);
 
             try

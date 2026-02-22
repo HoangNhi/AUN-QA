@@ -1,5 +1,7 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests;
 using AUN_QA.BusinessService.Helpers;
@@ -23,9 +25,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(SurveyTemplateGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelSurveyTemplateGetListPaging>> { Data = result, Success = true });
         }
@@ -34,9 +33,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelSurveyTemplate> { Data = result, Success = true });
         }
@@ -45,9 +41,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Insert([FromBody] SurveyTemplateRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.Insert(request);
             return Ok(new BaseResponse<ModelSurveyTemplate> { Data = result, Success = true });
         }
@@ -56,9 +49,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.UPDATE)]
         public async Task<IActionResult> Update(SurveyTemplateRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.Update(request);
             return Ok(new BaseResponse<ModelSurveyTemplate> { Data = result, Success = true });
         }
@@ -67,9 +57,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.DELETE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.DeleteList(request);
             return Ok(new BaseResponse<string> { Data = result, Success = true });
         }

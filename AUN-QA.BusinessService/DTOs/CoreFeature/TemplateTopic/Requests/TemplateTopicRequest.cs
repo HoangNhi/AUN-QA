@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests;
 using FluentValidation;
@@ -29,12 +30,12 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTopic.Requests
     {
         public TemplateTopicRequestValidator()
         {
-            RuleFor(x => x.Title).NotEmpty().WithMessage("Tiêu đề không được để trống");
-            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thứ tự sắp xếp không được nhỏ hơn 0");
+            RuleFor(x => x.Title).NotEmpty().WithMessage("TiÃªu Ä‘á» khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thá»© tá»± sáº¯p xáº¿p khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n 0");
 
             When(x => x.HasTextQuestionPart, () =>
             {
-                RuleFor(x => x.TextQuestionTitle).NotEmpty().WithMessage("Tiêu đề phần câu hỏi mở không được để trống khi có phần câu hỏi mở");
+                RuleFor(x => x.TextQuestionTitle).NotEmpty().WithMessage("TiÃªu Ä‘á» pháº§n cÃ¢u há»i má»Ÿ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng khi cÃ³ pháº§n cÃ¢u há»i má»Ÿ");
             });
 
             RuleForEach(x => x.ListCategory).SetValidator(new TemplateCategoryRequestValidator());

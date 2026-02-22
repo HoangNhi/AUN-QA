@@ -5,9 +5,12 @@ using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
 using AUN_QA.CatalogService.Services.CoreFeature.Standard;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AUN_QA.CatalogService.Services.gRPC
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class CatalogGrpcService : CatalogProto.CatalogProtoBase
     {
         private readonly IStakeholderService _stakeholderService;

@@ -82,10 +82,12 @@ namespace AUN_QA.CatalogService.Configs
 
             // gRPC
             builder.Services.AddGrpc();
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");
-            });
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }
     public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>

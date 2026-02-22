@@ -8,6 +8,26 @@ namespace AUN_QA.SystemService.Configs
 {
     public static class ConfigureAuthentication
     {
+        private const string ServiceAuthorizationHeader = "x-service-authorization";
+
+        private static bool IsGrpcRequest(HttpContext httpContext)
+        {
+            return httpContext.Request.ContentType?.StartsWith("application/grpc", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
+        private static string? ExtractTokenFromHeader(string authHeader)
+        {
+            if (string.IsNullOrWhiteSpace(authHeader))
+            {
+                return null;
+            }
+
+            const string bearerPrefix = "Bearer ";
+            return authHeader.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase)
+                ? authHeader.Substring(bearerPrefix.Length).Trim()
+                : authHeader.Trim();
+        }
+
         public static void ExecuteConfigAuthentication(this WebApplicationBuilder builder)
         {
             builder.Services
@@ -32,8 +52,25 @@ namespace AUN_QA.SystemService.Configs
 
                     options.Events = new JwtBearerEvents
                     {
+                        OnMessageReceived = context =>
+                        {
+                            if (IsGrpcRequest(context.HttpContext)
+                                && string.IsNullOrEmpty(context.Token)
+                                && context.HttpContext.Request.Headers.TryGetValue(ServiceAuthorizationHeader, out var authHeader))
+                            {
+                                context.Token = ExtractTokenFromHeader(authHeader.ToString());
+                            }
+
+                            return Task.CompletedTask;
+                        },
+
                         OnChallenge = async context =>
                         {
+                            if (IsGrpcRequest(context.HttpContext))
+                            {
+                                return;
+                            }
+
                             context.HandleResponse();
 
                             context.Response.StatusCode = StatusCodes.Status200OK;
@@ -47,6 +84,11 @@ namespace AUN_QA.SystemService.Configs
 
                         OnForbidden = async context =>
                         {
+                            if (IsGrpcRequest(context.HttpContext))
+                            {
+                                return;
+                            }
+
                             context.Response.StatusCode = StatusCodes.Status200OK;
                             context.Response.ContentType = "application/json";
 

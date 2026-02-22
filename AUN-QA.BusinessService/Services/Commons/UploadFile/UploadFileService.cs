@@ -40,9 +40,9 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
                     FileUrl = x.FileUrl
                 }).ToList();
             }
-            catch (RpcException)
+            catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
 
@@ -55,9 +55,9 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
                 var response = await _fileProtoClient.DeleteDataAsync(request);
                 return response.Success;
             }
-            catch (RpcException)
+            catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
 
@@ -79,9 +79,9 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
                     HasWatermark = response.HasWatermark
                 };
             }
-            catch (RpcException)
+            catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
     }

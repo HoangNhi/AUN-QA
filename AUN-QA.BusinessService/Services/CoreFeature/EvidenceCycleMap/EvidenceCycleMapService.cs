@@ -10,7 +10,6 @@ using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using System.Net.WebSockets;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 {
@@ -281,8 +280,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             if (request.CycleId.HasValue)
                 await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
 
-            var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
-
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
                         join e in _context.Evidences on ecm.EvidenceId equals e.Id
                         where !ecm.IsDeleted
@@ -340,10 +337,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            // Populate CycleName from in-memory cycle list
-            foreach (var item in data)
+            if (data.Any())
             {
-                item.CycleName = cycle.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
+                var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+                // Populate CycleName from in-memory cycle list
+                foreach (var item in data)
+                {
+                    item.CycleName = cycle.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
+                }
             }
 
             return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>

@@ -1,9 +1,12 @@
 using AUN_QA.FileService.Protos;
 using AUN_QA.FileService.Services.CoreFeature.UploadFile;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AUN_QA.FileService.Services.Grpc
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class FileGrpcService : FileProto.FileProtoBase
     {
         private readonly IUploadFileService _uploadFileService;

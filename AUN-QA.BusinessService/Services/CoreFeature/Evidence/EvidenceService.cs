@@ -8,7 +8,6 @@ using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 {

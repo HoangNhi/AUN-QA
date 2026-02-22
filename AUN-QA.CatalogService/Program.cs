@@ -2,6 +2,7 @@ using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
 using AUN_QA.CatalogService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,11 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigureEndpointDefaults(lo => lo.Protocols = HttpProtocols.Http1AndHttp2);
+});
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();

@@ -85,10 +85,13 @@ namespace AUN_QA.BusinessService.Configs
             });
 
             //GRPC CLIENT
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");
-            });
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             const int grpcMaxMessageSize = 128 * 1024 * 1024; // 128 MB
 
@@ -100,12 +103,14 @@ namespace AUN_QA.BusinessService.Configs
             {
                 o.MaxReceiveMessageSize = grpcMaxMessageSize;
                 o.MaxSendMessageSize = grpcMaxMessageSize;
-            });
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>
             {
                 o.Address = new Uri("http://CatalogService");
-            });
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
 
         public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>

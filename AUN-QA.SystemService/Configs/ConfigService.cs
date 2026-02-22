@@ -78,10 +78,12 @@ namespace AUN_QA.SystemService.Configs
 
             //GRPC
             builder.Services.AddGrpc();
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
                 o.Address = new Uri("http://FileService");
-            });
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }
 

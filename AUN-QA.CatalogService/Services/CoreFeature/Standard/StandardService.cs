@@ -34,7 +34,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var data = await _context.Standards.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<StandardRequest>(data);
@@ -71,7 +71,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("MÃ£ hoáº·c tÃªn tiÃªu chuáº©n Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Standard>(request);
@@ -82,7 +82,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             #region Criterions
             if (!request.Criterions.Any())
             {
-                throw new Exception("TiÃªu chÃ­ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                throw new Exception("Tiêu chí không được để trống");
             }
 
             foreach (var criterion in request.Criterions)
@@ -120,13 +120,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("MÃ£ hoáº·c tÃªn tiÃªu chuáº©n Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var update = await _context.Standards.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -245,7 +245,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 var delete = await _context.Standards.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -326,7 +326,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
                 if (standardSet == null)
                 {
-                    throw new Exception("Bá»™ tiÃªu chuáº©n khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Bộ tiêu chuẩn không tồn tại");
                 }
                 targetStandardSetId = standardSet.Id;
             }
@@ -337,7 +337,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
                 if (cycle == null)
                 {
-                    throw new Exception("Chu ká»³ khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Chu kỳ không tồn tại");
                 }
                 targetStandardSetId = cycle.StandardSetId;
             }
@@ -432,7 +432,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             if (!Guid.TryParse(request.FileTypeId, out var fileTypeId))
                 yield break;
 
-            // Query with joins: Cycle â†’ StandardSet â†’ Standard â†’ Criterion â†’ CriterionRequirement
+            // Query with joins: Cycle → StandardSet → Standard → Criterion → CriterionRequirement
             var query = from criterion in _context.Criteria
                         join standard in _context.Standards on criterion.StandardId equals standard.Id
                         join standardSet in _context.StandardSets on standard.StandardSetId equals standardSet.Id

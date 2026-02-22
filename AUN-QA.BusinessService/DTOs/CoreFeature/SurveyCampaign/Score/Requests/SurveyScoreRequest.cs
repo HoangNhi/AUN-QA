@@ -20,10 +20,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Score.Requests
         public SurveyScoreRequestValidator()
         {
             RuleFor(x => x.QuestionId)
-                .NotEmpty().WithMessage("CÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Câu hỏi không được để trống");
 
             RuleFor(x => x.Score)
-                .InclusiveBetween(1, 5).WithMessage("Äiá»ƒm sá»‘ pháº£i tá»« 1 Ä‘áº¿n 5");
+                .InclusiveBetween(1, 5).WithMessage("Điểm số phải từ 1 đến 5");
         }
     }
 }

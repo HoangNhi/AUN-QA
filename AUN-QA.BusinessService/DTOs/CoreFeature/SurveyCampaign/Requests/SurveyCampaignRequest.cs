@@ -19,7 +19,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
         public string Name { get; set; } = null!;
 
         /// <summary>
-        /// 1. ChÆ°a gá»­i, 2. ÄÃ£ gá»­i, 3. ÄÃ£ hoÃ n thÃ nh
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
         /// </summary>
         public int? Status { get; set; } = ((int)SurveyCampaignStatus.Draft);
 
@@ -31,16 +31,16 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
         public SurveyCampaignRequestValidator()
         {
             RuleFor(x => x.CycleId)
-                .NotEmpty().WithMessage("Chu ká»³ kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Chu kỳ khảo sát không được để trống");
 
             RuleFor(x => x.TemplateId)
-                .NotEmpty().WithMessage("Máº«u kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Mẫu khảo sát không được để trống");
 
             RuleFor(x => x.StakeholderType)
-                .NotEmpty().WithMessage("Loáº¡i Ä‘á»‘i tÆ°á»£ng tham gia khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Loại đối tượng tham gia không được để trống");
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃªn chiáº¿n dá»‹ch kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Tên chiến dịch khảo sát không được để trống");
 
             RuleForEach(x => x.ListTopic)
                 .SetValidator(new TemplateTopicRequestValidator());

@@ -31,7 +31,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
             var data = await _context.Menus.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelMenu>(data);
@@ -46,7 +46,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             if (data.Any())
             {
-                throw new Exception("TÃªn menu Ä‘Ã£ tá»“n táº¡i trong nhÃ³m nÃ y");
+                throw new Exception("Tên menu đã tồn tại trong nhóm này");
             }
 
             var add = _mapper.Map<Entities.Menu>(request);
@@ -69,13 +69,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             if (data.Any())
             {
-                throw new Exception("TÃªn menu Ä‘Ã£ tá»“n táº¡i trong nhÃ³m nÃ y");
+                throw new Exception("Tên menu đã tồn tại trong nhóm này");
             }
 
             var update = await _context.Menus.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -96,7 +96,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
                 var delete = await _context.Menus.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

@@ -13,7 +13,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests
         public string Email { get; set; } = null!;
 
         /// <summary>
-        /// 1. Sinh viÃƒÂªn, 2. CÃ¡Â»Â±u sinh viÃƒÂªn, 3. NhÃƒÂ  tuyÃ¡Â»Æ’n dÃ¡Â»Â¥ng, 4. GiÃ¡ÂºÂ£ng viÃƒÂªn
+        /// 1. Sinh viên, 2. Cựu sinh viên, 3. Nhà tuyển dụng, 4. Giảng viên
         /// </summary>
         public int? Type { get; set; }
 
@@ -24,10 +24,10 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests
     {
         public StakeholderRequestValidator()
         {
-            RuleFor(x => x.FullName).NotEmpty().WithMessage("HÃ¡Â»Â tÃƒÂªn khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
-            RuleFor(x => x.Email).NotEmpty().WithMessage("Email khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng")
-                .EmailAddress().WithMessage("Email khÃƒÂ´ng Ã„â€˜ÃƒÂºng Ã„â€˜Ã¡Â»â€¹nh dÃ¡ÂºÂ¡ng");
-            RuleFor(x => x.Type).NotEmpty().WithMessage("LoÃ¡ÂºÂ¡i Ã„â€˜Ã¡Â»â€˜i tÃ†Â°Ã¡Â»Â£ng khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+            RuleFor(x => x.FullName).NotEmpty().WithMessage("Họ tên không được để trống");
+            RuleFor(x => x.Email).NotEmpty().WithMessage("Email không được để trống")
+                .EmailAddress().WithMessage("Email không đúng định dạng");
+            RuleFor(x => x.Type).NotEmpty().WithMessage("Loại đối tượng không được để trống");
         }
     }
 }

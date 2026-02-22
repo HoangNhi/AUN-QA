@@ -31,7 +31,7 @@ namespace AUN_QA.BusinessService.Middlewares
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            _logger.LogError(exception, "Lá»—i há»‡ thá»‘ng: {Message}", exception.Message);
+            _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.OK;
@@ -40,7 +40,7 @@ namespace AUN_QA.BusinessService.Middlewares
             {
                 Success = false,
                 StatusCode = context.Response.StatusCode,
-                Message = _env.IsDevelopment() ? exception.Message : "ÄÃ£ xáº£y ra lá»—i há»‡ thá»‘ng. Vui lÃ²ng thá»­ láº¡i sau."
+                Message = _env.IsDevelopment() ? exception.Message : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."
             };
 
             var json = JsonSerializer.Serialize(response);

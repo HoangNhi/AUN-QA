@@ -27,7 +27,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             _contextAccessor = contextAccessor;
         }
 
-        #region Chá»©c nÄƒng chÃ­nh
+        #region Chức năng chính
         public async Task<GetListPagingResponse<ModelStakeholderGetListPaging>> GetList(StakeholderGetListPagingRequest request)
         {
             var query = _context.Stakeholders.AsQueryable().Where(x => !x.IsDeleted);
@@ -55,11 +55,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 var res = _mapper.Map<ModelStakeholderGetListPaging>(x);
                 res.TypeName = x.Type switch
                 {
-                    1 => "Sinh viÃªn",
-                    2 => "Cá»±u sinh viÃªn",
-                    3 => "NhÃ  tuyá»ƒn dá»¥ng",
-                    4 => "Giáº£ng viÃªn",
-                    _ => "KhÃ¡c"
+                    1 => "Sinh viên",
+                    2 => "Cựu sinh viên",
+                    3 => "Nhà tuyển dụng",
+                    4 => "Giảng viên",
+                    _ => "Khác"
                 };
                 return res;
             }).ToList();
@@ -78,7 +78,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             var data = await _context.Stakeholders.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelStakeholder>(data);
@@ -93,7 +93,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
 
             if (data.Any())
             {
-                throw new Exception("Email Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Email đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Stakeholder>(request);
@@ -115,13 +115,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
 
             if (data.Any())
             {
-                throw new Exception("Email Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Email đã tồn tại");
             }
 
             var update = await _context.Stakeholders.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -142,7 +142,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 var delete = await _context.Stakeholders.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

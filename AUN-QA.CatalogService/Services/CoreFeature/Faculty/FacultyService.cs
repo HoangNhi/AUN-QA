@@ -30,7 +30,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             var data = await _context.Faculties.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelFaculty>(data);
@@ -45,7 +45,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
 
             if (data.Any())
             {
-                throw new Exception("TÃªn khoa Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên khoa đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Faculty>(request);
@@ -67,13 +67,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
 
             if (data.Any())
             {
-                throw new Exception("TÃªn khoa Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên khoa đã tồn tại");
             }
 
             var update = await _context.Faculties.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -94,7 +94,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
                 var delete = await _context.Faculties.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

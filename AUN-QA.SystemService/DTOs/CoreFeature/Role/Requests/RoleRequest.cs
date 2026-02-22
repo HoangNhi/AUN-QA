@@ -16,7 +16,7 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.Role.Requests
         public RoleRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃƒÂªn gÃ¡Â»Âi khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Tên gọi không được để trống");
         }
     }
 }

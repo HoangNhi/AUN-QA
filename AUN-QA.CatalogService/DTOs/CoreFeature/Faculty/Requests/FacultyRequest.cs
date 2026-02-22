@@ -15,7 +15,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests
         public FacultyRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃƒÂªn khoa khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Tên khoa không được để trống");
         }
     }
 }

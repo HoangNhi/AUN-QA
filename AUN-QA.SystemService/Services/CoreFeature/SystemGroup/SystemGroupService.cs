@@ -32,7 +32,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             var data = await _context.SystemGroups.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃƒÂ´ng tÃƒÂ¬m thÃ¡ÂºÂ¥y dÃ¡Â»Â¯ liÃ¡Â»â€¡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelSystemGroup>(data);
@@ -47,7 +47,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("TÃƒÂªn nhÃƒÂ³m Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
+                throw new Exception("Tên nhóm đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.SystemGroup>(request);
@@ -69,13 +69,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("TÃƒÂªn nhÃƒÂ³m Ã„â€˜ÃƒÂ£ tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
+                throw new Exception("Tên nhóm đã tồn tại");
             }
 
             var update = await _context.SystemGroups.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("DÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -95,7 +95,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
                 var delete = await _context.SystemGroups.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("DÃ¡Â»Â¯ liÃ¡Â»â€¡u khÃƒÂ´ng tÃ¡Â»â€œn tÃ¡ÂºÂ¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

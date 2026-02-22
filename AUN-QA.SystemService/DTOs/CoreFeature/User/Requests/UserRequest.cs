@@ -26,16 +26,16 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
         public UserRequestValidator()
         {
             RuleFor(x => x.Username)
-                .NotEmpty().WithMessage("TÃªn tÃ i khoáº£n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Tên tài khoản không được để trống");
             RuleFor(x => x.Fullname)
-                .NotEmpty().WithMessage("Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Họ và tên không được để trống");
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Mật khẩu không được để trống");
             RuleFor(x => x.RoleId)
-                .NotEmpty().WithMessage("Vai trÃ² khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Vai trò không được để trống");
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-                .EmailAddress().WithMessage("Email khÃ´ng há»£p lá»‡");
+                .NotEmpty().WithMessage("Email không được để trống")
+                .EmailAddress().WithMessage("Email không hợp lệ");
         }
     }
 }

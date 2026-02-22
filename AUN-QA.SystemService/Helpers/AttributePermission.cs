@@ -45,7 +45,7 @@ namespace AUN_QA.SystemService.Helpers
                 {
                     Success = false,
                     StatusCode = 401,
-                    Message = "Báº¡n chÆ°a Ä‘Äƒng nháº­p"
+                    Message = "Bạn chưa đăng nhập"
                 };
                 context.Result = new JsonResult(response);
             }
@@ -55,7 +55,7 @@ namespace AUN_QA.SystemService.Helpers
                 {
                     Success = false,
                     StatusCode = 500,
-                    Message = "ÄÃ£ xáº£y ra lá»—i há»‡ thá»‘ng khi kiá»ƒm tra quyá»n"
+                    Message = "Đã xảy ra lỗi hệ thống khi kiểm tra quyền"
                 };
                 context.Result = new JsonResult(response);
             }

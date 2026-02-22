@@ -22,13 +22,13 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateQuestion.Requests
         public TemplateQuestionRequestValidator()
         {
             RuleFor(x => x.CategoryId)
-                .NotEmpty().WithMessage("NhÃ³m cÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Nhóm câu hỏi không được để trống");
 
             RuleFor(x => x.Content)
-                .NotEmpty().WithMessage("CÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Câu hỏi không được để trống");
 
             RuleFor(x => x.Sort)
-                .GreaterThanOrEqualTo(0).WithMessage("Thá»© tá»± cÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .GreaterThanOrEqualTo(0).WithMessage("Thứ tự câu hỏi không được để trống");
         }
     }
 }

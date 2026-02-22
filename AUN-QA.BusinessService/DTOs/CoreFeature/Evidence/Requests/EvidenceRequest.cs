@@ -41,13 +41,13 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests
         public EvidenceRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Tên không được để trống");
 
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("MÃ£ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Mã không được để trống");
 
             RuleFor(x => x.FileTypeId)
-                .NotEmpty().WithMessage("Loáº¡i tÃ i liá»‡u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Loại tài liệu không được để trống");
         }
     }
 }

@@ -17,7 +17,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.FileType.Requests
         public FileTypeRequestValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃƒÂªn loÃ¡ÂºÂ¡i tÃ¡Â»â€¡p khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Tên loại tệp không được để trống");
         }
     }
 }

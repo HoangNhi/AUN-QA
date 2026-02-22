@@ -16,11 +16,11 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Requests
         public EditProfileRequestValidator()
         {
             RuleFor(x => x.FullName)
-                .NotEmpty().WithMessage("Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.");
+                .NotEmpty().WithMessage("Họ và tên không được để trống.");
 
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.")
-                .EmailAddress().WithMessage("Email khÃ´ng Ä‘Ãºng Ä‘á»‹nh dáº¡ng.");
+                .NotEmpty().WithMessage("Email không được để trống.")
+                .EmailAddress().WithMessage("Email không đúng định dạng.");
         }
     }
 }

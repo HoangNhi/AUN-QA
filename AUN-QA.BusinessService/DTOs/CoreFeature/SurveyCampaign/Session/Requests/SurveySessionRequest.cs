@@ -20,7 +20,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Request
         public string? Token { get; set; }
 
         /// <summary>
-        /// 1. ChÆ°a gá»­i, 2. ÄÃ£ gá»­i, 3. ÄÃ£ hoÃ n thÃ nh
+        /// 1. Chưa gửi, 2. Đã gửi, 3. Đã hoàn thành
         /// </summary>
         public int? Status { get; set; } = ((int)SurveySessionStatus.Draft);
 
@@ -34,10 +34,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Request
         public SurveySessionRequestValidator()
         {
             RuleFor(x => x.CampaignId)
-                .NotEmpty().WithMessage("Kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Khảo sát không được để trống");
 
             RuleFor(x => x.StakeholderId)
-                .NotEmpty().WithMessage("NgÆ°á»i tham gia khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Người tham gia không được để trống");
         }
     }
 }

@@ -28,10 +28,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests
         public EvidenceCycleMapRequestValidator()
         {
             RuleFor(x => x.CycleId)
-                .NotEmpty().WithMessage("Chu ká»³ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Chu kỳ không được để trống");
 
             RuleFor(x => x.EvidenceId)
-                .NotEmpty().WithMessage("Báº±ng chá»©ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .NotEmpty().WithMessage("Bằng chứng không được để trống");
             
             RuleFor(x => x.Evidence)
                 .SetValidator(new EvidenceRequestValidator()!)

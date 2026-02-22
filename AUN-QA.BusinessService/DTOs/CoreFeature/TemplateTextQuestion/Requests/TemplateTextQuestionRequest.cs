@@ -23,9 +23,9 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.TemplateTextQuestion.Requests
     {
         public TemplateTextQuestionRequestValidator()
         {
-            RuleFor(x => x.TopicId).NotEmpty().WithMessage("Chá»§ Ä‘á» khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.Content).NotEmpty().WithMessage("CÃ¢u há»i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thá»© tá»± sáº¯p xáº¿p khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n 0");
+            RuleFor(x => x.TopicId).NotEmpty().WithMessage("Chủ đề không được để trống");
+            RuleFor(x => x.Content).NotEmpty().WithMessage("Câu hỏi không được để trống");
+            RuleFor(x => x.Sort).GreaterThanOrEqualTo(0).WithMessage("Thứ tự sắp xếp không được nhỏ hơn 0");
         }
     }
 }

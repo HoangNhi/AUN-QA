@@ -36,28 +36,28 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Requests
     {
         public CycleRequestValidator()
         {
-            RuleFor(x => x.Name).NotEmpty().WithMessage("Káº¿ hoáº¡ch khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.Year).NotEmpty().WithMessage("NÄƒm khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.StartDate).NotEmpty().WithMessage("NgÃ y báº¯t Ä‘áº§u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.EndDate).NotEmpty().WithMessage("NgÃ y káº¿t thÃºc khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.Status).NotEmpty().WithMessage("Tráº¡ng thÃ¡i khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.EvaluationPurpose).NotEmpty().WithMessage("Má»¥c Ä‘Ã­ch Ä‘Ã¡nh giÃ¡ khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
-            RuleFor(x => x.Scope).NotEmpty().WithMessage("Pháº¡m vi khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Kế hoạch không được để trống");
+            RuleFor(x => x.Year).NotEmpty().WithMessage("Năm không được để trống");
+            RuleFor(x => x.StartDate).NotEmpty().WithMessage("Ngày bắt đầu không được để trống");
+            RuleFor(x => x.EndDate).NotEmpty().WithMessage("Ngày kết thúc không được để trống");
+            RuleFor(x => x.Status).NotEmpty().WithMessage("Trạng thái không được để trống");
+            RuleFor(x => x.EvaluationPurpose).NotEmpty().WithMessage("Mục đích đánh giá không được để trống");
+            RuleFor(x => x.Scope).NotEmpty().WithMessage("Phạm vi không được để trống");
 
             RuleForEach(x => x.ListCouncil).SetValidator(new CouncilRequestValidator());
             RuleForEach(x => x.ListEvaluationSchedule).SetValidator(new EvaluationScheduleRequestValidator());
 
             RuleFor(x => x.EndDate)
                 .GreaterThan(x => x.StartDate)
-                .WithMessage("NgÃ y káº¿t thÃºc pháº£i lá»›n hÆ¡n ngÃ y báº¯t Ä‘áº§u");
+                .WithMessage("Ngày kết thúc phải lớn hơn ngày bắt đầu");
 
             RuleFor(x => x.Year)
                 .InclusiveBetween(2000, 2100)
-                .WithMessage("NÄƒm pháº£i náº±m trong khoáº£ng tá»« 2000 Ä‘áº¿n 2100");
+                .WithMessage("Năm phải nằm trong khoảng từ 2000 đến 2100");
 
             RuleFor(x => x.StandardSetId)
                 .NotEqual(Guid.Empty)
-                .WithMessage("Bá»™ tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .WithMessage("Bộ tiêu chuẩn không được để trống");
         }
     }
 }

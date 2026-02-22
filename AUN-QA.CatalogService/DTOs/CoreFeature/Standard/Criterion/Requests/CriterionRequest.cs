@@ -35,19 +35,19 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests
         public CriterionRequestValidator()
         {
             RuleFor(x => x.StandardId)
-                .NotEmpty().WithMessage("TiÃƒÂªu chuÃ¡ÂºÂ©n khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Tiêu chuẩn không được để trống");
 
             RuleFor(x => x.Code)
-                .NotEmpty().WithMessage("MÃƒÂ£ tiÃƒÂªu chÃƒÂ­ khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Mã tiêu chí không được để trống");
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("TÃƒÂªn tiÃƒÂªu chÃƒÂ­ khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡Â»Æ’ trÃ¡Â»â€˜ng");
+                .NotEmpty().WithMessage("Tên tiêu chí không được để trống");
 
             RuleFor(x => x.IsPrerequisite)
-                .NotNull().WithMessage("BÃ¡ÂºÂ¯t buÃ¡Â»â„¢c phÃ¡ÂºÂ£i chÃ¡Â»Ân tiÃƒÂªn quyÃ¡ÂºÂ¿t hoÃ¡ÂºÂ·c khÃƒÂ´ng tiÃƒÂªn quyÃ¡ÂºÂ¿t");
+                .NotNull().WithMessage("Bắt buộc phải chọn tiên quyết hoặc không tiên quyết");
 
             RuleFor(x => x.Order)
-                .GreaterThanOrEqualTo(0).WithMessage("ThÃ¡Â»Â© tÃ¡Â»Â± phÃ¡ÂºÂ£i lÃ¡Â»â€ºn hÃ†Â¡n hoÃ¡ÂºÂ·c bÃ¡ÂºÂ±ng 0");
+                .GreaterThanOrEqualTo(0).WithMessage("Thứ tự phải lớn hơn hoặc bằng 0");
 
             RuleForEach(x => x.CriterionRequirements).SetValidator(new CriterionRequirementRequestValidator());
         }

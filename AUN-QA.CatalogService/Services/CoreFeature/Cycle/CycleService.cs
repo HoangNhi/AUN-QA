@@ -32,13 +32,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             _contextAccessor = contextAccessor;
         }
 
-        #region Chá»©c nÄƒng chÃ­nh
+        #region Chức năng chính
         public async Task<ModelCycle> GetById(GetByIdRequest request)
         {
             var data = await _context.Cycles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelCycle>(data);
@@ -63,12 +63,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (data.Any())
             {
-                throw new Exception("TÃªn chu ká»³ Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên chu kỳ đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Cycle>(request);
             add.Id = Guid.NewGuid();
-            add.Status = (int)CycleStatus.Plan; // Láº­p káº¿ hoáº¡ch â€” always draft on creation
+            add.Status = (int)CycleStatus.Plan; // Lập kế hoạch — always draft on creation
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
             add.CreatedAt = DateTime.Now;
             add.IsActived = request.IsActived;
@@ -80,18 +80,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             {
                 if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
                 {
-                    throw new Exception("ThÃ nh viÃªn trong há»™i Ä‘á»“ng Ä‘Ã¡nh giÃ¡ khÃ´ng Ä‘Æ°á»£c trÃ¹ng nhau");
+                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
-                    throw new Exception("Há»™i Ä‘á»“ng pháº£i cÃ³ 1 trÆ°á»Ÿng nhÃ³m");
+                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
                 }
 
-                // Blueprint Ä15.k1: HÄ pháº£i cÃ³ tá»‘i thiá»ƒu 9 thÃ nh viÃªn
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
                 if (request.ListCouncil.Count < 9)
                 {
-                    throw new Exception("Há»™i Ä‘á»“ng pháº£i cÃ³ tá»‘i thiá»ƒu 9 thÃ nh viÃªn (Ä15.k1)");
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var council in request.ListCouncil)
@@ -134,18 +134,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (data.Any())
             {
-                throw new Exception("TÃªn chu ká»³ Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên chu kỳ đã tồn tại");
             }
 
             var update = await _context.Cycles.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             if (update.Status >= (int)CycleStatus.Finish)
             {
-                throw new Exception("Chu ká»³ Ä‘Ã£ káº¿t thÃºc, khÃ´ng thá»ƒ cáº­p nháº­t");
+                throw new Exception("Chu kỳ đã kết thúc, không thể cập nhật");
             }
 
             _mapper.Map(request, update);
@@ -174,18 +174,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             {
                 if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
                 {
-                    throw new Exception("ThÃ nh viÃªn trong há»™i Ä‘á»“ng Ä‘Ã¡nh giÃ¡ khÃ´ng Ä‘Æ°á»£c trÃ¹ng nhau");
+                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
-                    throw new Exception("Há»™i Ä‘á»“ng pháº£i cÃ³ 1 trÆ°á»Ÿng nhÃ³m");
+                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
                 }
 
-                // Blueprint Ä15.k1: HÄ pháº£i cÃ³ tá»‘i thiá»ƒu 9 thÃ nh viÃªn
+                // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
                 if (request.ListCouncil.Count < 9)
                 {
-                    throw new Exception("Há»™i Ä‘á»“ng pháº£i cÃ³ tá»‘i thiá»ƒu 9 thÃ nh viÃªn (Ä15.k1)");
+                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var item in request.ListCouncil)
@@ -257,7 +257,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var delete = await _context.Cycles.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -315,12 +315,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var res = _mapper.Map<ModelCycleGetListPaging>(x.Cycle);
                 res.StatusName = x.Cycle.Status switch
                 {
-                    (int)CycleStatus.Plan => "Láº­p káº¿ hoáº¡ch",
-                    (int)CycleStatus.Do => "Thá»±c hiá»‡n",
-                    (int)CycleStatus.Check => "Kiá»ƒm tra",
-                    (int)CycleStatus.Act => "Cáº£i tiáº¿n",
-                    (int)CycleStatus.Finish => "Káº¿t thÃºc",
-                    _ => "KhÃ´ng xÃ¡c Ä‘á»‹nh"
+                    (int)CycleStatus.Plan => "Lập kế hoạch",
+                    (int)CycleStatus.Do => "Thực hiện",
+                    (int)CycleStatus.Check => "Kiểm tra",
+                    (int)CycleStatus.Act => "Cải tiến",
+                    (int)CycleStatus.Finish => "Kết thúc",
+                    _ => "Không xác định"
                 };
                 res.StandardSet = x.StandardSetName;
 
@@ -362,11 +362,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         {
             var cycle = await _context.Cycles.FindAsync(request.Id);
             if (cycle == null)
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
 
             var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
 
-            // PCT HÄ chá»‰ Ä‘Æ°á»£c chuyá»ƒn tráº¡ng thÃ¡i khi Ä‘ang Ä‘Æ°á»£c á»§y quyá»n há»£p lá»‡
+            // PCT HĐ chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ
             var councilRecord = await _context.Councils.AsNoTracking().FirstOrDefaultAsync(c =>
                 c.CycleId == cycle.Id
                 && c.UserId == Guid.Parse(userId)
@@ -377,7 +377,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 && (CouncilRole)councilRecord.RoleId == CouncilRole.ViceChairman
                 && !IsDelegationActive(councilRecord))
             {
-                throw new Exception("PhÃ³ Chá»§ tá»‹ch Há»™i Ä‘á»“ng chá»‰ Ä‘Æ°á»£c chuyá»ƒn tráº¡ng thÃ¡i khi Ä‘ang Ä‘Æ°á»£c á»§y quyá»n há»£p lá»‡");
+                throw new Exception("Phó Chủ tịch Hội đồng chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ");
             }
 
             var checkPermissionInPDCA = await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
@@ -393,11 +393,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (!checkPermissionInPDCA)
             {
-                throw new Exception("Chá»‰ Chá»§ tá»‹ch Há»™i Ä‘á»“ng má»›i cÃ³ quyá»n chuyá»ƒn tráº¡ng thÃ¡i chu ká»³");
+                throw new Exception("Chỉ Chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
             }
 
             if (cycle.Status >= (int)CycleStatus.Finish)
-                throw new Exception("Chu ká»³ Ä‘Ã£ káº¿t thÃºc, khÃ´ng thá»ƒ chuyá»ƒn tráº¡ng thÃ¡i");
+                throw new Exception("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
 
             cycle.Status += 1;
             cycle.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
@@ -485,13 +485,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (request.AllowedRoles != null && request.AllowedRoles.Count > 0)
                 return request.AllowedRoles.Contains(council.RoleId);
 
-            // KhÃ´ng giá»›i háº¡n vai trÃ²: báº¥t ká»³ thÃ nh viÃªn HÄ Ä‘ang hoáº¡t Ä‘á»™ng nÃ o cÅ©ng Ä‘Æ°á»£c phÃ©p
+            // Không giới hạn vai trò: bất kỳ thành viên HĐ đang hoạt động nào cũng được phép
             return true;
         }
 
         /// <summary>
-        /// Kiá»ƒm tra á»§y quyá»n cá»§a PCT HÄ cÃ²n hiá»‡u lá»±c hay khÃ´ng.
-        /// Há»£p lá»‡ khi: IsDelegated = true VÃ€ (DelegatedUntil == null HOáº¶C chÆ°a háº¿t háº¡n).
+        /// Kiểm tra ủy quyền của PCT HĐ còn hiệu lực hay không.
+        /// Hợp lệ khi: IsDelegated = true VÀ (DelegatedUntil == null HOẶC chưa hết hạn).
         /// </summary>
         private static bool IsDelegationActive(Entities.Council council)
         {
@@ -505,14 +505,14 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         }
 
         /// <summary>
-        /// Kiá»ƒm tra pháº¡m vi tiÃªu chuáº©n phá»¥ trÃ¡ch.
-        /// - Náº¿u standardId == null: khÃ´ng cáº§n lá»c pháº¡m vi â†’ true.
-        /// - Náº¿u standardId cÃ³ giÃ¡ trá»‹: AssignedStandards JSON pháº£i chá»©a standardId Ä‘Ã³.
-        /// - Náº¿u AssignedStandards rá»—ng/null: user chÆ°a Ä‘Æ°á»£c phÃ¢n cÃ´ng TC nÃ o â†’ false khi cÃ³ standardId.
+        /// Kiểm tra phạm vi tiêu chuẩn phụ trách.
+        /// - Nếu standardId == null: không cần lọc phạm vi → true.
+        /// - Nếu standardId có giá trị: AssignedStandards JSON phải chứa standardId đó.
+        /// - Nếu AssignedStandards rỗng/null: user chưa được phân công TC nào → false khi có standardId.
         /// </summary>
         private static bool IsInScope(string? assignedStandardsJson, Guid? standardId)
         {
-            // KhÃ´ng lá»c pháº¡m vi náº¿u khÃ´ng chá»‰ Ä‘á»‹nh TC cá»¥ thá»ƒ
+            // Không lọc phạm vi nếu không chỉ định TC cụ thể
             if (standardId == null)
                 return true;
 
@@ -526,7 +526,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             }
             catch
             {
-                // JSON khÃ´ng há»£p lá»‡ â†’ an toÃ n lÃ  tá»« chá»‘i
+                // JSON không hợp lệ → an toàn là từ chối
                 return false;
             }
         }

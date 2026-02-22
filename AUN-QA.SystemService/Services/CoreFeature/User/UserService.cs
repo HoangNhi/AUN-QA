@@ -37,7 +37,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelUser>(data);
@@ -51,12 +51,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                throw new Exception("NgÆ°á»i dÃ¹ng chÆ°a xÃ¡c thá»±c");
+                throw new Exception("Người dùng chưa xác thực");
             }
             var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
             if (data == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
             var result = _mapper.Map<ModelUser>(data);
             return result;
@@ -71,7 +71,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("TÃªn Ä‘Äƒng nháº­p hoáº·c email Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.User>(request);
@@ -96,13 +96,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("TÃªn Ä‘Äƒng nháº­p hoáº·c email Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
             }
 
             var update = await _context.Users.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             var oldPassword = update.Password;
@@ -134,7 +134,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 var delete = await _context.Users.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                    throw new Exception("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -192,7 +192,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                throw new Exception("NgÆ°á»i dÃ¹ng khÃ´ng cÃ³ quyá»n thá»±c hiá»‡n hÃ nh Ä‘á»™ng nÃ y");
+                throw new Exception("Người dùng không có quyền thực hiện hành động này");
             }
 
             var userId = Guid.Parse(currentUserId);
@@ -203,13 +203,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Email Ä‘Ã£ tá»“n táº¡i");
+                throw new Exception("Email đã tồn tại");
             }
 
             var update = await _context.Users.FindAsync(userId);
             if (update == null)
             {
-                throw new Exception("Dá»¯ liá»‡u khÃ´ng tá»“n táº¡i");
+                throw new Exception("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -235,14 +235,14 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var update = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.Username == _contextAccessor.HttpContext.User.Identity.Name && x.IsDeleted == false);
             if (update == null)
             {
-                throw new Exception("KhÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u");
+                throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("XÃ¡c nháº­n máº­t kháº©u má»›i khÃ´ng Ä‘Ãºng");
+            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("Xác nhận mật khẩu mới không đúng");
 
-            // Náº¿u Ä‘á»•i máº­t kháº©u thÃ¬ cáº­p nháº­t láº¡i máº­t kháº©u má»›i
+            // Nếu đổi mật khẩu thì cập nhật lại mật khẩu mới
             var pass = Encrypt_DecryptHelper.EncodePassword(request.OldPassword, update.PasswordSalt);
-            if (!pass.Equals(update.Password)) throw new Exception("Máº­t kháº©u cÅ© khÃ´ng Ä‘Ãºng");
+            if (!pass.Equals(update.Password)) throw new Exception("Mật khẩu cũ không đúng");
 
             var salt = Encrypt_DecryptHelper.GenerateSalt();
             update.PasswordSalt = salt;

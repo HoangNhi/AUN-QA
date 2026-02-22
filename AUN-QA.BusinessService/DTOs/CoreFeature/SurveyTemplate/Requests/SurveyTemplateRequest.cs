@@ -23,10 +23,10 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests
         public SurveyTemplateRequestValidator()
         {
             RuleFor(x => x.Title)
-                .NotEmpty().WithMessage("TiÃªu Ä‘á» kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng")
-                .MaximumLength(255).WithMessage("TiÃªu Ä‘á» kháº£o sÃ¡t khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 255 kÃ½ tá»±");
+                .NotEmpty().WithMessage("Tiêu đề khảo sát không được để trống")
+                .MaximumLength(255).WithMessage("Tiêu đề khảo sát không được vượt quá 255 ký tự");
             RuleFor(x => x.StakeholderType)
-                .GreaterThanOrEqualTo(0).WithMessage("Loáº¡i Ä‘á»‘i tÆ°á»£ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng");
+                .GreaterThanOrEqualTo(0).WithMessage("Loại đối tượng không được để trống");
 
             RuleForEach(x => x.ListTopic)
                 .SetValidator(new TemplateTopicRequestValidator());

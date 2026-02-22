@@ -92,7 +92,7 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> GetVerifiedFileTypeCounts([FromQuery] Guid cycleId)
         {
             if (cycleId == Guid.Empty)
-                return Ok(new BaseResponse(false, 400, "cycleId khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"));
+                return Ok(new BaseResponse(false, 400, "cycleId không được để trống"));
 
             var result = await _service.GetVerifiedFileTypeCountsAsync(cycleId);
             return Ok(new BaseResponse<List<VerifiedFileTypeCountResponse>> { Data = result, Success = true });

@@ -42,7 +42,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException)
             {
-                throw new Exception("Lá»—i káº¿t ná»‘i Ä‘áº¿n FileService. Vui lÃ²ng thá»­ láº¡i sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
             }
         }
 
@@ -57,7 +57,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException)
             {
-                throw new Exception("Lá»—i káº¿t ná»‘i Ä‘áº¿n FileService. Vui lÃ²ng thá»­ láº¡i sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
             }
         }
 
@@ -81,7 +81,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException)
             {
-                throw new Exception("Lá»—i káº¿t ná»‘i Ä‘áº¿n FileService. Vui lÃ²ng thá»­ láº¡i sau.");
+                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.");
             }
         }
     }

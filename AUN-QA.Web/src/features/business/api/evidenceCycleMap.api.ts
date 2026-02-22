@@ -93,7 +93,6 @@ const transformEvidenceCycleMapResponse = (
   UpdatedAt: backendData.UpdatedAt,
   UpdatedBy: backendData.UpdatedBy,
   IsActived: backendData.IsActived ?? false,
-  IsDeleted: backendData.IsDeleted ?? false,
   IsEdit: false,
   FolderUpload: "",
 });

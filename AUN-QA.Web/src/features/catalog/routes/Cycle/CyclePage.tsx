@@ -15,6 +15,12 @@ import {
   CYCLE_SCOPE_OPTIONS,
 } from "@/constants/catalog.constants";
 import { standardSetService } from "../../api/standardset.api";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 const CyclePage = () => {
   const {
@@ -77,116 +83,116 @@ const CyclePage = () => {
 
   return (
     <div className="container mx-auto space-y-4">
-      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest({
-                ...pageRequest,
-                PageIndex: 1,
-                TextSearch: "",
-                Status: undefined,
-                Scope: undefined,
-                Year: undefined,
-              });
-              setSearchTerm("");
-              setYearTerm(0);
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Combobox
-            options={CYCLE_STATUS_OPTIONS}
-            value={pageRequest.Status}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                Status: val || undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả trạng thái"
-            searchPlaceholder="Tìm kiếm trạng thái..."
-            emptyText="Không tìm thấy trạng thái."
-          />
-          <Combobox
-            fetchOptions={async () => {
-              const res = await standardSetService.getAllCombobox();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
-            value={pageRequest.StandardSetId}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                StandardSetId: val || undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả bộ tiêu chuẩn"
-            searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-            emptyText="Không tìm thấy bộ tiêu chuẩn."
-          />
-          <Combobox
-            options={CYCLE_SCOPE_OPTIONS}
-            value={pageRequest.Scope}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                Scope: val || undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả phạm vi"
-            searchPlaceholder="Tìm kiếm phạm vi..."
-            emptyText="Không tìm thấy phạm vi."
-          />
-          <Input
-            type="number"
-            placeholder="Năm"
-            value={yearTerm || ""}
-            onChange={(e) => setYearTerm(Number(e.target.value))}
-            className="bg-background"
-          />
-          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
+      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
+        <CardContent className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => {
+                setPageRequest({
+                  ...pageRequest,
+                  PageIndex: 1,
+                  TextSearch: "",
+                  Status: undefined,
+                  Scope: undefined,
+                  Year: undefined,
+                });
+                setSearchTerm("");
+                setYearTerm(0);
+              }}
+            >
+              Đặt lại bộ lọc
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4 lg:grid-cols-5">
+            <Combobox
+              options={CYCLE_STATUS_OPTIONS}
+              value={pageRequest.Status}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  Status: val || undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả trạng thái"
+              searchPlaceholder="Tìm kiếm trạng thái..."
+              emptyText="Không tìm thấy trạng thái."
+            />
+            <Combobox
+              fetchOptions={async () => {
+                const res = await standardSetService.getAllCombobox();
+                return (res.Data || []).map((t) => ({
+                  Value: t.Value ?? "",
+                  Text: t.Text ?? "",
+                }));
+              }}
+              value={pageRequest.StandardSetId}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  StandardSetId: val || undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả bộ tiêu chuẩn"
+              searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+              emptyText="Không tìm thấy bộ tiêu chuẩn."
+            />
+            <Combobox
+              options={CYCLE_SCOPE_OPTIONS}
+              value={pageRequest.Scope}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  Scope: val || undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả phạm vi"
+              searchPlaceholder="Tìm kiếm phạm vi..."
+              emptyText="Không tìm thấy phạm vi."
+            />
             <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+              type="number"
+              placeholder="Năm"
+              value={yearTerm || ""}
+              onChange={(e) => setYearTerm(Number(e.target.value))}
+              className="bg-background"
+            />
+            <InputGroup className="col-span-1 bg-background lg:col-span-1">
+              <InputGroupInput
+                placeholder="Tìm kiếm..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPageRequest((prev) => ({
+                      ...prev,
+                      TextSearch: searchTerm,
+                      PageIndex: 1,
+                    }));
+                  }
+                }}
+              />
+              <InputGroupButton
+                onClick={() => {
                   setPageRequest((prev) => ({
                     ...prev,
                     TextSearch: searchTerm,
                     PageIndex: 1,
                   }));
-                }
-              }}
-              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
-            />
-            <Button
-              onClick={() => {
-                setPageRequest((prev) => ({
-                  ...prev,
-                  TextSearch: searchTerm,
-                  PageIndex: 1,
-                }));
-              }}
-              className="rounded-l-none"
-            >
-              <SearchIcon className="h-4 w-4 mr-1.5" />
-            </Button>
+                }}
+              >
+                <SearchIcon />
+              </InputGroupButton>
+            </InputGroup>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">

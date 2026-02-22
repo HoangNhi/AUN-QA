@@ -158,7 +158,7 @@ export function Combobox({
                         value === option.Value && "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
-                        const newValue = option.Value === value ? "" : option.Value;
+                        const newValue = option.Value === value ? "" : (option.Value || "");
                         const newText = option.Value === value ? "" : (option.Text || "");
                         onValueChange(newValue, newText);
                         setOpen(false);

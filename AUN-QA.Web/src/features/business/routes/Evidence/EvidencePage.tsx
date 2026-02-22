@@ -4,13 +4,18 @@ import { getColumns } from "./columns";
 import { DataTable } from "@/components/ui/data-table";
 import PopupEvidence from "./PopupEvidence";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Combobox } from "@/components/ui/combobox";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Dialog,
   DialogClose,
@@ -72,95 +77,95 @@ const EvidencePage = () => {
 
   return (
     <div className="container mx-auto space-y-4">
-      <div className="rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest((prev) => ({
-                ...prev,
-                PageIndex: 1,
-                TextSearch: "",
-                FileTypeId: undefined,
-                Status: undefined,
-              }));
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
-            value={pageRequest.FileTypeId}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                FileTypeId: val ? val : undefined,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả loại tài liệu"
-            searchPlaceholder="Tìm kiếm loại tài liệu..."
-            emptyText="Không tìm thấy loại tài liệu."
-          />
+      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
+        <CardContent className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  PageIndex: 1,
+                  TextSearch: "",
+                  FileTypeId: undefined,
+                  Status: undefined,
+                }));
+                setSearchTerm("");
+              }}
+            >
+              Đặt lại bộ lọc
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Combobox
+              fetchOptions={async () => {
+                const res = await fileTypeService.getAllCombobox();
+                return (res.Data || []).map((t) => ({
+                  Value: t.Value ?? "",
+                  Text: t.Text ?? "",
+                }));
+              }}
+              value={pageRequest.FileTypeId}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  FileTypeId: val ? val : undefined,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả loại tài liệu"
+              searchPlaceholder="Tìm kiếm loại tài liệu..."
+              emptyText="Không tìm thấy loại tài liệu."
+            />
 
-          <Combobox
-            options={EVIDENCE_STATUS_OPTIONS}
-            value={pageRequest.Status?.toString()}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                Status: val ? Number(val) : undefined,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả trạng thái minh chứng"
-            searchPlaceholder="Tìm kiếm trạng thái..."
-            emptyText="Không tìm thấy trạng thái."
-          />
+            <Combobox
+              options={EVIDENCE_STATUS_OPTIONS}
+              value={pageRequest.Status?.toString()}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  Status: val ? Number(val) : undefined,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả trạng thái"
+              searchPlaceholder="Tìm kiếm trạng thái..."
+              emptyText="Không tìm thấy trạng thái."
+            />
 
-          <div className="flex rounded-md shadow-xs col-span-1 bg-background md:col-span-2">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+            <InputGroup className="col-span-1 bg-background md:col-span-2">
+              <InputGroupInput
+                placeholder="Tìm kiếm..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPageRequest((prev) => ({
+                      ...prev,
+                      TextSearch: searchTerm,
+                      PageIndex: 1,
+                    }));
+                  }
+                }}
+              />
+              <InputGroupButton
+                onClick={() => {
                   setPageRequest((prev) => ({
                     ...prev,
                     TextSearch: searchTerm,
                     PageIndex: 1,
                   }));
-                }
-              }}
-              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
-            />
-            <Button
-              onClick={() => {
-                setPageRequest((prev) => ({
-                  ...prev,
-                  TextSearch: searchTerm,
-                  PageIndex: 1,
-                }));
-              }}
-              className="rounded-l-none"
-            >
-              <SearchIcon className="h-4 w-4 mr-1.5" />
-            </Button>
+                }}
+              >
+                <SearchIcon />
+              </InputGroupButton>
+            </InputGroup>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">

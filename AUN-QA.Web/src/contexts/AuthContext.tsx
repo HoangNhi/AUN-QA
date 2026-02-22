@@ -64,7 +64,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (systemGroupJson) {
       try {
         currentSystemGroup = JSON.parse(systemGroupJson);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!currentSystemGroup || currentSystemGroup.length === 0) {
@@ -81,7 +81,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (menuJson) {
       try {
         currentMenu = JSON.parse(menuJson);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!currentMenu || currentMenu.length === 0) {
@@ -98,7 +98,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     if (permissionsJson) {
       try {
         currentPermissions = JSON.parse(permissionsJson);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!currentPermissions || currentPermissions.length === 0) {
@@ -144,8 +144,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
                 RefreshToken: refreshToken,
               });
               if (response.Success) {
-                const accessToken = response.Data?.AccessToken;
-                const refreshToken = response.Data?.RefreshToken;
+                const accessToken = response.Data?.AccessToken || "";
+                const refreshToken = response.Data?.RefreshToken || "";
                 saveTokens(accessToken, refreshToken);
                 localStorage.setItem("user", JSON.stringify(response.Data));
               }
@@ -165,8 +165,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
               RefreshToken: refreshToken,
             });
             if (response.Success && response.Data) {
-              const accessToken = response.Data.AccessToken;
-              const newRefreshToken = response.Data.RefreshToken;
+              const accessToken = response.Data.AccessToken || "";
+              const newRefreshToken = response.Data.RefreshToken || "";
               saveTokens(accessToken, newRefreshToken);
 
               // After refresh, we need to set the user
@@ -226,11 +226,8 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
           return response;
         }
 
-        const AccessToken = response.Data?.AccessToken;
-        const RefreshToken = response.Data?.RefreshToken;
-        const Id = response.Data?.Id;
-        const Fullname = response.Data?.Fullname;
-        const Username = response.Data?.Username;
+        const AccessToken = response.Data?.AccessToken || "";
+        const RefreshToken = response.Data?.RefreshToken || "";
 
         if (!AccessToken) {
           return {
@@ -241,6 +238,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         }
 
         saveTokens(AccessToken, RefreshToken);
+        const Id = response.Data?.Id;
+        const Fullname = response.Data?.Fullname;
+        const Username = response.Data?.Username;
         const RoleId = response.Data?.RoleId;
         const userData: User = {
           Id: Id || "",
@@ -310,7 +310,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentSystemGroup = JSON.parse(systemGroupJson);
           setSystemGroup(currentSystemGroup || []);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // If still empty (e.g. not in method storage), try API
@@ -334,7 +334,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentMenu = JSON.parse(menuJson);
           setMenu(currentMenu || []);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!currentMenu || currentMenu.length === 0) {
@@ -354,7 +354,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
         try {
           currentPermissions = JSON.parse(permissionsJson);
           setPermissions(currentPermissions || []);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!currentPermissions || currentPermissions.length === 0) {

@@ -7,16 +7,16 @@ import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/Button";
 import {
   InputGroup,
-  InputGroupAddon,
+  InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Search } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -84,117 +84,117 @@ const EvidenceCycleMapPage = () => {
 
   return (
     <div className="container mx-auto space-y-4">
-      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest({
-                ...pageRequest,
-                PageIndex: 1,
-                TextSearch: "",
-                CycleId: undefined,
-                FileTypeId: undefined,
-                EvidenceStatus: undefined,
-              });
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Combobox
-            fetchOptions={async () => {
-              const res = await cycleService.getComboboxByUser();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
-            value={pageRequest.CycleId}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                CycleId: val ? val : undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm kiếm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
-          />
+      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
+        <CardContent className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => {
+                setPageRequest({
+                  ...pageRequest,
+                  PageIndex: 1,
+                  TextSearch: "",
+                  CycleId: undefined,
+                  FileTypeId: undefined,
+                  EvidenceStatus: undefined,
+                });
+                setSearchTerm("");
+              }}
+            >
+              Đặt lại bộ lọc
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Combobox
+              fetchOptions={async () => {
+                const res = await cycleService.getComboboxByUser();
+                return (res.Data || []).map((t) => ({
+                  Value: t.Value ?? "",
+                  Text: t.Text ?? "",
+                }));
+              }}
+              value={pageRequest.CycleId}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  CycleId: val ? val : undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả chu kỳ"
+              searchPlaceholder="Tìm kiếm chu kỳ..."
+              emptyText="Không tìm thấy chu kỳ."
+            />
 
-          <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
-            value={pageRequest.FileTypeId}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                FileTypeId: val ? val : undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả loại tài liệu"
-            searchPlaceholder="Tìm kiếm loại tài liệu..."
-            emptyText="Không tìm thấy loại tài liệu."
-          />
+            <Combobox
+              fetchOptions={async () => {
+                const res = await fileTypeService.getAllCombobox();
+                return (res.Data || []).map((t) => ({
+                  Value: t.Value ?? "",
+                  Text: t.Text ?? "",
+                }));
+              }}
+              value={pageRequest.FileTypeId}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  FileTypeId: val ? val : undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả loại tài liệu"
+              searchPlaceholder="Tìm kiếm loại tài liệu..."
+              emptyText="Không tìm thấy loại tài liệu."
+            />
 
-          <Combobox
-            options={EVIDENCE_STATUS_OPTIONS}
-            value={pageRequest.EvidenceStatus?.toString()}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                EvidenceStatus: val ? Number(val) : undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả trạng thái minh chứng"
-            searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
-            emptyText="Không tìm thấy trạng thái."
-          />
+            <Combobox
+              options={EVIDENCE_STATUS_OPTIONS}
+              value={pageRequest.EvidenceStatus?.toString()}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  EvidenceStatus: val ? Number(val) : undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả trạng thái minh chứng"
+              searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
+              emptyText="Không tìm thấy trạng thái."
+            />
 
-          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
-            <Input
-              placeholder="Tên hoặc mã minh chứng..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+            <InputGroup className="col-span-1 bg-background">
+              <InputGroupInput
+                placeholder="Tên hoặc mã minh chứng..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPageRequest({
+                      ...pageRequest,
+                      TextSearch: searchTerm,
+                      PageIndex: 1,
+                    });
+                  }
+                }}
+              />
+              <InputGroupButton
+                onClick={() => {
                   setPageRequest({
                     ...pageRequest,
                     TextSearch: searchTerm,
                     PageIndex: 1,
                   });
-                }
-              }}
-              className="-me-px rounded-r-none shadow-none focus-visible:z-1"
-            />
-            <Button
-              onClick={() => {
-                setPageRequest({
-                  ...pageRequest,
-                  TextSearch: searchTerm,
-                  PageIndex: 1,
-                });
-              }}
-              className="rounded-l-none"
-            >
-              <Search className="h-4 w-4 mr-1.5" />
-            </Button>
+                }}
+              >
+                <SearchIcon />
+              </InputGroupButton>
+            </InputGroup>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">

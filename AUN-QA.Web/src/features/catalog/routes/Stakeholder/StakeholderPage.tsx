@@ -5,11 +5,17 @@ import { DataTable } from "@/components/ui/data-table";
 import PopupStakeholder from "./PopupStakeholder";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
+
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 const StakeholderPage = () => {
   const {
@@ -61,74 +67,77 @@ const StakeholderPage = () => {
     setRowSelection({}); // Clear selection
   };
 
+
+
+  // ... Inside StakeholderPage return ...
   return (
     <div className="container mx-auto space-y-4">
-      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest({
-                ...pageRequest,
-                TextSearch: "",
-                Type: undefined,
-                PageIndex: 1,
-              });
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <Combobox
-            options={STAKEHOLDER_TYPES}
-            value={pageRequest.Type?.toString()}
-            onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
-                Type: val ? Number(val) : undefined,
-                PageIndex: 1,
-              });
-            }}
-            placeholder="Tất cả loại đối tượng"
-            searchPlaceholder="Tìm kiếm loại đối tượng..."
-            emptyText="Không tìm thấy loại đối tượng."
-          />
-          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
+        <CardContent className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => {
+                setPageRequest({
+                  ...pageRequest,
+                  TextSearch: "",
+                  Type: undefined,
+                  PageIndex: 1,
+                });
+                setSearchTerm("");
+              }}
+            >
+              Đặt lại bộ lọc
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <Combobox
+              options={STAKEHOLDER_TYPES}
+              value={pageRequest.Type?.toString()}
+              onValueChange={(val) => {
+                setPageRequest({
+                  ...pageRequest,
+                  Type: val ? Number(val) : undefined,
+                  PageIndex: 1,
+                });
+              }}
+              placeholder="Tất cả loại đối tượng"
+              searchPlaceholder="Tìm kiếm loại đối tượng..."
+              emptyText="Không tìm thấy loại đối tượng."
+            />
+            <InputGroup className="col-span-1 md:col-span-3 bg-background">
+              <InputGroupInput
+                placeholder="Tìm kiếm..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPageRequest((prev) => ({
+                      ...prev,
+                      TextSearch: searchTerm,
+                      PageIndex: 1,
+                    }));
+                  }
+                }}
+              />
+              <InputGroupButton
+                onClick={() => {
                   setPageRequest((prev) => ({
                     ...prev,
                     TextSearch: searchTerm,
                     PageIndex: 1,
                   }));
-                }
-              }}
-              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
-            />
-            <Button
-              onClick={() => {
-                setPageRequest((prev) => ({
-                  ...prev,
-                  TextSearch: searchTerm,
-                  PageIndex: 1,
-                }));
-              }}
-              className="rounded-l-none"
-            >
-              <SearchIcon className="h-4 w-4 mr-1.5" />
-            </Button>
+                }}
+              >
+                <SearchIcon />
+              </InputGroupButton>
+            </InputGroup>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">

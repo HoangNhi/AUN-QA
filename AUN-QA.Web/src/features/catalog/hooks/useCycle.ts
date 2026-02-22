@@ -133,8 +133,11 @@ export const useCycle = () => {
         Status: "1",
         EvaluationPurpose: "",
         Scope: 1,
-        StandardSetId: undefined,
+        StandardSetId: "",
         IsEdit: isEdit,
+        IsActived: true,
+        ListCouncil: [],
+        ListEvaluationSchedule: [],
       });
       setIsOpen(true);
     }
@@ -158,8 +161,11 @@ export const useCycle = () => {
           Status: "1",
           EvaluationPurpose: "",
           Scope: 1,
-          StandardSetId: undefined,
+          StandardSetId: "",
           IsEdit: false,
+          IsActived: true,
+          ListCouncil: [],
+          ListEvaluationSchedule: [],
         });
       } else {
         setIsOpen(false);

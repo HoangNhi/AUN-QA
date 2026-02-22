@@ -54,7 +54,7 @@ export const PopupSession = ({
   });
   const [textSearch, setTextSearch] = useState("");
   const [openChooseStakeholder, setOpenChooseStakeholder] = useState(false);
-  const [rowSelection, setRowSelection] = useState({});
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState<string[]>([]); // store ids to delete
   const [viewAnswerSession, setViewAnswerSession] =

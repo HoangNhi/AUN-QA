@@ -9,18 +9,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import type { FileType } from "@/features/catalog/types/filetype.types";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  id: z.string(),
+  code: z.string().min(1, "Mã loại file là bắt buộc"),
+  name: z.string().min(2, "Tên phải từ 2-200 ký tự").max(200, "Tên phải từ 2-200 ký tự"),
+  description: z.string().optional(),
+  isActived: z.boolean(),
+});
 
 const PopupFileType = ({
   fileType,
@@ -38,77 +51,44 @@ const PopupFileType = ({
   ) => void;
   isLoading?: boolean;
 }) => {
-  const [formData, setFormData] = useState({
-    id: fileType?.Id || uuidv4(),
-    code: fileType?.Code || "",
-    name: fileType?.Name || "",
-    description: fileType?.Description || "",
-    isActived: fileType?.IsActived ?? true,
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: fileType?.Id || uuidv4(),
+      code: fileType?.Code || "",
+      name: fileType?.Name || "",
+      description: fileType?.Description || "",
+      isActived: fileType?.IsActived ?? true,
+    },
   });
 
-  const [errors, setErrors] = useState<{
-    code?: string;
-    name?: string;
-  }>({});
-
-  const updateField = <K extends keyof typeof formData>(
-    field: K,
-    value: (typeof formData)[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user types
-    if (errors[field as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: typeof errors = {};
-
-    // Code validation
-    const trimmedCode = formData.code.trim();
-    if (!trimmedCode) {
-      newErrors.code = "Mã loại file là bắt buộc";
-    }
-
-    // Name validation
-    const trimmedName = formData.name.trim();
-    if (!trimmedName) {
-      newErrors.name = "Tên loại file là bắt buộc";
-    } else if (trimmedName.length < 2 || trimmedName.length > 200) {
-      newErrors.name = "Tên phải từ 2-200 ký tự";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Sync form when fileType prop changes
   useEffect(() => {
     if (fileType) {
-      setFormData({
+      form.reset({
         id: fileType.Id || uuidv4(),
         code: fileType.Code || "",
         name: fileType.Name || "",
         description: fileType.Description || "",
         isActived: fileType.IsActived ?? true,
       });
-      // Clear errors when form is populated with new data
-      setErrors({});
+    } else {
+      form.reset({
+        id: uuidv4(),
+        code: "",
+        name: "",
+        description: "",
+        isActived: true,
+      });
     }
-  }, [fileType]);
+  }, [fileType, form]);
 
-  const onSubmit = (isAddMore: boolean) => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
     const payload = {
-      Id: formData.id,
-      Code: formData.code.trim(),
-      Name: formData.name.trim(),
-      Description: formData.description.trim(),
-      IsActived: formData.isActived,
+      Id: values.id,
+      Code: values.code.trim(),
+      Name: values.name.trim(),
+      Description: values.description?.trim() || "",
+      IsActived: values.isActived,
       IsEdit: fileType?.IsEdit || false,
       FolderUpload: "",
     };
@@ -121,125 +101,112 @@ const PopupFileType = ({
         className="sm:max-w-xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit(false);
-          }}
-          noValidate
-          aria-label={
-            fileType?.IsEdit ? "Cập nhật Loại File" : "Thêm mới Loại File"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {fileType?.IsEdit ? "Cập nhật Loại File" : "Thêm mới Loại File"}
-            </DialogTitle>
-          </DialogHeader>
+        <Form {...form}>
+          <form
+            id="fileType-form"
+            onSubmit={form.handleSubmit((data) => onSubmit(data, false))}
+            noValidate
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {fileType?.IsEdit ? "Cập nhật Loại File" : "Thêm mới Loại File"}
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            {/* Code Field */}
-            <Field>
-              <FieldLabel htmlFor="code">
-                Mã loại file <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => updateField("code", e.target.value)}
-                  placeholder="Nhập mã loại file"
-                  aria-required="true"
-                  aria-invalid={errors.code ? "true" : "false"}
-                  aria-describedby={
-                    errors.code
-                      ? "code-error code-description"
-                      : "code-description"
-                  }
-                />
-                {errors.code && (
-                  <FieldError id="code-error">{errors.code}</FieldError>
+            <div className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                      Mã loại file
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nhập mã loại file" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </FieldContent>
-            </Field>
+              />
 
-            {/* Name Field */}
-            <Field>
-              <FieldLabel htmlFor="name">
-                Tên loại file <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="Nhập tên loại file"
-                  aria-required="true"
-                  aria-invalid={errors.name ? "true" : "false"}
-                  aria-describedby={
-                    errors.name
-                      ? "name-error name-description"
-                      : "name-description"
-                  }
-                />
-                {errors.name && (
-                  <FieldError id="name-error">{errors.name}</FieldError>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                      Tên loại file
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nhập tên loại file" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </FieldContent>
-            </Field>
+              />
 
-            {/* Description Field */}
-            <Field>
-              <FieldLabel htmlFor="description">Mô tả</FieldLabel>
-              <FieldContent>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => updateField("description", e.target.value)}
-                  placeholder="Nhập mô tả loại file"
-                  rows={3}
-                />
-              </FieldContent>
-            </Field>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mô tả</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Nhập mô tả loại file"
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Status Field */}
-            <Field>
-              <FieldLabel htmlFor="status">Trạng thái</FieldLabel>
-              <FieldContent>
-                <Combobox
-                  options={ACTIVE_STATUS_OPTIONS}
-                  value={formData.isActived.toString()}
-                  onValueChange={(val) =>
-                    updateField("isActived", val === "true")
-                  }
-                  placeholder="Chọn trạng thái"
-                  searchPlaceholder="Tìm kiếm trạng thái..."
-                  emptyText="Không tìm thấy trạng thái."
-                />
-              </FieldContent>
-            </Field>
-          </div>
+              <FormField
+                control={form.control}
+                name="isActived"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={ACTIVE_STATUS_OPTIONS}
+                        value={field.value.toString()}
+                        onValueChange={(val) => field.onChange(val === "true")}
+                        placeholder="Chọn trạng thái"
+                        searchPlaceholder="Tìm kiếm trạng thái..."
+                        emptyText="Không tìm thấy trạng thái."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu
-            </Button>
-            {!fileType?.IsEdit && (
-              <Button
-                type="button"
-                onClick={() => onSubmit(true)}
-                disabled={isLoading}
-              >
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button">Hủy</Button>
+              </DialogClose>
+              <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Lưu và thêm tiếp
+                Lưu
               </Button>
-            )}
-          </DialogFooter>
-        </form>
+              {!fileType?.IsEdit && (
+                <Button
+                  type="button"
+                  onClick={form.handleSubmit((data) => onSubmit(data, true))}
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Lưu và thêm tiếp
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

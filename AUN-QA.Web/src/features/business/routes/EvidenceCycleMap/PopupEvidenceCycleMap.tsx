@@ -18,11 +18,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Field,
-  FieldContent,
-  FieldLabel,
-  FieldError,
-} from "@/components/ui/field";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { Combobox } from "@/components/ui/combobox";
@@ -48,6 +53,34 @@ interface PopupEvidenceCycleMapProps {
   isApproving?: boolean;
 }
 
+const formSchema = z
+  .object({
+    id: z.string(),
+    evidenceId: z.string(),
+    name: z.string().min(1, "Tên minh chứng không được để trống"),
+    code: z.string().min(1, "Mã minh chứng không được để trống"),
+    status: z.string(),
+    issueDate: z.string().optional(),
+    issuingAuthority: z.string().optional(),
+    expiryDate: z.string().optional(),
+    fileTypeId: z.string().min(1, "Vui lòng chọn loại tài liệu"),
+    description: z.string().optional(),
+    rejectionReason: z.string().optional(),
+    cycleId: z.string().min(1, "Vui lòng chọn kế hoạch"),
+  })
+  .refine(
+    (data) => {
+      if (data.issueDate && data.expiryDate) {
+        return new Date(data.issueDate) <= new Date(data.expiryDate);
+      }
+      return true;
+    },
+    {
+      message: "Ngày hết hạn phải sau ngày ban hành",
+      path: ["expiryDate"],
+    },
+  );
+
 const PopupEvidenceCycleMap = ({
   evidenceCycleMap,
   isOpen,
@@ -57,26 +90,29 @@ const PopupEvidenceCycleMap = ({
   onApprove,
   isApproving,
 }: PopupEvidenceCycleMapProps) => {
-  // --- Form state ---
   const { user } = useAuth();
   const [assignedStandardIds, setAssignedStandardIds] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    id: evidenceCycleMap?.Id || uuidv4(),
-    evidenceId: evidenceCycleMap?.EvidenceId || "",
-    name: evidenceCycleMap?.Evidence?.Name || "",
-    code: evidenceCycleMap?.Evidence?.Code || "",
-    status: evidenceCycleMap?.Evidence?.Status?.toString() || "1",
-    issueDate: evidenceCycleMap?.Evidence?.IssueDate
-      ? format(new Date(evidenceCycleMap.Evidence.IssueDate), "yyyy-MM-dd")
-      : "",
-    issuingAuthority: evidenceCycleMap?.Evidence?.IssuingAuthority || "",
-    expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
-      ? format(new Date(evidenceCycleMap.Evidence.ExpiryDate), "yyyy-MM-dd")
-      : "",
-    fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
-    description: evidenceCycleMap?.Evidence?.Description || "",
-    rejectionReason: evidenceCycleMap?.Evidence?.RejectionReason || "",
-    cycleId: evidenceCycleMap?.CycleId || "",
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: evidenceCycleMap?.Id || uuidv4(),
+      evidenceId: evidenceCycleMap?.EvidenceId || "",
+      name: evidenceCycleMap?.Evidence?.Name || "",
+      code: evidenceCycleMap?.Evidence?.Code || "",
+      status: evidenceCycleMap?.Evidence?.Status?.toString() || "1",
+      issueDate: evidenceCycleMap?.Evidence?.IssueDate
+        ? format(new Date(evidenceCycleMap.Evidence.IssueDate), "yyyy-MM-dd")
+        : "",
+      issuingAuthority: evidenceCycleMap?.Evidence?.IssuingAuthority || "",
+      expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
+        ? format(new Date(evidenceCycleMap.Evidence.ExpiryDate), "yyyy-MM-dd")
+        : "",
+      fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
+      description: evidenceCycleMap?.Evidence?.Description || "",
+      rejectionReason: evidenceCycleMap?.Evidence?.RejectionReason || "",
+      cycleId: evidenceCycleMap?.CycleId || "",
+    },
   });
 
   const [standardSetId, setStandardSetId] = useState<string>("");
@@ -88,17 +124,12 @@ const PopupEvidenceCycleMap = ({
     evidenceCycleMap?.Evidence?.ListAttachment || [],
   );
 
-  const [errors, setErrors] = useState<{
-    name?: string;
-    code?: string;
-    fileTypeId?: string;
-    cycleId?: string;
-    issueDate?: string;
-    expiryDate?: string;
-    attachment?: string;
-  }>({});
+  const status = form.watch("status");
+  const isPending = status === "2" || status === "3";
+  const cycleIdForm = form.watch("cycleId");
+  const fileTypeIdForm = form.watch("fileTypeId");
 
-  const isPending = formData.status === "2" || formData.status === "3";
+  const [attachmentError, setAttachmentError] = useState<string>("");
 
   // Approve/Reject dialog state
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
@@ -116,7 +147,7 @@ const PopupEvidenceCycleMap = ({
     mutationFn: () =>
       evidenceCycleMapService.reuseVerifiedEvidence({
         EvidenceId: pendingReuseEvidence!.EvidenceId,
-        TargetCycleId: formData.cycleId,
+        TargetCycleId: cycleIdForm,
       }),
     onSuccess: () => {
       toast.success("Tái sử dụng minh chứng thành công");
@@ -149,7 +180,7 @@ const PopupEvidenceCycleMap = ({
   // --- Sync form state when evidenceCycleMap prop changes ---
   useEffect(() => {
     if (evidenceCycleMap) {
-      setFormData({
+      form.reset({
         id: evidenceCycleMap.Id || uuidv4(),
         evidenceId: evidenceCycleMap.EvidenceId || "",
         name: evidenceCycleMap.Evidence?.Name || "",
@@ -169,74 +200,46 @@ const PopupEvidenceCycleMap = ({
       });
       setFolderUpload(evidenceCycleMap.Evidence?.FolderUpload || uuidv4());
       setListAttachment(evidenceCycleMap.Evidence?.ListAttachment || []);
-      setErrors({});
+      setAttachmentError("");
+    } else {
+      form.reset({
+        id: uuidv4(),
+        evidenceId: "",
+        name: "",
+        code: "",
+        status: "1",
+        issueDate: "",
+        issuingAuthority: "",
+        expiryDate: "",
+        fileTypeId: "",
+        description: "",
+        rejectionReason: "",
+        cycleId: "",
+      });
+      setFolderUpload(uuidv4());
+      setListAttachment([]);
+      setAttachmentError("");
     }
 
     cycleId_Change(evidenceCycleMap?.CycleId || "");
-  }, [evidenceCycleMap]);
+  }, [evidenceCycleMap, form]);
 
   // --- Helpers ---
-  const updateField = <K extends keyof typeof formData>(
-    field: K,
-    value: (typeof formData)[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
   const handleAttachmentChange = (attachments: Attachment[]) => {
     setListAttachment(attachments);
-    if (errors.attachment) {
-      setErrors((prev) => ({ ...prev, attachment: undefined }));
+    if (attachmentError) {
+      setAttachmentError("");
     }
-  };
-
-  // --- Validation ---
-  const validateForm = (): boolean => {
-    const newErrors: typeof errors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Tên minh chứng không được để trống";
-    }
-
-    if (!formData.code.trim()) {
-      newErrors.code = "Mã minh chứng không được để trống";
-    }
-
-    if (!formData.fileTypeId) {
-      newErrors.fileTypeId = "Vui lòng chọn loại tài liệu";
-    }
-
-    if (!formData.cycleId) {
-      newErrors.cycleId = "Vui lòng chọn kế hoạch";
-    }
-
-    if (
-      formData.issueDate &&
-      formData.expiryDate &&
-      formData.issueDate > formData.expiryDate
-    ) {
-      newErrors.expiryDate = "Ngày hết hạn phải sau ngày ban hành";
-      toast.error("Ngày hết hạn phải sau ngày ban hành");
-    }
-
-    if (!isPending) {
-      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
-      if (listAttachment.length === 0 && pendingFiles.length === 0) {
-        newErrors.attachment = "Vui lòng tải lên ít nhất một tệp đính kèm";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   // --- Submission ---
-  const onSubmit = async (isAddMore: boolean, status: number) => {
-    if (!validateForm()) {
-      return;
+  const onSubmit = async (values: z.infer<typeof formSchema>, isAddMore: boolean, status: number) => {
+    if (!isPending) {
+      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
+      if (listAttachment.length === 0 && pendingFiles.length === 0) {
+        setAttachmentError("Vui lòng tải lên ít nhất một tệp đính kèm");
+        return;
+      }
     }
 
     // Upload files first
@@ -250,21 +253,21 @@ const PopupEvidenceCycleMap = ({
 
     // Construct data object with nested Evidence
     const saveData: EvidenceCycleMap = {
-      Id: formData.id,
-      EvidenceId: formData.evidenceId || uuidv4(),
-      CycleId: formData.cycleId,
+      Id: values.id,
+      EvidenceId: values.evidenceId || uuidv4(),
+      CycleId: values.cycleId,
       ReviewStatus: evidenceCycleMap?.ReviewStatus || 1,
       Evidence: {
-        Id: evidenceCycleMap?.Evidence?.Id || formData.evidenceId || uuidv4(),
-        Name: formData.name,
-        Code: formData.code,
+        Id: evidenceCycleMap?.Evidence?.Id || values.evidenceId || uuidv4(),
+        Name: values.name,
+        Code: values.code,
         Status: status,
-        IssueDate: formData.issueDate || undefined,
-        IssuingAuthority: formData.issuingAuthority || undefined,
-        ExpiryDate: formData.expiryDate || undefined,
-        FileTypeId: formData.fileTypeId,
-        Description: formData.description || undefined,
-        CycleId: formData.cycleId,
+        IssueDate: values.issueDate || undefined,
+        IssuingAuthority: values.issuingAuthority || undefined,
+        ExpiryDate: values.expiryDate || undefined,
+        FileTypeId: values.fileTypeId,
+        Description: values.description || undefined,
+        CycleId: values.cycleId,
         AttachmentIds: listAttachment.map((a) => a.Id),
         ListAttachment: listAttachment,
         IsEdit: evidenceCycleMap?.IsEdit || false,
@@ -309,127 +312,150 @@ const PopupEvidenceCycleMap = ({
 
           {/* Scrollable Body - Split View 6/6 */}
           <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="grid grid-cols-12 gap-6 flex-1 min-h-0">
-              {/* LEFT COLUMN - General Information */}
-              <div className="col-span-6 flex flex-col min-h-0">
-                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
-                  {pendingReuseEvidence && (
-                    <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                      <span className="mt-0.5 shrink-0">⚠️</span>
-                      <span>
-                        Đang xem trước minh chứng sẽ tái sử dụng. Nhấn{" "}
-                        <strong>Xác nhận tái sử dụng</strong> để lưu, hoặc{" "}
-                        <strong>Huỷ xem trước</strong> để chọn lại.
-                      </span>
-                    </div>
-                  )}
-                  {evidenceCycleMap?.Evidence?.Status === 4 && (
-                    <Field>
-                      <FieldLabel>
-                        Lý do không duyệt{" "}
-                        <span className="text-red-500">*</span>
-                      </FieldLabel>
-                      <FieldContent>
-                        <Textarea
-                          value={formData.rejectionReason}
-                          placeholder="Ví dụ: Quy định về đào tạo năm 2024"
-                          readOnly={true}
-                          className="bg-muted cursor-not-allowed"
-                          rows={4}
-                        />
-                      </FieldContent>
-                    </Field>
-                  )}
-
-                  {/* Name */}
-                  <Field>
-                    <div className="flex items-center justify-between">
-                      <FieldLabel>
-                        Tên minh chứng <span className="text-red-500">*</span>
-                      </FieldLabel>
-                      {!isPending && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowReusePopup(true)}
-                          disabled={!formData.cycleId}
-                          className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
-                        >
-                          <RefreshCcw className="h-3.5 w-3.5" />
-                          Tái sử dụng minh chứng cũ
-                        </Button>
-                      )}
-                    </div>
-
-                    <FieldContent>
-                      <Input
-                        value={formData.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        placeholder="Ví dụ: Quy định về đào tạo năm 2024"
-                        readOnly={isPending}
-                        className={
-                          isPending ? "bg-muted cursor-not-allowed" : ""
-                        }
-                      />
-                      {errors.name && <FieldError>{errors.name}</FieldError>}
-                    </FieldContent>
-                  </Field>
-
-                  {/* Code and File Type Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field>
-                      <FieldLabel>
-                        Mã minh chứng <span className="text-red-500">*</span>
-                      </FieldLabel>
-                      <FieldContent>
-                        <Input
-                          value={formData.code}
-                          onChange={(e) => updateField("code", e.target.value)}
-                          placeholder="HC.01.02"
-                          readOnly={isPending}
-                          className={
-                            isPending ? "bg-muted cursor-not-allowed" : ""
-                          }
-                        />
-                        {errors.code && <FieldError>{errors.code}</FieldError>}
-                      </FieldContent>
-                    </Field>
-
-                    <Field>
-                      <FieldLabel>
-                        Loại tài liệu <span className="text-red-500">*</span>
-                      </FieldLabel>
-                      <FieldContent>
-                        <Combobox
-                          fetchOptions={async () => {
-                            const res = await fileTypeService.getAllCombobox();
-                            return (res.Data || []).map((t) => ({
-                              Value: t.Value ?? "",
-                              Text: t.Text ?? "",
-                            }));
-                          }}
-                          value={formData.fileTypeId}
-                          onValueChange={(val) => {
-                            updateField("fileTypeId", val || "");
-                          }}
-                          placeholder="Chọn loại tài liệu"
-                          searchPlaceholder="Tìm kiếm loại tài liệu..."
-                          emptyText="Không tìm thấy loại tài liệu."
-                          readonly={isPending}
-                        />
-                        {errors.fileTypeId && (
-                          <FieldError>{errors.fileTypeId}</FieldError>
+            <Form {...form}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                }}
+                className="grid grid-cols-12 gap-6 flex-1 min-h-0"
+              >
+                {/* LEFT COLUMN - General Information */}
+                <div className="col-span-6 flex flex-col min-h-0">
+                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
+                    {pendingReuseEvidence && (
+                      <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                        <span className="mt-0.5 shrink-0">⚠️</span>
+                        <span>
+                          Đang xem trước minh chứng sẽ tái sử dụng. Nhấn{" "}
+                          <strong>Xác nhận tái sử dụng</strong> để lưu, hoặc{" "}
+                          <strong>Huỷ xem trước</strong> để chọn lại.
+                        </span>
+                      </div>
+                    )}
+                    {evidenceCycleMap?.Evidence?.Status === 4 && (
+                      <FormField
+                        control={form.control}
+                        name="rejectionReason"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Lý do không duyệt {" "}
+                              <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Lý do..."
+                                readOnly={true}
+                                className="bg-muted cursor-not-allowed"
+                                rows={4}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </FieldContent>
-                    </Field>
-                  </div>
+                      />
+                    )}
 
-                  {/* Attachments */}
-                  <Field>
-                    <FieldLabel>
-                      Tệp đính kèm <span className="text-red-500">*</span>
-                    </FieldLabel>
-                    <FieldContent>
+                    {/* Name */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>
+                              Tên minh chứng <span className="text-red-500">*</span>
+                            </FormLabel>
+                            {!isPending && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowReusePopup(true)}
+                                disabled={!cycleIdForm}
+                                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
+                              >
+                                <RefreshCcw className="h-3.5 w-3.5" />
+                                Tái sử dụng minh chứng cũ
+                              </Button>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Ví dụ: Quy định về đào tạo năm 2024"
+                              readOnly={isPending}
+                              className={
+                                isPending ? "bg-muted cursor-not-allowed" : ""
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Code and File Type Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="code"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Mã minh chứng <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="HC.01.02"
+                                readOnly={isPending}
+                                className={
+                                  isPending ? "bg-muted cursor-not-allowed" : ""
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="fileTypeId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Loại tài liệu <span className="text-red-500">*</span>
+                            </FormLabel>
+                            <FormControl>
+                              <Combobox
+                                fetchOptions={async () => {
+                                  const res = await fileTypeService.getAllCombobox();
+                                  return (res.Data || []).map((t) => ({
+                                    Value: t.Value ?? "",
+                                    Text: t.Text ?? "",
+                                  }));
+                                }}
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                placeholder="Chọn loại tài liệu"
+                                searchPlaceholder="Tìm kiếm loại tài liệu..."
+                                emptyText="Không tìm thấy loại tài liệu."
+                                readonly={isPending}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Attachments */}
+                    <div className="space-y-2">
+                      <FormLabel>
+                        Tệp đính kèm <span className="text-red-500">*</span>
+                      </FormLabel>
                       <UploadFile
                         ref={uploadRef}
                         listAttachment={listAttachment}
@@ -448,138 +474,152 @@ const PopupEvidenceCycleMap = ({
                         fileValidateText=".jpg, .png, .pdf, .doc, .docx, .xls, .xlsx, .mp4"
                         fileSizeLimit={100}
                         readonly={isPending}
-                        hasError={!!errors.attachment}
+                        hasError={!!attachmentError}
                       />
-                      {errors.attachment && (
-                        <FieldError>{errors.attachment}</FieldError>
+                      {attachmentError && (
+                        <p className="text-sm font-medium text-destructive">
+                          {attachmentError}
+                        </p>
                       )}
-                    </FieldContent>
-                  </Field>
+                    </div>
 
-                  {/* Description */}
-                  <Field>
-                    <FieldLabel>Mô tả tóm tắt</FieldLabel>
-                    <FieldContent>
-                      <Textarea
-                        value={formData.description}
-                        onChange={(e) =>
-                          updateField("description", e.target.value)
-                        }
-                        placeholder="Nội dung chính..."
-                        rows={3}
-                        readOnly={isPending}
-                        className={
-                          isPending
-                            ? "bg-muted cursor-not-allowed resize-none"
-                            : ""
-                        }
+                    {/* Description */}
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mô tả tóm tắt</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Nội dung chính..."
+                              rows={3}
+                              readOnly={isPending}
+                              className={
+                                isPending
+                                  ? "bg-muted cursor-not-allowed resize-none"
+                                  : ""
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Issue Date and Issuing Authority Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="issueDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ngày ban hành</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                readOnly={isPending}
+                                className={
+                                  isPending ? "bg-muted cursor-not-allowed" : ""
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FieldContent>
-                  </Field>
 
-                  {/* Issue Date and Issuing Authority Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field>
-                      <FieldLabel>Ngày ban hành</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          type="date"
-                          value={formData.issueDate}
-                          onChange={(e) =>
-                            updateField("issueDate", e.target.value)
-                          }
-                          readOnly={isPending}
-                          className={
-                            isPending ? "bg-muted cursor-not-allowed" : ""
-                          }
-                        />
-                        {errors.issueDate && (
-                          <FieldError>{errors.issueDate}</FieldError>
+                      <FormField
+                        control={form.control}
+                        name="expiryDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ngày hết hạn</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                readOnly={isPending}
+                                className={
+                                  isPending ? "bg-muted cursor-not-allowed" : ""
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </FieldContent>
-                    </Field>
+                      />
+                    </div>
 
-                    <Field>
-                      <FieldLabel>Ngày hết hạn</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          type="date"
-                          value={formData.expiryDate}
-                          onChange={(e) =>
-                            updateField("expiryDate", e.target.value)
-                          }
-                          readOnly={isPending}
-                          className={
-                            isPending ? "bg-muted cursor-not-allowed" : ""
-                          }
-                        />
-                        {errors.expiryDate && (
-                          <FieldError>{errors.expiryDate}</FieldError>
+                    {/* Expiry Date */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="issuingAuthority"
+                        render={({ field }) => (
+                          <FormItem className="col-span-2">
+                            <FormLabel>Cơ quan ban hành</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Tên cơ quan"
+                                readOnly={isPending}
+                                className={
+                                  isPending ? "bg-muted cursor-not-allowed" : ""
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </FieldContent>
-                    </Field>
-                  </div>
-
-                  {/* Expiry Date */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field className="col-span-2">
-                      <FieldLabel>Cơ quan ban hành</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          value={formData.issuingAuthority}
-                          onChange={(e) =>
-                            updateField("issuingAuthority", e.target.value)
-                          }
-                          placeholder="Tên cơ quan"
-                          readOnly={isPending}
-                          className={
-                            isPending ? "bg-muted cursor-not-allowed" : ""
-                          }
-                        />
-                      </FieldContent>
-                    </Field>
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* RIGHT COLUMN - Criteria Mapping */}
-              <div className="col-span-6 flex flex-col min-h-0">
-                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
-                  {/* Cycle Selection */}
-                  <Field>
-                    <FieldLabel>
-                      Chu kỳ <span className="text-red-500">*</span>
-                    </FieldLabel>
-                    <FieldContent>
-                      <Combobox
-                        fetchOptions={async () => {
-                          const res = await cycleService.getComboboxByUser();
-                          return (res.Data || []).map((t) => ({
-                            Value: t.Value ?? "",
-                            Text: t.Text ?? "",
-                          }));
-                        }}
-                        value={formData.cycleId}
-                        onValueChange={async (val) => {
-                          updateField("cycleId", val || "");
-                          cycleId_Change(val || "");
-                        }}
-                        placeholder="Chọn chu kỳ"
-                        searchPlaceholder="Tìm kiếm chu kỳ..."
-                        emptyText="Không tìm thấy chu kỳ."
-                      />
-                      {errors.cycleId && (
-                        <FieldError>{errors.cycleId}</FieldError>
+                {/* RIGHT COLUMN - Criteria Mapping */}
+                <div className="col-span-6 flex flex-col min-h-0">
+                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
+                    {/* Cycle Selection */}
+                    <FormField
+                      control={form.control}
+                      name="cycleId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Chu kỳ <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Combobox
+                              fetchOptions={async () => {
+                                const res = await cycleService.getComboboxByUser();
+                                return (res.Data || []).map((t) => ({
+                                  Value: t.Value ?? "",
+                                  Text: t.Text ?? "",
+                                }));
+                              }}
+                              value={field.value}
+                              onValueChange={async (val) => {
+                                field.onChange(val || "");
+                                cycleId_Change(val || "");
+                              }}
+                              placeholder="Chọn chu kỳ"
+                              searchPlaceholder="Tìm kiếm chu kỳ..."
+                              emptyText="Không tìm thấy chu kỳ."
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </FieldContent>
-                  </Field>
+                    />
 
-                  {/* Standard Set */}
-                  <Field>
-                    <FieldLabel>
-                      Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                    </FieldLabel>
-                    <FieldContent>
+                    {/* Standard Set */}
+                    <div className="space-y-2">
+                      <FormLabel>
+                        Bộ tiêu chuẩn <span className="text-red-500">*</span>
+                      </FormLabel>
                       <Combobox
                         fetchOptions={async () => {
                           const res = await standardSetService.getAllCombobox();
@@ -595,24 +635,24 @@ const PopupEvidenceCycleMap = ({
                         emptyText="Không tìm thấy bộ tiêu chuẩn."
                         readonly={true}
                       />
-                    </FieldContent>
-                  </Field>
+                    </div>
 
-                  {/* Criteria Table */}
-                  <StandardCriteriaTable
-                    cycleId={formData.cycleId}
-                    selectedFileTypeId={formData.fileTypeId}
-                    assignedStandardIds={assignedStandardIds}
-                  />
-                  {formData.cycleId && (
-                    <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                      Tiêu chí lọc theo loại tài liệu đã chọn. Tiến độ cập nhật
-                      sau khi minh chứng được phê duyệt.
-                    </p>
-                  )}
+                    {/* Criteria Table */}
+                    <StandardCriteriaTable
+                      cycleId={cycleIdForm}
+                      selectedFileTypeId={fileTypeIdForm}
+                      assignedStandardIds={assignedStandardIds}
+                    />
+                    {cycleIdForm && (
+                      <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
+                        Tiêu chí lọc theo loại tài liệu đã chọn. Tiến độ cập nhật
+                        sau khi minh chứng được phê duyệt.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
+              </form>
+            </Form>
           </div>
 
           {/* Footer */}
@@ -624,7 +664,7 @@ const PopupEvidenceCycleMap = ({
                   disabled={reuseMutation.isPending}
                   onClick={() => {
                     setPendingReuseEvidence(null);
-                    setFormData({
+                    form.reset({
                       id: evidenceCycleMap?.Id || uuidv4(),
                       evidenceId: evidenceCycleMap?.EvidenceId || "",
                       name: evidenceCycleMap?.Evidence?.Name || "",
@@ -633,24 +673,24 @@ const PopupEvidenceCycleMap = ({
                         evidenceCycleMap?.Evidence?.Status?.toString() || "1",
                       issueDate: evidenceCycleMap?.Evidence?.IssueDate
                         ? format(
-                            new Date(evidenceCycleMap.Evidence.IssueDate),
-                            "yyyy-MM-dd",
-                          )
+                          new Date(evidenceCycleMap.Evidence.IssueDate),
+                          "yyyy-MM-dd",
+                        )
                         : "",
                       issuingAuthority:
                         evidenceCycleMap?.Evidence?.IssuingAuthority || "",
                       expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
                         ? format(
-                            new Date(evidenceCycleMap.Evidence.ExpiryDate),
-                            "yyyy-MM-dd",
-                          )
+                          new Date(evidenceCycleMap.Evidence.ExpiryDate),
+                          "yyyy-MM-dd",
+                        )
                         : "",
                       fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
                       description:
                         evidenceCycleMap?.Evidence?.Description || "",
                       rejectionReason:
                         evidenceCycleMap?.Evidence?.RejectionReason || "",
-                      cycleId: formData.cycleId,
+                      cycleId: cycleIdForm,
                     });
                   }}
                 >
@@ -674,9 +714,10 @@ const PopupEvidenceCycleMap = ({
                   </Button>
                 </DialogClose>
 
-                {formData.status === "2" ? (
+                {status === "2" ? (
                   <>
                     <Button
+                      type="button"
                       variant="destructive"
                       onClick={() => {
                         setRejectionReason("");
@@ -688,6 +729,7 @@ const PopupEvidenceCycleMap = ({
                       Không duyệt
                     </Button>
                     <Button
+                      type="button"
                       variant="default"
                       onClick={() => setShowApproveConfirm(true)}
                       disabled={isLoading || isApproving}
@@ -697,9 +739,10 @@ const PopupEvidenceCycleMap = ({
                   </>
                 ) : (
                   <>
-                    {formData.status !== "3" && (
+                    {status !== "3" && (
                       <Button
-                        onClick={() => onSubmit(false, 1)}
+                        type="button"
+                        onClick={form.handleSubmit((values) => onSubmit(values, false, 1))}
                         disabled={isLoading}
                       >
                         {isLoading && (
@@ -710,7 +753,8 @@ const PopupEvidenceCycleMap = ({
                     )}
                     {!evidenceCycleMap?.IsEdit && (
                       <Button
-                        onClick={() => onSubmit(false, 2)}
+                        type="button"
+                        onClick={form.handleSubmit((values) => onSubmit(values, false, 2))}
                         disabled={isLoading}
                       >
                         {isLoading && (
@@ -751,23 +795,21 @@ const PopupEvidenceCycleMap = ({
             <DialogTitle>Lý do không duyệt</DialogTitle>
           </DialogHeader>
           <div className="py-2">
-            <Field>
-              <FieldLabel>
+            <div className="space-y-2">
+              <FormLabel>
                 Lý do <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Textarea
-                  value={rejectionReason}
-                  onChange={(e) => {
-                    setRejectionReason(e.target.value);
-                    if (e.target.value.trim()) setRejectionError("");
-                  }}
-                  placeholder="Nhập lý do không duyệt..."
-                  rows={4}
-                />
-                {rejectionError && <FieldError>{rejectionError}</FieldError>}
-              </FieldContent>
-            </Field>
+              </FormLabel>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => {
+                  setRejectionReason(e.target.value);
+                  if (e.target.value.trim()) setRejectionError("");
+                }}
+                placeholder="Nhập lý do không duyệt..."
+                rows={4}
+              />
+              {rejectionError && <p className="text-[0.8rem] font-medium text-destructive">{rejectionError}</p>}
+            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
@@ -797,11 +839,11 @@ const PopupEvidenceCycleMap = ({
       <PopupReuseEvidence
         isOpen={showReusePopup}
         onOpenChange={setShowReusePopup}
-        targetCycleId={formData.cycleId}
+        targetCycleId={cycleIdForm}
         onReuseSuccess={(evidence: ModelVerifiedEvidenceForReuse) => {
           setPendingReuseEvidence(evidence);
-          setFormData((prev) => ({
-            ...prev,
+          form.reset({
+            ...form.getValues(),
             evidenceId: evidence.EvidenceId,
             name: evidence.evidenceName,
             code: evidence.evidenceCode,
@@ -815,7 +857,7 @@ const PopupEvidenceCycleMap = ({
               : "",
             issuingAuthority: evidence.IssuingAuthority || "",
             status: "3",
-          }));
+          });
 
           // Handle potential casing issues (PascalCase from C# vs camelCase from JSON serialization)
           const rawAttachments =

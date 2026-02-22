@@ -18,7 +18,6 @@ import {
   Zap,
   Filter,
   Layers,
-  User,
 } from "lucide-react";
 import {
   useStandardsWithCriteria,
@@ -790,20 +789,20 @@ const StandardRow = ({
   ).length;
   const projectedSatisfiedInStd = selectedFileTypeId
     ? criteria.filter((c) => {
-        const cReqs = c.CriterionRequirements || [];
-        const totalReq = cReqs.reduce(
-          (sum, r) => sum + (r.MinQuantity || 0),
-          0,
-        );
-        if (totalReq === 0) return false;
-        const projected = cReqs.reduce((sum, r) => {
-          const actual = countMap.get(r.FileTypeId) ?? 0;
-          const simulated =
-            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
-          return sum + Math.min(simulated, r.MinQuantity || 0);
-        }, 0);
-        return projected >= totalReq;
-      }).length
+      const cReqs = c.CriterionRequirements || [];
+      const totalReq = cReqs.reduce(
+        (sum, r) => sum + (r.MinQuantity || 0),
+        0,
+      );
+      if (totalReq === 0) return false;
+      const projected = cReqs.reduce((sum, r) => {
+        const actual = countMap.get(r.FileTypeId) ?? 0;
+        const simulated =
+          r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+        return sum + Math.min(simulated, r.MinQuantity || 0);
+      }, 0);
+      return projected >= totalReq;
+    }).length
     : satisfiedInStd;
   const matchInStd = criteria.filter((c) =>
     matchingCriterionIds.has(c.Id),
@@ -913,11 +912,11 @@ const CriterionRow = ({
   const projectedCount =
     selectedFileTypeId !== undefined
       ? reqs.reduce((sum, r) => {
-          const actual = countMap.get(r.FileTypeId) ?? 0;
-          const simulated =
-            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
-          return sum + Math.min(simulated, r.MinQuantity || 0);
-        }, 0)
+        const actual = countMap.get(r.FileTypeId) ?? 0;
+        const simulated =
+          r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+        return sum + Math.min(simulated, r.MinQuantity || 0);
+      }, 0)
       : currentCount;
 
   const wouldComplete =

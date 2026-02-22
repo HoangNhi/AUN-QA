@@ -10,7 +10,6 @@ import { XIcon } from "lucide-react";
 
 import {
   Command,
-  CommandItem,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
@@ -40,8 +39,7 @@ interface MultipleSelectorProps {
   /** Loading component. */
   loadingIndicator?: React.ReactNode;
 
-  /** Empty component. */
-  emptyIndicator?: React.ReactNode;
+
 
   /** Debounce time for async search. Only work with `onSearch`. */
   delay?: number;
@@ -161,17 +159,7 @@ function removePickedOption(groupOption: GroupOption, picked: Option[]) {
   return cloneOption;
 }
 
-function isOptionsExist(groupOption: GroupOption, targetOption: Option[]) {
-  for (const [, value] of Object.entries(groupOption)) {
-    if (
-      value.some((option) => targetOption.find((p) => p.value === option.value))
-    ) {
-      return true;
-    }
-  }
 
-  return false;
-}
 
 const CommandEmpty = ({
   className,
@@ -203,7 +191,7 @@ const MultipleSelector = ({
   onSearch,
   onSearchSync,
   loadingIndicator,
-  emptyIndicator,
+
   maxSelected = Number.MAX_SAFE_INTEGER,
   onMaxSelected,
   hidePlaceholderWhenSelected,
@@ -397,69 +385,7 @@ const MultipleSelector = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus]);
 
-  const CreatableItem = () => {
-    if (!creatable) return undefined;
 
-    if (
-      isOptionsExist(options, [{ value: inputValue, label: inputValue }]) ||
-      selected.find((s) => s.value === inputValue)
-    ) {
-      return undefined;
-    }
-
-    const Item = (
-      <CommandItem
-        value={inputValue}
-        className="cursor-pointer"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onSelect={(value: string) => {
-          if (selected.length >= maxSelected) {
-            onMaxSelected?.(selected.length);
-
-            return;
-          }
-
-          setInputValue("");
-          const newOptions = [...selected, { value, label: value }];
-
-          setSelected(newOptions);
-          onChange?.(newOptions);
-        }}
-      >
-        {`Create "${inputValue}"`}
-      </CommandItem>
-    );
-
-    // For normal creatable
-    if (!onSearch && inputValue.length > 0) {
-      return Item;
-    }
-
-    // For async search creatable. avoid showing creatable item before loading at first.
-    if (onSearch && debouncedSearchTerm.length > 0 && !isLoading) {
-      return Item;
-    }
-
-    return undefined;
-  };
-
-  const EmptyItem = React.useCallback(() => {
-    if (!emptyIndicator) return undefined;
-
-    // For async search that showing emptyIndicator
-    if (onSearch && !creatable && Object.keys(options).length === 0) {
-      return (
-        <CommandItem value="-" disabled>
-          {emptyIndicator}
-        </CommandItem>
-      );
-    }
-
-    return <CommandEmpty>{emptyIndicator}</CommandEmpty>;
-  }, [creatable, emptyIndicator, onSearch, options]);
 
   const selectables = React.useMemo<GroupOption>(
     () => removePickedOption(options, selected),

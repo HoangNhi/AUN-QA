@@ -18,7 +18,7 @@ export const useStakeholder = () => {
     Id: "",
     FullName: "",
     Email: "",
-    Type: undefined,
+    Type: 0,
     Description: "",
     IsEdit: false,
     IsActived: true,

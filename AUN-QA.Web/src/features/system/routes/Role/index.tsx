@@ -5,9 +5,14 @@ import PopupDetail from "./PopupDetail";
 import PopupPermission from "./PopupPermission";
 import { useRole } from "@/features/system/hooks/useRole";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  InputGroup,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 const RolePage = () => {
   const {
@@ -52,57 +57,57 @@ const RolePage = () => {
 
   return (
     <div className="container mx-auto space-y-4">
-      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest({
-                ...pageRequest,
-                PageIndex: 1,
-                TextSearch: "",
-              });
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="flex rounded-md shadow-xs col-span-1 bg-background">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
+      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
+        <CardContent className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => {
+                setPageRequest({
+                  ...pageRequest,
+                  PageIndex: 1,
+                  TextSearch: "",
+                });
+                setSearchTerm("");
+              }}
+            >
+              Đặt lại bộ lọc
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <InputGroup className="col-span-1 bg-background">
+              <InputGroupInput
+                placeholder="Tìm kiếm..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setPageRequest({
+                      ...pageRequest,
+                      TextSearch: searchTerm,
+                      PageIndex: 1,
+                    });
+                  }
+                }}
+              />
+              <InputGroupButton
+                onClick={() => {
                   setPageRequest({
                     ...pageRequest,
                     TextSearch: searchTerm,
                     PageIndex: 1,
                   });
-                }
-              }}
-              className="-me-px rounded-r-none shadow-none focus-visible:z-1 pl-3"
-            />
-            <Button
-              onClick={() => {
-                setPageRequest({
-                  ...pageRequest,
-                  TextSearch: searchTerm,
-                  PageIndex: 1,
-                });
-              }}
-              className="rounded-l-none"
-            >
-              <SearchIcon className="h-4 w-4 mr-1.5" />
-            </Button>
+                }}
+              >
+                <SearchIcon />
+              </InputGroupButton>
+            </InputGroup>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-3 items-center justify-between">
         <div className="col-span-2 flex items-center gap-2">

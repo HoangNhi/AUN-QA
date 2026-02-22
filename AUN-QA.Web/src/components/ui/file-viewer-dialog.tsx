@@ -12,7 +12,6 @@ import {
   Image as ImageIcon,
   Film,
   FileSpreadsheet,
-  Printer,
   ZoomIn,
   ZoomOut,
   File,
@@ -314,74 +313,7 @@ const FileViewerDialog = ({
     }
   }, [officeBlob, viewerType, fileExt]);
 
-  const handlePrint = () => {
-    if (!file) return;
 
-    // Handle PDF printing
-    if (viewerType === "pdf" && blobUrl) {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = blobUrl;
-      document.body.appendChild(iframe);
-      iframe.onload = () => {
-        setTimeout(() => {
-          iframe.contentWindow?.print();
-          setTimeout(() => iframe.remove(), 2000);
-        }, 100);
-      };
-      return;
-    }
-
-    // Handle Office formats printing
-    if (viewerType === "office") {
-      let printContent = "";
-      const isWord = ["docx", "doc"].includes(fileExt?.replace(".", "") || "");
-      const isExcel = ["xlsx", "xls"].includes(fileExt?.replace(".", "") || "");
-
-      if (isWord && officeContainerRef.current) {
-        printContent = officeContainerRef.current.innerHTML;
-      } else if (isExcel) {
-        const excelContainer = document.getElementById("excel-print-container");
-        if (excelContainer) {
-          printContent = excelContainer.innerHTML;
-        }
-      }
-
-      if (printContent) {
-        const printWindow = window.open("", "_blank");
-        if (printWindow) {
-          printWindow.document.write(`
-            <html>
-              <head>
-                <title>In tài liệu</title>
-                <style>
-                  body { font-family: sans-serif; padding: 20px; margin: 0; background: white; }
-                  table { border-collapse: collapse; width: 100%; border: 1px solid #ddd; font-size: 14px; }
-                  th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-                  @media print {
-                    @page { margin: 0; }
-                    body { padding: 1.5cm; }
-                    .docx-wrapper { background: transparent !important; padding: 0 !important; }
-                    .docx-wrapper > section.docx { box-shadow: none !important; margin: 0 !important; min-height: auto !important; }
-                  }
-                </style>
-              </head>
-              <body>
-                ${printContent}
-              </body>
-            </html>
-          `);
-          printWindow.document.close();
-          // Use setTimeout to allow DOM reflow and stylesheet to apply
-          setTimeout(() => {
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-          }, 500);
-        }
-      }
-    }
-  };
 
   const handleDownload = async () => {
     if (!file) return;

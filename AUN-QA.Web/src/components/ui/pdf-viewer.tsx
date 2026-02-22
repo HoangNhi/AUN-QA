@@ -54,7 +54,7 @@ export function PdfViewer({ fileUrl, zoom }: PdfViewerProps) {
           canvas.className = "mx-auto mb-4 bg-white shadow-sm transition-all duration-200 ease-out";
 
           fragment.appendChild(canvas);
-          await page.render({ canvasContext: context, viewport }).promise;
+          await page.render({ canvasContext: context, viewport, canvas } as any).promise;
 
           if (cancelled) return;
         }

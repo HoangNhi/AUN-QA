@@ -26,69 +26,69 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
 ): ColumnDef<StandardSet>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-  },
-  {
-    accessorKey: "Code",
-    header: "Mã bộ tiêu chuẩn",
-  },
-  {
-    accessorKey: "Name",
-    header: "Tên bộ tiêu chuẩn",
-  },
-  {
-    accessorKey: "EvaluationMode_Name",
-    header: "Chế độ đánh giá",
-    cell: ({ row }) => row.original.EvaluationMode_Name || "-",
-  },
-  {
-    accessorKey: "CreateAt",
-    header: "Ngày tạo",
-    cell: ({ row }) => formatDate(row.original.CreatedAt),
-  },
-  {
-    accessorKey: "UpdatedAt",
-    header: "Ngày cập nhật",
-    cell: ({ row }) => formatDate(row.original.UpdatedAt),
-  },
-  {
-    accessorKey: "IsActived",
-    header: "Trạng thái",
-    cell: ({ row }) =>
-      row.original.IsActived ? "Hoạt động" : "Không hoạt động",
-  },
-  {
-    id: "actions",
-    meta: {
-      className: "text-center",
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
     },
-    cell: ({ row }) => (
-      <ActionCell
-        row={row}
-        showPopupDetail={showPopupDetail}
-        deleteList={deleteList}
-      />
-    ),
-  },
-];
+    {
+      accessorKey: "Code",
+      header: "Mã bộ tiêu chuẩn",
+    },
+    {
+      accessorKey: "Name",
+      header: "Tên bộ tiêu chuẩn",
+    },
+    {
+      accessorKey: "EvaluationMode_Name",
+      header: "Chế độ đánh giá",
+      cell: ({ row }) => row.original.EvaluationMode_Name || "-",
+    },
+    {
+      accessorKey: "CreateAt",
+      header: "Ngày tạo",
+      cell: ({ row }) => (row.original.CreatedAt ? formatDate(row.original.CreatedAt) : ""),
+    },
+    {
+      accessorKey: "UpdatedAt",
+      header: "Ngày cập nhật",
+      cell: ({ row }) => (row.original.UpdatedAt ? formatDate(row.original.UpdatedAt) : ""),
+    },
+    {
+      accessorKey: "IsActived",
+      header: "Trạng thái",
+      cell: ({ row }) =>
+        row.original.IsActived ? "Hoạt động" : "Không hoạt động",
+    },
+    {
+      id: "actions",
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => (
+        <ActionCell
+          row={row}
+          showPopupDetail={showPopupDetail}
+          deleteList={deleteList}
+        />
+      ),
+    },
+  ];
 
 const ActionCell = ({
   row,

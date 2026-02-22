@@ -15,11 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Field,
-  FieldContent,
-  FieldLabel,
-  FieldError,
-} from "@/components/ui/field";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
@@ -39,6 +41,20 @@ interface PopupStandardProps {
   isLoading: boolean;
 }
 
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  id: z.string(),
+  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không được để trống"),
+  code: z.string().min(1, "Mã tiêu chuẩn không được để trống"),
+  name: z.string().min(1, "Tên tiêu chuẩn không được để trống"),
+  description: z.string().optional(),
+  order: z.number().min(0, "Thứ tự phải lớn hoặc bằng 0"),
+  isActived: z.boolean(),
+});
+
 const PopupStandard = ({
   standard,
   isOpen,
@@ -46,34 +62,28 @@ const PopupStandard = ({
   saveChange,
   isLoading,
 }: PopupStandardProps) => {
-  // Form state for Standard basic fields
-  const [formData, setFormData] = useState({
-    id: standard?.Id || uuidv4(),
-    standardSetId: standard?.StandardSetId || "",
-    code: standard?.Code || "",
-    name: standard?.Name || "",
-    description: standard?.Description || "",
-    order: standard?.Order || 1,
-    isActived: standard?.IsActived ?? true,
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: standard?.Id || uuidv4(),
+      standardSetId: standard?.StandardSetId || "",
+      code: standard?.Code || "",
+      name: standard?.Name || "",
+      description: standard?.Description || "",
+      order: standard?.Order || 1,
+      isActived: standard?.IsActived ?? true,
+    },
   });
 
-  // StandardSet info for read-only display
-  const [standardSetInfo, setStandardSetInfo] = useState<{
-    name: string;
-    description: string;
-  } | null>(null);
+
 
   // Criterions state
   const [criterions, setCriterions] = useState<Criterion[]>(
     standard?.Criterions || [],
   );
 
-  // Errors state
+  // Errors state for complex arrays
   const [errors, setErrors] = useState<{
-    standardSetId?: string;
-    code?: string;
-    name?: string;
-    order?: string;
     criterions?: string;
   }>({});
 
@@ -98,7 +108,7 @@ const PopupStandard = ({
   // Sync form data when standard changes
   useEffect(() => {
     if (standard) {
-      setFormData({
+      form.reset({
         id: standard.Id || uuidv4(),
         standardSetId: standard.StandardSetId || "",
         code: standard.Code || "",
@@ -110,55 +120,17 @@ const PopupStandard = ({
       setCriterions(standard.Criterions || []);
       setErrors({});
 
-      // Fetch StandardSet info if StandardSetId exists
-      if (standard.StandardSetId) {
-        standardSetService.getById(standard.StandardSetId).then((response) => {
-          if (response.Success && response.Data) {
-            setStandardSetInfo({
-              name: response.Data.Name,
-              description: response.Data.Description || "",
-            });
-          }
-        });
-      } else {
-        setStandardSetInfo(null);
-      }
     }
-  }, [standard]);
+  }, [standard, form]);
 
   // Handle StandardSet change
   const handleStandardSetChange = useCallback(
     async (val: string) => {
-      setFormData((prev) => ({ ...prev, standardSetId: val }));
-      if (errors.standardSetId) {
-        setErrors((prev) => ({ ...prev, standardSetId: undefined }));
-      }
+      form.setValue("standardSetId", val, { shouldValidate: true });
 
-      if (val) {
-        const response = await standardSetService.getById(val);
-        if (response.Success && response.Data) {
-          setStandardSetInfo({
-            name: response.Data.Name,
-            description: response.Data.Description || "",
-          });
-        }
-      } else {
-        setStandardSetInfo(null);
-      }
     },
-    [errors.standardSetId],
+    [form],
   );
-
-  // Field update helper
-  const updateField = <K extends keyof typeof formData>(
-    field: K,
-    value: (typeof formData)[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
 
   // Criterion handlers
   const addCriterion = useCallback(() => {
@@ -169,7 +141,7 @@ const PopupStandard = ({
 
     const newCriterion: Criterion = {
       Id: uuidv4(),
-      StandardId: formData.id,
+      StandardId: form.getValues().id,
       Code: "",
       Name: "",
       IsPrerequisite: false,
@@ -210,7 +182,7 @@ const PopupStandard = ({
         });
       }
     }, 100);
-  }, [criterions, formData.id]);
+  }, [criterions, form]);
 
   const updateCriterion = useCallback(
     (id: string, updates: Partial<Criterion>) => {
@@ -298,26 +270,9 @@ const PopupStandard = ({
     [],
   );
 
-  // Validation
-  const validateForm = (): boolean => {
+  // Validation for arrays
+  const validateArrays = (): boolean => {
     const newErrors: typeof errors = {};
-
-    // Standard level validation
-    if (!formData.standardSetId.trim()) {
-      newErrors.standardSetId = "Bộ tiêu chuẩn không được để trống";
-    }
-
-    if (!formData.code.trim()) {
-      newErrors.code = "Mã tiêu chuẩn không được để trống";
-    }
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Tên tiêu chuẩn không được để trống";
-    }
-
-    if (formData.order < 0) {
-      newErrors.order = "Thứ tự phải lớn hơn hoặc bằng 0";
-    }
 
     // Criterions validation
     if (criterions.length === 0) {
@@ -364,15 +319,15 @@ const PopupStandard = ({
   };
 
   // Submit
-  const onSubmit = (isAddMore: boolean) => {
-    if (!validateForm()) {
+  const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
+    if (!validateArrays()) {
       return;
     }
 
     // Build payload with nested structure
     const criterionsWithIds = criterions.map((c) => ({
       ...c,
-      StandardId: formData.id,
+      StandardId: values.id,
       CriterionRequirements: c.CriterionRequirements?.map((req) => ({
         ...req,
         CriterionId: c.Id,
@@ -380,15 +335,15 @@ const PopupStandard = ({
     }));
 
     const payload: Standard = {
-      Id: formData.id,
-      StandardSetId: formData.standardSetId,
-      Code: formData.code.trim(),
-      Name: formData.name.trim(),
-      Description: formData.description.trim(),
-      Order: formData.order,
+      Id: values.id,
+      StandardSetId: values.standardSetId,
+      Code: values.code.trim(),
+      Name: values.name.trim(),
+      Description: values.description?.trim() || "",
+      Order: values.order,
       Criterions: criterionsWithIds,
       IsEdit: standard?.IsEdit || false,
-      IsActived: formData.isActived,
+      IsActived: values.isActived,
       FolderUpload: standard?.FolderUpload || "",
       CreatedBy: standard?.CreatedBy || "",
       CreatedAt: standard?.CreatedAt || "",
@@ -412,125 +367,149 @@ const PopupStandard = ({
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto custom-scrollbar flex-1 p-6 bg-slate-50/50 space-y-8">
-          {/* Section A: Standard Basic Info */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-l-4 border-blue-500 pl-3">
-              Thông tin tiêu chuẩn
-            </h3>
+          <Form {...form}>
+            <form id="standard-form" onSubmit={form.handleSubmit((data) => onSubmit(data, false))}>
+              {/* Section A: Standard Basic Info */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-l-4 border-blue-500 pl-3">
+                  Thông tin tiêu chuẩn
+                </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="standardSet">
-                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      options={standardSetOptions}
-                      value={formData.standardSetId}
-                      onValueChange={handleStandardSetChange}
-                      placeholder="Chọn bộ tiêu chuẩn"
-                      searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                      emptyText="Không tìm thấy bộ tiêu chuẩn."
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  <div className="md:col-span-4">
+                    <FormField
+                      control={form.control}
+                      name="standardSetId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Bộ tiêu chuẩn <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={standardSetOptions}
+                              value={field.value}
+                              onValueChange={handleStandardSetChange}
+                              placeholder="Chọn bộ tiêu chuẩn"
+                              searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+                              emptyText="Không tìm thấy bộ tiêu chuẩn."
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    {errors.standardSetId && (
-                      <FieldError>{errors.standardSetId}</FieldError>
-                    )}
-                  </FieldContent>
-                </Field>
-              </div>
+                  </div>
 
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="code">
-                    Mã tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="code"
-                      value={formData.code}
-                      onChange={(e) => updateField("code", e.target.value)}
-                      placeholder="VD: AUN-QA-01"
+                  <div className="md:col-span-4">
+                    <FormField
+                      control={form.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Mã tiêu chuẩn <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="VD: AUN-QA-01" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    {errors.code && <FieldError>{errors.code}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
+                  </div>
 
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="name">
-                    Tên tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => updateField("name", e.target.value)}
-                      placeholder="VD: Mục tiêu dự kiến của chương trình đào tạo"
+                  <div className="md:col-span-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Tên tiêu chuẩn <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="VD: Mục tiêu dự kiến của chương trình đào tạo"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    {errors.name && <FieldError>{errors.name}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
+                  </div>
 
-              <div className="md:col-span-6 md:row-span-2">
-                <Field>
-                  <FieldLabel htmlFor="description">Mô tả</FieldLabel>
-                  <FieldContent>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        updateField("description", e.target.value)
-                      }
-                      rows={4}
-                      className="h-full min-h-30"
-                      placeholder="Nhập mô tả chi tiết về tiêu chuẩn..."
+                  <div className="md:col-span-6 md:row-span-2">
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mô tả</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              rows={4}
+                              className="h-full min-h-30"
+                              placeholder="Nhập mô tả chi tiết về tiêu chuẩn..."
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FieldContent>
-                </Field>
-              </div>
+                  </div>
 
-              <div className="md:col-span-6">
-                <Field>
-                  <FieldLabel htmlFor="order">
-                    Thứ tự <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="order"
-                      type="number"
-                      value={formData.order}
-                      onChange={(e) =>
-                        updateField("order", parseInt(e.target.value) || 0)
-                      }
-                      min={0}
+                  <div className="md:col-span-6">
+                    <FormField
+                      control={form.control}
+                      name="order"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Thứ tự <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              min={0}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                    {errors.order && <FieldError>{errors.order}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
+                  </div>
 
-              <div className="md:col-span-6">
-                <Field>
-                  <FieldLabel htmlFor="status">Trạng thái</FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      options={ACTIVE_STATUS_OPTIONS}
-                      value={formData.isActived.toString()}
-                      onValueChange={(val) =>
-                        updateField("isActived", val === "true")
-                      }
-                      placeholder="Chọn trạng thái"
-                      searchPlaceholder="Tìm kiếm trạng thái..."
-                      emptyText="Không tìm thấy trạng thái."
+                  <div className="md:col-span-6">
+                    <FormField
+                      control={form.control}
+                      name="isActived"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trạng thái</FormLabel>
+                          <FormControl>
+                            <Combobox
+                              options={ACTIVE_STATUS_OPTIONS}
+                              value={field.value.toString()}
+                              onValueChange={(val) => field.onChange(val === "true")}
+                              placeholder="Chọn trạng thái"
+                              searchPlaceholder="Tìm kiếm trạng thái..."
+                              emptyText="Không tìm thấy trạng thái."
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FieldContent>
-                </Field>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </form>
+          </Form>
 
           {/* Section B: Criteria Cards */}
           <div className="space-y-6">
@@ -760,18 +739,18 @@ const PopupStandard = ({
 
         <DialogFooter className="px-6">
           <DialogClose asChild>
-            <Button variant="outline" disabled={isLoading}>
+            <Button variant="outline" disabled={isLoading} type="button">
               Hủy
             </Button>
           </DialogClose>
-          <Button onClick={() => onSubmit(false)} disabled={isLoading}>
+          <Button form="standard-form" type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Lưu
           </Button>
           {!standard?.IsEdit && (
             <Button
               type="button"
-              onClick={() => onSubmit(true)}
+              onClick={form.handleSubmit((data) => onSubmit(data, true))}
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

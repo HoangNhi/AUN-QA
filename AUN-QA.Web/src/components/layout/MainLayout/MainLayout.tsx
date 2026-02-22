@@ -26,7 +26,7 @@ export default function MainLayout({ permission }: MainLayoutProps) {
   const pathname = location.pathname.replace("/", "");
   const { systemGroup, menu } = useAuth();
   // Find the current active item and its parent group
-  let breadcrumbGroup = "";
+  let breadcrumbGroup: string | undefined = "";
   let breadcrumbPage = "";
 
   const activeItem = menu?.find((item) => item.Controller === pathname);

@@ -4,9 +4,9 @@ import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
 import { PopupSession } from "./components/PopupSession";
 import { Combobox } from "@/components/ui/combobox";
-import { cycleService } from "@/features/catalog/api/cycle.api";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
 import { useListPage } from "@/hooks/useListPage";
 
 const SurveyCampaignPage = () => {
@@ -60,6 +60,8 @@ const SurveyCampaignPage = () => {
     defaultPageRequest: { StakeholderType: undefined, CycleId: undefined },
   });
 
+  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+
   return (
     <ListPageLayout
       columns={columns}
@@ -78,16 +80,11 @@ const SurveyCampaignPage = () => {
       filterContent={
         <>
           <Combobox
-            fetchOptions={async () => {
-              const res = await cycleService.getComboboxByUser();
-              return (res.Data || []).map((t: any) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={cycleOptions}
+            loading={isCycleLoading}
             value={pageRequest.CycleId}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 CycleId: val,
                 PageIndex: 1,
@@ -102,7 +99,7 @@ const SurveyCampaignPage = () => {
             options={STAKEHOLDER_TYPES}
             value={pageRequest.StakeholderType?.toString()}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 StakeholderType: val ? Number(val) : undefined,
                 PageIndex: 1,

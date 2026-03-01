@@ -8,7 +8,7 @@ import {
   CYCLE_STATUS_OPTIONS,
   CYCLE_SCOPE_OPTIONS,
 } from "@/constants/catalog.constants";
-import { standardSetService } from "../../api/standardset.api";
+import { useStandardSetOptions } from "@/features/catalog/hooks/useStandardSetOptions";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
 
@@ -51,6 +51,8 @@ const CyclePage = () => {
     },
   });
 
+  const { options: standardSetOptions, isLoading: isStandardSetLoading } = useStandardSetOptions();
+
   return (
     <ListPageLayout
       columns={columns}
@@ -72,7 +74,7 @@ const CyclePage = () => {
             options={CYCLE_STATUS_OPTIONS}
             value={pageRequest.Status}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 Status: val || undefined,
                 PageIndex: 1,
@@ -83,16 +85,11 @@ const CyclePage = () => {
             emptyText="Không tìm thấy trạng thái."
           />
           <Combobox
-            fetchOptions={async () => {
-              const res = await standardSetService.getAllCombobox();
-              return (res.Data || []).map((t: any) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={standardSetOptions}
+            loading={isStandardSetLoading}
             value={pageRequest.StandardSetId}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 StandardSetId: val || undefined,
                 PageIndex: 1,

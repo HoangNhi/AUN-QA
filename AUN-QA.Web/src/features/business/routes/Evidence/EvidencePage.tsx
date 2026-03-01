@@ -4,9 +4,9 @@ import { getColumns } from "./columns";
 import PopupEvidence from "./PopupEvidence";
 import { Button } from "@/components/ui/Button";
 import { Combobox } from "@/components/ui/combobox";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import { useListPage } from "@/hooks/useListPage";
 import {
   Dialog,
@@ -61,6 +61,8 @@ const EvidencePage = () => {
     defaultPageRequest: { FileTypeId: undefined, Status: undefined },
   });
 
+  const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+
   return (
     <ListPageLayout
       columns={columns}
@@ -79,16 +81,11 @@ const EvidencePage = () => {
       filterContent={
         <>
           <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t: any) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={fileTypeOptions}
+            loading={isFileTypeLoading}
             value={pageRequest.FileTypeId}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 FileTypeId: val ? val : undefined,
                 PageIndex: 1,
@@ -103,7 +100,7 @@ const EvidencePage = () => {
             options={EVIDENCE_STATUS_OPTIONS}
             value={pageRequest.Status?.toString()}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 Status: val ? Number(val) : undefined,
                 PageIndex: 1,

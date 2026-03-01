@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
-import { cycleService } from "@/features/catalog/api/cycle.api";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import { useListPage } from "@/hooks/useListPage";
 
 const EvidenceCycleMapPage = () => {
@@ -33,15 +32,14 @@ const EvidenceCycleMapPage = () => {
     isApproving,
   } = useEvidenceCycleMap();
 
-  const { data: fileTypesData } = useQuery({
-    queryKey: ["fileTypesCombobox"],
-    queryFn: () => fileTypeService.getAllCombobox(),
-  });
+  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+  const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+
   const fileTypeMap = useMemo<Record<string, string>>(() => {
     return Object.fromEntries(
-      (fileTypesData?.Data ?? []).map((t: any) => [t.Value ?? "", t.Text ?? ""]),
+      fileTypeOptions.map((t) => [t.Value ?? "", t.Text ?? ""]),
     );
-  }, [fileTypesData]);
+  }, [fileTypeOptions]);
 
   const columns = useMemo(
     () => getColumns(showPopupDetail, deleteList, fileTypeMap),
@@ -93,16 +91,11 @@ const EvidenceCycleMapPage = () => {
       filterContent={
         <>
           <Combobox
-            fetchOptions={async () => {
-              const res = await cycleService.getComboboxByUser();
-              return (res.Data || []).map((t: any) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={cycleOptions}
+            loading={isCycleLoading}
             value={pageRequest.CycleId}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 CycleId: val ? val : undefined,
                 PageIndex: 1,
@@ -114,16 +107,11 @@ const EvidenceCycleMapPage = () => {
           />
 
           <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t: any) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={fileTypeOptions}
+            loading={isFileTypeLoading}
             value={pageRequest.FileTypeId}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 FileTypeId: val ? val : undefined,
                 PageIndex: 1,
@@ -138,7 +126,7 @@ const EvidenceCycleMapPage = () => {
             options={EVIDENCE_STATUS_OPTIONS}
             value={pageRequest.EvidenceStatus?.toString()}
             onValueChange={(val) => {
-              setPageRequest((prev: any) => ({
+              setPageRequest((prev) => ({
                 ...prev,
                 EvidenceStatus: val ? Number(val) : undefined,
                 PageIndex: 1,

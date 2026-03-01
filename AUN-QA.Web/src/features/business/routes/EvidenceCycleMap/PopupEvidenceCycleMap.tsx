@@ -8,33 +8,23 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import type { UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import { Combobox } from "@/components/ui/combobox";
-
 import { cycleService } from "@/features/catalog/api/cycle.api";
-import { standardSetService } from "@/features/catalog/api/standardset.api";
-import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { CriteriaMappingPanel } from "./components/CriteriaMappingPanel";
+import { ApprovalActions } from "./components/ApprovalActions";
 import { EvidenceFormFields } from "@/features/business/components/EvidenceFormFields";
 import type {
   EvidenceCycleMap,
@@ -130,12 +120,6 @@ const PopupEvidenceCycleMap = ({
   const fileTypeIdForm = form.watch("fileTypeId");
 
   const [attachmentError, setAttachmentError] = useState<string>("");
-
-  // Approve/Reject dialog state
-  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [rejectionError, setRejectionError] = useState("");
 
   // Reuse evidence popup state
   const [showReusePopup, setShowReusePopup] = useState(false);
@@ -349,75 +333,15 @@ const PopupEvidenceCycleMap = ({
 
                 {/* RIGHT COLUMN - Criteria Mapping */}
                 <div className="col-span-6 flex flex-col min-h-0">
-                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
-                    {/* Cycle Selection */}
-                    <FormField
-                      control={form.control}
-                      name="cycleId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Chu kỳ <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Combobox
-                              fetchOptions={async () => {
-                                const res = await cycleService.getComboboxByUser();
-                                return (res.Data || []).map((t) => ({
-                                  Value: t.Value ?? "",
-                                  Text: t.Text ?? "",
-                                }));
-                              }}
-                              value={field.value}
-                              onValueChange={async (val) => {
-                                field.onChange(val || "");
-                                cycleId_Change(val || "");
-                              }}
-                              placeholder="Chọn chu kỳ"
-                              searchPlaceholder="Tìm kiếm chu kỳ..."
-                              emptyText="Không tìm thấy chu kỳ."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Standard Set */}
-                    <div className="space-y-2">
-                      <FormLabel>
-                        Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <Combobox
-                        fetchOptions={async () => {
-                          const res = await standardSetService.getAllCombobox();
-                          return (res.Data || []).map((t) => ({
-                            Value: t.Value ?? "",
-                            Text: t.Text ?? "",
-                          }));
-                        }}
-                        value={standardSetId}
-                        onValueChange={(val) => setStandardSetId(val || "")}
-                        placeholder="Chọn bộ tiêu chuẩn"
-                        searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                        emptyText="Không tìm thấy bộ tiêu chuẩn."
-                        readonly={true}
-                      />
-                    </div>
-
-                    {/* Criteria Table */}
-                    <StandardCriteriaTable
-                      cycleId={cycleIdForm}
-                      selectedFileTypeId={fileTypeIdForm}
-                      assignedStandardIds={assignedStandardIds}
-                    />
-                    {cycleIdForm && (
-                      <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                        Tiêu chí lọc theo loại tài liệu đã chọn. Tiến độ cập nhật
-                        sau khi minh chứng được phê duyệt.
-                      </p>
-                    )}
-                  </div>
+                  <CriteriaMappingPanel
+                    form={form}
+                    cycleIdForm={cycleIdForm}
+                    fileTypeIdForm={fileTypeIdForm}
+                    standardSetId={standardSetId}
+                    setStandardSetId={setStandardSetId}
+                    assignedStandardIds={assignedStandardIds}
+                    cycleId_Change={cycleId_Change}
+                  />
                 </div>
               </form>
             </Form>
@@ -475,131 +399,17 @@ const PopupEvidenceCycleMap = ({
                 </Button>
               </>
             ) : (
-              <>
-                <DialogClose asChild>
-                  <Button variant="outline" disabled={isLoading}>
-                    Hủy bỏ
-                  </Button>
-                </DialogClose>
-
-                {status === "2" ? (
-                  <>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => {
-                        setRejectionReason("");
-                        setRejectionError("");
-                        setShowRejectDialog(true);
-                      }}
-                      disabled={isLoading || isApproving}
-                    >
-                      Không duyệt
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="default"
-                      onClick={() => setShowApproveConfirm(true)}
-                      disabled={isLoading || isApproving}
-                    >
-                      Duyệt
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {status !== "3" && (
-                      <Button
-                        type="button"
-                        onClick={form.handleSubmit((values) => onSubmit(values, false, 1))}
-                        disabled={isLoading}
-                      >
-                        {isLoading && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Lưu
-                      </Button>
-                    )}
-                    {!evidenceCycleMap?.IsEdit && (
-                      <Button
-                        type="button"
-                        onClick={form.handleSubmit((values) => onSubmit(values, false, 2))}
-                        disabled={isLoading}
-                      >
-                        {isLoading && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Lưu và gửi
-                      </Button>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <ConfirmDeleteDialog
-        open={showApproveConfirm}
-        onOpenChange={setShowApproveConfirm}
-        onConfirm={() => {
-          onApprove(evidenceCycleMap!.Id, 3);
-          setShowApproveConfirm(false);
-        }}
-        title="Xác nhận duyệt"
-        description="Bạn có chắc chắn muốn duyệt minh chứng này không?"
-        confirmText="Duyệt"
-        confirmVariant="default"
-        isLoading={isApproving}
-        stopAutoClose={true}
-      />
-
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent
-          className="sm:max-w-md"
-          onPointerDownOutside={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>Lý do không duyệt</DialogTitle>
-          </DialogHeader>
-          <div className="py-2">
-            <div className="space-y-2">
-              <FormLabel>
-                Lý do <span className="text-red-500">*</span>
-              </FormLabel>
-              <Textarea
-                value={rejectionReason}
-                onChange={(e) => {
-                  setRejectionReason(e.target.value);
-                  if (e.target.value.trim()) setRejectionError("");
+              <ApprovalActions
+                status={status}
+                isEdit={evidenceCycleMap?.IsEdit || false}
+                isLoading={isLoading}
+                isApproving={isApproving}
+                onApprove={(approveStatus, reason) => onApprove(evidenceCycleMap!.Id, approveStatus, reason)}
+                onSubmit={(submitStatus) => {
+                  form.handleSubmit((values) => onSubmit(values, false, submitStatus))();
                 }}
-                placeholder="Nhập lý do không duyệt..."
-                rows={4}
               />
-              {rejectionError && <p className="text-[0.8rem] font-medium text-destructive">{rejectionError}</p>}
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isApproving}>
-                Hủy bỏ
-              </Button>
-            </DialogClose>
-            <Button
-              variant="destructive"
-              disabled={isApproving}
-              onClick={() => {
-                if (!rejectionReason.trim()) {
-                  setRejectionError("Vui lòng nhập lý do không duyệt");
-                  return;
-                }
-                onApprove(evidenceCycleMap!.Id, 4, rejectionReason.trim());
-                setShowRejectDialog(false);
-              }}
-            >
-              {isApproving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Xác nhận
-            </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

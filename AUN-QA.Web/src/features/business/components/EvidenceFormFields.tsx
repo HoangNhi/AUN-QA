@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,8 @@ export function EvidenceFormFields({
     onShowReusePopup,
     cycleIdForm,
 }: EvidenceFormFieldsProps) {
+    const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+
     return (
         <>
             {status === "4" && (
@@ -141,13 +143,8 @@ export function EvidenceFormFields({
                             </FormLabel>
                             <FormControl>
                                 <Combobox
-                                    fetchOptions={async () => {
-                                        const res = await fileTypeService.getAllCombobox();
-                                        return (res.Data || []).map((t) => ({
-                                            Value: t.Value ?? "",
-                                            Text: t.Text ?? "",
-                                        }));
-                                    }}
+                                    options={fileTypeOptions}
+                                    loading={isFileTypeLoading}
                                     value={field.value}
                                     onValueChange={(val, text) => {
                                         field.onChange(val || "");

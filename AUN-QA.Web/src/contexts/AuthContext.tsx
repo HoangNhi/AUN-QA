@@ -385,7 +385,6 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     permissions,
     isAuthenticated: !!user,
     loading,
-    error: null,
     login,
     logout,
     getPermission,

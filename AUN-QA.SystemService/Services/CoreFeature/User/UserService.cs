@@ -176,13 +176,15 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var result = await _context.Users.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived)
-            .Select(x => new ModelCombobox
-            {
-                Text = $"[{x.Username}] - {x.Fullname}",
-                Value = x.Id.ToString(),
-            })
-            .OrderBy(x => x.Sort).ToListAsync();
+            var result = await _context.Users.AsNoTracking()
+                .Where(x => !x.IsDeleted && x.IsActived)
+                .OrderBy(x => x.Username)
+                .Select(x => new ModelCombobox
+                {
+                    Text = "[" + x.Username + "] - " + x.Fullname,
+                    Value = x.Id.ToString(),
+                })
+                .ToListAsync();
             return result;
         }
 

@@ -7,6 +7,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Services.CoreFeature.User;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AUN_QA.SystemService.Controllers
 {
@@ -70,6 +71,7 @@ namespace AUN_QA.SystemService.Controllers
         }
 
         [HttpGet, Route("get-all-combobox")]
+        [AllowAnonymous]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetAllForCombobox()
         {

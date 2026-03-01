@@ -30,7 +30,6 @@ export interface AuthContextType {
   menu: MenuGetListPaging[] | null;
   permissions: GetPermissionByUser[] | null;
   loading: boolean;
-  error: string | null;
   isAuthenticated: boolean;
   login: (
     email: string,

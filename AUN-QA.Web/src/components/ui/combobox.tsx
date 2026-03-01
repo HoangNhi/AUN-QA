@@ -25,6 +25,7 @@ type DataFetcher = () => Promise<ModelCombobox[]>;
 interface ComboboxProps {
   // Option 1: Pass options directly (for static data or parent-managed)
   options?: ModelCombobox[];
+  loading?: boolean;
 
   // Option 2: Pass a fetcher function (component manages loading)
   fetchOptions?: DataFetcher;
@@ -56,6 +57,7 @@ export function Combobox({
   searchPlaceholder = "Search...",
   emptyText = "No results found.",
   loadingText = "Đang tải...",
+  loading = false,
   className,
   disabled = false,
   readonly = false,
@@ -137,7 +139,7 @@ export function Combobox({
         <Command>
           {showSearch && <CommandInput placeholder={searchPlaceholder} />}
           <CommandList>
-            {isLoading ? (
+            {isLoading || loading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />

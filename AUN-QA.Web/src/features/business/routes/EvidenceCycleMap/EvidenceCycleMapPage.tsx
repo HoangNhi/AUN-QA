@@ -1,22 +1,16 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
-import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/Button";
-import {
-  InputGroup,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
-import { Card, CardContent } from "@/components/ui/card";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -45,7 +39,7 @@ const EvidenceCycleMapPage = () => {
   });
   const fileTypeMap = useMemo<Record<string, string>>(() => {
     return Object.fromEntries(
-      (fileTypesData?.Data ?? []).map((t) => [t.Value ?? "", t.Text ?? ""]),
+      (fileTypesData?.Data ?? []).map((t: any) => [t.Value ?? "", t.Text ?? ""]),
     );
   }, [fileTypesData]);
 
@@ -54,24 +48,21 @@ const EvidenceCycleMapPage = () => {
     [showPopupDetail, deleteList, fileTypeMap],
   );
 
-  const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || "",
-  );
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-  useEffect(() => {
-    // Only text search has been changed to manual trigger. Other filters are still auto.
-  }, [setPageRequest]);
 
-  const handleDelete = () => {
-    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
-      (item) => item.Id,
-    );
-    deleteList(ids);
-    setShowDeleteConfirm(false);
-    setRowSelection({});
-  };
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+    defaultPageRequest: {
+      CycleId: undefined,
+      FileTypeId: undefined,
+      EvidenceStatus: undefined,
+    },
+  });
 
   const handleSubmitToApprove = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -82,156 +73,102 @@ const EvidenceCycleMapPage = () => {
     setRowSelection({});
   };
 
+  const selectedCount = Object.keys(rowSelection).length;
+
   return (
-    <div className="container mx-auto space-y-4">
-      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Lọc danh sách</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs"
-              onClick={() => {
-                setPageRequest({
-                  ...pageRequest,
-                  PageIndex: 1,
-                  TextSearch: "",
-                  CycleId: undefined,
-                  FileTypeId: undefined,
-                  EvidenceStatus: undefined,
-                });
-                setSearchTerm("");
-              }}
-            >
-              Đặt lại bộ lọc
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Combobox
-              fetchOptions={async () => {
-                const res = await cycleService.getComboboxByUser();
-                return (res.Data || []).map((t) => ({
-                  Value: t.Value ?? "",
-                  Text: t.Text ?? "",
-                }));
-              }}
-              value={pageRequest.CycleId}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  CycleId: val ? val : undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả chu kỳ"
-              searchPlaceholder="Tìm kiếm chu kỳ..."
-              emptyText="Không tìm thấy chu kỳ."
-            />
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      searchInputClassName="col-span-1 bg-background"
+      filterContent={
+        <>
+          <Combobox
+            fetchOptions={async () => {
+              const res = await cycleService.getComboboxByUser();
+              return (res.Data || []).map((t: any) => ({
+                Value: t.Value ?? "",
+                Text: t.Text ?? "",
+              }));
+            }}
+            value={pageRequest.CycleId}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                CycleId: val ? val : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm kiếm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
+          />
 
-            <Combobox
-              fetchOptions={async () => {
-                const res = await fileTypeService.getAllCombobox();
-                return (res.Data || []).map((t) => ({
-                  Value: t.Value ?? "",
-                  Text: t.Text ?? "",
-                }));
-              }}
-              value={pageRequest.FileTypeId}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  FileTypeId: val ? val : undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả loại tài liệu"
-              searchPlaceholder="Tìm kiếm loại tài liệu..."
-              emptyText="Không tìm thấy loại tài liệu."
-            />
+          <Combobox
+            fetchOptions={async () => {
+              const res = await fileTypeService.getAllCombobox();
+              return (res.Data || []).map((t: any) => ({
+                Value: t.Value ?? "",
+                Text: t.Text ?? "",
+              }));
+            }}
+            value={pageRequest.FileTypeId}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                FileTypeId: val ? val : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả loại tài liệu"
+            searchPlaceholder="Tìm kiếm loại tài liệu..."
+            emptyText="Không tìm thấy loại tài liệu."
+          />
 
-            <Combobox
-              options={EVIDENCE_STATUS_OPTIONS}
-              value={pageRequest.EvidenceStatus?.toString()}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  EvidenceStatus: val ? Number(val) : undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả trạng thái minh chứng"
-              searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
-              emptyText="Không tìm thấy trạng thái."
-            />
-
-            <InputGroup className="col-span-1 bg-background">
-              <InputGroupInput
-                placeholder="Tên hoặc mã minh chứng..."
-                value={searchTerm || ""}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setPageRequest({
-                      ...pageRequest,
-                      TextSearch: searchTerm,
-                      PageIndex: 1,
-                    });
-                  }
-                }}
-              />
-              <InputGroupButton
-                onClick={() => {
-                  setPageRequest({
-                    ...pageRequest,
-                    TextSearch: searchTerm,
-                    PageIndex: 1,
-                  });
-                }}
-              >
-                <SearchIcon />
-              </InputGroupButton>
-            </InputGroup>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-3 items-center justify-between">
-        <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowSubmitConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Gửi duyệt
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        onRefresh={() => getList()}
-        isLoading={isFetching}
-      />
-
+          <Combobox
+            options={EVIDENCE_STATUS_OPTIONS}
+            value={pageRequest.EvidenceStatus?.toString()}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                EvidenceStatus: val ? Number(val) : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả trạng thái minh chứng"
+            searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
+            emptyText="Không tìm thấy trạng thái."
+          />
+        </>
+      }
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={selectedCount === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={selectedCount}
+      isDeleteLoading={isLoading}
+      extraActions={
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowSubmitConfirm(true)}
+          disabled={selectedCount === 0}
+        >
+          Gửi duyệt
+        </Button>
+      }
+    >
       {isOpen && (
         <PopupEvidenceCycleMap
           key={evidenceCycleMap?.Id || "new"}
@@ -246,23 +183,16 @@ const EvidenceCycleMapPage = () => {
       )}
 
       <ConfirmDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={handleDelete}
-        itemCount={Object.keys(rowSelection).length}
-      />
-
-      <ConfirmDeleteDialog
         open={showSubmitConfirm}
         onOpenChange={setShowSubmitConfirm}
         onConfirm={handleSubmitToApprove}
-        itemCount={Object.keys(rowSelection).length}
+        itemCount={selectedCount}
         title="Xác nhận gửi duyệt"
-        description={`Bạn có chắc chắn muốn gửi ${Object.keys(rowSelection).length} mục đã chọn để duyệt không?`}
+        description={`Bạn có chắc chắn muốn gửi ${selectedCount} mục đã chọn để duyệt không?`}
         confirmText="Gửi duyệt"
         confirmVariant="default"
       />
-    </div>
+    </ListPageLayout>
   );
 };
 

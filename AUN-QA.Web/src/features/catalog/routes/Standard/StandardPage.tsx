@@ -1,22 +1,13 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { useStandard } from "@/features/catalog/hooks/useStandard";
 import { getColumns } from "./columns";
-import { DataTable } from "@/components/ui/data-table";
 import PopupStandard from "./PopupStandard";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Button } from "@/components/ui/Button";
-import { SearchIcon } from "lucide-react";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
 import { useQuery } from "@tanstack/react-query";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  InputGroup,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
 
 const StandardPage = () => {
   const {
@@ -41,13 +32,6 @@ const StandardPage = () => {
     [showPopupDetail, deleteList],
   );
 
-  const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || "",
-  );
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
   // Fetch StandardSet options for filter
   const { data: standardSetResponse } = useQuery({
     queryKey: ["standardSets", "combobox"],
@@ -56,140 +40,72 @@ const StandardPage = () => {
 
   const standardSetOptions = standardSetResponse?.Data || [];
 
-  useEffect(() => {
-    setPageRequest((prev) => {
-      if (prev.TextSearch === debouncedSearchTerm) return prev;
-      return {
-        ...prev,
-        TextSearch: debouncedSearchTerm,
-        PageIndex: 1,
-      };
-    });
-  }, [debouncedSearchTerm, setPageRequest]);
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+    defaultPageRequest: { IsActived: undefined, StandardSetId: undefined },
+  });
 
-  const handleDelete = () => {
-    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
-      (item) => item.Id,
-    );
-    deleteList(ids);
-    setShowDeleteConfirm(false);
-    setRowSelection({});
-  };
-
-
-  // ... Inside StandardPage return ...
   return (
-    <div className="container mx-auto space-y-4">
-      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Lọc danh sách</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs"
-              onClick={() => {
-                setPageRequest({
-                  ...pageRequest,
-                  PageIndex: 1,
-                  TextSearch: "",
-                  IsActived: undefined,
-                  StandardSetId: undefined,
-                });
-                setSearchTerm("");
-              }}
-            >
-              Đặt lại bộ lọc
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Combobox
-              options={standardSetOptions}
-              value={pageRequest.StandardSetId}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  StandardSetId: val || undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả bộ tiêu chuẩn"
-              searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-              emptyText="Không tìm thấy bộ tiêu chuẩn."
-            />
-            <Combobox
-              options={ACTIVE_STATUS_OPTIONS}
-              value={pageRequest.IsActived?.toString()}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  IsActived: val ? val === "true" : undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả trạng thái"
-              searchPlaceholder="Tìm kiếm trạng thái..."
-              emptyText="Không tìm thấy trạng thái."
-            />
-            <InputGroup className="col-span-1 md:col-span-2 bg-background">
-              <InputGroupInput
-                placeholder="Tìm kiếm..."
-                value={searchTerm || ""}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setPageRequest((prev) => ({
-                      ...prev,
-                      TextSearch: searchTerm,
-                      PageIndex: 1,
-                    }));
-                  }
-                }}
-              />
-              <InputGroupButton
-                onClick={() => {
-                  setPageRequest((prev) => ({
-                    ...prev,
-                    TextSearch: searchTerm,
-                    PageIndex: 1,
-                  }));
-                }}
-              >
-                <SearchIcon />
-              </InputGroupButton>
-            </InputGroup>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-3 items-center justify-between">
-        <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        onRefresh={() => getList()}
-        isLoading={isFetching}
-      />
-
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      searchInputClassName="col-span-1 md:col-span-2 bg-background"
+      filterContent={
+        <>
+          <Combobox
+            options={standardSetOptions}
+            value={pageRequest.StandardSetId}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                StandardSetId: val || undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả bộ tiêu chuẩn"
+            searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+            emptyText="Không tìm thấy bộ tiêu chuẩn."
+          />
+          <Combobox
+            options={ACTIVE_STATUS_OPTIONS}
+            value={pageRequest.IsActived?.toString()}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                IsActived: val ? val === "true" : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả trạng thái"
+            searchPlaceholder="Tìm kiếm trạng thái..."
+            emptyText="Không tìm thấy trạng thái."
+          />
+        </>
+      }
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={Object.keys(rowSelection).length === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={Object.keys(rowSelection).length}
+      isDeleteLoading={isLoading}
+    >
       {isOpen && (
         <PopupStandard
           key={standard?.Id || "new"}
@@ -200,14 +116,7 @@ const StandardPage = () => {
           isLoading={isLoading}
         />
       )}
-
-      <ConfirmDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={handleDelete}
-        itemCount={Object.keys(rowSelection).length}
-      />
-    </div>
+    </ListPageLayout>
   );
 };
 

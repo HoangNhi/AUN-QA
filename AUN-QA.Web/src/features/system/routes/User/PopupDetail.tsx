@@ -67,7 +67,7 @@ const PopupDetail = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: user?.Username || "",
-      password: user?.Password || "b86e09fa-0751",
+      password: user?.Password || "",
       fullName: user?.Fullname || "",
       email: user?.Email || "",
       roleId: user?.RoleId || "",

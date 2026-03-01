@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/Button";
 import {
@@ -11,19 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Combobox } from "@/components/ui/combobox";
-import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
+import { Form } from "@/components/ui/form";
+import { StandardFormFields } from "./components/StandardFormFields";
+import { CriterionList } from "./components/CriterionList";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import type {
@@ -370,371 +360,26 @@ const PopupStandard = ({
           <Form {...form}>
             <form id="standard-form" onSubmit={form.handleSubmit((data) => onSubmit(data, false))}>
               {/* Section A: Standard Basic Info */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-l-4 border-blue-500 pl-3">
-                  Thông tin tiêu chuẩn
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  <div className="md:col-span-4">
-                    <FormField
-                      control={form.control}
-                      name="standardSetId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Combobox
-                              options={standardSetOptions}
-                              value={field.value}
-                              onValueChange={handleStandardSetChange}
-                              placeholder="Chọn bộ tiêu chuẩn"
-                              searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                              emptyText="Không tìm thấy bộ tiêu chuẩn."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-4">
-                    <FormField
-                      control={form.control}
-                      name="code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Mã tiêu chuẩn <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="VD: AUN-QA-01" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Tên tiêu chuẩn <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="VD: Mục tiêu dự kiến của chương trình đào tạo"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-6 md:row-span-2">
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mô tả</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              rows={4}
-                              className="h-full min-h-30"
-                              placeholder="Nhập mô tả chi tiết về tiêu chuẩn..."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-6">
-                    <FormField
-                      control={form.control}
-                      name="order"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Thứ tự <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              min={0}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="md:col-span-6">
-                    <FormField
-                      control={form.control}
-                      name="isActived"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Trạng thái</FormLabel>
-                          <FormControl>
-                            <Combobox
-                              options={ACTIVE_STATUS_OPTIONS}
-                              value={field.value.toString()}
-                              onValueChange={(val) => field.onChange(val === "true")}
-                              placeholder="Chọn trạng thái"
-                              searchPlaceholder="Tìm kiếm trạng thái..."
-                              emptyText="Không tìm thấy trạng thái."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
+              <StandardFormFields
+                form={form}
+                standardSetOptions={standardSetOptions}
+                handleStandardSetChange={handleStandardSetChange}
+              />
             </form>
           </Form>
 
           {/* Section B: Criteria Cards */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-l-4 border-indigo-500 pl-3">
-                Danh sách Tiêu chí & Yêu cầu Minh chứng
-              </h3>
-              <Button
-                type="button"
-                size="sm"
-                onClick={addCriterion}
-                className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm tiêu chí
-              </Button>
-            </div>
-
-            {errors.criterions && (
-              <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-200">
-                {errors.criterions}
-              </div>
-            )}
-
-            {criterions.map((criterion) => (
-              <div
-                key={criterion.Id}
-                className="criterion-card bg-white rounded-xl border border-slate-200 shadow-sm relative group animate-in overflow-hidden"
-              >
-                {/* Remove Button */}
-                <button
-                  type="button"
-                  onClick={() => deleteCriterion(criterion.Id)}
-                  className="absolute top-2 right-2 z-20 text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
-                  title="Xóa tiêu chí"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
-                  {/* Left: Criterion Info */}
-                  <div className="lg:col-span-5 p-5 bg-slate-50/30">
-                    <div className="flex gap-4 mb-4">
-                      <div className="w-20">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Mã
-                        </label>
-                        <Input
-                          value={criterion.Code}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              Code: e.target.value,
-                            })
-                          }
-                          placeholder="1.1"
-                          className="text-center font-bold"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Tên tiêu chí
-                        </label>
-                        <Input
-                          value={criterion.Name}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              Name: e.target.value,
-                            })
-                          }
-                          placeholder="Nhập tên tiêu chí..."
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {/* IsPrerequisite */}
-                      <label className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors">
-                        <Checkbox
-                          checked={criterion.IsPrerequisite}
-                          onCheckedChange={(checked) =>
-                            updateCriterion(criterion.Id, {
-                              IsPrerequisite: checked === true,
-                            })
-                          }
-                          className="h-4 w-4 rounded border-amber-300 text-amber-600"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-amber-800">
-                            Tiêu chí điều kiện
-                          </span>
-                          <span className="block text-[10px] text-amber-600/80">
-                            Nếu trượt tiêu chí này, cả tiêu chuẩn bị trượt
-                          </span>
-                        </div>
-                      </label>
-
-                      {/* DiagnosticQuestions */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Câu hỏi chẩn đoán
-                        </label>
-                        <Textarea
-                          rows={3}
-                          value={criterion.DiagnosticQuestions || ""}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              DiagnosticQuestions: e.target.value,
-                            })
-                          }
-                          placeholder="- Nhà trường có văn bản nào quy định về...?"
-                          className="resize-none text-xs"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 text-right">
-                          Hỗ trợ viết báo cáo tự đánh giá
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: File Requirements */}
-                  <div className="lg:col-span-7 p-5">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-xs font-bold text-slate-600 uppercase">
-                        Yêu cầu minh chứng
-                      </h4>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => addFileRequirement(criterion.Id)}
-                        className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 h-auto border border-blue-100"
-                      >
-                        + THÊM LOẠI FILE
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
-                      {criterion.CriterionRequirements?.map((req) => (
-                        <div
-                          key={req.Id}
-                          className="bg-slate-50 border border-slate-100 rounded-lg p-2 flex flex-col gap-2 hover:border-blue-200 transition-all animate-in"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Combobox
-                              options={fileTypeOptions}
-                              value={req.FileTypeId}
-                              onValueChange={(val) =>
-                                updateFileRequirement(criterion.Id, req.Id, {
-                                  FileTypeId: val,
-                                })
-                              }
-                              placeholder="-- Chọn loại tài liệu --"
-                              searchPlaceholder="Tìm kiếm..."
-                              emptyText="Không tìm thấy"
-                              className="flex-1 text-xs h-8"
-                            />
-
-                            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-2 py-1">
-                              <span className="text-[10px] text-slate-400 font-bold">
-                                SL:
-                              </span>
-                              <Input
-                                type="number"
-                                value={req.MinQuantity}
-                                onChange={(e) =>
-                                  updateFileRequirement(criterion.Id, req.Id, {
-                                    MinQuantity: parseInt(e.target.value) || 1,
-                                  })
-                                }
-                                min={1}
-                                className="w-12 text-center text-xs font-bold h-6 px-1"
-                              />
-                            </div>
-
-                            <label className="flex items-center gap-1 cursor-pointer select-none">
-                              <Checkbox
-                                checked={req.IsMandatory}
-                                onCheckedChange={(checked) =>
-                                  updateFileRequirement(criterion.Id, req.Id, {
-                                    IsMandatory: checked === true,
-                                  })
-                                }
-                                className="h-3 w-3 rounded border-slate-300 text-blue-600"
-                              />
-                              <span className="text-[10px] font-bold text-slate-500">
-                                Bắt buộc
-                              </span>
-                            </label>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteFileRequirement(criterion.Id, req.Id)
-                              }
-                              className="text-slate-300 hover:text-red-500 transition-colors"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-
-                          {/* Suggestion Input */}
-                          <Input
-                            value={req.Suggestion || ""}
-                            onChange={(e) =>
-                              updateFileRequirement(criterion.Id, req.Id, {
-                                Suggestion: e.target.value,
-                              })
-                            }
-                            placeholder="Gợi ý: 'Quyết định thành lập hội đồng'..."
-                            className="bg-transparent text-[11px] text-slate-600 italic placeholder:text-slate-300 border-b border-dashed border-slate-200 focus:border-blue-300 outline-none rounded-none h-6 px-1"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-center">
-                      <p className="text-[10px] text-slate-400 italic">
-                        Hệ thống sẽ đối chiếu danh sách này với file thực tế
-                        user upload để báo cáo thiếu/đủ.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CriterionList
+            criterions={criterions}
+            fileTypeOptions={fileTypeOptions}
+            error={errors.criterions}
+            onAddCriterion={addCriterion}
+            onUpdateCriterion={updateCriterion}
+            onDeleteCriterion={deleteCriterion}
+            onAddFileRequirement={addFileRequirement}
+            onUpdateFileRequirement={updateFileRequirement}
+            onDeleteFileRequirement={deleteFileRequirement}
+          />
         </div>
 
         <DialogFooter className="px-6">

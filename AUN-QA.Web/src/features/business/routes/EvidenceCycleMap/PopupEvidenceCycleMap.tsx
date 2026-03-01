@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
-import { Loader2, RefreshCcw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
@@ -28,14 +27,15 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
+import type { UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { Combobox } from "@/components/ui/combobox";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
+
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { EvidenceFormFields } from "@/features/business/components/EvidenceFormFields";
 import type {
   EvidenceCycleMap,
   ModelVerifiedEvidenceForReuse,
@@ -332,250 +332,18 @@ const PopupEvidenceCycleMap = ({
                         </span>
                       </div>
                     )}
-                    {evidenceCycleMap?.Evidence?.Status === 4 && (
-                      <FormField
-                        control={form.control}
-                        name="rejectionReason"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              Lý do không duyệt {" "}
-                              <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                placeholder="Lý do..."
-                                readOnly={true}
-                                className="bg-muted cursor-not-allowed"
-                                rows={4}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {/* Name */}
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center justify-between">
-                            <FormLabel>
-                              Tên minh chứng <span className="text-red-500">*</span>
-                            </FormLabel>
-                            {!isPending && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowReusePopup(true)}
-                                disabled={!cycleIdForm}
-                                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
-                              >
-                                <RefreshCcw className="h-3.5 w-3.5" />
-                                Tái sử dụng minh chứng cũ
-                              </Button>
-                            )}
-                          </div>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Ví dụ: Quy định về đào tạo năm 2024"
-                              readOnly={isPending}
-                              className={
-                                isPending ? "bg-muted cursor-not-allowed" : ""
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <EvidenceFormFields
+                      form={form}
+                      isPending={isPending}
+                      uploadRef={uploadRef}
+                      listAttachment={listAttachment}
+                      folderUpload={folderUpload}
+                      handleAttachmentChange={handleAttachmentChange}
+                      attachmentError={attachmentError}
+                      status={form.watch("status")}
+                      onShowReusePopup={() => setShowReusePopup(true)}
+                      cycleIdForm={cycleIdForm}
                     />
-
-                    {/* Code and File Type Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              Mã minh chứng <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="HC.01.02"
-                                readOnly={isPending}
-                                className={
-                                  isPending ? "bg-muted cursor-not-allowed" : ""
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="fileTypeId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              Loại tài liệu <span className="text-red-500">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Combobox
-                                fetchOptions={async () => {
-                                  const res = await fileTypeService.getAllCombobox();
-                                  return (res.Data || []).map((t) => ({
-                                    Value: t.Value ?? "",
-                                    Text: t.Text ?? "",
-                                  }));
-                                }}
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                placeholder="Chọn loại tài liệu"
-                                searchPlaceholder="Tìm kiếm loại tài liệu..."
-                                emptyText="Không tìm thấy loại tài liệu."
-                                readonly={isPending}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Attachments */}
-                    <div className="space-y-2">
-                      <FormLabel>
-                        Tệp đính kèm <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <UploadFile
-                        ref={uploadRef}
-                        listAttachment={listAttachment}
-                        folderUpload={folderUpload}
-                        setListAttachment={handleAttachmentChange}
-                        fileValidate={[
-                          ".jpg",
-                          ".png",
-                          ".pdf",
-                          ".doc",
-                          ".docx",
-                          ".xls",
-                          ".xlsx",
-                          ".mp4",
-                        ]}
-                        fileValidateText=".jpg, .png, .pdf, .doc, .docx, .xls, .xlsx, .mp4"
-                        fileSizeLimit={100}
-                        readonly={isPending}
-                        hasError={!!attachmentError}
-                      />
-                      {attachmentError && (
-                        <p className="text-sm font-medium text-destructive">
-                          {attachmentError}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mô tả tóm tắt</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder="Nội dung chính..."
-                              rows={3}
-                              readOnly={isPending}
-                              className={
-                                isPending
-                                  ? "bg-muted cursor-not-allowed resize-none"
-                                  : ""
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Issue Date and Issuing Authority Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="issueDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ngày ban hành</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                readOnly={isPending}
-                                className={
-                                  isPending ? "bg-muted cursor-not-allowed" : ""
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="expiryDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ngày hết hạn</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                readOnly={isPending}
-                                className={
-                                  isPending ? "bg-muted cursor-not-allowed" : ""
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Expiry Date */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="issuingAuthority"
-                        render={({ field }) => (
-                          <FormItem className="col-span-2">
-                            <FormLabel>Cơ quan ban hành</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Tên cơ quan"
-                                readOnly={isPending}
-                                className={
-                                  isPending ? "bg-muted cursor-not-allowed" : ""
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
                   </div>
                 </div>
 
@@ -859,10 +627,11 @@ const PopupEvidenceCycleMap = ({
             status: "3",
           });
 
+          const ev = evidence as ModelVerifiedEvidenceForReuse & { listAttachment?: Attachment[]; folderUpload?: string };
           // Handle potential casing issues (PascalCase from C# vs camelCase from JSON serialization)
           const rawAttachments =
-            (evidence as any).ListAttachment ||
-            (evidence as any).listAttachment ||
+            ev.ListAttachment ||
+            ev.listAttachment ||
             [];
           const normalizedAttachments: Attachment[] = rawAttachments.map(
             (att: any) => ({
@@ -877,8 +646,7 @@ const PopupEvidenceCycleMap = ({
             }),
           );
 
-          const rawFolder =
-            (evidence as any).FolderUpload || (evidence as any).folderUpload;
+          const rawFolder = ev.FolderUpload || ev.folderUpload;
 
           setFolderUpload(rawFolder || uuidv4());
           setListAttachment(normalizedAttachments);

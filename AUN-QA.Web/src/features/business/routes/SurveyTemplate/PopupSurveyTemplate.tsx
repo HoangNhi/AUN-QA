@@ -88,7 +88,7 @@ const PopupSurveyTemplate = ({
       Description: values.description || "",
       IsActived: values.isActived,
       ListTopic: listTopic,
-      IsEdit: (surveyTemplate as any)?.IsEdit || false,
+      IsEdit: surveyTemplate?.IsEdit || false,
     } as SurveyTemplate & { IsEdit: boolean };
 
     saveChange(payload, isAddMore);
@@ -168,7 +168,7 @@ const PopupSurveyTemplate = ({
                     </Button>
                   )}
                   <span>
-                    {(surveyTemplate as any)?.IsEdit
+                    {surveyTemplate?.IsEdit
                       ? "Cập nhật mẫu khảo sát"
                       : "Thêm mới mẫu khảo sát"}
                   </span>
@@ -341,7 +341,7 @@ const PopupSurveyTemplate = ({
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Lưu
                 </Button>
-                {!(surveyTemplate as any)?.IsEdit && (
+                {!surveyTemplate?.IsEdit && (
                   <Button
                     type="button"
                     onClick={form.handleSubmit((values) => onSubmit(values, true))}

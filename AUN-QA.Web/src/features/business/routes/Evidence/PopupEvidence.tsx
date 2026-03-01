@@ -12,27 +12,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
-  FormControl,
-  FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormControl,
 } from "@/components/ui/form";
-import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
+import type { UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import { Combobox } from "@/components/ui/combobox";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import MultiStandardSetPanel from "@/features/catalog/components/MultiStandardSetPanel";
+import { EvidenceFormFields } from "@/features/business/components/EvidenceFormFields";
 import type { Evidence } from "@/features/business/types/evidence.types";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { cn } from "@/lib/utils";
 
 const formSchema = z
   .object({
@@ -217,233 +212,17 @@ const PopupEvidence = ({
                 {/* LEFT COLUMN - General Information */}
                 <div className="col-span-5 flex flex-col min-h-0">
                   <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
-                    {/* Rejection reason (read-only, shown when rejected) */}
-                    {status === "4" && (
-                      <FormField
-                        control={form.control}
-                        name="rejectionReason"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                              Lý do không duyệt
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea
-                                {...field}
-                                value={field.value || ""}
-                                placeholder="Lý do không duyệt"
-                                readOnly={true}
-                                className="bg-muted cursor-not-allowed"
-                                rows={4}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {/* Name */}
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Tên minh chứng
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="Ví dụ: Quy định về đào tạo năm 2024"
-                              readOnly={isPending}
-                              className={cn(
-                                isPending && "bg-muted cursor-not-allowed",
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <EvidenceFormFields
+                      form={form}
+                      isPending={isPending}
+                      uploadRef={uploadRef}
+                      listAttachment={listAttachment}
+                      folderUpload={folderUpload}
+                      handleAttachmentChange={handleAttachmentChange}
+                      attachmentError={attachmentError}
+                      status={status}
+                      onFileTypeChange={(_, text) => setFileTypeName(text || "")}
                     />
-
-                    {/* Code and File Type Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                              Mã minh chứng
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="HC.01.02"
-                                readOnly={isPending}
-                                className={cn(
-                                  isPending && "bg-muted cursor-not-allowed",
-                                )}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="fileTypeId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                              Loại tài liệu
-                            </FormLabel>
-                            <FormControl>
-                              <Combobox
-                                fetchOptions={async () => {
-                                  const res = await fileTypeService.getAllCombobox();
-                                  return (res.Data || []).map((t) => ({
-                                    Value: t.Value ?? "",
-                                    Text: t.Text ?? "",
-                                  }));
-                                }}
-                                value={field.value}
-                                onValueChange={(val, text) => {
-                                  field.onChange(val || "");
-                                  setFileTypeName(text || "");
-                                }}
-                                placeholder="Chọn loại tài liệu"
-                                searchPlaceholder="Tìm kiếm loại tài liệu..."
-                                emptyText="Không tìm thấy loại tài liệu."
-                                readonly={isPending}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Attachments */}
-                    <FormItem>
-                      <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                        Tệp đính kèm
-                      </FormLabel>
-                      <FormControl>
-                        <UploadFile
-                          ref={uploadRef}
-                          listAttachment={listAttachment}
-                          folderUpload={folderUpload}
-                          setListAttachment={handleAttachmentChange}
-                          readonly={isPending}
-                          hasError={!!attachmentError}
-                        />
-                      </FormControl>
-                      {attachmentError && (
-                        <p className="text-[0.8rem] font-medium text-destructive">
-                          {attachmentError}
-                        </p>
-                      )}
-                    </FormItem>
-
-                    {/* Description */}
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mô tả tóm tắt</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              value={field.value || ""}
-                              placeholder="Nội dung chính..."
-                              rows={3}
-                              readOnly={isPending}
-                              className={cn(
-                                isPending &&
-                                "bg-muted cursor-not-allowed resize-none",
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Issue Date and Expiry Date Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="issueDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ngày ban hành</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                value={field.value || ""}
-                                readOnly={isPending}
-                                className={cn(
-                                  isPending && "bg-muted cursor-not-allowed",
-                                )}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="expiryDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ngày hết hạn</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                value={field.value || ""}
-                                readOnly={isPending}
-                                className={cn(
-                                  isPending && "bg-muted cursor-not-allowed",
-                                )}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Issuing Authority - full width */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="issuingAuthority"
-                        render={({ field }) => (
-                          <FormItem className="col-span-2">
-                            <FormLabel>Cơ quan ban hành</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                value={field.value || ""}
-                                placeholder="Tên cơ quan"
-                                readOnly={isPending}
-                                className={cn(
-                                  isPending && "bg-muted cursor-not-allowed",
-                                )}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
                   </div>
                 </div>
 

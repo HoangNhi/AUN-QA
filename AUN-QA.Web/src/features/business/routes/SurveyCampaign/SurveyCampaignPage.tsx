@@ -1,22 +1,13 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
 import { PopupSession } from "./components/PopupSession";
-import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/Button";
-import { SearchIcon } from "lucide-react";
-import { useDebounce } from "@/hooks/use-debounce";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { cycleService } from "@/features/catalog/api/cycle.api";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  InputGroup,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
 
 const SurveyCampaignPage = () => {
   const {
@@ -59,153 +50,79 @@ const SurveyCampaignPage = () => {
     [showPopupDetail, deleteList, showPopupSession, handleChangeStatus],
   );
 
-  const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || "",
-  );
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    setPageRequest((prev) => {
-      if (prev.TextSearch === debouncedSearchTerm) return prev;
-      return {
-        ...prev,
-        TextSearch: debouncedSearchTerm,
-        PageIndex: 1,
-      };
-    });
-  }, [debouncedSearchTerm, setPageRequest]);
-
-  const handleDelete = () => {
-    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
-      (item) => item.Id,
-    );
-    deleteList(ids);
-    setShowDeleteConfirm(false);
-    setRowSelection({});
-  };
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+    defaultPageRequest: { StakeholderType: undefined, CycleId: undefined },
+  });
 
   return (
-    <div className="container mx-auto space-y-4">
-      <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
-        <CardContent className="p-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-medium">Lọc danh sách</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 text-xs"
-              onClick={() => {
-                setPageRequest({
-                  ...pageRequest,
-                  PageIndex: 1,
-                  TextSearch: "",
-                  StakeholderType: undefined,
-                  CycleId: undefined,
-                });
-                setSearchTerm("");
-              }}
-            >
-              Đặt lại bộ lọc
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Combobox
-              fetchOptions={async () => {
-                const res = await cycleService.getComboboxByUser();
-                return (res.Data || []).map((t) => ({
-                  Value: t.Value ?? "",
-                  Text: t.Text ?? "",
-                }));
-              }}
-              value={pageRequest.CycleId}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  CycleId: val,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả chu kỳ"
-              searchPlaceholder="Tìm kiếm chu kỳ..."
-              emptyText="Không tìm thấy chu kỳ."
-            />
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      searchInputClassName="col-span-1 md:col-span-2 bg-background"
+      filterContent={
+        <>
+          <Combobox
+            fetchOptions={async () => {
+              const res = await cycleService.getComboboxByUser();
+              return (res.Data || []).map((t: any) => ({
+                Value: t.Value ?? "",
+                Text: t.Text ?? "",
+              }));
+            }}
+            value={pageRequest.CycleId}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                CycleId: val,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm kiếm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
+          />
 
-            <Combobox
-              options={STAKEHOLDER_TYPES}
-              value={pageRequest.StakeholderType?.toString()}
-              onValueChange={(val) => {
-                setPageRequest({
-                  ...pageRequest,
-                  StakeholderType: val ? Number(val) : undefined,
-                  PageIndex: 1,
-                });
-              }}
-              placeholder="Tất cả loại đối tượng"
-              searchPlaceholder="Tìm kiếm loại đối tượng..."
-              emptyText="Không tìm thấy loại đối tượng."
-            />
-
-            <InputGroup className="col-span-1 bg-background md:col-span-2">
-              <InputGroupInput
-                placeholder="Tìm kiếm..."
-                value={searchTerm || ""}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setPageRequest({
-                      ...pageRequest,
-                      TextSearch: searchTerm,
-                      PageIndex: 1,
-                    });
-                  }
-                }}
-              />
-              <InputGroupButton
-                onClick={() => {
-                  setPageRequest({
-                    ...pageRequest,
-                    TextSearch: searchTerm,
-                    PageIndex: 1,
-                  });
-                }}
-              >
-                <SearchIcon />
-              </InputGroupButton>
-            </InputGroup>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-3 items-center justify-between">
-        <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        onRefresh={() => getList()}
-        isLoading={isFetching}
-      />
-
+          <Combobox
+            options={STAKEHOLDER_TYPES}
+            value={pageRequest.StakeholderType?.toString()}
+            onValueChange={(val) => {
+              setPageRequest((prev: any) => ({
+                ...prev,
+                StakeholderType: val ? Number(val) : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả loại đối tượng"
+            searchPlaceholder="Tìm kiếm loại đối tượng..."
+            emptyText="Không tìm thấy loại đối tượng."
+          />
+        </>
+      }
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={Object.keys(rowSelection).length === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={Object.keys(rowSelection).length}
+      isDeleteLoading={isLoading}
+    >
       {isOpen && (
         <PopupSurveyCampaign
           key={surveyCampaign?.Id || "new"}
@@ -216,21 +133,13 @@ const SurveyCampaignPage = () => {
           isLoading={isLoading}
         />
       )}
-
-      <ConfirmDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={handleDelete}
-        itemCount={Object.keys(rowSelection).length}
-      />
-
       <PopupSession
         open={isPopupSessionOpen}
         onOpenChange={setIsPopupSessionOpen}
         campaignId={selectedCampaign?.id || ""}
         campaignName={selectedCampaign?.name}
       />
-    </div>
+    </ListPageLayout>
   );
 };
 

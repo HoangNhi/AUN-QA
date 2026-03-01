@@ -49,6 +49,12 @@ export const API_ENDPOINTS = {
       LOGIN: `${SYSTEM_BASE}/Auth/login`,
       REFRESH_TOKEN: `${SYSTEM_BASE}/Auth/refresh-token`,
     },
+    AuditLog: {
+      GET_LIST: `${SYSTEM_BASE}/AuditLog/get-list`,
+      GET_BY_ID: `${SYSTEM_BASE}/AuditLog/get-by-id`,
+      GET_ENTITY_NAMES: `${SYSTEM_BASE}/AuditLog/get-entity-names`,
+      GET_ACTIONS: `${SYSTEM_BASE}/AuditLog/get-actions`,
+    },
   },
   Catalog: {
     Faculty: {

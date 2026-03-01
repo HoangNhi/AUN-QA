@@ -498,7 +498,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (!council.IsDelegated)
                 return false;
 
-            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.UtcNow)
+            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.Now)
                 return false;
 
             return true;

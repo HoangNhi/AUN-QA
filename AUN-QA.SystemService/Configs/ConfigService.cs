@@ -27,9 +27,15 @@ namespace AUN_QA.SystemService.Configs
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
+            // Audit context and interceptors
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Services.IAuditLogWriter, AUN_QA.SystemService.Infrastructure.Services.AuditLogWriter>();
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Filters.AuditActionFilter>();
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>();
+
             //DATABASE
-            builder.Services.AddDbContext<SystemContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("System")));
+            builder.Services.AddDbContext<SystemContext>((sp, options) =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("System"))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
             builder.Services.AddAutoMapper(mc =>

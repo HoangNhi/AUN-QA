@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\system.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\audit.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>

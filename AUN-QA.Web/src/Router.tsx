@@ -19,6 +19,7 @@ import SurveyTemplatePage from "./features/business/routes/SurveyTemplate/Survey
 import SurveyCampaignPage from "./features/business/routes/SurveyCampaign/SurveyCampaignPage";
 import StandardPage from "./features/catalog/routes/Standard/StandardPage";
 import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPage";
+import AuditLogPage from "./features/system/routes/AuditLog/AuditLogPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -53,6 +54,7 @@ const Router: FC = () => {
           <Route path="/surveycampaign" element={<SurveyCampaignPage />} />
           <Route path="/standard" element={<StandardPage />} />
           <Route path="/standardset" element={<StandardSetPage />} />
+          <Route path="/auditlog" element={<AuditLogPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

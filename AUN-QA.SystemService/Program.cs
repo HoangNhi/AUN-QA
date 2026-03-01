@@ -10,7 +10,10 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<AUN_QA.SystemService.Infrastructure.Filters.AuditActionFilter>();
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -45,5 +48,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapGrpcService<SystemGrpcService>();
+app.MapGrpcService<AUN_QA.SystemService.Services.GrpcService.AuditGrpcService>();
 
 app.Run();

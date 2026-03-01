@@ -27,13 +27,15 @@ namespace AUN_QA.CatalogService.Configs
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
 
+            // Audit interceptor + action filter
+            builder.Services.AddScoped<AUN_QA.CatalogService.Infrastructure.Interceptors.AuditInterceptor>();
+            builder.Services.AddScoped<AUN_QA.CatalogService.Infrastructure.Filters.AuditActionFilter>();
+
             //DATABASE
-            builder.Services.AddDbContext<CatalogContext>(options =>
+            builder.Services.AddDbContext<CatalogContext>((sp, options) =>
                 options.UseMySql(builder.Configuration.GetConnectionString("Catalog"),
-                ServerVersion.AutoDetect(
-                    builder.Configuration.GetConnectionString("Catalog")
-                )
-            ));
+                ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Catalog")))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.CatalogService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
             builder.Services.AddAutoMapper(mc =>
@@ -84,6 +86,12 @@ namespace AUN_QA.CatalogService.Configs
             builder.Services.AddGrpc();
             builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
+            {
+                o.Address = new Uri("http://SystemService");
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
+            builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");
             })

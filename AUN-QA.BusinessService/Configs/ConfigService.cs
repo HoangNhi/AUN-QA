@@ -31,10 +31,14 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            // Audit interceptor + action filter
+            builder.Services.AddScoped<AUN_QA.BusinessService.Infrastructure.Interceptors.AuditInterceptor>();
+            builder.Services.AddScoped<AUN_QA.BusinessService.Infrastructure.Filters.AuditActionFilter>();
+
             //DATABASE
-            builder.Services.AddDbContext<BusinessContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("Business")
-            ));
+            builder.Services.AddDbContext<BusinessContext>((sp, options) =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Business"))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.BusinessService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
             builder.Services.AddAutoMapper(mc =>
@@ -88,6 +92,12 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
+            {
+                o.Address = new Uri("http://SystemService");
+            })
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
+            builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
                 o.Address = new Uri("http://SystemService");
             })

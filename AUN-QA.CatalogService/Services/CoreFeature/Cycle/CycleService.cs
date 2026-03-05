@@ -44,7 +44,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             var result = _mapper.Map<ModelCycle>(data);
 
             // List Council
-            var listCouncil = _context.Councils.AsNoTracking().Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived).OrderBy(x => x.RoleId);
+            var listCouncil = _context.Councils.AsNoTracking()
+                .Where(x => x.CycleId == result.Id && !x.IsDeleted && x.IsActived)
+                .OrderBy(x => x.RoleId);
             result.ListCouncil = _mapper.Map<List<CouncilRequest>>(listCouncil);
 
             // List 
@@ -260,6 +262,22 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
+                if (delete.Status != (int)CycleStatus.Plan)
+                {
+                    var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                        .FirstOrDefault(x => x.Type == "name")?.Value;
+
+                    var allowed = !string.IsNullOrEmpty(userIdString) && await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+                    {
+                        CycleId = delete.Id,
+                        UserId = Guid.Parse(userIdString),
+                        AllowedRoles = new List<int> { (int)CouncilRole.HeadOfCouncil }
+                    });
+
+                    if (!allowed)
+                        throw new Exception($"Chu kỳ '{delete.Name}' đang ở trạng thái thực hiện, chỉ Chủ tịch Hội đồng mới có quyền xóa");
+                }
+
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
@@ -301,6 +319,45 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             {
                 query = query.Where(x => x.Cycle.StandardSetId == request.StandardSetId);
             }
+
+            // === NEW: Role-based visibility filter ===
+            var username = _contextAccessor.HttpContext.User.Identity.Name;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            // HeadOfCouncil and Secretary system roles see all cycles; others see only their own
+            var privilegedRoleIds = new[]
+            {
+                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
+                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
+            };
+
+            bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isPrivilegedRole)
+            {
+                var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var userId))
+                {
+                    var userCycleIds = _context.Councils
+                        .Where(c => c.UserId == userId && !c.IsDeleted && c.IsActived)
+                        .Select(c => c.CycleId);
+
+                    query = query.Where(x => userCycleIds.Contains(x.Cycle.Id));
+                }
+                else
+                {
+                    // Cannot identify user -> return empty
+                    return new GetListPagingResponse<ModelCycleGetListPaging>
+                    {
+                        PageIndex = request.PageIndex,
+                        PageSize = request.PageSize,
+                        TotalRow = 0,
+                        Data = new List<ModelCycleGetListPaging>()
+                    };
+                }
+            }
+            // === END: Role-based visibility filter ===
 
             var totalRow = await query.CountAsync();
 
@@ -366,28 +423,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
 
-            // PCT HĐ chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ
-            var councilRecord = await _context.Councils.AsNoTracking().FirstOrDefaultAsync(c =>
-                c.CycleId == cycle.Id
-                && c.UserId == Guid.Parse(userId)
-                && !c.IsDeleted
-                && c.IsActived);
-
-            if (councilRecord != null
-                && (CouncilRole)councilRecord.RoleId == CouncilRole.ViceChairman
-                && !IsDelegationActive(councilRecord))
-            {
-                throw new Exception("Phó Chủ tịch Hội đồng chỉ được chuyển trạng thái khi đang được ủy quyền hợp lệ");
-            }
-
             var checkPermissionInPDCA = await CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
             {
                 CycleId = cycle.Id,
                 UserId = Guid.Parse(userId),
                 AllowedRoles = new List<int>
                 {
-                    (int)CouncilRole.HeadOfCouncil,
-                    (int)CouncilRole.ViceChairman
+                    (int)CouncilRole.HeadOfCouncil
                 }
             });
 
@@ -459,6 +501,15 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (council == null)
                 return null;
             return council.RoleId;
+        }
+
+        public async Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId)
+        {
+            return await _context.Councils
+                .Where(c => c.UserId == userId && !c.IsDeleted && c.IsActived)
+                .Select(c => c.CycleId)
+                .Distinct()
+                .ToListAsync();
         }
         #endregion
 

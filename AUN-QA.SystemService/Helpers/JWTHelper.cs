@@ -20,6 +20,7 @@ namespace AUN_QA.SystemService.Helpers
                 new Claim(JwtRegisteredClaimNames.Name, User.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, User.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("role", User.RoleId.ToString()),
             };
 
             var token = new JwtSecurityToken(

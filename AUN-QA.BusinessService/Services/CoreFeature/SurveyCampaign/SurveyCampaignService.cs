@@ -59,7 +59,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator));
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
 
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 
@@ -129,7 +129,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-            await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var data = _context.SurveyCampaigns.Where(x =>
                 x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
@@ -224,7 +224,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-            await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
             var data = _context.SurveyCampaigns.Where(x =>
                x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
                 && !x.IsDeleted && x.Id != request.Id);
@@ -456,7 +456,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
-                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.Secretary));
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
@@ -470,9 +470,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
         {
-            if (request.CycleId.HasValue)
-                await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator));
-
             var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
 
             var query = _context.SurveyCampaigns
@@ -493,6 +490,43 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 query = query.Where(x =>
                     x.Name.Contains(request.TextSearch));
             }
+
+            // === Role-based visibility filter ===
+            var username = _contextAccessor.HttpContext.User.Identity.Name;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims
+                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var privilegedRoleIds = new[]
+            {
+                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
+                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
+            };
+
+            bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isPrivilegedRole)
+            {
+                var userIdString = _contextAccessor.HttpContext.User.Claims
+                    .FirstOrDefault(x => x.Type == "name")?.Value;
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var userId))
+                {
+                    var userCycleIds = await _catalogService
+                        .GetCycleIdsByUserAsync(userIdString);
+                    query = query.Where(x => userCycleIds.Contains(x.CycleId));
+                }
+                else
+                {
+                    return new GetListPagingResponse<ModelSurveyCampaignGetListPaging>
+                    {
+                        PageIndex = request.PageIndex,
+                        PageSize = request.PageSize,
+                        TotalRow = 0,
+                        Data = new List<ModelSurveyCampaignGetListPaging>()
+                    };
+                }
+            }
+            // === END: Role-based visibility filter ===
 
             var totalRow = await query.CountAsync();
 
@@ -552,7 +586,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             switch (data.Status)
             {
@@ -820,7 +854,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 throw new Exception("Chiến dịch khảo sát không tồn tại");
             }
-            await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator));
+            await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
             var allStakeholders = await _catalogService
                 .GetStakeholdersStreamAsync(new CatalogService.Protos.GetStakeholdersStreamRequest
                 {
@@ -871,7 +905,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         {
             var sessionCampaign = await _context.SurveyCampaigns.FindAsync(request.CampaignId)
                 ?? throw new Exception("Chiến dịch không tồn tại");
-            await CheckPdcaPermissionAsync(sessionCampaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator));
+            await CheckPdcaPermissionAsync(sessionCampaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
 
             var query = _context.SurveySessions
                 .Where(x => x.CampaignId == request.CampaignId && !x.IsDeleted);
@@ -915,7 +949,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             if (!request.StakeholderIds.Any())
             {
@@ -962,7 +996,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
             {
@@ -1014,7 +1048,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(firstSession.CampaignId);
             if (campaign != null)
             {
-                await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.Secretary));
+                await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
             }
             else
             {
@@ -1052,7 +1086,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (campaign == null)

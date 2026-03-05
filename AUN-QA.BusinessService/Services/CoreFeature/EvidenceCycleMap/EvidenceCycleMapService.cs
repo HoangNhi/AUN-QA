@@ -81,7 +81,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
-                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 // Validate duplicate name or code
                 var data = _context.Evidences.Where(x =>
@@ -160,7 +160,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
-                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 #region Evidence
                 var update = await _context.Evidences.FindAsync(request.Evidence.Id);
@@ -264,7 +264,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
-                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
@@ -277,9 +277,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
-            if (request.CycleId.HasValue)
-                await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
-
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
                         join e in _context.Evidences on ecm.EvidenceId equals e.Id
                         where !ecm.IsDeleted
@@ -328,6 +325,43 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             {
                 query = query.Where(x => x.Evidence_FileTypeId == request.FileTypeId.Value);
             }
+
+            // === Role-based visibility filter ===
+            var username = _contextAccessor.HttpContext.User.Identity.Name;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims
+                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var privilegedRoleIds = new[]
+            {
+                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
+                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
+            };
+
+            bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isPrivilegedRole)
+            {
+                var userIdString = _contextAccessor.HttpContext.User.Claims
+                    .FirstOrDefault(x => x.Type == "name")?.Value;
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var userId))
+                {
+                    var userCycleIds = await _catalogService
+                        .GetCycleIdsByUserAsync(userIdString);
+                    query = query.Where(x => userCycleIds.Contains(x.CycleId));
+                }
+                else
+                {
+                    return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>
+                    {
+                        PageIndex = request.PageIndex,
+                        PageSize = request.PageSize,
+                        TotalRow = 0,
+                        Data = new List<ModelEvidenceCycleMapGetListPaging>()
+                    };
+                }
+            }
+            // === END: Role-based visibility filter ===
 
             var totalRow = await query.CountAsync();
 
@@ -380,7 +414,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(item);
                     if (evidenceCycleMap is not null)
                     {
-                        await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                        await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                         var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
                         if (evidence is not null)
@@ -408,7 +442,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
             if (evidence is null)
@@ -548,7 +582,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task ReuseVerifiedEvidenceAsync(ReuseVerifiedEvidenceRequest request)
         {
-            await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+            await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
             var evidence = await _context.Evidences.FindAsync(request.EvidenceId);
             if (evidence == null || evidence.Status != (int)EvidenceStatus.Verified)

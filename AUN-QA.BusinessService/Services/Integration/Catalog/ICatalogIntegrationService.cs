@@ -14,6 +14,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
         Task<int> GetUserRoleAsync(string cycleId, string userId, CancellationToken cancellationToken = default);
         Task<bool> IsUserInRoleAsync(string cycleId, string userId, int role, CancellationToken cancellationToken = default);
         Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default);
+        Task<List<Guid>> GetCycleIdsByUserAsync(string userId, CancellationToken cancellationToken = default);
         #endregion
 
         #region Standard

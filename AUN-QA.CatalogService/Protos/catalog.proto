@@ -17,6 +17,7 @@ service CatalogProto {
   rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
 
   rpc CanUserDoActionInPdca (CanUserDoActionInPdcaRequest) returns (google.protobuf.BoolValue);
+  rpc GetCycleIdsByUser (GetCycleIdsByUserRequest) returns (CycleIdsByUserResponse);
 }
 
 message GetStakeholdersStreamRequest {
@@ -93,4 +94,12 @@ message CanUserDoActionInPdcaRequest {
   string cycle_id = 2;
   google.protobuf.StringValue standard_id = 4; // optional
   repeated int32 allowed_roles = 5;
+}
+
+message GetCycleIdsByUserRequest {
+  string user_id = 1;
+}
+
+message CycleIdsByUserResponse {
+  repeated string cycle_ids = 1;
 }

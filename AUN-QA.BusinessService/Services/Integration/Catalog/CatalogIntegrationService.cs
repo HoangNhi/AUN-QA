@@ -149,6 +149,24 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                 throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
+
+        public async Task<List<Guid>> GetCycleIdsByUserAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new GetCycleIdsByUserRequest
+                {
+                    UserId = userId
+                };
+
+                var response = await _grpcClient.GetCycleIdsByUserAsync(request, cancellationToken: cancellationToken);
+                return response.CycleIds.Select(id => Guid.Parse(id)).ToList();
+            }
+            catch (RpcException)
+            {
+                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+        }
         #endregion
 
         #region Standard Service

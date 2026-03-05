@@ -81,6 +81,16 @@ namespace AUN_QA.CatalogService.Services.gRPC
             return new BoolValue { Value = result };
         }
 
+        public override async Task<CycleIdsByUserResponse> GetCycleIdsByUser(
+            GetCycleIdsByUserRequest request,
+            ServerCallContext context)
+        {
+            var cycleIds = await _cycleService.GetCycleIdsByUserAsync(Guid.Parse(request.UserId));
+            var response = new CycleIdsByUserResponse();
+            response.CycleIds.AddRange(cycleIds.Select(id => id.ToString()));
+            return response;
+        }
+
         #endregion
 
         #region Standard Service

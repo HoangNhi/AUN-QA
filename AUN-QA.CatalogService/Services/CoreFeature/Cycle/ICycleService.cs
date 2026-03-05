@@ -21,6 +21,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         IAsyncEnumerable<CycleInfo> GetCyclesStreamAsync(GetCyclesStreamRequest request, CancellationToken cancellationToken = default);
         Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request);
         Task<int?> GetUserRoleAsync(GetUserRoleRequest request);
+        Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId);
         #endregion
 
         #region PDCA Permissions

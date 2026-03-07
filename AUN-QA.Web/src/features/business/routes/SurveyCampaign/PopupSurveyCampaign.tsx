@@ -356,22 +356,38 @@ const PopupSurveyCampaign = ({
                     <FormField
                       control={form.control}
                       name="status"
-                      render={({ field }) => (
-                        <FormItem className="grid gap-2">
-                          <FormLabel>Trạng thái</FormLabel>
-                          <FormControl>
-                            <Combobox
-                              options={CAMPAIGN_STATUS_OPTIONS}
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              placeholder="Chọn trạng thái"
-                              searchPlaceholder="Tìm kiếm trạng thái..."
-                              readonly={!surveyCampaign?.IsEdit}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const statusOption = CAMPAIGN_STATUS_OPTIONS.find(
+                          (option) => option.Value === field.value,
+                        );
+                        const statusClassName =
+                          field.value === "1"
+                            ? "bg-gray-100 text-gray-800"
+                            : field.value === "2"
+                              ? "bg-blue-100 text-blue-800"
+                              : field.value === "3"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800";
+
+                        return (
+                          <FormItem className="grid gap-2">
+                            <FormLabel>{"Tr\u1EA1ng th\u00E1i"}</FormLabel>
+                            <FormControl>
+                              <div className="rounded-md border bg-muted/20 px-3 py-2">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName}`}
+                                >
+                                  {statusOption?.Text ?? field.value}
+                                </span>
+                              </div>
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">
+                              Status can only be changed from campaign actions.
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
                 </div>

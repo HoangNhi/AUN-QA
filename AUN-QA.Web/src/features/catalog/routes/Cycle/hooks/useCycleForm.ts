@@ -231,7 +231,7 @@ export function useCycleForm({ cycle, isOpen, saveChange }: UseCycleFormProps) {
                     evaluatorCounts[id] = (evaluatorCounts[id] ?? 0) + 1;
                 }
             }
-            if (role === 5 || role === 1) {
+            if (role === 5) {
                 for (const id of effectiveIds) {
                     providerCounts[id] = (providerCounts[id] ?? 0) + 1;
                 }
@@ -259,7 +259,7 @@ export function useCycleForm({ cycle, isOpen, saveChange }: UseCycleFormProps) {
         const newErrors: typeof errors = {};
 
         if (!formData.name.trim()) {
-            newErrors.name = "Tên kế hoạch không được để trống";
+            newErrors.name = "Tên chu kỳ không được để trống";
         }
 
         if (!formData.year.trim() || isNaN(parseInt(formData.year))) {

@@ -22,6 +22,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         Task<bool> IsUserInRoleAsync(IsUserInRoleRequest request);
         Task<int?> GetUserRoleAsync(GetUserRoleRequest request);
         Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId);
+        Task<GetCycleStatusResponse> GetCycleStatusAsync(GetCycleStatusRequest request);
         #endregion
 
         #region PDCA Permissions

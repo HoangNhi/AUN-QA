@@ -167,6 +167,20 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                 throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
+
+        public async Task<(bool Found, int Status)> GetCycleStatusAsync(string cycleId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new GetCycleStatusRequest { CycleId = cycleId };
+                var response = await _grpcClient.GetCycleStatusAsync(request, cancellationToken: cancellationToken);
+                return (response.Found, response.Status);
+            }
+            catch (RpcException)
+            {
+                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+        }
         #endregion
 
         #region Standard Service

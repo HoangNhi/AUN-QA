@@ -56,7 +56,7 @@ const formSchema = z
     fileTypeId: z.string().min(1, "Vui lòng chọn loại tài liệu"),
     description: z.string().optional(),
     rejectionReason: z.string().optional(),
-    cycleId: z.string().min(1, "Vui lòng chọn kế hoạch"),
+    cycleId: z.string().min(1, "Vui lòng chọn chu kỳ"),
   })
   .refine(
     (data) => {

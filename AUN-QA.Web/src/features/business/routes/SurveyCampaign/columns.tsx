@@ -62,6 +62,11 @@ export const getColumns = (
   {
     accessorKey: "Name",
     header: "Tên chiến dịch",
+    cell: ({ row }) => (
+      <div className="max-w-[300px]">
+        <p className="line-clamp-2 font-medium leading-5">{row.original.Name}</p>
+      </div>
+    ),
   },
   {
     accessorKey: "Stakeholder",
@@ -94,9 +99,9 @@ export const getColumns = (
       };
 
       return (
-        <div className="flex justify-center">
+        <div className="flex">
           <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 ${config.className}`}
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${config.className}`}
           >
             {config.text}
           </span>
@@ -145,12 +150,32 @@ const ActionCell = ({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <div className="flex items-center justify-end gap-1">
+          {!isCompleted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowStatusConfirm(true)}
+            >
+              <span className="sr-only">
+                {isDraft ? "Send survey campaign" : "Complete survey campaign"}
+              </span>
+              {isDraft ? (
+                <Send className="h-4 w-4 text-blue-600" />
+              ) : (
+                <StopCircle className="h-4 w-4 text-orange-600" />
+              )}
+            </Button>
+          )}
+
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </div>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
 

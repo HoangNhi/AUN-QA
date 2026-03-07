@@ -129,6 +129,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+            await CheckCycleStageAsync(request.CycleId.ToString());
             await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var data = _context.SurveyCampaigns.Where(x =>
@@ -138,7 +139,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở quy trình này");
+                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
             }
 
             var add = _mapper.Map<Entities.SurveyCampaign>(request);
@@ -224,6 +225,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+            await CheckCycleStageAsync(request.CycleId.ToString());
             await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
             var data = _context.SurveyCampaigns.Where(x =>
                x.CycleId == request.CycleId && x.StakeholderType == request.StakeholderType
@@ -231,7 +233,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở quy trình này");
+                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
             }
 
             var update = await _context.SurveyCampaigns.FindAsync(request.Id);
@@ -268,6 +270,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .Where(x => existingTopicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .ToListAsync();
 
+            await ValidateChildIdsBelongToCampaignAsync(
+                request,
+                update.Id,
+                existingTopics,
+                existingCategories,
+                existingQuestions,
+                existingTextQuestions);
+
             // 2. Process Request Data
             if (!request.ListTopic.Any())
             {
@@ -295,7 +305,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 {
                     // Add Topic
                     var newTopic = _mapper.Map<Entities.TemplateTopic>(topicReq);
-                    newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
+                    newTopic.Id = Guid.NewGuid();
                     newTopic.CampaignId = update.Id;
                     newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     newTopic.CreatedAt = DateTime.Now;
@@ -329,7 +339,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     {
                         // Add Category
                         var newCategory = _mapper.Map<Entities.TemplateCategory>(catReq);
-                        newCategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
+                        newCategory.Id = Guid.NewGuid();
                         newCategory.TopicId = currentTopic.Id;
                         newCategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                         newCategory.CreatedAt = DateTime.Now;
@@ -361,7 +371,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                         {
                             // Add Question
                             var newQuestion = _mapper.Map<Entities.TemplateQuestion>(qReq);
-                            newQuestion.Id = qReq.Id == Guid.Empty ? Guid.NewGuid() : qReq.Id;
+                            newQuestion.Id = Guid.NewGuid();
                             newQuestion.CategoryId = currentCategory.Id;
                             newQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                             newQuestion.CreatedAt = DateTime.Now;
@@ -394,7 +404,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     {
                         // Add Text Question
                         var newTextQ = _mapper.Map<Entities.TemplateTextQuestion>(txtReq);
-                        newTextQ.Id = txtReq.Id == Guid.Empty ? Guid.NewGuid() : txtReq.Id;
+                        newTextQ.Id = Guid.NewGuid();
                         newTextQ.TopicId = currentTopic.Id;
                         newTextQ.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                         newTextQ.CreatedAt = DateTime.Now;
@@ -456,6 +466,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
+                await CheckCycleStageAsync(delete.CycleId.ToString());
                 await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
                 delete.IsDeleted = true;
@@ -471,9 +482,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
         {
             var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+            var activeCycleIds = cycles.Select(c => c.Id).ToList();
 
             var query = _context.SurveyCampaigns
-                .Where(x => !x.IsDeleted);
+                .Where(x => !x.IsDeleted && activeCycleIds.Contains(x.CycleId));
 
             if (request.StakeholderType.HasValue)
             {
@@ -564,12 +576,48 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.SurveyCampaigns.Where(x => !x.IsDeleted && x.IsActived == true).ToListAsync();
-            return data.Select(x => new ModelCombobox
+            var query = _context.SurveyCampaigns
+                .Where(x => !x.IsDeleted && x.IsActived == true);
+
+            // === Role-based visibility filter ===
+            var username = _contextAccessor.HttpContext.User.Identity.Name;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims
+                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            var privilegedRoleIds = new[]
             {
-                Text = x.Name,
-                Value = x.Id.ToString()
-            }).OrderBy(x => x.Text).ToList();
+                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
+                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
+            };
+
+            bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
+
+            if (!isAdmin && !isPrivilegedRole)
+            {
+                var userIdString = _contextAccessor.HttpContext.User.Claims
+                    .FirstOrDefault(x => x.Type == "name")?.Value;
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out _))
+                {
+                    var userCycleIds = await _catalogService.GetCycleIdsByUserAsync(userIdString);
+                    query = query.Where(x => userCycleIds.Contains(x.CycleId));
+                }
+                else
+                {
+                    return new List<ModelCombobox>();
+                }
+            }
+            // === END: Role-based visibility filter ===
+
+            var data = await query.ToListAsync();
+            return data
+                .Select(x => new ModelCombobox
+                {
+                    Text = x.Name,
+                    Value = x.Id.ToString()
+                })
+                .OrderBy(x => x.Text)
+                .ToList();
         }
 
         /// <summary>
@@ -586,6 +634,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            await CheckCycleStageAsync(data.CycleId.ToString());
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             switch (data.Status)
@@ -949,6 +998,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            await CheckCycleStageAsync(data.CycleId.ToString());
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             if (!request.StakeholderIds.Any())
@@ -996,6 +1046,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            await CheckCycleStageAsync(data.CycleId.ToString());
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var stakeholder = await GetStakeholdersNotInCampaign(new GetStakeholdersNotInCampaignRequest
@@ -1048,6 +1099,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(firstSession.CampaignId);
             if (campaign != null)
             {
+                await CheckCycleStageAsync(campaign.CycleId.ToString());
                 await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
             }
             else
@@ -1086,6 +1138,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            await CheckCycleStageAsync(data.CycleId.ToString());
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
@@ -1124,6 +1177,104 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         private static List<int> Roles(params CouncilRole[] roles)
             => roles.Select(r => (int)r).ToList();
 
+        private async Task ValidateChildIdsBelongToCampaignAsync(
+            SurveyCampaignRequest request,
+            Guid campaignId,
+            List<Entities.TemplateTopic> existingTopics,
+            List<Entities.TemplateCategory> existingCategories,
+            List<Entities.TemplateQuestion> existingQuestions,
+            List<Entities.TemplateTextQuestion> existingTextQuestions)
+        {
+            var existingTopicIdSet = existingTopics.Select(x => x.Id).ToHashSet();
+            var existingCategoryIdSet = existingCategories.Select(x => x.Id).ToHashSet();
+            var existingQuestionIdSet = existingQuestions.Select(x => x.Id).ToHashSet();
+            var existingTextQuestionIdSet = existingTextQuestions.Select(x => x.Id).ToHashSet();
+
+            var requestedTopicIds = request.ListTopic
+                .Select(x => x.Id)
+                .Where(x => x != Guid.Empty)
+                .ToHashSet();
+
+            var requestedCategoryIds = request.ListTopic
+                .SelectMany(x => x.ListCategory)
+                .Select(x => x.Id)
+                .Where(x => x != Guid.Empty)
+                .ToHashSet();
+
+            var requestedQuestionIds = request.ListTopic
+                .SelectMany(x => x.ListCategory)
+                .SelectMany(x => x.ListQuestion)
+                .Select(x => x.Id)
+                .Where(x => x != Guid.Empty)
+                .ToHashSet();
+
+            var requestedTextQuestionIds = request.ListTopic
+                .SelectMany(x => x.ListTextQuestion)
+                .Select(x => x.Id)
+                .Where(x => x != Guid.Empty)
+                .ToHashSet();
+
+            var foreignTopicIds = requestedTopicIds.Except(existingTopicIdSet).ToList();
+            if (foreignTopicIds.Any())
+            {
+                var conflicted = await _context.TemplateTopics
+                    .AsNoTracking()
+                    .Where(x => foreignTopicIds.Contains(x.Id) && !x.IsDeleted && x.CampaignId != campaignId)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (conflicted.Any())
+                {
+                    throw new Exception("Payload không hợp lệ: chứa TopicId không thuộc chiến dịch hiện tại");
+                }
+            }
+
+            var foreignCategoryIds = requestedCategoryIds.Except(existingCategoryIdSet).ToList();
+            if (foreignCategoryIds.Any())
+            {
+                var conflicted = await _context.TemplateCategories
+                    .AsNoTracking()
+                    .Where(x => foreignCategoryIds.Contains(x.Id) && !x.IsDeleted)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (conflicted.Any())
+                {
+                    throw new Exception("Payload không hợp lệ: chứa CategoryId không thuộc chiến dịch hiện tại");
+                }
+            }
+
+            var foreignQuestionIds = requestedQuestionIds.Except(existingQuestionIdSet).ToList();
+            if (foreignQuestionIds.Any())
+            {
+                var conflicted = await _context.TemplateQuestions
+                    .AsNoTracking()
+                    .Where(x => foreignQuestionIds.Contains(x.Id) && !x.IsDeleted)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (conflicted.Any())
+                {
+                    throw new Exception("Payload không hợp lệ: chứa QuestionId không thuộc chiến dịch hiện tại");
+                }
+            }
+
+            var foreignTextQuestionIds = requestedTextQuestionIds.Except(existingTextQuestionIdSet).ToList();
+            if (foreignTextQuestionIds.Any())
+            {
+                var conflicted = await _context.TemplateTextQuestions
+                    .AsNoTracking()
+                    .Where(x => foreignTextQuestionIds.Contains(x.Id) && !x.IsDeleted)
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (conflicted.Any())
+                {
+                    throw new Exception("Payload không hợp lệ: chứa TextQuestionId không thuộc chiến dịch hiện tại");
+                }
+            }
+        }
+
         private async Task CheckPdcaPermissionAsync(string cycleId, List<int>? allowedRoles = null)
         {
             var userId = _contextAccessor.HttpContext!.User.Claims
@@ -1131,6 +1282,43 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
             if (!allowed)
                 throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+        }
+
+        /// <summary>
+        /// Kiểm tra chu kỳ có đang ở giai đoạn Thực hiện (Do) không.
+        /// Nếu không, chỉ Admin / Chủ tịch / PCT HĐ mới được tiếp tục.
+        /// </summary>
+        private async Task CheckCycleStageAsync(string cycleId)
+        {
+            var (found, status) = await _catalogService.GetCycleStatusAsync(cycleId);
+
+            if (!found)
+                throw new Exception("Chu kỳ không tồn tại");
+
+            // CycleStatus.Do == 2 (Thực hiện) — matches CatalogService CommonEnum.CycleStatus.Do
+            const int CycleStatusDo = 2;
+            if (status == CycleStatusDo)
+                return;
+
+            // Cycle is not in Do stage — check if caller is privileged
+            var username = _contextAccessor.HttpContext!.User.Identity?.Name;
+            if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var userId = _contextAccessor.HttpContext!.User.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+
+            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
+                cycleId,
+                userId,
+                null,
+                Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
+
+            if (!allowed)
+                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
         }
         #endregion
     }

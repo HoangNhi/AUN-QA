@@ -81,7 +81,7 @@ export const getColumns = (
     },
     {
       accessorKey: "Name",
-      header: "Kế hoạch",
+      header: "Chu kỳ",
     },
     {
       accessorKey: "Year",

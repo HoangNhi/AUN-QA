@@ -429,13 +429,14 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 UserId = Guid.Parse(userId),
                 AllowedRoles = new List<int>
                 {
-                    (int)CouncilRole.HeadOfCouncil
+                    (int)CouncilRole.HeadOfCouncil,
+                    ((int)CouncilRole.ViceChairman)
                 }
             });
 
             if (!checkPermissionInPDCA)
             {
-                throw new Exception("Chỉ Chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
+                throw new Exception("Chỉ Chủ tịch hoặc Phó chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
             }
 
             if (cycle.Status >= (int)CycleStatus.Finish)
@@ -510,6 +511,20 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 .Select(c => c.CycleId)
                 .Distinct()
                 .ToListAsync();
+        }
+
+        public async Task<GetCycleStatusResponse> GetCycleStatusAsync(GetCycleStatusRequest request)
+        {
+            if (!Guid.TryParse(request.CycleId, out var cycleId))
+                return new GetCycleStatusResponse { Found = false, Status = 0 };
+
+            var cycle = await _context.Cycles.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == cycleId && !c.IsDeleted && c.IsActived);
+
+            if (cycle == null)
+                return new GetCycleStatusResponse { Found = false, Status = 0 };
+
+            return new GetCycleStatusResponse { Found = true, Status = cycle.Status };
         }
         #endregion
 

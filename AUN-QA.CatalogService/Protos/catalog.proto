@@ -18,6 +18,7 @@ service CatalogProto {
 
   rpc CanUserDoActionInPdca (CanUserDoActionInPdcaRequest) returns (google.protobuf.BoolValue);
   rpc GetCycleIdsByUser (GetCycleIdsByUserRequest) returns (CycleIdsByUserResponse);
+  rpc GetCycleStatus (GetCycleStatusRequest) returns (GetCycleStatusResponse);
 }
 
 message GetStakeholdersStreamRequest {
@@ -102,4 +103,14 @@ message GetCycleIdsByUserRequest {
 
 message CycleIdsByUserResponse {
   repeated string cycle_ids = 1;
+}
+
+// Cycle Status Check
+message GetCycleStatusRequest {
+  string cycle_id = 1;
+}
+
+message GetCycleStatusResponse {
+  bool found = 1;
+  int32 status = 2;
 }

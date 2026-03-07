@@ -91,6 +91,13 @@ namespace AUN_QA.CatalogService.Services.gRPC
             return response;
         }
 
+        public override async Task<GetCycleStatusResponse> GetCycleStatus(
+            GetCycleStatusRequest request,
+            ServerCallContext context)
+        {
+            return await _cycleService.GetCycleStatusAsync(request);
+        }
+
         #endregion
 
         #region Standard Service

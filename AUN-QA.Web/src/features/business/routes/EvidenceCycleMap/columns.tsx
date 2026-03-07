@@ -65,7 +65,7 @@ export const getColumns = (
     },
     {
       accessorKey: "cycleName",
-      header: "Kế hoạch",
+      header: "Chu kỳ",
     },
     {
       accessorKey: "fileTypeId",

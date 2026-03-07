@@ -71,7 +71,7 @@ const PopupCycle = ({
       >
         <DialogHeader className="border-b pb-2">
           <DialogTitle>
-            {cycle?.IsEdit ? "Cập nhật kế hoạch" : "Thêm mới kế hoạch"}
+            {cycle?.IsEdit ? "Cập nhật chu kỳ" : "Thêm mới chu kỳ"}
           </DialogTitle>
         </DialogHeader>
 
@@ -82,7 +82,7 @@ const PopupCycle = ({
             <div className="col-span-8">
               <Field>
                 <FieldLabel>
-                  Kế hoạch <span className="text-red-500">*</span>
+                  Chu kỳ <span className="text-red-500">*</span>
                 </FieldLabel>
                 <FieldContent>
                   <Input

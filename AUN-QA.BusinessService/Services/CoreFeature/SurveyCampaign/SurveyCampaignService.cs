@@ -59,7 +59,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new Exception("Không tìm thấy dữ liệu");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
+            //await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
 
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 

@@ -371,19 +371,17 @@ const PopupSurveyCampaign = ({
 
                         return (
                           <FormItem className="grid gap-2">
-                            <FormLabel>{"Tr\u1EA1ng th\u00E1i"}</FormLabel>
+                            <FormLabel>Trạng thái</FormLabel>
                             <FormControl>
-                              <div className="rounded-md border bg-muted/20 px-3 py-2">
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName}`}
-                                >
-                                  {statusOption?.Text ?? field.value}
-                                </span>
-                              </div>
+                              <Combobox
+                                options={CAMPAIGN_STATUS_OPTIONS}
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                placeholder="Chọn trạng thái"
+                                searchPlaceholder="Tìm kiếm trạng thái..."
+                                readonly={true}
+                              />
                             </FormControl>
-                            <p className="text-xs text-muted-foreground">
-                              Status can only be changed from campaign actions.
-                            </p>
                             <FormMessage />
                           </FormItem>
                         );

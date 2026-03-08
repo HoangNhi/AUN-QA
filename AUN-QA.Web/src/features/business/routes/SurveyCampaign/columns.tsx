@@ -35,49 +35,49 @@ export const getColumns = (
   showPopupSession: (id: string, name: string) => void,
   changeStatus: (id: string) => Promise<void>,
 ): ColumnDef<SurveyCampaignGetListPaging>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-  },
-  {
-    accessorKey: "Cycle",
-    header: "Quy trình",
-  },
-  {
-    accessorKey: "Name",
-    header: "Tên chiến dịch",
-    cell: ({ row }) => (
-      <div className="max-w-[300px]">
-        <p className="line-clamp-2 font-medium leading-5">{row.original.Name}</p>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "Stakeholder",
-    header: "Loại đối tượng",
-  },
-  {
-    accessorKey: "Status",
-    header: "Trạng thái",
-    cell: ({ row }) => {
-      const status = row.original.Status;
-      const statusConfig: Record<number, { text: string; className: string }> =
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+    },
+    {
+      accessorKey: "Cycle",
+      header: "Quy trình",
+    },
+    {
+      accessorKey: "Name",
+      header: "Tên chiến dịch",
+      cell: ({ row }) => (
+        <div className="max-w-[300px]">
+          <p className="line-clamp-2 font-medium leading-5">{row.original.Name}</p>
+        </div>
+      ),
+    },
+    {
+      accessorKey: "Stakeholder",
+      header: "Loại đối tượng",
+    },
+    {
+      accessorKey: "Status",
+      header: "Trạng thái",
+      cell: ({ row }) => {
+        const status = row.original.Status;
+        const statusConfig: Record<number, { text: string; className: string }> =
         {
           1: {
             text: "Chưa bắt đầu",
@@ -93,38 +93,38 @@ export const getColumns = (
           },
         };
 
-      const config = statusConfig[status] || {
-        text: "Không xác định",
-        className: "bg-gray-100 text-gray-800",
-      };
+        const config = statusConfig[status] || {
+          text: "Không xác định",
+          className: "bg-gray-100 text-gray-800",
+        };
 
-      return (
-        <div className="flex">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${config.className}`}
-          >
-            {config.text}
-          </span>
-        </div>
-      );
+        return (
+          <div className="flex">
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${config.className}`}
+            >
+              {config.text}
+            </span>
+          </div>
+        );
+      },
     },
-  },
-  {
-    id: "actions",
-    meta: {
-      className: "text-center",
+    {
+      id: "actions",
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => (
+        <ActionCell
+          row={row}
+          showPopupDetail={showPopupDetail}
+          deleteList={deleteList}
+          showPopupSession={showPopupSession}
+          changeStatus={changeStatus}
+        />
+      ),
     },
-    cell: ({ row }) => (
-      <ActionCell
-        row={row}
-        showPopupDetail={showPopupDetail}
-        deleteList={deleteList}
-        showPopupSession={showPopupSession}
-        changeStatus={changeStatus}
-      />
-    ),
-  },
-];
+  ];
 
 const ActionCell = ({
   row,
@@ -151,24 +151,6 @@ const ActionCell = ({
     <>
       <DropdownMenu>
         <div className="flex items-center justify-end gap-1">
-          {!isCompleted && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setShowStatusConfirm(true)}
-            >
-              <span className="sr-only">
-                {isDraft ? "Send survey campaign" : "Complete survey campaign"}
-              </span>
-              {isDraft ? (
-                <Send className="h-4 w-4 text-blue-600" />
-              ) : (
-                <StopCircle className="h-4 w-4 text-orange-600" />
-              )}
-            </Button>
-          )}
-
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>

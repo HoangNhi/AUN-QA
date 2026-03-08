@@ -14,8 +14,6 @@ import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions"
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { cn } from "@/lib/utils";
-import { RefreshCcw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 
 interface EvidenceFormFieldsProps {
     form: UseFormReturn<any>;
@@ -27,8 +25,6 @@ interface EvidenceFormFieldsProps {
     attachmentError: string;
     status: string;
     onFileTypeChange?: (val: string, text?: string) => void;
-    onShowReusePopup?: () => void;
-    cycleIdForm?: string;
 }
 
 export function EvidenceFormFields({
@@ -41,8 +37,6 @@ export function EvidenceFormFields({
     attachmentError,
     status,
     onFileTypeChange,
-    onShowReusePopup,
-    cycleIdForm,
 }: EvidenceFormFieldsProps) {
     const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
 
@@ -78,24 +72,9 @@ export function EvidenceFormFields({
                 name="name"
                 render={({ field }) => (
                     <FormItem>
-                        <div className="flex items-center justify-between">
-                            <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                Tên minh chứng
-                            </FormLabel>
-                            {onShowReusePopup && !isPending && (
-                                <Button
-                                    variant="ghost"
-                                    type="button"
-                                    size="sm"
-                                    onClick={onShowReusePopup}
-                                    disabled={!cycleIdForm}
-                                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
-                                >
-                                    <RefreshCcw className="h-3.5 w-3.5" />
-                                    Tái sử dụng minh chứng cũ
-                                </Button>
-                            )}
-                        </div>
+                        <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                            Tên minh chứng
+                        </FormLabel>
                         <FormControl>
                             <Input
                                 {...field}

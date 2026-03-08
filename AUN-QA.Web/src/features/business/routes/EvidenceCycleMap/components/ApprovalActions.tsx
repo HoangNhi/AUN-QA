@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { FormLabel } from "@/components/ui/form";
+
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 
 interface ApprovalActionsProps {
@@ -115,9 +115,9 @@ export function ApprovalActions({
                     </DialogHeader>
                     <div className="py-2">
                         <div className="space-y-2">
-                            <FormLabel>
+                            <label className="text-sm font-medium leading-none">
                                 Lý do <span className="text-red-500">*</span>
-                            </FormLabel>
+                            </label>
                             <Textarea
                                 value={rejectionReason}
                                 onChange={(e) => {

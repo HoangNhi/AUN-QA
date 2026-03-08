@@ -325,8 +325,6 @@ const PopupEvidenceCycleMap = ({
                       handleAttachmentChange={handleAttachmentChange}
                       attachmentError={attachmentError}
                       status={form.watch("status")}
-                      onShowReusePopup={() => setShowReusePopup(true)}
-                      cycleIdForm={cycleIdForm}
                     />
                   </div>
                 </div>
@@ -341,6 +339,8 @@ const PopupEvidenceCycleMap = ({
                     setStandardSetId={setStandardSetId}
                     assignedStandardIds={assignedStandardIds}
                     cycleId_Change={cycleId_Change}
+                    onShowReusePopup={() => setShowReusePopup(true)}
+                    isPending={isPending}
                   />
                 </div>
               </form>

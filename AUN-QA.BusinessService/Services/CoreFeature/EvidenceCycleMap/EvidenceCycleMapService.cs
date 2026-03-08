@@ -81,6 +81,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
+                await CheckCycleStageAsync(request.CycleId.ToString());
                 await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 // Validate duplicate name or code
@@ -160,6 +161,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
+                await CheckCycleStageAsync(request.CycleId.ToString());
                 await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 #region Evidence
@@ -264,6 +266,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     throw new Exception("Dữ liệu không tồn tại");
                 }
 
+                await CheckCycleStageAsync(delete.CycleId.ToString());
                 await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 delete.IsDeleted = true;
@@ -277,9 +280,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
+            var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+            var activeCycleIds = cycles.Select(c => c.Id).ToList();
+
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
                         join e in _context.Evidences on ecm.EvidenceId equals e.Id
-                        where !ecm.IsDeleted
+                        where !ecm.IsDeleted && activeCycleIds.Contains(ecm.CycleId)
                         select new ModelEvidenceCycleMapGetListPaging
                         {
                             Id = ecm.Id,
@@ -328,19 +334,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             // === Role-based visibility filter ===
             var username = _contextAccessor.HttpContext.User.Identity.Name;
-            var roleClaim = _contextAccessor.HttpContext.User.Claims
-                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-
-            var privilegedRoleIds = new[]
-            {
-                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
-                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
-            };
-
             bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
-            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
 
-            if (!isAdmin && !isPrivilegedRole)
+            if (!isAdmin)
             {
                 var userIdString = _contextAccessor.HttpContext.User.Claims
                     .FirstOrDefault(x => x.Type == "name")?.Value;
@@ -371,14 +367,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            if (data.Any())
+            foreach (var item in data)
             {
-                var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
-                // Populate CycleName from in-memory cycle list
-                foreach (var item in data)
-                {
-                    item.CycleName = cycle.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
-                }
+                item.CycleName = cycles.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
             }
 
             return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>
@@ -414,6 +405,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(item);
                     if (evidenceCycleMap is not null)
                     {
+                        await CheckCycleStageAsync(evidenceCycleMap.CycleId.ToString());
                         await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                         var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
@@ -442,6 +434,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 throw new Exception("Dữ liệu không tồn tại");
             }
 
+            await CheckCycleStageAsync(evidenceCycleMap.CycleId.ToString());
             await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
             var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
@@ -582,6 +575,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task ReuseVerifiedEvidenceAsync(ReuseVerifiedEvidenceRequest request)
         {
+            await CheckCycleStageAsync(request.TargetCycleId.ToString());
             await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
             var evidence = await _context.Evidences.FindAsync(request.EvidenceId);
@@ -623,6 +617,42 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
             if (!allowed)
                 throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+        }
+
+        /// <summary>
+        /// Kiểm tra chu kỳ có đang ở giai đoạn Thực hiện (Do) không.
+        /// Nếu không, chỉ Admin / Chủ tịch / PCT HĐ mới được tiếp tục.
+        /// </summary>
+        private async Task CheckCycleStageAsync(string cycleId)
+        {
+            var (found, status) = await _catalogService.GetCycleStatusAsync(cycleId);
+
+            if (!found)
+                throw new Exception("Chu kỳ không tồn tại");
+
+            // CycleStatus.Do == 2 (Thực hiện) — matches CatalogService CommonEnum.CycleStatus.Do
+            const int CycleStatusDo = 2;
+            if (status == CycleStatusDo)
+                return;
+
+            var username = _contextAccessor.HttpContext!.User.Identity?.Name;
+            if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var userId = _contextAccessor.HttpContext!.User.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+
+            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
+                cycleId,
+                userId,
+                null,
+                Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
+
+            if (!allowed)
+                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
         }
 
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)

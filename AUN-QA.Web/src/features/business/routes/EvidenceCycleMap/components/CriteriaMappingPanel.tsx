@@ -4,6 +4,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
 import { useStandardSetOptions } from "@/features/catalog/hooks/useStandardSetOptions";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
+import { RefreshCcw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface CriteriaMappingPanelProps {
     form: UseFormReturn<any>;
@@ -13,6 +15,8 @@ interface CriteriaMappingPanelProps {
     setStandardSetId: (val: string) => void;
     assignedStandardIds: string[];
     cycleId_Change: (val: string) => Promise<void>;
+    onShowReusePopup?: () => void;
+    isPending?: boolean;
 }
 
 export function CriteriaMappingPanel({
@@ -23,6 +27,8 @@ export function CriteriaMappingPanel({
     setStandardSetId,
     assignedStandardIds,
     cycleId_Change,
+    onShowReusePopup,
+    isPending,
 }: CriteriaMappingPanelProps) {
     const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
     const { options: standardSetOptions, isLoading: isStandardSetLoading } = useStandardSetOptions();
@@ -35,9 +41,24 @@ export function CriteriaMappingPanel({
                 name="cycleId"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>
-                            Chu kỳ <span className="text-red-500">*</span>
-                        </FormLabel>
+                        <div className="flex items-center justify-between">
+                            <FormLabel>
+                                Chu kỳ <span className="text-red-500">*</span>
+                            </FormLabel>
+                            {onShowReusePopup && !isPending && (
+                                <Button
+                                    variant="ghost"
+                                    type="button"
+                                    size="sm"
+                                    onClick={onShowReusePopup}
+                                    disabled={!cycleIdForm}
+                                    className="flex items-center gap-1.5 text-xs font-medium text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 hover:border-blue-300 rounded-lg transition-colors whitespace-nowrap"
+                                >
+                                    <RefreshCcw className="h-3.5 w-3.5" />
+                                    Tái sử dụng minh chứng cũ
+                                </Button>
+                            )}
+                        </div>
                         <FormControl>
                             <Combobox
                                 options={cycleOptions}

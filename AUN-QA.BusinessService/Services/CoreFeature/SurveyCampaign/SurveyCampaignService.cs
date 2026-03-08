@@ -505,19 +505,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             // === Role-based visibility filter ===
             var username = _contextAccessor.HttpContext.User.Identity.Name;
-            var roleClaim = _contextAccessor.HttpContext.User.Claims
-                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-
-            var privilegedRoleIds = new[]
-            {
-                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
-                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
-            };
-
             bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
-            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
 
-            if (!isAdmin && !isPrivilegedRole)
+            if (!isAdmin)
             {
                 var userIdString = _contextAccessor.HttpContext.User.Claims
                     .FirstOrDefault(x => x.Type == "name")?.Value;
@@ -581,19 +571,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             // === Role-based visibility filter ===
             var username = _contextAccessor.HttpContext.User.Identity.Name;
-            var roleClaim = _contextAccessor.HttpContext.User.Claims
-                .FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-
-            var privilegedRoleIds = new[]
-            {
-                "5493e3b6-abbc-4ba2-a54f-3e5a35e82219", // HeadOfCouncil
-                "90fbf8b5-74b2-420f-a9a8-029ae32a2a83"  // Secretary
-            };
-
             bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
-            bool isPrivilegedRole = roleClaim != null && privilegedRoleIds.Contains(roleClaim, StringComparer.OrdinalIgnoreCase);
 
-            if (!isAdmin && !isPrivilegedRole)
+            if (!isAdmin)
             {
                 var userIdString = _contextAccessor.HttpContext.User.Claims
                     .FirstOrDefault(x => x.Type == "name")?.Value;

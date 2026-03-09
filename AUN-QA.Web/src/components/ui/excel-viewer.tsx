@@ -147,12 +147,7 @@ export function ExcelViewer({
 
           <tbody>
             {rows.map((row, ri) => (
-              <tr
-                key={ri}
-                className={
-                  ri === 0 ? "sticky top-[29px] z-10" : "hover:bg-blue-50/30"
-                }
-              >
+              <tr key={ri} className="hover:bg-blue-50/30">
                 {/* Row number */}
                 <td className="w-10 min-w-[2.5rem] bg-slate-100 border border-slate-300 text-center text-xs text-slate-400 select-none px-1">
                   {ri + 1}

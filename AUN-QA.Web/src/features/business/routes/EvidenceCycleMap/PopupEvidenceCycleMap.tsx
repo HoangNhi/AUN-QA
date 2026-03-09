@@ -135,7 +135,7 @@ const PopupEvidenceCycleMap = ({
       }),
     onSuccess: () => {
       toast.success("Tái sử dụng minh chứng thành công");
-      queryClient.invalidateQueries({ queryKey: ["evidenceCycleMapList"] });
+      queryClient.invalidateQueries({ queryKey: ["evidenceCycleMaps"] });
       setPendingReuseEvidence(null);
       onOpenChange(false);
     },
@@ -230,7 +230,7 @@ const PopupEvidenceCycleMap = ({
     const uploadSuccess = await uploadRef.current?.upload();
     if (!uploadSuccess) {
       toast.error(
-        "Tải tệp thất bại. Vui lòng kiểm tra định dạng MP4 hoặc dung lượng tối đa 100MB.",
+        "Tải tệp thất bại. Vui lòng kiểm tra định dạng hoặc dung lượng tối đa 50MB.",
       );
       return;
     }
@@ -305,7 +305,7 @@ const PopupEvidenceCycleMap = ({
               >
                 {/* LEFT COLUMN - General Information */}
                 <div className="col-span-6 flex flex-col min-h-0">
-                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 p-2">
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar space-y-4 p-2">
                     {pendingReuseEvidence && (
                       <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                         <span className="mt-0.5 shrink-0">⚠️</span>

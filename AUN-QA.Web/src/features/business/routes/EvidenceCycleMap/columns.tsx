@@ -55,20 +55,28 @@ export const getColumns = (
       accessorKey: "evidenceCode",
       header: "Mã MC",
       meta: {
-        className: "text-center",
         headerClassName: "text-center",
       },
     },
     {
       accessorKey: "evidenceName",
       header: "Tên minh chứng",
+      meta: {
+        headerClassName: "text-center",
+      },
     },
     {
       accessorKey: "cycleName",
       header: "Chu kỳ",
+      meta: {
+        headerClassName: "text-center",
+      },
     },
     {
       accessorKey: "fileTypeId",
+      meta: {
+        headerClassName: "text-center",
+      },
       header: "Loại tài liệu",
       cell: ({ row }) => {
         const name = fileTypeMap?.[row.original.fileTypeId ?? ""];

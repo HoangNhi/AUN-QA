@@ -154,52 +154,56 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     return (
-      <div className="w-full text-sm">
+      <div className="w-full text-sm overflow-x-hidden">
         {/* Attachment Table */}
         {listAttachment.length > 0 && (
           <div className="mb-3 border rounded-lg bg-white overflow-hidden shadow-sm">
             <div className="bg-gray-50 px-3 py-2 border-b flex items-center gap-2 font-semibold text-gray-700">
               <Paperclip size={14} className="text-blue-500" /> TỆP ĐÃ TẢI LÊN
             </div>
-            <table className="w-full">
-              <tbody className="divide-y">
-                {listAttachment.map((file) => (
-                  <tr key={file.Id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-blue-600 truncate">
-                      {file.FullFileName}
-                    </td>
-                    <td className="px-3 py-2 text-right flex items-center justify-end gap-2">
+            <div className="divide-y">
+              {listAttachment.map((file) => (
+                <div
+                  key={file.Id}
+                  className="flex w-full min-w-0 items-center hover:bg-gray-50"
+                >
+                  <span
+                    className="block flex-1 min-w-0 px-3 py-2 text-blue-600 truncate"
+                    title={file.FullFileName}
+                  >
+                    {file.FullFileName}
+                  </span>
+                  <div className="shrink-0 px-3 py-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePreview(file)}
+                      className="text-gray-400 hover:text-blue-500"
+                      title="Xem trước"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(file)}
+                      className="text-gray-400 hover:text-green-500"
+                      title="Tải xuống"
+                    >
+                      <Download size={16} />
+                    </button>
+                    {!readonly && (
                       <button
                         type="button"
-                        onClick={() => handlePreview(file)}
-                        className="text-gray-400 hover:text-blue-500"
-                        title="Xem trước"
+                        onClick={() => handleDeleteAttachment(file.Id)}
+                        className="text-gray-400 hover:text-red-500"
+                        title="Xóa"
                       >
-                        <Eye size={16} />
+                        <Trash size={16} />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(file)}
-                        className="text-gray-400 hover:text-green-500"
-                        title="Tải xuống"
-                      >
-                        <Download size={16} />
-                      </button>
-                      {!readonly && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAttachment(file.Id)}
-                          className="text-gray-400 hover:text-red-500"
-                          title="Xóa"
-                        >
-                          <Trash size={16} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -234,15 +238,20 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                 {selectedFiles.map((f, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between bg-white p-2 border rounded"
+                    className="flex items-center justify-between bg-white p-2 border rounded gap-2"
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <FileIcon size={14} className="text-orange-400" />
-                      <span className="truncate italic text-xs">{f.name}</span>
+                    <div className="flex flex-1 items-center gap-2 min-w-0">
+                      <FileIcon size={14} className="shrink-0 text-orange-400" />
+                      <span
+                        className="block flex-1 min-w-0 truncate italic text-xs"
+                        title={f.name}
+                      >
+                        {f.name}
+                      </span>
                     </div>
                     <X
                       size={14}
-                      className="cursor-pointer text-gray-400 hover:text-red-500"
+                      className="shrink-0 cursor-pointer text-gray-400 hover:text-red-500"
                       onClick={() =>
                         setSelectedFiles((s) => s.filter((_, idx) => idx !== i))
                       }

@@ -66,8 +66,8 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             }
 
             List<ModelAttachment> result = new List<ModelAttachment>();
-            string sourceDirPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files\\Temp\\" + tempFolder);
-            string destinationDirPath = Path.Combine(_webHostEnvironment.WebRootPath, servicePath, folderName + "\\" + lienKetId.ToString());
+            string sourceDirPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files", "Temp", tempFolder);
+            string destinationDirPath = Path.Combine(_webHostEnvironment.WebRootPath, servicePath, folderName, lienKetId.ToString());
             string relativeDirPath = servicePath + "/" + folderName + "/" + lienKetId.ToString();
 
             result = SyncUploadFile(sourceDirPath, destinationDirPath, relativeDirPath);
@@ -141,7 +141,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         public string UploadAvatar(string folderUploadId, string oldImage)
         {
             string path = oldImage;
-            string folderUploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files\\Temp\\" + folderUploadId);
+            string folderUploadPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files", "Temp", folderUploadId);
             if (Directory.Exists(folderUploadPath))
             {
                 string[] arrFiles = Directory.GetFiles(folderUploadPath);
@@ -149,7 +149,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                 {
                     FileInfo info = new FileInfo(arrFiles[0]);
                     string fileName = Guid.NewGuid().ToString() + info.Extension;
-                    string avataPath = Path.Combine(_webHostEnvironment.WebRootPath, "System\\Avatar");
+                    string avataPath = Path.Combine(_webHostEnvironment.WebRootPath, "System", "Avatar");
                     //Kiểm tra nếu thư mục chưa tồn tại thì tạo mới.
                     if (!Directory.Exists(avataPath))
                     {
@@ -157,14 +157,14 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                     }
 
                     //Xóa ảnh cũ nếu tồn tại
-                    if (File.Exists(avataPath + "\\" + oldImage))
+                    if (File.Exists(Path.Combine(avataPath, oldImage)))
                     {
-                        File.Delete(avataPath + "\\" + oldImage);
+                        File.Delete(Path.Combine(avataPath, oldImage));
                     }
 
                     //Copy ảnh mới
-                    File.Move(arrFiles[0], avataPath + "\\" + fileName, true);
-                    path = "System\\Avatar\\" + fileName;
+                    File.Move(arrFiles[0], Path.Combine(avataPath, fileName), true);
+                    path = "System/Avatar/" + fileName;
                 }
 
                 //Xóa thư mục tạm.

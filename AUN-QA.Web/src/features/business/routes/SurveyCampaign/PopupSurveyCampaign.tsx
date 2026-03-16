@@ -357,18 +357,6 @@ const PopupSurveyCampaign = ({
                       control={form.control}
                       name="status"
                       render={({ field }) => {
-                        const statusOption = CAMPAIGN_STATUS_OPTIONS.find(
-                          (option) => option.Value === field.value,
-                        );
-                        const statusClassName =
-                          field.value === "1"
-                            ? "bg-gray-100 text-gray-800"
-                            : field.value === "2"
-                              ? "bg-blue-100 text-blue-800"
-                              : field.value === "3"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800";
-
                         return (
                           <FormItem className="grid gap-2">
                             <FormLabel>Trạng thái</FormLabel>

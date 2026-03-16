@@ -389,3 +389,11 @@ CLAUDE.md
 /docs
 /AUN-QA.Web/docs
 /.gemini
+/AUN-QA.ApiGateway/appsettings.Production.json
+/AUN-QA.BusinessService/appsettings.Production.json
+/AUN-QA.CatalogService/appsettings.Production.json
+/AUN-QA.FileService/appsettings.Production.json
+/AUN-QA.SystemService/appsettings.Production.json
+/AUN-QA.Web/.env.production
+/AGENTS.md
+/Deploy

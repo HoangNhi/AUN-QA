@@ -2,8 +2,15 @@ using AUN_QA.FileService.Configs;
 using AUN_QA.FileService.Middlewares;
 using AUN_QA.FileService.Services.Grpc;
 using AUN_QA.ServiceDefaults;
+using Grpc.AspNetCore.Web;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+}
 
 builder.AddServiceDefaults();
 
@@ -30,7 +37,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 
@@ -40,6 +50,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<FileGrpcService>();
 
 app.Run();

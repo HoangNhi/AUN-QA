@@ -11,7 +11,7 @@ namespace AUN_QA.FileService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);

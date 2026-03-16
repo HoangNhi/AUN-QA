@@ -2,6 +2,7 @@ using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using Grpc.Net.Client.Web;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
 using AUN_QA.CatalogService.Protos;
@@ -93,33 +94,37 @@ namespace AUN_QA.BusinessService.Configs
 
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             const int grpcMaxMessageSize = 128 * 1024 * 1024; // 128 MB
 
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
-                o.Address = new Uri("http://FileService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");
             })
             .ConfigureChannel(o =>
             {
                 o.MaxReceiveMessageSize = grpcMaxMessageSize;
                 o.MaxSendMessageSize = grpcMaxMessageSize;
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>
             {
-                o.Address = new Uri("http://CatalogService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:CatalogService"] ?? "http://CatalogService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
 

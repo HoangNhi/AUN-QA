@@ -1,7 +1,7 @@
 using AUN_QA.FileService.Protos;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Common;
-using AUN_QA.Shared.Common;
+using Grpc.Net.Client.Web;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration;
@@ -21,7 +21,7 @@ namespace AUN_QA.SystemService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);
@@ -87,8 +87,9 @@ namespace AUN_QA.SystemService.Configs
             builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
-                o.Address = new Uri("http://FileService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "node server.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -38,6 +39,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "docx-preview": "^0.3.7",
+    "express": "^5.2.1",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.556.0",

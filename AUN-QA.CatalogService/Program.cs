@@ -2,9 +2,16 @@ using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
 using AUN_QA.CatalogService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using Grpc.AspNetCore.Web;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+}
 
 builder.AddServiceDefaults();
 
@@ -39,7 +46,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors();
 
@@ -47,6 +57,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<CatalogGrpcService>();
 
 app.Run();

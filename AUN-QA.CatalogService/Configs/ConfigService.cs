@@ -1,6 +1,7 @@
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Common;
 using AUN_QA.Shared.Common;
+using Grpc.Net.Client.Web;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
 using AUN_QA.SystemService.Protos;
@@ -21,7 +22,7 @@ namespace AUN_QA.CatalogService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);
@@ -87,14 +88,16 @@ namespace AUN_QA.CatalogService.Configs
             builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }

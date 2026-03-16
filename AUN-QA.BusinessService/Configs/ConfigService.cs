@@ -96,12 +96,22 @@ namespace AUN_QA.BusinessService.Configs
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
             })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
@@ -116,6 +126,8 @@ namespace AUN_QA.BusinessService.Configs
             {
                 o.MaxReceiveMessageSize = grpcMaxMessageSize;
                 o.MaxSendMessageSize = grpcMaxMessageSize;
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
             })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
@@ -123,6 +135,11 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:CatalogService"] ?? "http://CatalogService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
             })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();

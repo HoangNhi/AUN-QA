@@ -90,12 +90,22 @@ namespace AUN_QA.CatalogService.Configs
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
             })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
             })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();

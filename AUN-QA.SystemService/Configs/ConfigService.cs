@@ -89,6 +89,11 @@ namespace AUN_QA.SystemService.Configs
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");
             })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
             .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
             .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }

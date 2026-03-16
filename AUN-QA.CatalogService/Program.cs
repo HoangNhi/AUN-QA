@@ -56,8 +56,8 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
 app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+app.MapControllers();
 app.MapGrpcService<CatalogGrpcService>();
 
 app.Run();

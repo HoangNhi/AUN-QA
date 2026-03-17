@@ -52,10 +52,16 @@ public class AuditLogService : IAuditLogService
             query = query.Where(x => x.IsSuccess == request.IsSuccess.Value);
 
         if (request.FromDate.HasValue)
-            query = query.Where(x => x.CreatedAt >= request.FromDate.Value);
+        {
+            var from = DateTime.SpecifyKind(request.FromDate.Value, DateTimeKind.Unspecified);
+            query = query.Where(x => x.CreatedAt >= from);
+        }
 
         if (request.ToDate.HasValue)
-            query = query.Where(x => x.CreatedAt <= request.ToDate.Value.AddDays(1));
+        {
+            var to = DateTime.SpecifyKind(request.ToDate.Value, DateTimeKind.Unspecified).AddDays(1);
+            query = query.Where(x => x.CreatedAt <= to);
+        }
 
         query = query.OrderByDescending(x => x.CreatedAt);
 

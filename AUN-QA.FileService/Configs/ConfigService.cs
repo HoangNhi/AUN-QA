@@ -1,4 +1,6 @@
-﻿using AutoDependencyRegistration;
+﻿using AUN_QA.SystemService.Protos;
+using AutoDependencyRegistration;
+using Grpc.Net.Client.Web;
 
 namespace AUN_QA.FileService.Configs
 {
@@ -17,6 +19,21 @@ namespace AUN_QA.FileService.Configs
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            // Audit action filter
+            builder.Services.AddScoped<AUN_QA.FileService.Infrastructure.Filters.AuditActionFilter>();
+
+            // gRPC client for audit logging
+            builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
+            {
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()));
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();

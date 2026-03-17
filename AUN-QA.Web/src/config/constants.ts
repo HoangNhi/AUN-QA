@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
     },
     Auth: {
       LOGIN: `${SYSTEM_BASE}/Auth/login`,
+      LOGOUT: `${SYSTEM_BASE}/Auth/logout`,
       REFRESH_TOKEN: `${SYSTEM_BASE}/Auth/refresh-token`,
     },
     AuditLog: {

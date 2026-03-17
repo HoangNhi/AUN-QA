@@ -276,6 +276,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
+      await authService.logout();
       await performLogout();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Đăng xuất thất bại");

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Protos;
@@ -71,7 +72,7 @@ public class AuditActionFilter : IAsyncActionFilter
             var request = new WriteAuditLogRequest
             {
                 UserId = httpContext.User?.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? "",
-                UserName = httpContext.User?.Claims.FirstOrDefault(c => c.Type == "username")?.Value ?? "Unknown",
+                UserName = httpContext.User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "Unknown",
                 Action = auditAction,
                 EntityName = controllerName,
                 EntityId = "",
@@ -130,10 +131,57 @@ public class AuditActionFilter : IAsyncActionFilter
         return null;
     }
 
+    private static readonly HashSet<string> SensitiveFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Password", "PasswordSalt", "Token", "RefreshToken",
+        "CurrentPassword", "NewPassword", "ConfirmPassword"
+    };
+
     private static string? CaptureRequestBody(ActionExecutingContext ctx)
     {
         if (ctx.ActionArguments.Count == 0) return null;
-        try { return JsonSerializer.Serialize(ctx.ActionArguments); } catch { return null; }
+        try
+        {
+            var json = JsonSerializer.Serialize(ctx.ActionArguments);
+            using var doc = JsonDocument.Parse(json);
+            using var ms = new MemoryStream();
+            using var writer = new Utf8JsonWriter(ms);
+            WriteMasked(writer, doc.RootElement);
+            writer.Flush();
+            return Encoding.UTF8.GetString(ms.ToArray());
+        }
+        catch { return null; }
+    }
+
+    private static void WriteMasked(Utf8JsonWriter writer, JsonElement element, string? propertyName = null)
+    {
+        if (propertyName != null && SensitiveFields.Contains(propertyName))
+        {
+            writer.WriteStringValue("***MASKED***");
+            return;
+        }
+
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                writer.WriteStartObject();
+                foreach (var prop in element.EnumerateObject())
+                {
+                    writer.WritePropertyName(prop.Name);
+                    WriteMasked(writer, prop.Value, prop.Name);
+                }
+                writer.WriteEndObject();
+                break;
+            case JsonValueKind.Array:
+                writer.WriteStartArray();
+                foreach (var item in element.EnumerateArray())
+                    WriteMasked(writer, item);
+                writer.WriteEndArray();
+                break;
+            default:
+                element.WriteTo(writer);
+                break;
+        }
     }
 
     private static string GetControllerName(ActionExecutingContext ctx)
@@ -150,6 +198,10 @@ public class AuditActionFilter : IAsyncActionFilter
     {
         var f = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         if (!string.IsNullOrEmpty(f)) return f.Split(',').FirstOrDefault()?.Trim() ?? "";
-        return ctx.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "";
+        var remoteIp = ctx.Connection.RemoteIpAddress;
+        if (remoteIp == null) return "";
+        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
+        if (remoteIp.ToString() == "::1") return "127.0.0.1";
+        return remoteIp.ToString();
     }
 }

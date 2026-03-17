@@ -135,7 +135,7 @@ public class AuditInterceptor : SaveChangesInterceptor
 
     private static string GetUserName(HttpContext? httpContext)
     {
-        return httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "username")?.Value ?? "System";
+        return httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "System";
     }
 
     private static string? GetIpAddress(HttpContext? httpContext)
@@ -144,7 +144,11 @@ public class AuditInterceptor : SaveChangesInterceptor
         var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         if (!string.IsNullOrEmpty(forwarded))
             return forwarded.Split(',').FirstOrDefault()?.Trim();
-        return httpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+        var remoteIp = httpContext.Connection.RemoteIpAddress;
+        if (remoteIp == null) return null;
+        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
+        if (remoteIp.ToString() == "::1") return "127.0.0.1";
+        return remoteIp.ToString();
     }
 
     private static string? GetEntityId(EntityEntry entry)

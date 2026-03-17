@@ -1,8 +1,10 @@
 using System.Text.Json;
 using AUN_QA.SystemService.Protos;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Polly;
 
 namespace AUN_QA.BusinessService.Infrastructure.Interceptors;
 
@@ -14,8 +16,11 @@ public class AuditInterceptor : SaveChangesInterceptor
 
     private static readonly HashSet<string> ExcludedProperties = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Password", "PasswordSalt", "Token"
+        "Password", "PasswordSalt", "Token", "RefreshToken"
     };
+
+    // Key used to pass the captured audit payload from SavingChanges → SavedChanges
+    private const string AuditPayloadKey = "AuditInterceptorPayload_Business";
 
     public AuditInterceptor(
         IHttpContextAccessor httpContextAccessor,
@@ -27,13 +32,14 @@ public class AuditInterceptor : SaveChangesInterceptor
         _logger = logger;
     }
 
-    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+    // Phase 1: Capture old/new values BEFORE save (ChangeTracker still has state here)
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context == null)
-            return await base.SavingChangesAsync(eventData, result, cancellationToken);
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
 
         var httpContext = _httpContextAccessor.HttpContext;
 
@@ -42,19 +48,17 @@ public class AuditInterceptor : SaveChangesInterceptor
             .ToList();
 
         if (entries.Count == 0)
-            return await base.SavingChangesAsync(eventData, result, cancellationToken);
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
 
         var contextualAction = httpContext?.Items["AuditAction"]?.ToString();
         var action = contextualAction ?? InferAction(entries);
 
-        // Build grouped OldValues and NewValues
         var oldValuesGroup = new Dictionary<string, List<Dictionary<string, object?>>>();
         var newValuesGroup = new Dictionary<string, List<Dictionary<string, object?>>>();
 
         foreach (var entry in entries)
         {
             var entityName = entry.Entity.GetType().Name;
-
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -72,10 +76,11 @@ public class AuditInterceptor : SaveChangesInterceptor
 
         var controllerName = GetControllerName(httpContext) ?? entries.First().Entity.GetType().Name;
 
-        var request = new WriteAuditLogRequest
+        // Build and store the payload — will be sent AFTER commit succeeds
+        var payload = new WriteAuditLogRequest
         {
             UserId = httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "name")?.Value ?? "",
-            UserName = httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "username")?.Value ?? "System",
+            UserName = httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "System",
             Action = action,
             EntityName = controllerName,
             EntityId = GetEntityId(entries.First()),
@@ -87,13 +92,55 @@ public class AuditInterceptor : SaveChangesInterceptor
             ErrorMessage = ""
         };
 
-        _ = Task.Run(async () =>
-        {
-            try { await _auditClient.WriteAuditLogAsync(request); }
-            catch (Exception ex) { _logger.LogWarning(ex, "Failed to send audit log"); }
-        }, cancellationToken);
+        if (httpContext != null)
+            httpContext.Items[AuditPayloadKey] = payload;
 
-        return await base.SavingChangesAsync(eventData, result, cancellationToken);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    // Phase 2: Send audit log AFTER commit succeeds (no false positives on DB failure)
+    public override async ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+
+        if (httpContext?.Items[AuditPayloadKey] is WriteAuditLogRequest payload)
+        {
+            // Clear payload immediately to avoid double-send if SavedChanges fires multiple times
+            httpContext.Items.Remove(AuditPayloadKey);
+
+            var capturedPayload = payload;
+            var capturedLogger = _logger;
+            var capturedClient = _auditClient;
+
+            _ = Task.Run(async () =>
+            {
+                var retryPolicy = Policy
+                    .Handle<RpcException>()
+                    .WaitAndRetryAsync(
+                        3,
+                        attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                        (ex, ts, attempt, _) => capturedLogger.LogWarning(ex,
+                            "Audit gRPC retry {Attempt}/3 for {Service}/{Action}",
+                            attempt, capturedPayload.ServiceName, capturedPayload.Action));
+
+                try
+                {
+                    await retryPolicy.ExecuteAsync(() =>
+                        capturedClient.WriteAuditLogAsync(capturedPayload).ResponseAsync);
+                }
+                catch (Exception ex)
+                {
+                    capturedLogger.LogError(ex,
+                        "AUDIT LOG LOST after 3 retries for {Service}/{Action}/{Entity}",
+                        capturedPayload.ServiceName, capturedPayload.Action, capturedPayload.EntityName);
+                }
+            }, CancellationToken.None);
+        }
+
+        return await base.SavedChangesAsync(eventData, result, cancellationToken);
     }
 
     private static string InferAction(List<EntityEntry> entries)
@@ -141,7 +188,11 @@ public class AuditInterceptor : SaveChangesInterceptor
         if (ctx == null) return "";
         var fwd = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
         if (!string.IsNullOrEmpty(fwd)) return fwd.Split(',').FirstOrDefault()?.Trim() ?? "";
-        return ctx.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "";
+        var remoteIp = ctx.Connection.RemoteIpAddress;
+        if (remoteIp == null) return "";
+        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
+        if (remoteIp.ToString() == "::1") return "127.0.0.1";
+        return remoteIp.ToString();
     }
 
     private static Dictionary<string, object?> SerializeEntryValues(PropertyValues values)

@@ -72,7 +72,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             add.Id = Guid.NewGuid();
             add.Status = (int)CycleStatus.Plan; // Lập kế hoạch — always draft on creation
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             add.IsActived = request.IsActived;
 
             await _context.Cycles.AddAsync(add);
@@ -102,7 +102,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     addCouncil.Id = Guid.NewGuid();
                     addCouncil.CycleId = add.Id;
                     addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addCouncil.CreatedAt = DateTime.Now;
+                    addCouncil.CreatedAt = DateTime.UtcNow;
                     addCouncil.IsActived = true;
                     await _context.Councils.AddAsync(addCouncil);
                 }
@@ -118,7 +118,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     addSchedule.Id = Guid.NewGuid();
                     addSchedule.CycleId = add.Id;
                     addSchedule.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addSchedule.CreatedAt = DateTime.Now;
+                    addSchedule.CreatedAt = DateTime.UtcNow;
                     addSchedule.IsActived = true;
                     await _context.EvaluationSchedules.AddAsync(addSchedule);
                 }
@@ -153,7 +153,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Cycles.Update(update);
 
@@ -166,7 +166,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 foreach (var item in ListCouncilCanXoa)
                 {
                     item.IsDeleted = true;
-                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedAt = DateTime.UtcNow;
                     item.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     _context.Councils.Update(item);
                 }
@@ -195,7 +195,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     var updateCouncil = ListCouncilHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
                     if (updateCouncil != null)
                     {
-                        updateCouncil.UpdatedAt = DateTime.Now;
+                        updateCouncil.UpdatedAt = DateTime.UtcNow;
                         updateCouncil.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                         _context.Councils.Update(updateCouncil);
                     }
@@ -205,7 +205,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                         addCouncil.Id = Guid.NewGuid();
                         addCouncil.CycleId = update.Id;
                         addCouncil.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        addCouncil.CreatedAt = DateTime.Now;
+                        addCouncil.CreatedAt = DateTime.UtcNow;
                         addCouncil.IsActived = true;
                         await _context.Councils.AddAsync(addCouncil);
                     }
@@ -222,7 +222,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 foreach (var item in ListScheduleCanXoa)
                 {
                     item.IsDeleted = true;
-                    item.UpdatedAt = DateTime.Now;
+                    item.UpdatedAt = DateTime.UtcNow;
                     item.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     _context.EvaluationSchedules.Update(item);
                 }
@@ -232,7 +232,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var updateSchedule = ListScheduleHienTai.Find(x => x.Id == item.Id && !x.IsDeleted);
                 if (updateSchedule != null)
                 {
-                    updateSchedule.UpdatedAt = DateTime.Now;
+                    updateSchedule.UpdatedAt = DateTime.UtcNow;
                     updateSchedule.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
                     _context.EvaluationSchedules.Update(updateSchedule);
                 }
@@ -242,7 +242,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     addSchedule.Id = Guid.NewGuid();
                     addSchedule.CycleId = update.Id;
                     addSchedule.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addSchedule.CreatedAt = DateTime.Now;
+                    addSchedule.CreatedAt = DateTime.UtcNow;
                     addSchedule.IsActived = true;
                     await _context.EvaluationSchedules.AddAsync(addSchedule);
                 }
@@ -444,7 +444,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             cycle.Status += 1;
             cycle.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            cycle.UpdatedAt = DateTime.Now;
+            cycle.UpdatedAt = DateTime.UtcNow;
 
             _context.Cycles.Update(cycle);
             await _context.SaveChangesAsync();
@@ -564,7 +564,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             if (!council.IsDelegated)
                 return false;
 
-            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.Now)
+            if (council.DelegatedUntil.HasValue && council.DelegatedUntil.Value <= DateTime.UtcNow)
                 return false;
 
             return true;

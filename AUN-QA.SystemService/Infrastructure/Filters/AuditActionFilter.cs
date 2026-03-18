@@ -107,7 +107,7 @@ public class AuditActionFilter : IAsyncActionFilter
                 ServiceName = "SystemService",
                 IsSuccess = false,
                 ErrorMessage = errorMessage,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             await _auditWriter.WriteAsync(auditLog);

@@ -2,7 +2,9 @@ using System.Text;
 using System.Text.Json;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Protos;
+using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
+using Polly;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -72,10 +74,29 @@ public class AuditActionFilter : IAsyncActionFilter
                 ErrorMessage = ExtractErrorMessage(executedContext) ?? "Unknown error"
             };
 
+            var capturedClient = _auditClient;
+            var capturedLogger = _logger;
             _ = Task.Run(async () =>
             {
-                try { await _auditClient.WriteAuditLogAsync(request); }
-                catch (Exception ex) { _logger.LogWarning(ex, "Failed to send failed-operation audit"); }
+                var retryPolicy = Policy
+                    .Handle<RpcException>()
+                    .WaitAndRetryAsync(
+                        3,
+                        attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                        (ex, ts, attempt, _) => capturedLogger.LogWarning(ex,
+                            "Audit gRPC retry {Attempt}/3 for CatalogService/{Action}",
+                            attempt, request.Action));
+                try
+                {
+                    await retryPolicy.ExecuteAsync(() =>
+                        capturedClient.WriteAuditLogAsync(request).ResponseAsync);
+                }
+                catch (Exception ex)
+                {
+                    capturedLogger.LogError(ex,
+                        "AUDIT LOG LOST after 3 retries for CatalogService/{Action}/{Entity}",
+                        request.Action, request.EntityName);
+                }
             });
         }
     }

@@ -99,7 +99,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             var add = _mapper.Map<Entities.Stakeholder>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Stakeholders.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -127,7 +127,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Stakeholders.Update(update);
             await _context.SaveChangesAsync();
@@ -146,7 +146,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 }
 
                 delete.IsDeleted = true;
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name;
 
                 _context.Stakeholders.Update(delete);

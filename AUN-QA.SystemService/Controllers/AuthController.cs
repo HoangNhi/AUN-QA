@@ -49,7 +49,7 @@ namespace AUN_QA.SystemService.Controllers
                     ServiceName = "SystemService",
                     IsSuccess = true,
                     ErrorMessage = null,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 });
 
                 return Ok(new BaseResponse<LoginResponse> { Data = result, Success = true });
@@ -70,7 +70,7 @@ namespace AUN_QA.SystemService.Controllers
                     ServiceName = "SystemService",
                     IsSuccess = false,
                     ErrorMessage = ex.Message,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 });
 
                 throw;
@@ -97,7 +97,7 @@ namespace AUN_QA.SystemService.Controllers
                 ServiceName = "SystemService",
                 IsSuccess = true,
                 ErrorMessage = null,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             });
 
             return Ok(new BaseResponse<object> { Data = null, Success = true, Message = "Đăng xuất thành công" });

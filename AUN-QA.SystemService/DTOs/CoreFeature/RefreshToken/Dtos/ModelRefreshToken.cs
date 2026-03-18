@@ -22,7 +22,7 @@
 
         public string? ReasonRevoked { get; set; }
 
-        public bool IsExpired => DateTime.Now >= ExpiresAt;
+        public bool IsExpired => DateTime.UtcNow >= ExpiresAt;
 
         public bool IsRevoked => RevokedAt != null;
 

@@ -5,6 +5,9 @@ using AUN_QA.SystemService.Services.SystemGrpc;
 using Grpc.AspNetCore.Web;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
+// Allow writing DateTime with Kind=Utc to PostgreSQL 'timestamp without time zone' columns
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 var port = Environment.GetEnvironmentVariable("PORT");

@@ -52,7 +52,7 @@ public partial class SystemContext : DbContext
                 .HasDefaultValueSql("''::character varying")
                 .HasColumnName("action");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.EntityId)
@@ -104,7 +104,7 @@ public partial class SystemContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("controller");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -211,7 +211,7 @@ public partial class SystemContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -242,7 +242,7 @@ public partial class SystemContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -276,7 +276,7 @@ public partial class SystemContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.Avatar).HasColumnName("avatar");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)

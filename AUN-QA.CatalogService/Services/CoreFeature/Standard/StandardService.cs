@@ -77,7 +77,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var add = _mapper.Map<Entities.Standard>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             #region Criterions
             if (!request.Criterions.Any())
@@ -91,7 +91,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
                 addCriterion.StandardId = add.Id;
                 addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addCriterion.CreatedAt = DateTime.Now;
+                addCriterion.CreatedAt = DateTime.UtcNow;
                 await _context.Criteria.AddAsync(addCriterion);
 
                 // Criterion Requirements
@@ -101,7 +101,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     addOption.Id = option.Id == Guid.Empty ? Guid.NewGuid() : option.Id;
                     addOption.CriterionId = addCriterion.Id;
                     addOption.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addOption.CreatedAt = DateTime.Now;
+                    addOption.CreatedAt = DateTime.UtcNow;
                     await _context.CriterionRequirements.AddAsync(addOption);
                 }
             }
@@ -132,7 +132,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             #region Criterions
             var existingCriterions = _context.Criteria
@@ -145,7 +145,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 {
                     existing.IsDeleted = true;
                     existing.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existing.UpdatedAt = DateTime.Now;
+                    existing.UpdatedAt = DateTime.UtcNow;
                     _context.Criteria.Update(existing);
                 }
             }
@@ -159,7 +159,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     // Update existing
                     _mapper.Map(criterion, existingCriterion);
                     existingCriterion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingCriterion.UpdatedAt = DateTime.Now;
+                    existingCriterion.UpdatedAt = DateTime.UtcNow;
                     _context.Criteria.Update(existingCriterion);
 
                     #region CriterionRequirements for existing Criterion
@@ -177,7 +177,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     {
                         removed.IsDeleted = true;
                         removed.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        removed.UpdatedAt = DateTime.Now;
+                        removed.UpdatedAt = DateTime.UtcNow;
                         _context.CriterionRequirements.Update(removed);
                     }
 
@@ -192,7 +192,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                             // Update existing CriterionRequirement
                             _mapper.Map(requirementRequest, existingRequirement);
                             existingRequirement.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            existingRequirement.UpdatedAt = DateTime.Now;
+                            existingRequirement.UpdatedAt = DateTime.UtcNow;
                             _context.CriterionRequirements.Update(existingRequirement);
                         }
                         else
@@ -202,7 +202,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                             addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
                             addRequirement.CriterionId = existingCriterion.Id;
                             addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            addRequirement.CreatedAt = DateTime.Now;
+                            addRequirement.CreatedAt = DateTime.UtcNow;
                             await _context.CriterionRequirements.AddAsync(addRequirement);
                         }
                     }
@@ -215,7 +215,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
                     addCriterion.StandardId = update.Id;
                     addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addCriterion.CreatedAt = DateTime.Now;
+                    addCriterion.CreatedAt = DateTime.UtcNow;
                     await _context.Criteria.AddAsync(addCriterion);
 
                     #region CriterionRequirements for new Criterion
@@ -226,7 +226,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                         addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
                         addRequirement.CriterionId = addCriterion.Id;
                         addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        addRequirement.CreatedAt = DateTime.Now;
+                        addRequirement.CreatedAt = DateTime.UtcNow;
                         await _context.CriterionRequirements.AddAsync(addRequirement);
                     }
                     #endregion
@@ -250,7 +250,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Standards.Update(delete);
             }

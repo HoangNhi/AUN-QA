@@ -109,7 +109,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
 
         private void revokeRefreshToken(ModelRefreshToken token, string ipAddress, string reason = null, string replacedByToken = null)
         {
-            token.RevokedAt = DateTime.Now;
+            token.RevokedAt = DateTime.UtcNow;
             token.RevokedByIp = ipAddress;
             token.ReasonRevoked = reason;
             token.ReplacedByToken = replacedByToken;

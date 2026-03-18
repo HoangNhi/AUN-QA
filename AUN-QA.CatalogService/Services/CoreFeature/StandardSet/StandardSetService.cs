@@ -51,7 +51,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
             var add = _mapper.Map<Entities.StandardSet>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.StandardSets.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -77,7 +77,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.StandardSet
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.StandardSets.Update(update);
             await _context.SaveChangesAsync();

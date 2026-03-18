@@ -48,7 +48,7 @@ public partial class CatalogContext : DbContext
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("UTC_TIMESTAMP()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.CycleId)
@@ -110,7 +110,7 @@ public partial class CatalogContext : DbContext
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("UTC_TIMESTAMP()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.EndDate).HasColumnType("timestamp");
@@ -118,7 +118,7 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.StartDate).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("UTC_TIMESTAMP()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });
@@ -157,7 +157,7 @@ public partial class CatalogContext : DbContext
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("UTC_TIMESTAMP()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.IsActived)
@@ -165,7 +165,7 @@ public partial class CatalogContext : DbContext
                 .HasDefaultValueSql("'1'");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("UTC_TIMESTAMP()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });

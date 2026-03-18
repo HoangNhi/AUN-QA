@@ -35,7 +35,7 @@ public class AuditGrpcService : AuditProto.AuditProtoBase
                 ServiceName = request.ServiceName,
                 IsSuccess = request.IsSuccess,
                 ErrorMessage = string.IsNullOrEmpty(request.ErrorMessage) ? null : request.ErrorMessage,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.AuditLogs.Add(auditLog);

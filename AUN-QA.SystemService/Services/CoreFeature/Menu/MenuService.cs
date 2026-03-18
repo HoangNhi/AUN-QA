@@ -53,7 +53,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.Controller = add.Controller.ToLower();
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Menus.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -82,7 +82,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             update.Controller = update.Controller.ToLower();
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.Menus.Update(update);
             await _context.SaveChangesAsync();
 
@@ -101,7 +101,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Menus.Update(delete);
             }

@@ -82,7 +82,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
                 add.Status = request.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
                 add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                add.CreatedAt = DateTime.Now;
+                add.CreatedAt = DateTime.UtcNow;
                 await _context.Evidences.AddAsync(add);
 
                 // Thêm tài liệu đính kèm
@@ -92,7 +92,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
                     addAttachment.CreatedBy = add.CreatedBy;
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -138,7 +138,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
                 update.Status = (int)EvidenceStatus.Draft;
                 update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                update.UpdatedAt = DateTime.Now;
+                update.UpdatedAt = DateTime.UtcNow;
 
                 _context.Evidences.Update(update);
 
@@ -153,7 +153,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                     await _uploadFileService.DeleteDataAsync(listDinhKemCanXoa.Select(x => x.FileUrl).ToList());
                     foreach (var attachment in listDinhKemCanXoa)
                     {
-                        attachment.UpdatedAt = DateTime.Now;
+                        attachment.UpdatedAt = DateTime.UtcNow;
                         attachment.UpdatedBy = update.UpdatedBy;
                         attachment.IsDeleted = true;
 
@@ -168,7 +168,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
                     addAttachment.CreatedBy = update.UpdatedBy;
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -296,7 +296,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
                 evidence.Status = (int)EvidenceStatus.Pending;
                 evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                evidence.UpdatedAt = DateTime.Now;
+                evidence.UpdatedAt = DateTime.UtcNow;
                 _context.Evidences.Update(evidence);
             }
 
@@ -314,10 +314,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             evidence.Status = request.EvidenceStatus;
             evidence.RejectionReason = request.RejectionReason;
-            evidence.ApprovedAt = DateTime.Now;
+            evidence.ApprovedAt = DateTime.UtcNow;
             evidence.ApprovedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            evidence.UpdatedAt = DateTime.Now;
+            evidence.UpdatedAt = DateTime.UtcNow;
 
             _context.Evidences.Update(evidence);
             await _context.SaveChangesAsync();

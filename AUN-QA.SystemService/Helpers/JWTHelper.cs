@@ -27,7 +27,7 @@ namespace AUN_QA.SystemService.Helpers
                 Config["Jwt:Issuer"],
                 Config["Jwt:Audience"],
                 claims,
-                expires: DateTime.Now.AddHours(int.Parse(Config["Jwt:Expiry"])),
+                expires: DateTime.UtcNow.AddHours(int.Parse(Config["Jwt:Expiry"])),
                 signingCredentials: credentials
             );
 
@@ -39,8 +39,8 @@ namespace AUN_QA.SystemService.Helpers
             var refreshToken = new RefreshToken
             {
                 Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                ExpiresAt = DateTime.Now.AddHours(double.Parse(Config["Jwt:ExpireRefreshToken"])),
-                CreatedAt = DateTime.Now,
+                ExpiresAt = DateTime.UtcNow.AddHours(double.Parse(Config["Jwt:ExpireRefreshToken"])),
+                CreatedAt = DateTime.UtcNow,
                 CreatedByIp = ipAddress
             };
             return refreshToken;

@@ -104,7 +104,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 add.Status = request.Evidence.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
 
                 add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                add.CreatedAt = DateTime.Now;
+                add.CreatedAt = DateTime.UtcNow;
                 await _context.Evidences.AddAsync(add);
 
                 #region Thêm tài liệu đính kèm
@@ -114,7 +114,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
                     addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -130,7 +130,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     CycleId = request.CycleId,
                     ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
                     CreatedBy = add.CreatedBy,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     IsActived = true,
                     IsDeleted = false
                 };
@@ -191,7 +191,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 // Always reset to Draft after update to require re-approval
                 update.Status = (int)EvidenceStatus.Draft;
                 update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                update.UpdatedAt = DateTime.Now;
+                update.UpdatedAt = DateTime.UtcNow;
 
                 _context.Evidences.Update(update);
 
@@ -204,7 +204,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
                 foreach (var attachment in ListDinhKemCanXoa)
                 {
-                    attachment.UpdatedAt = DateTime.Now;
+                    attachment.UpdatedAt = DateTime.UtcNow;
                     attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                     attachment.IsDeleted = true;
 
@@ -218,7 +218,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
                     addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -236,7 +236,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 cycleMapUpdate.CycleId = request.CycleId;
                 cycleMapUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                cycleMapUpdate.UpdatedAt = DateTime.Now;
+                cycleMapUpdate.UpdatedAt = DateTime.UtcNow;
                 _context.EvidenceCycleMaps.Update(cycleMapUpdate);
                 #endregion
 
@@ -415,7 +415,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                             if (evidence.Status == ((int)EvidenceStatus.Draft))
                             {
                                 evidence.Status = ((int)EvidenceStatus.Pending);
-                                evidence.UpdatedAt = DateTime.Now;
+                                evidence.UpdatedAt = DateTime.UtcNow;
                                 evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
                                 _context.Evidences.Update(evidence);
@@ -446,7 +446,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             evidence.Status = request.EvidenceStatus;
             evidence.RejectionReason = request.RejectionReason;
-            evidence.ApprovedAt = DateTime.Now;
+            evidence.ApprovedAt = DateTime.UtcNow;
             evidence.ApprovedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
             _context.Evidences.Update(evidence);
@@ -597,7 +597,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 CycleId      = request.TargetCycleId,
                 ReviewStatus = (int)EvidenceCycleMapReviewStatus.NotStarted,
                 CreatedBy    = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System",
-                CreatedAt    = DateTime.Now,
+                CreatedAt    = DateTime.UtcNow,
                 IsActived    = true,
                 IsDeleted    = false
             };

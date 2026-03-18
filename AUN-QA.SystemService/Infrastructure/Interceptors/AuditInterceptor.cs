@@ -84,7 +84,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             ServiceName = "SystemService",
             IsSuccess = true,
             ErrorMessage = null,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.UtcNow
         };
 
         context.AuditLogs.Add(auditLog);

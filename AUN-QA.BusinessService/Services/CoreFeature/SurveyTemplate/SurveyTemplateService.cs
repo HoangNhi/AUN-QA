@@ -109,7 +109,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var add = _mapper.Map<Entities.SurveyTemplate>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             await _context.SurveyTemplates.AddAsync(add);
 
             #region Chủ đề khảo sát và nhóm câu hỏi
@@ -124,7 +124,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 addTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
                 addTopic.TemplateId = add.Id;
                 addTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addTopic.CreatedAt = DateTime.Now;
+                addTopic.CreatedAt = DateTime.UtcNow;
                 await _context.TemplateTopics.AddAsync(addTopic);
 
                 #region Nhóm câu hỏi và câu hỏi
@@ -139,7 +139,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     addcategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
                     addcategory.TopicId = addTopic.Id;
                     addcategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addcategory.CreatedAt = DateTime.Now;
+                    addcategory.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateCategories.AddAsync(addcategory);
 
                     if (!catReq.ListQuestion.Any())
@@ -153,7 +153,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         addQuestion.Id = question.Id == Guid.Empty ? Guid.NewGuid() : question.Id;
                         addQuestion.CategoryId = addcategory.Id;
                         addQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        addQuestion.CreatedAt = DateTime.Now;
+                        addQuestion.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateQuestions.AddAsync(addQuestion);
                     }
                 }
@@ -171,7 +171,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     addTextQuestion.Id = textQuestion.Id == Guid.Empty ? Guid.NewGuid() : textQuestion.Id;
                     addTextQuestion.TopicId = addTopic.Id;
                     addTextQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addTextQuestion.CreatedAt = DateTime.Now;
+                    addTextQuestion.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateTextQuestions.AddAsync(addTextQuestion);
                 }
                 #endregion
@@ -213,7 +213,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.SurveyTemplates.Update(update);
 
@@ -253,7 +253,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     // Update Topic
                     _mapper.Map(topicReq, existingTopic);
                     existingTopic.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingTopic.UpdatedAt = DateTime.Now;
+                    existingTopic.UpdatedAt = DateTime.UtcNow;
                     _context.TemplateTopics.Update(existingTopic);
                     currentTopic = existingTopic;
 
@@ -267,7 +267,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
                     newTopic.TemplateId = update.Id;
                     newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    newTopic.CreatedAt = DateTime.Now;
+                    newTopic.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateTopics.AddAsync(newTopic);
                     currentTopic = newTopic;
                 }
@@ -289,7 +289,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         _mapper.Map(catReq, existingCategory);
                         existingCategory.TopicId = currentTopic.Id; // Ensure link
                         existingCategory.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        existingCategory.UpdatedAt = DateTime.Now;
+                        existingCategory.UpdatedAt = DateTime.UtcNow;
                         _context.TemplateCategories.Update(existingCategory);
                         currentCategory = existingCategory;
 
@@ -302,7 +302,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         newCategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
                         newCategory.TopicId = currentTopic.Id;
                         newCategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        newCategory.CreatedAt = DateTime.Now;
+                        newCategory.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateCategories.AddAsync(newCategory);
                         currentCategory = newCategory;
                     }
@@ -323,7 +323,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                             _mapper.Map(qReq, existingQuestion);
                             existingQuestion.CategoryId = currentCategory.Id;
                             existingQuestion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            existingQuestion.UpdatedAt = DateTime.Now;
+                            existingQuestion.UpdatedAt = DateTime.UtcNow;
                             _context.TemplateQuestions.Update(existingQuestion);
 
                             existingQuestions.Remove(existingQuestion);
@@ -335,7 +335,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                             newQuestion.Id = qReq.Id == Guid.Empty ? Guid.NewGuid() : qReq.Id;
                             newQuestion.CategoryId = currentCategory.Id;
                             newQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            newQuestion.CreatedAt = DateTime.Now;
+                            newQuestion.CreatedAt = DateTime.UtcNow;
                             await _context.TemplateQuestions.AddAsync(newQuestion);
                         }
                     }
@@ -359,7 +359,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         _mapper.Map(txtReq, existingTextQ);
                         existingTextQ.TopicId = currentTopic.Id;
                         existingTextQ.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        existingTextQ.UpdatedAt = DateTime.Now;
+                        existingTextQ.UpdatedAt = DateTime.UtcNow;
                         _context.TemplateTextQuestions.Update(existingTextQ);
 
                         existingTextQuestions.Remove(existingTextQ);
@@ -371,7 +371,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         newTextQ.Id = txtReq.Id == Guid.Empty ? Guid.NewGuid() : txtReq.Id;
                         newTextQ.TopicId = currentTopic.Id;
                         newTextQ.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        newTextQ.CreatedAt = DateTime.Now;
+                        newTextQ.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateTextQuestions.AddAsync(newTextQ);
                     }
                 }
@@ -382,7 +382,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 q.IsDeleted = true;
                 q.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                q.UpdatedAt = DateTime.Now;
+                q.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateQuestions.Update(q);
             }
 
@@ -390,7 +390,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 c.IsDeleted = true;
                 c.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                c.UpdatedAt = DateTime.Now;
+                c.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateCategories.Update(c);
             }
 
@@ -398,7 +398,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 tq.IsDeleted = true;
                 tq.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                tq.UpdatedAt = DateTime.Now;
+                tq.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateTextQuestions.Update(tq);
             }
 
@@ -406,7 +406,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 t.IsDeleted = true;
                 t.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                t.UpdatedAt = DateTime.Now;
+                t.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateTopics.Update(t);
             }
             #endregion

@@ -55,7 +55,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
             var add = _mapper.Map<Entities.Role>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             add.IsActived = true;
 
             await _context.Roles.AddAsync(add);
@@ -84,7 +84,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.Roles.Update(update);
             await _context.SaveChangesAsync();
 
@@ -103,7 +103,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Roles.Update(delete);
             }
@@ -167,7 +167,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 var roleUpdate = await _context.Roles.FindAsync(item.RoleId);
                 if (roleUpdate != null)
                 {
-                    roleUpdate.UpdatedAt = DateTime.Now;
+                    roleUpdate.UpdatedAt = DateTime.UtcNow;
                     roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                     _context.Update(roleUpdate);
                 }

@@ -53,7 +53,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             var add = _mapper.Map<Entities.SystemGroup>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.SystemGroups.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -81,7 +81,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.SystemGroups.Update(update);
             await _context.SaveChangesAsync();
 
@@ -100,7 +100,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.SystemGroups.Update(delete);
             }

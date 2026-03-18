@@ -79,7 +79,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             add.PasswordSalt = Encrypt_DecryptHelper.GenerateSalt();
             add.Password = Encrypt_DecryptHelper.EncodePassword(request.Password, add.PasswordSalt);
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             add.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, "");
 
             await _context.Users.AddAsync(add);
@@ -119,7 +119,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             update.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, update.Avatar);
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Users.Update(update);
             await _context.SaveChangesAsync();
@@ -139,7 +139,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Users.Update(delete);
             }
@@ -217,7 +217,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             _mapper.Map(request, update);
             update.Avatar = await _uploadFileService.UploadAvatarAsync(request.FolderUpload, update.Avatar);
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Users.Update(update);
             await _context.SaveChangesAsync();
@@ -250,7 +250,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             update.PasswordSalt = salt;
             update.Password = Encrypt_DecryptHelper.EncodePassword(request.NewPassword, salt);
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Users.Update(update);
             await _context.SaveChangesAsync();

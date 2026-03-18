@@ -62,7 +62,12 @@ namespace AUN_QA.CatalogService.Configs
                     config.DisableDataAnnotationsValidation = true;
                     config.RegisterValidatorsFromAssemblyContaining<FacultyRequestValidator>();
                 })
-                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    options.JsonSerializerOptions.Converters.Add(new VietnamDateTimeConverter());
+                    options.JsonSerializerOptions.Converters.Add(new VietnamNullableDateTimeConverter());
+                });
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();

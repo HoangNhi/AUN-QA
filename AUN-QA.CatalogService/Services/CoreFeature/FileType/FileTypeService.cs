@@ -54,7 +54,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             var add = _mapper.Map<Entities.FileType>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.FileTypes.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -80,7 +80,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.FileType
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.FileTypes.Update(update);
             await _context.SaveChangesAsync();

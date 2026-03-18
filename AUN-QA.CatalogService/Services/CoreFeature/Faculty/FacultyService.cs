@@ -51,7 +51,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             var add = _mapper.Map<Entities.Faculty>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Faculties.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -79,7 +79,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Faculties.Update(update);
             await _context.SaveChangesAsync();

@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -31,16 +32,29 @@ namespace AUN_QA.SystemService.Middlewares
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
-
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.OK;
+
+            string message;
+            int statusCode;
+
+            if (exception is BusinessException busEx)
+            {
+                message = busEx.Message;
+                statusCode = busEx.StatusCode;
+            }
+            else
+            {
+                _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
+                message = _env.IsDevelopment() ? exception.Message : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.";
+                statusCode = 500;
+            }
 
             var response = new BaseResponse<string>
             {
                 Success = false,
-                StatusCode = context.Response.StatusCode,
-                Message = _env.IsDevelopment() ? exception.Message : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."
+                StatusCode = statusCode,
+                Message = message
             };
 
             var json = JsonSerializer.Serialize(response);

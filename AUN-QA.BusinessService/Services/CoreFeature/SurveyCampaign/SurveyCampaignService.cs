@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
@@ -56,7 +57,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var data = await _context.SurveyCampaigns.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             //await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
@@ -139,7 +140,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
+                throw new BusinessException("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
             }
 
             var add = _mapper.Map<Entities.SurveyCampaign>(request);
@@ -152,7 +153,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             #region Chủ đề khảo sát và nhóm câu hỏi
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -166,7 +167,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -180,7 +181,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var question in catReq.ListQuestion)
@@ -196,7 +197,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var textQuestion in topicReq.ListTextQuestion)
@@ -233,13 +234,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
+                throw new BusinessException("Khảo sát cho đối tượng này đã tồn tại ở chu kỳ này");
             }
 
             var update = await _context.SurveyCampaigns.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -281,7 +282,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             // 2. Process Request Data
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -315,7 +316,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -349,7 +350,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var qReq in catReq.ListQuestion)
@@ -382,7 +383,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var txtReq in topicReq.ListTextQuestion)
@@ -463,7 +464,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 var delete = await _context.SurveyCampaigns.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 await CheckCycleStageAsync(delete.CycleId.ToString());
@@ -611,7 +612,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var data = await _context.SurveyCampaigns.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             await CheckCycleStageAsync(data.CycleId.ToString());
@@ -691,10 +692,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     break;
 
                 case ((int)SurveyCampaignStatus.Completed):
-                    throw new Exception("Chiến dịch đã kết thúc, không thể thay đổi trạng thái");
+                    throw new BusinessException("Chiến dịch đã kết thúc, không thể thay đổi trạng thái");
 
                 default:
-                    throw new Exception("Trạng thái không hợp lệ");
+                    throw new BusinessException("Trạng thái không hợp lệ");
             }
 
             await _context.SaveChangesAsync();
@@ -708,7 +709,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (session == null)
             {
-                throw new Exception("Liên kết khảo sát không hợp lệ");
+                throw new BusinessException("Liên kết khảo sát không hợp lệ");
             }
 
             // 2. Get Campaign
@@ -716,12 +717,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (campaignReq.Status == (int)SurveyCampaignStatus.Draft)
             {
-                throw new Exception("Chiến dịch chưa bắt đầu");
+                throw new BusinessException("Chiến dịch chưa bắt đầu");
             }
 
             if (campaignReq.Status == (int)SurveyCampaignStatus.Completed)
             {
-                throw new Exception("Chiến dịch đã kết thúc");
+                throw new BusinessException("Chiến dịch đã kết thúc");
             }
 
             // 3. Map to SurveyViewDto
@@ -801,7 +802,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (session == null)
             {
-                throw new Exception("Liên kết khảo sát không hợp lệ");
+                throw new BusinessException("Liên kết khảo sát không hợp lệ");
             }
 
             var now = DateTime.UtcNow;
@@ -810,12 +811,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (campaign == null)
             {
-                throw new Exception("Không tìm thấy thông tin chiến dịch");
+                throw new BusinessException("Không tìm thấy thông tin chiến dịch");
             }
 
             if (campaign.Status == (int)SurveyCampaignStatus.Draft)
             {
-                throw new Exception("Chiến dịch chưa bắt đầu");
+                throw new BusinessException("Chiến dịch chưa bắt đầu");
             }
 
             // NEW: Clean up existing answers if re-submitting (for editing)
@@ -881,7 +882,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(request.CampainId);
             if (campaign == null)
             {
-                throw new Exception("Chiến dịch khảo sát không tồn tại");
+                throw new BusinessException("Chiến dịch khảo sát không tồn tại");
             }
             await CheckPdcaPermissionAsync(campaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
             var allStakeholders = await _catalogService
@@ -933,7 +934,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         public async Task<GetListPagingResponse<ModelSurveySession>> GetListSession(SurveySessionGetListPagingRequest request)
         {
             var sessionCampaign = await _context.SurveyCampaigns.FindAsync(request.CampaignId)
-                ?? throw new Exception("Chiến dịch không tồn tại");
+                ?? throw new BusinessException("Chiến dịch không tồn tại");
             await CheckPdcaPermissionAsync(sessionCampaign.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
 
             var query = _context.SurveySessions
@@ -975,7 +976,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var data = await _context.SurveyCampaigns.FindAsync(request.CampaignId);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             await CheckCycleStageAsync(data.CycleId.ToString());
@@ -983,7 +984,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (!request.StakeholderIds.Any())
             {
-                throw new Exception("Danh sách người tham gia không được để trống");
+                throw new BusinessException("Danh sách người tham gia không được để trống");
             }
 
             foreach (var stakeholderId in request.StakeholderIds)
@@ -995,7 +996,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (stakeholder == null)
                 {
-                    throw new Exception($"Người tham gia với ID {stakeholderId} không tồn tại");
+                    throw new BusinessException($"Người tham gia với ID {stakeholderId} không tồn tại");
                 }
 
                 var add = new Entities.SurveySession
@@ -1023,7 +1024,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var data = await _context.SurveyCampaigns.FindAsync(request.CampaignId);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             await CheckCycleStageAsync(data.CycleId.ToString());
@@ -1039,7 +1040,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             if (!stakeholder.Data.Any())
             {
-                throw new Exception("Không có người tham gia nào phù hợp để thêm vào chiến dịch");
+                throw new BusinessException("Không có người tham gia nào phù hợp để thêm vào chiến dịch");
             }
 
             foreach (var item in stakeholder.Data)
@@ -1084,14 +1085,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             else
             {
-                throw new Exception("Chiến dịch không tồn tại");
+                throw new BusinessException("Chiến dịch không tồn tại");
             }
 
             foreach (var session in sessions)
             {
                 if (session.Status == ((int)SurveySessionStatus.Completed))
                 {
-                    throw new Exception("Không thể xóa người đã hoàn thành khảo sát");
+                    throw new BusinessException("Không thể xóa người đã hoàn thành khảo sát");
                 }
 
                 session.IsDeleted = true;
@@ -1109,13 +1110,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var session = await _context.SurveySessions.FindAsync(request.Id);
             if (session == null)
             {
-                throw new Exception("Không tìm thấy thông tin lượt khảo sát");
+                throw new BusinessException("Không tìm thấy thông tin lượt khảo sát");
             }
 
             var data = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             await CheckCycleStageAsync(data.CycleId.ToString());
@@ -1124,7 +1125,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var campaign = await _context.SurveyCampaigns.FindAsync(session.CampaignId);
             if (campaign == null)
             {
-                throw new Exception("Không tìm thấy thông tin chiến dịch khảo sát");
+                throw new BusinessException("Không tìm thấy thông tin chiến dịch khảo sát");
             }
 
             string subject = $"Mời tham gia khảo sát: {campaign.Name}";
@@ -1148,7 +1149,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             }
             catch (Exception ex)
             {
-                throw new Exception($"Gửi email thất bại: {ex.Message}");
+                throw new BusinessException($"Gửi email thất bại: {ex.Message}");
             }
         }
         #endregion
@@ -1205,7 +1206,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (conflicted.Any())
                 {
-                    throw new Exception("Payload không hợp lệ: chứa TopicId không thuộc chiến dịch hiện tại");
+                    throw new BusinessException("Payload không hợp lệ: chứa TopicId không thuộc chiến dịch hiện tại");
                 }
             }
 
@@ -1220,7 +1221,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (conflicted.Any())
                 {
-                    throw new Exception("Payload không hợp lệ: chứa CategoryId không thuộc chiến dịch hiện tại");
+                    throw new BusinessException("Payload không hợp lệ: chứa CategoryId không thuộc chiến dịch hiện tại");
                 }
             }
 
@@ -1235,7 +1236,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (conflicted.Any())
                 {
-                    throw new Exception("Payload không hợp lệ: chứa QuestionId không thuộc chiến dịch hiện tại");
+                    throw new BusinessException("Payload không hợp lệ: chứa QuestionId không thuộc chiến dịch hiện tại");
                 }
             }
 
@@ -1250,7 +1251,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
                 if (conflicted.Any())
                 {
-                    throw new Exception("Payload không hợp lệ: chứa TextQuestionId không thuộc chiến dịch hiện tại");
+                    throw new BusinessException("Payload không hợp lệ: chứa TextQuestionId không thuộc chiến dịch hiện tại");
                 }
             }
         }
@@ -1261,7 +1262,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .FirstOrDefault(x => x.Type == "name")!.Value;
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
             if (!allowed)
-                throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
         }
 
         /// <summary>
@@ -1273,7 +1274,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             var (found, status) = await _catalogService.GetCycleStatusAsync(cycleId);
 
             if (!found)
-                throw new Exception("Chu kỳ không tồn tại");
+                throw new BusinessException("Chu kỳ không tồn tại");
 
             // CycleStatus.Do == 2 (Thực hiện) — matches CatalogService CommonEnum.CycleStatus.Do
             const int CycleStatusDo = 2;
@@ -1289,7 +1290,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 .FirstOrDefault(x => x.Type == "name")?.Value;
 
             if (string.IsNullOrEmpty(userId))
-                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
 
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
                 cycleId,
@@ -1298,7 +1299,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
 
             if (!allowed)
-                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
         }
         #endregion
     }

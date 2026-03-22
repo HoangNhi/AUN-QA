@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
@@ -37,7 +38,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelUser>(data);
@@ -51,12 +52,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
             if (string.IsNullOrEmpty(userId))
             {
-                throw new Exception("Người dùng chưa xác thực");
+                throw new BusinessException("Người dùng chưa xác thực");
             }
             var data = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Guid.Parse(userId) && !x.IsDeleted && x.IsActived);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
             var result = _mapper.Map<ModelUser>(data);
             return result;
@@ -71,7 +72,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
+                throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.User>(request);
@@ -96,13 +97,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Tên đăng nhập hoặc email đã tồn tại");
+                throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại");
             }
 
             var update = await _context.Users.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             var oldPassword = update.Password;
@@ -134,7 +135,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 var delete = await _context.Users.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -194,7 +195,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (string.IsNullOrEmpty(currentUserId))
             {
-                throw new Exception("Người dùng không có quyền thực hiện hành động này");
+                throw new BusinessException("Người dùng không có quyền thực hiện hành động này");
             }
 
             var userId = Guid.Parse(currentUserId);
@@ -205,13 +206,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
 
             if (data.Any())
             {
-                throw new Exception("Email đã tồn tại");
+                throw new BusinessException("Email đã tồn tại");
             }
 
             var update = await _context.Users.FindAsync(userId);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -237,14 +238,14 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var update = await _context.Users.FirstOrDefaultAsync(x => x.Id == id && x.Username == _contextAccessor.HttpContext.User.Identity.Name && x.IsDeleted == false);
             if (update == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
-            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new Exception("Xác nhận mật khẩu mới không đúng");
+            if (!request.NewPassword.Equals(request.ConfirmNewPassword)) throw new BusinessException("Xác nhận mật khẩu mới không đúng");
 
             // Nếu đổi mật khẩu thì cập nhật lại mật khẩu mới
             var pass = Encrypt_DecryptHelper.EncodePassword(request.OldPassword, update.PasswordSalt);
-            if (!pass.Equals(update.Password)) throw new Exception("Mật khẩu cũ không đúng");
+            if (!pass.Equals(update.Password)) throw new BusinessException("Mật khẩu cũ không đúng");
 
             var salt = Encrypt_DecryptHelper.GenerateSalt();
             update.PasswordSalt = salt;

@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.DTOs.Common;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Cycle.Dtos;
@@ -38,7 +39,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             var data = await _context.Cycles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelCycle>(data);
@@ -65,7 +66,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (data.Any())
             {
-                throw new Exception("Tên chu kỳ đã tồn tại");
+                throw new BusinessException("Tên chu kỳ đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Cycle>(request);
@@ -82,18 +83,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             {
                 if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
                 {
-                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
+                    throw new BusinessException("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
-                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                    throw new BusinessException("Hội đồng phải có 1 trưởng nhóm");
                 }
 
                 // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
                 if (request.ListCouncil.Count < 9)
                 {
-                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
+                    throw new BusinessException("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var council in request.ListCouncil)
@@ -136,18 +137,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (data.Any())
             {
-                throw new Exception("Tên chu kỳ đã tồn tại");
+                throw new BusinessException("Tên chu kỳ đã tồn tại");
             }
 
             var update = await _context.Cycles.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             if (update.Status >= (int)CycleStatus.Finish)
             {
-                throw new Exception("Chu kỳ đã kết thúc, không thể cập nhật");
+                throw new BusinessException("Chu kỳ đã kết thúc, không thể cập nhật");
             }
 
             _mapper.Map(request, update);
@@ -176,18 +177,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
             {
                 if (request.ListCouncil.Count() > 1 && request.ListCouncil.GroupBy(x => x.UserId).Any(g => g.Count() > 1))
                 {
-                    throw new Exception("Thành viên trong hội đồng đánh giá không được trùng nhau");
+                    throw new BusinessException("Thành viên trong hội đồng đánh giá không được trùng nhau");
                 }
 
                 if (request.ListCouncil.Count(x => x.RoleId == ((int)CouncilRole.HeadOfCouncil)) != 1)
                 {
-                    throw new Exception("Hội đồng phải có 1 trưởng nhóm");
+                    throw new BusinessException("Hội đồng phải có 1 trưởng nhóm");
                 }
 
                 // Blueprint Đ15.k1: HĐ phải có tối thiểu 9 thành viên
                 if (request.ListCouncil.Count < 9)
                 {
-                    throw new Exception("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
+                    throw new BusinessException("Hội đồng phải có tối thiểu 9 thành viên (Đ15.k1)");
                 }
 
                 foreach (var item in request.ListCouncil)
@@ -259,7 +260,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                 var delete = await _context.Cycles.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 if (delete.Status != (int)CycleStatus.Plan)
@@ -275,7 +276,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
                     });
 
                     if (!allowed)
-                        throw new Exception($"Chu kỳ '{delete.Name}' đang ở trạng thái thực hiện, chỉ Chủ tịch Hội đồng mới có quyền xóa");
+                        throw new BusinessException($"Chu kỳ '{delete.Name}' đang ở trạng thái thực hiện, chỉ Chủ tịch Hội đồng mới có quyền xóa");
                 }
 
                 delete.IsDeleted = true;
@@ -419,7 +420,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
         {
             var cycle = await _context.Cycles.FindAsync(request.Id);
             if (cycle == null)
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
 
             var userId = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
 
@@ -436,11 +437,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Cycle
 
             if (!checkPermissionInPDCA)
             {
-                throw new Exception("Chỉ Chủ tịch hoặc Phó chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
+                throw new BusinessException("Chỉ Chủ tịch hoặc Phó chủ tịch Hội đồng mới có quyền chuyển trạng thái chu kỳ");
             }
 
             if (cycle.Status >= (int)CycleStatus.Finish)
-                throw new Exception("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
+                throw new BusinessException("Chu kỳ đã kết thúc, không thể chuyển trạng thái");
 
             cycle.Status += 1;
             cycle.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;

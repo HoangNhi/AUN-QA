@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
@@ -35,7 +36,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var data = await _context.SurveyTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelSurveyTemplate>(data);
@@ -103,7 +104,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Tên mẫu khảo sát đã tồn tại");
+                throw new BusinessException("Tên mẫu khảo sát đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.SurveyTemplate>(request);
@@ -115,7 +116,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             #region Chủ đề khảo sát và nhóm câu hỏi
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -130,7 +131,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Nhóm câu hỏi và câu hỏi
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -144,7 +145,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var question in catReq.ListQuestion)
@@ -162,7 +163,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Ý kiến khác
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var textQuestion in topicReq.ListTextQuestion)
@@ -201,13 +202,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Tên mẫu khảo sát đã tồn tại");
+                throw new BusinessException("Tên mẫu khảo sát đã tồn tại");
             }
 
             var update = await _context.SurveyTemplates.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -240,7 +241,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             // 2. Process Request Data
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -275,7 +276,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Process Categories
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -310,7 +311,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     #region Process Questions
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var qReq in catReq.ListQuestion)
@@ -346,7 +347,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Process Text Questions
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var txtReq in topicReq.ListTextQuestion)
@@ -430,7 +431,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 var delete = await _context.SurveyTemplates.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

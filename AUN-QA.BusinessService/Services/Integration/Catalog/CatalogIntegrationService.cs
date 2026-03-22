@@ -1,4 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Integration.Catalog;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Grpc.Core;
@@ -41,7 +42,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
 
             foreach (var item in lst)
@@ -79,7 +80,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
 
             foreach (var item in lst)
@@ -103,7 +104,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
 
@@ -123,7 +124,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
 
@@ -146,7 +147,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
 
@@ -164,7 +165,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
 
@@ -178,7 +179,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
         #endregion
@@ -210,7 +211,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
 
             foreach (var item in lst)
@@ -238,7 +239,7 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
             catch (RpcException)
             {
-                throw new Exception("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
 
             foreach (var item in lst)

@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
@@ -34,7 +35,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
             var data = await _context.Roles.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             return _mapper.Map<ModelRole>(data);
@@ -49,7 +50,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new BusinessException("Tên gọi đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Role>(request);
@@ -72,13 +73,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new BusinessException("Tên gọi đã tồn tại");
             }
 
             var update = await _context.Roles.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -98,7 +99,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 var delete = await _context.Roles.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

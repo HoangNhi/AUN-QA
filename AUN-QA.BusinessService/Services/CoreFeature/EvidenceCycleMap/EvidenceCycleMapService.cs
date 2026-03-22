@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
@@ -56,7 +57,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var data = await _context.EvidenceCycleMaps.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
@@ -92,7 +93,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 if (await data.AnyAsync())
                 {
-                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                    throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
                 }
 
                 var add = _mapper.Map<Entities.Evidence>(request.Evidence);
@@ -168,12 +169,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 var update = await _context.Evidences.FindAsync(request.Evidence.Id);
                 if (update == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
                 {
-                    throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+                    throw new BusinessException("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
                 }
 
                 // Validate duplicate name or code
@@ -183,7 +184,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 if (await data.AnyAsync())
                 {
-                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                    throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
                 }
 
                 _mapper.Map(request.Evidence, update);
@@ -231,7 +232,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 var cycleMapUpdate = await _context.EvidenceCycleMaps.FindAsync(request.Id);
                 if (cycleMapUpdate == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 cycleMapUpdate.CycleId = request.CycleId;
@@ -264,7 +265,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 var delete = await _context.EvidenceCycleMaps.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 await CheckCycleStageAsync(delete.CycleId.ToString());
@@ -432,7 +433,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(request.Id);
             if (evidenceCycleMap is null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             await CheckCycleStageAsync(evidenceCycleMap.CycleId.ToString());
@@ -441,7 +442,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
             if (evidence is null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             evidence.Status = request.EvidenceStatus;
@@ -581,14 +582,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             var evidence = await _context.Evidences.FindAsync(request.EvidenceId);
             if (evidence == null || evidence.Status != (int)EvidenceStatus.Verified)
-                throw new Exception("Chỉ có thể tái sử dụng minh chứng đã được duyệt");
+                throw new BusinessException("Chỉ có thể tái sử dụng minh chứng đã được duyệt");
 
             var existing = await _context.EvidenceCycleMaps
                 .FirstOrDefaultAsync(x => x.EvidenceId == request.EvidenceId
                                           && x.CycleId == request.TargetCycleId
                                           && !x.IsDeleted);
             if (existing != null)
-                throw new Exception("Minh chứng này đã được liên kết với chu kỳ hiện tại");
+                throw new BusinessException("Minh chứng này đã được liên kết với chu kỳ hiện tại");
 
             var cycleMap = new Entities.EvidenceCycleMap
             {
@@ -617,7 +618,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .FirstOrDefault(x => x.Type == "name")!.Value;
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
             if (!allowed)
-                throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
         }
 
         /// <summary>
@@ -629,7 +630,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var (found, status) = await _catalogService.GetCycleStatusAsync(cycleId);
 
             if (!found)
-                throw new Exception("Chu kỳ không tồn tại");
+                throw new BusinessException("Chu kỳ không tồn tại");
 
             // CycleStatus.Do == 2 (Thực hiện) — matches CatalogService CommonEnum.CycleStatus.Do
             const int CycleStatusDo = 2;
@@ -644,7 +645,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .FirstOrDefault(x => x.Type == "name")?.Value;
 
             if (string.IsNullOrEmpty(userId))
-                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
 
             var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
                 cycleId,
@@ -653,7 +654,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
 
             if (!allowed)
-                throw new Exception("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
         }
 
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)

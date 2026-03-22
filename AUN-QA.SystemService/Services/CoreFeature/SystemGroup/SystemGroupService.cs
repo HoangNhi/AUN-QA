@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Requests;
 using AUN_QA.SystemService.Helpers;
@@ -32,7 +33,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             var data = await _context.SystemGroups.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelSystemGroup>(data);
@@ -47,7 +48,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("Tên nhóm đã tồn tại");
+                throw new BusinessException("Tên nhóm đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.SystemGroup>(request);
@@ -69,13 +70,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("Tên nhóm đã tồn tại");
+                throw new BusinessException("Tên nhóm đã tồn tại");
             }
 
             var update = await _context.SystemGroups.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -95,7 +96,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
                 var delete = await _context.SystemGroups.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

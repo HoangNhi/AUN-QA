@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.FileService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Grpc.Core;
@@ -42,7 +43,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
+                throw new BusinessException("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
 
@@ -57,7 +58,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
+                throw new BusinessException("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
 
@@ -81,7 +82,7 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
             catch (RpcException ex)
             {
-                throw new Exception("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
+                throw new BusinessException("Lỗi kết nối đến FileService. Vui lòng thử lại sau.", ex);
             }
         }
     }

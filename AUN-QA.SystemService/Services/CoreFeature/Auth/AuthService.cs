@@ -1,4 +1,5 @@
-﻿using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
+﻿using AUN_QA.Shared.Exceptions;
+using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Requests;
@@ -37,18 +38,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
             var user = _context.Users.Where(x => x.Username == request.Username).FirstOrDefault();
             if (user == null)
             {
-                throw new Exception("Tài khoản không tồn tại");
+                throw new BusinessException("Tài khoản không tồn tại");
             }
 
             if (!user.IsActived)
             {
-                throw new Exception("Tài khoản đã bị vô hiệu");
+                throw new BusinessException("Tài khoản đã bị vô hiệu");
             }
 
             var pass = Encrypt_DecryptHelper.EncodePassword(request.Password, user.PasswordSalt);
             if (!pass.Equals(user.Password))
             {
-                throw new Exception("Tài khoản hoặc mật khẩu không đúng");
+                throw new BusinessException("Tài khoản hoặc mật khẩu không đúng");
             }
 
             var data = _mapper.Map<LoginResponse>(user);
@@ -77,7 +78,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
                 _context.SaveChanges();
             }
 
-            if (!refreshToken.IsActive) throw new Exception("Token không hợp lệ");
+            if (!refreshToken.IsActive) throw new BusinessException("Token không hợp lệ");
 
             var newRefreshToken = rotateRefreshToken(refreshToken, ipAddress);
             newRefreshToken.UserId = user.Id;

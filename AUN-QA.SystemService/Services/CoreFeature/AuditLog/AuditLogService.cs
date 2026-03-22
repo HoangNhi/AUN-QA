@@ -1,4 +1,5 @@
 using AUN_QA.Shared.Common;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.CoreFeature.AuditLog.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.AuditLog.Requests;
@@ -88,7 +89,7 @@ public class AuditLogService : IAuditLogService
             .FirstOrDefaultAsync(x => x.Id == request.Id);
 
         if (data == null)
-            throw new Exception("Không tìm thấy dữ liệu audit log");
+            throw new BusinessException("Không tìm thấy dữ liệu audit log");
 
         return _mapper.Map<ModelAuditLog>(data);
     }

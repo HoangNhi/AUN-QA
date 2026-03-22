@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.FileService.DTOs.Base;
 using AUN_QA.FileService.DTOs.Common;
 using AutoDependencyRegistration.Attributes;
@@ -21,7 +22,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         {
             if (string.IsNullOrWhiteSpace(FolderName) || FolderName.Contains("..") || FolderName.Contains("/") || FolderName.Contains("\\"))
             {
-                throw new Exception("Thư mục lưu trữ không hợp lệ");
+                throw new BusinessException("Thư mục lưu trữ không hợp lệ");
             }
 
             var folderPath = Path.Combine(_webHostEnvironment.WebRootPath, "Files/Temp/" + FolderName);
@@ -49,7 +50,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
                 }
                 else
                 {
-                    throw new Exception("Upload file không thành công");
+                    throw new BusinessException("Upload file không thành công");
                 }
             }
         }
@@ -58,11 +59,11 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         {
             if (string.IsNullOrWhiteSpace(tempFolder) || tempFolder.Contains("..") || tempFolder.Contains("/") || tempFolder.Contains("\\"))
             {
-                throw new Exception("Thư mục lưu trữ tạm không hợp lệ");
+                throw new BusinessException("Thư mục lưu trữ tạm không hợp lệ");
             }
             if (string.IsNullOrWhiteSpace(folderName) || folderName.Contains("..") || folderName.Contains("/") || folderName.Contains("\\"))
             {
-                throw new Exception("Thư mục lưu trữ chính không hợp lệ");
+                throw new BusinessException("Thư mục lưu trữ chính không hợp lệ");
             }
 
             List<ModelAttachment> result = new List<ModelAttachment>();
@@ -178,7 +179,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
         {
             if (string.IsNullOrWhiteSpace(fileUrl))
             {
-                throw new Exception("Đường dẫn tệp không hợp lệ");
+                throw new BusinessException("Đường dẫn tệp không hợp lệ");
             }
 
             var normalizedRelativePath = fileUrl
@@ -192,12 +193,12 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 
             if (!absolutePath.StartsWith(fullWebRootPath, StringComparison.OrdinalIgnoreCase))
             {
-                throw new Exception("Đường dẫn tệp không hợp lệ");
+                throw new BusinessException("Đường dẫn tệp không hợp lệ");
             }
 
             if (!File.Exists(absolutePath))
             {
-                throw new Exception("Tệp không tồn tại");
+                throw new BusinessException("Tệp không tồn tại");
             }
 
             var fileContent = File.ReadAllBytes(absolutePath);

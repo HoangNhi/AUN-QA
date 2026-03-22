@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
@@ -34,7 +35,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var data = await _context.Standards.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<StandardRequest>(data);
@@ -71,7 +72,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new BusinessException("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Standard>(request);
@@ -82,7 +83,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             #region Criterions
             if (!request.Criterions.Any())
             {
-                throw new Exception("Tiêu chí không được để trống");
+                throw new BusinessException("Tiêu chí không được để trống");
             }
 
             foreach (var criterion in request.Criterions)
@@ -120,13 +121,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new BusinessException("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var update = await _context.Standards.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
@@ -245,7 +246,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 var delete = await _context.Standards.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -326,7 +327,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
                 if (standardSet == null)
                 {
-                    throw new Exception("Bộ tiêu chuẩn không tồn tại");
+                    throw new BusinessException("Bộ tiêu chuẩn không tồn tại");
                 }
                 targetStandardSetId = standardSet.Id;
             }
@@ -337,7 +338,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
                 if (cycle == null)
                 {
-                    throw new Exception("Chu kỳ không tồn tại");
+                    throw new BusinessException("Chu kỳ không tồn tại");
                 }
                 targetStandardSetId = cycle.StandardSetId;
             }

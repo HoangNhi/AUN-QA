@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
@@ -40,7 +41,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
             var data = await _context.Evidences.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelEvidence>(data);
@@ -57,7 +58,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             if (attachment == null)
             {
-                throw new Exception("Tệp đính kèm không tồn tại");
+                throw new BusinessException("Tệp đính kèm không tồn tại");
             }
 
             return await _uploadFileService.PreviewFileAsync(attachment.FileUrl, mode);
@@ -72,7 +73,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             if (isDuplicate)
             {
-                throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -117,18 +118,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 
             if (isDuplicate)
             {
-                throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
             }
 
             var update = await _context.Evidences.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
             {
-                throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+                throw new BusinessException("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -192,12 +193,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 var delete = await _context.Evidences.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 if (delete.Status == ((int)EvidenceStatus.Pending) || delete.Status == ((int)EvidenceStatus.Verified))
                 {
-                    throw new Exception("Không được xóa minh chứng đang chờ duyệt hoặc đã duyệt");
+                    throw new BusinessException("Không được xóa minh chứng đang chờ duyệt hoặc đã duyệt");
                 }
 
                 delete.IsDeleted = true;
@@ -283,13 +284,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         public async Task SubmitForReview(EvidenceSubmitToApproveRequest request)
         {
             if (!request.Ids.Any())
-                throw new Exception("Không có minh chứng để gửi duyệt");
+                throw new BusinessException("Không có minh chứng để gửi duyệt");
 
             foreach (var id in request.Ids)
             {
                 var evidence = await _context.Evidences.FindAsync(id);
                 if (evidence == null)
-                    throw new Exception("Minh chứng không tồn tại");
+                    throw new BusinessException("Minh chứng không tồn tại");
 
                 if (evidence.Status != (int)EvidenceStatus.Draft)
                     continue;
@@ -307,10 +308,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         {
             var evidence = await _context.Evidences.FindAsync(request.Id);
             if (evidence == null)
-                throw new Exception("Minh chứng không tồn tại");
+                throw new BusinessException("Minh chứng không tồn tại");
 
             if (evidence.Status != (int)EvidenceStatus.Pending)
-                throw new Exception("Chỉ được duyệt minh chứng đang chờ duyệt");
+                throw new BusinessException("Chỉ được duyệt minh chứng đang chờ duyệt");
 
             evidence.Status = request.EvidenceStatus;
             evidence.RejectionReason = request.RejectionReason;

@@ -1,0 +1,195 @@
+import { useState } from "react";
+import { ChevronDown, ChevronRight, Zap } from "lucide-react";
+import type {
+  CriterionEvaluationItem,
+  EvaluationStatus,
+  FrameworkType,
+  StandardEvaluationGroup,
+} from "../../../types/criterionEvaluation.types";
+import { EVALUATION_STATUS_CONFIG } from "../../../types/criterionEvaluation.types";
+
+interface CriteriaGridProps {
+  groups: StandardEvaluationGroup[];
+  framework: FrameworkType;
+  onRowClick: (item: CriterionEvaluationItem) => void;
+}
+
+function StatusBadge({ status }: { status: EvaluationStatus }) {
+  const config = EVALUATION_STATUS_CONFIG[status];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.color}`}
+    >
+      {config.label}
+    </span>
+  );
+}
+
+function OfficialScoreCell({
+  item,
+  framework,
+}: {
+  item: CriterionEvaluationItem;
+  framework: FrameworkType;
+}) {
+  if (item.Status !== 3) return <span className="text-muted-foreground">—</span>;
+
+  if (framework === "AUN" && item.OfficialScore != null) {
+    return (
+      <span className="font-semibold text-blue-700">{item.OfficialScore}/7</span>
+    );
+  }
+  if (framework === "MOET") {
+    if (item.OfficialResult === true) {
+      return (
+        <span className="text-green-600 font-medium">Đạt</span>
+      );
+    }
+    if (item.OfficialResult === false) {
+      return (
+        <span className="text-red-600 font-medium">Không đạt</span>
+      );
+    }
+  }
+  return <span className="text-muted-foreground">—</span>;
+}
+
+function StandardGroupRow({
+  group,
+  framework,
+  onRowClick,
+}: {
+  group: StandardEvaluationGroup;
+  framework: FrameworkType;
+  onRowClick: (item: CriterionEvaluationItem) => void;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <>
+      {/* Standard group header */}
+      <tr
+        className="bg-muted/60 cursor-pointer hover:bg-muted select-none"
+        onClick={() => setCollapsed((c) => !c)}
+      >
+        <td colSpan={5} className="px-4 py-2">
+          <div className="flex items-center gap-2">
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="font-semibold text-sm">
+              {group.StandardCode} — {group.StandardName}
+            </span>
+            <span className="text-xs text-muted-foreground ml-2">
+              {group.ApprovedCount}/{group.TotalCount} duyệt
+            </span>
+            {framework === "MOET" && (
+              <span
+                className={`ml-auto text-xs font-medium rounded px-2 py-0.5 ${
+                  group.IsPassed
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {group.IsPassed ? "Đạt" : "Không đạt"}
+              </span>
+            )}
+          </div>
+        </td>
+      </tr>
+
+      {/* Criterion rows */}
+      {!collapsed &&
+        group.Items.map((item) => (
+          <tr
+            key={item.Id}
+            className="hover:bg-muted/40 cursor-pointer border-b border-border/50"
+            onClick={() => onRowClick(item)}
+          >
+            <td className="px-4 py-2.5 text-sm">
+              <div className="flex items-center gap-1.5">
+                {item.IsPrerequisite && (
+                  <Zap className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                )}
+                <span className="font-mono text-xs text-muted-foreground">
+                  {item.CriterionCode}
+                </span>
+              </div>
+            </td>
+            <td className="px-4 py-2.5 text-sm max-w-[300px]">
+              <span className="line-clamp-2">{item.CriterionName}</span>
+            </td>
+            <td className="px-4 py-2.5">
+              <StatusBadge status={item.Status} />
+              {item.SubmissionCount > 0 && (
+                <span className="ml-1.5 text-xs text-muted-foreground">
+                  ({item.SubmissionCount})
+                </span>
+              )}
+            </td>
+            <td className="px-4 py-2.5 text-sm">
+              <OfficialScoreCell item={item} framework={framework} />
+            </td>
+            <td className="px-4 py-2.5 text-sm text-muted-foreground">
+              {item.EvidenceCount > 0 ? (
+                <span>{item.EvidenceCount}</span>
+              ) : (
+                <span>—</span>
+              )}
+            </td>
+          </tr>
+        ))}
+    </>
+  );
+}
+
+export function CriteriaGrid({ groups, framework, onRowClick }: CriteriaGridProps) {
+  if (groups.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <p className="text-sm">Chưa có dữ liệu đánh giá.</p>
+        <p className="text-xs mt-1">
+          Vui lòng khởi tạo hoặc chọn chu kỳ đang thực hiện.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b bg-muted/30">
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[100px]">
+              Mã TC
+            </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground">
+              Nội dung tiêu chí
+            </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[140px]">
+              Trạng thái
+            </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[100px]">
+              {framework === "AUN" ? "Điểm" : "Kết quả"}
+            </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[80px]">
+              Minh chứng
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((group) => (
+            <StandardGroupRow
+              key={group.StandardId}
+              group={group}
+              framework={framework}
+              onRowClick={onRowClick}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

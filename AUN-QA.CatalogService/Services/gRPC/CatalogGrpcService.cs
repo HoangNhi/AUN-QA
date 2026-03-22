@@ -113,6 +113,19 @@ namespace AUN_QA.CatalogService.Services.gRPC
                 await responseStream.WriteAsync(item);
             }
         }
+
+        public override async Task GetStandardsWithCriteriaStream(
+            GetStandardsWithCriteriaStreamRequest request,
+            IServerStreamWriter<StandardWithCriteriaInfo> responseStream,
+            ServerCallContext context)
+        {
+            await foreach (var item in _standardService.GetStandardsWithCriteriaStreamAsync(
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
         #endregion
 
         #region FileType Service

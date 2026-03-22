@@ -85,9 +85,9 @@ function getCouncilColumns({
                 }
                 const selectedOptions: Option[] = (
                     row.original.AssignedStandardIds ?? []
-                ).map((id) => {
+                ).flatMap((id) => {
                     const s = standards.find((x) => x.Id === id);
-                    return { value: id, label: s?.Code ?? id };
+                    return s ? [{ value: id, label: s.Code }] : [];
                 });
                 const allOptions: Option[] = standards.map((s) => ({
                     value: s.Id,

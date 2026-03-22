@@ -20,5 +20,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
             GetCriterionsForEvidenceStreamRequest request,
             CancellationToken cancellationToken = default);
+
+        IAsyncEnumerable<StandardWithCriteriaInfo> GetStandardsWithCriteriaStreamAsync(
+            GetStandardsWithCriteriaStreamRequest request,
+            CancellationToken cancellationToken = default);
     }
 }

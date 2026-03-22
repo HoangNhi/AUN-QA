@@ -219,6 +219,39 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                 yield return item;
             }
         }
+
+        public async IAsyncEnumerable<StandardWithCriteriaDto> GetStandardsWithCriteriaStreamAsync(GetStandardsWithCriteriaStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lst = new List<StandardWithCriteriaDto>();
+            try
+            {
+                using var call = _grpcClient.GetStandardsWithCriteriaStream(request, cancellationToken: cancellationToken);
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    lst.Add(new StandardWithCriteriaDto
+                    {
+                        StandardId = Guid.Parse(item.StandardId),
+                        StandardCode = item.StandardCode,
+                        StandardName = item.StandardName,
+                        StandardOrder = item.StandardOrder,
+                        CriterionId = Guid.Parse(item.CriterionId),
+                        CriterionCode = item.CriterionCode,
+                        CriterionName = item.CriterionName,
+                        IsPrerequisite = item.IsPrerequisite,
+                        CriterionOrder = item.CriterionOrder
+                    });
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
+            }
+        }
         #endregion
 
         #region FileType Service

@@ -162,6 +162,15 @@ export const API_ENDPOINTS = {
       GET_SURVEY_BY_TOKEN: `${BUSINESS_BASE}/SurveyCampaign/get-survey-by-token`,
       SUBMIT_SURVEY: `${BUSINESS_BASE}/SurveyCampaign/submit-survey`,
     },
+    CriterionEvaluation: {
+      GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,
+      GET_LIST: `${BUSINESS_BASE}/CriterionEvaluation/get-list`,
+      GET_SUBMISSIONS: `${BUSINESS_BASE}/CriterionEvaluation/get-submissions`,
+      GET_MY_SUBMISSION: `${BUSINESS_BASE}/CriterionEvaluation/get-my-submission`,
+      SUBMIT: `${BUSINESS_BASE}/CriterionEvaluation/submit`,
+      APPROVE: `${BUSINESS_BASE}/CriterionEvaluation/approve`,
+      INITIALIZE: `${BUSINESS_BASE}/CriterionEvaluation/initialize`,
+    },
   },
   File: {
     UploadFile: {

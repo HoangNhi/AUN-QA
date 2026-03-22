@@ -468,6 +468,41 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 };
             }
         }
+
+        public async IAsyncEnumerable<StandardWithCriteriaInfo> GetStandardsWithCriteriaStreamAsync(
+            GetStandardsWithCriteriaStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (!Guid.TryParse(request.StandardSetId, out var standardSetId))
+                yield break;
+
+            // Query: Standard → Criterion, filtered by StandardSetId
+            var query = from standard in _context.Standards
+                        join criterion in _context.Criteria on standard.Id equals criterion.StandardId
+                        where standard.StandardSetId == standardSetId
+                          && !standard.IsDeleted && standard.IsActived
+                          && !criterion.IsDeleted && criterion.IsActived
+                        orderby standard.Order, criterion.Order
+                        select new { standard, criterion };
+
+            var dataStream = query.AsAsyncEnumerable();
+
+            await foreach (var item in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return new StandardWithCriteriaInfo
+                {
+                    StandardId = item.standard.Id.ToString(),
+                    StandardCode = item.standard.Code,
+                    StandardName = item.standard.Name,
+                    StandardOrder = item.standard.Order,
+                    CriterionId = item.criterion.Id.ToString(),
+                    CriterionCode = item.criterion.Code,
+                    CriterionName = item.criterion.Name,
+                    IsPrerequisite = item.criterion.IsPrerequisite,
+                    CriterionOrder = item.criterion.Order
+                };
+            }
+        }
         #endregion
     }
 }

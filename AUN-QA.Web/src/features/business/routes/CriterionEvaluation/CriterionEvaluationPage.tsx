@@ -1,0 +1,190 @@
+import { useQuery } from "@tanstack/react-query";
+import { Search, RefreshCw, Loader2 } from "lucide-react";
+import { useCriterionEvaluation } from "../../hooks/useCriterionEvaluation";
+import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { standardSetService } from "@/features/catalog/api/standardset.api";
+import { useAuth } from "@/hooks/useAuth";
+import { SummaryBar } from "./components/SummaryBar";
+import { CriteriaGrid } from "./components/CriteriaGrid";
+import { CriterionPopup } from "./components/CriterionPopup";
+import { Combobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
+import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
+import type { ModelCombobox } from "@/types/base/base.types";
+
+const STATUS_FILTER_OPTIONS: ModelCombobox[] = [
+  { Value: "", Text: "Tất cả trạng thái" },
+  { Value: "0", Text: EVALUATION_STATUS_CONFIG[0].label },
+  { Value: "1", Text: EVALUATION_STATUS_CONFIG[1].label },
+  { Value: "2", Text: EVALUATION_STATUS_CONFIG[2].label },
+  { Value: "3", Text: EVALUATION_STATUS_CONFIG[3].label },
+];
+
+export function CriterionEvaluationPage() {
+  const { user } = useAuth();
+
+  const {
+    selectedCycleId,
+    setSelectedCycleId,
+    activeItemId,
+    setActiveItemId,
+    filters,
+    setFilters,
+    cycleData,
+    standardSetId,
+    summary,
+    groups,
+    submissions,
+    mySubmission,
+    isSummaryLoading,
+    isListLoading,
+    isSubmitting,
+    isApproving,
+    handleSubmit,
+    handleApprove,
+    handleInitialize,
+  } = useCriterionEvaluation();
+
+  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+
+  const { data: standardSetData } = useQuery({
+    queryKey: ["standardSet-detail", standardSetId],
+    queryFn: async () => {
+      const res = await standardSetService.getById(standardSetId);
+      return res.Data;
+    },
+    enabled: !!standardSetId,
+  });
+
+  const framework: FrameworkType =
+    standardSetData?.EvaluationMode === 2 ? "MOET" : "AUN";
+
+  const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
+  const userRole = userCouncil?.RoleId ?? 0;
+  const canSubmit = userRole === 4; // TVH
+  const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
+
+  const cycleStatus = Number(cycleData?.Status ?? 0);
+
+  const activeItem =
+    activeItemId != null
+      ? groups.flatMap((g) => g.Items).find((item) => item.Id === activeItemId) ?? null
+      : null;
+
+  const isOngoing = cycleStatus === 2;
+  const hasNoGroups = !isListLoading && groups.length === 0;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Page header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
+        <div>
+          <h1 className="text-lg font-semibold">Đánh giá tiêu chí (Biểu 04)</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Chu kỳ kiểm định — đánh giá theo chuẩn {framework}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Combobox
+            options={cycleOptions}
+            value={selectedCycleId}
+            onChange={(val) => setSelectedCycleId(val ?? "")}
+            placeholder={isCycleLoading ? "Đang tải..." : "Chọn chu kỳ..."}
+            className="w-[260px]"
+          />
+
+          {isOngoing && hasNoGroups && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleInitialize}
+              className="gap-1.5"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Khởi tạo đánh giá
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Summary bar */}
+      {(isSummaryLoading && selectedCycleId) ? (
+        <div className="flex items-center gap-2 px-6 py-3 border-b text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Đang tải dữ liệu tổng hợp...
+        </div>
+      ) : (
+        <SummaryBar summary={summary} framework={framework} />
+      )}
+
+      {/* Toolbar */}
+      {selectedCycleId && (
+        <div className="flex items-center gap-3 px-6 py-3 border-b flex-shrink-0">
+          <div className="relative flex-1 max-w-[320px]">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm tiêu chí..."
+              value={filters.TextSearch ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, TextSearch: e.target.value }))
+              }
+              className="pl-8 h-8 text-sm"
+            />
+          </div>
+          <Combobox
+            options={STATUS_FILTER_OPTIONS}
+            value={filters.Status?.toString() ?? ""}
+            onChange={(val) =>
+              setFilters((f) => ({
+                ...f,
+                Status: val ? (Number(val) as EvaluationStatus) : undefined,
+              }))
+            }
+            placeholder="Trạng thái"
+            className="w-[180px]"
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        {!selectedCycleId ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+            <p className="text-sm">Vui lòng chọn chu kỳ để xem đánh giá tiêu chí.</p>
+          </div>
+        ) : isListLoading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <CriteriaGrid
+            groups={groups}
+            framework={framework}
+            onRowClick={(item) => setActiveItemId(item.Id)}
+          />
+        )}
+      </div>
+
+      {/* Criterion popup */}
+      {activeItem && (
+        <CriterionPopup
+          item={activeItem}
+          submissions={submissions}
+          mySubmission={mySubmission}
+          framework={framework}
+          cycleStatus={cycleStatus}
+          canSubmit={canSubmit}
+          canApprove={canApprove}
+          isSubmitting={isSubmitting}
+          isApproving={isApproving}
+          onClose={() => setActiveItemId(null)}
+          onSubmit={handleSubmit}
+          onApprove={handleApprove}
+        />
+      )}
+    </div>
+  );
+}

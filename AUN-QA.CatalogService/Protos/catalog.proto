@@ -19,6 +19,7 @@ service CatalogProto {
   rpc CanUserDoActionInPdca (CanUserDoActionInPdcaRequest) returns (google.protobuf.BoolValue);
   rpc GetCycleIdsByUser (GetCycleIdsByUserRequest) returns (CycleIdsByUserResponse);
   rpc GetCycleStatus (GetCycleStatusRequest) returns (GetCycleStatusResponse);
+  rpc GetStandardsWithCriteriaStream (GetStandardsWithCriteriaStreamRequest) returns (stream StandardWithCriteriaInfo);
 }
 
 message GetStakeholdersStreamRequest {
@@ -113,4 +114,21 @@ message GetCycleStatusRequest {
 message GetCycleStatusResponse {
   bool found = 1;
   int32 status = 2;
+}
+
+// CriterionEvaluation - Standards with Criteria
+message GetStandardsWithCriteriaStreamRequest {
+  string standard_set_id = 1;
+}
+
+message StandardWithCriteriaInfo {
+  string standard_id = 1;
+  string standard_code = 2;
+  string standard_name = 3;
+  int32 standard_order = 4;
+  string criterion_id = 5;
+  string criterion_code = 6;
+  string criterion_name = 7;
+  bool is_prerequisite = 8;
+  int32 criterion_order = 9;
 }

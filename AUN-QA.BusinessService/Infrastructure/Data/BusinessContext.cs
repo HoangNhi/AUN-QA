@@ -12,6 +12,10 @@ public partial class BusinessContext : DbContext
     {
     }
 
+    public virtual DbSet<CriterionEvaluation> CriterionEvaluations { get; set; }
+
+    public virtual DbSet<EvaluationSubmission> EvaluationSubmissions { get; set; }
+
     public virtual DbSet<Evidence> Evidences { get; set; }
 
     public virtual DbSet<EvidenceAttachment> EvidenceAttachments { get; set; }
@@ -38,6 +42,41 @@ public partial class BusinessContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CriterionEvaluation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("CriterionEvaluation_pk");
+
+            entity.ToTable("CriterionEvaluation");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<EvaluationSubmission>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Evaluati__3214EC07AD6C4851");
+
+            entity.ToTable("EvaluationSubmission");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(450);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(450);
+        });
+
         modelBuilder.Entity<Evidence>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Evidence_pk");

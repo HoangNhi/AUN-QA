@@ -7,7 +7,7 @@ import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
-import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import { useListPage } from "@/hooks/useListPage";
 

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Search, RefreshCw, Loader2 } from "lucide-react";
 import { useCriterionEvaluation } from "../../hooks/useCriterionEvaluation";
-import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import { useAuth } from "@/hooks/useAuth";
 import { SummaryBar } from "./components/SummaryBar";

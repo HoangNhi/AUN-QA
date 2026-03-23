@@ -44,4 +44,13 @@ namespace AUN_QA.BusinessService.DTOs.Common
         Waiting = 2,  // Chờ duyệt — at least one submission, pending CTH approval
         Approved = 3  // Đã duyệt — CTH/PCT set official score
     }
+
+    public enum CycleStatus
+    {
+        Plan   = 1,  // Lập kế hoạch
+        Do     = 2,  // Thực hiện
+        Check  = 3,  // Kiểm tra
+        Act    = 4,  // Cải tiến
+        Finish = 5   // Kết thúc
+    }
 }

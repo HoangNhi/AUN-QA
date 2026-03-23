@@ -4,7 +4,7 @@ import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
-import CyclePage from "./features/catalog/routes/Cycle/CyclePage";
+import CyclePage from "./features/business/routes/Cycle/CyclePage";
 import FileTypePage from "./features/catalog/routes/FileType/FileTypePage";
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
 import EvidenceCycleMapPage from "./features/business/routes/EvidenceCycleMap/EvidenceCycleMapPage";

@@ -9,16 +9,8 @@ package catalog;
 
 service CatalogProto {
   rpc GetStakeholdersStream (GetStakeholdersStreamRequest) returns (stream StakeholderInfo);
-  rpc GetCyclesStream (GetCyclesStreamRequest) returns (stream CycleInfo);
   rpc GetCriterionsForEvidenceStream (GetCriterionsForEvidenceStreamRequest) returns (stream CriterionInfo);
-
-  rpc IsUserInRole (IsUserInRoleRequest) returns (google.protobuf.BoolValue);
-  rpc GetUserRole (GetUserRoleRequest) returns (google.protobuf.Int32Value);
   rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
-
-  rpc CanUserDoActionInPdca (CanUserDoActionInPdcaRequest) returns (google.protobuf.BoolValue);
-  rpc GetCycleIdsByUser (GetCycleIdsByUserRequest) returns (CycleIdsByUserResponse);
-  rpc GetCycleStatus (GetCycleStatusRequest) returns (GetCycleStatusResponse);
   rpc GetStandardsWithCriteriaStream (GetStandardsWithCriteriaStreamRequest) returns (stream StandardWithCriteriaInfo);
 }
 
@@ -35,32 +27,6 @@ message StakeholderInfo {
   string description = 5;
 }
 
-message GetCyclesStreamRequest {
-  google.protobuf.Int32Value year = 1;
-}
-
-message CycleInfo {
-  string id = 1;
-  string name = 2;
-  int32 year = 3;
-  google.protobuf.Timestamp start_date = 4;
-  google.protobuf.Timestamp end_date = 5;
-  int32 status = 6;
-  string evaluation_purpose = 7;
-  int32 scope = 8;
-}
-
-message IsUserInRoleRequest {
-  string cycle_id = 1;
-  string user_id = 2;
-  int32 role = 3;
-}
-
-message GetUserRoleRequest {
-  string cycle_id = 1;
-  string user_id = 2;
-}
-
 // Standard service
 message CriterionInfo {
   string id = 1;
@@ -75,7 +41,7 @@ message CriterionInfo {
 
 message GetCriterionsForEvidenceStreamRequest {
   string file_type_id = 1;
-  string cycle_id = 2;
+  string standard_set_id = 2;
 }
 
 // FileType
@@ -88,32 +54,6 @@ message FileTypeInfo {
 
 message GetFileTypesStreamRequest {
   google.protobuf.StringValue id = 1;
-}
-
-// PDCA Permission Check
-message CanUserDoActionInPdcaRequest {
-  string user_id = 1;
-  string cycle_id = 2;
-  google.protobuf.StringValue standard_id = 4; // optional
-  repeated int32 allowed_roles = 5;
-}
-
-message GetCycleIdsByUserRequest {
-  string user_id = 1;
-}
-
-message CycleIdsByUserResponse {
-  repeated string cycle_ids = 1;
-}
-
-// Cycle Status Check
-message GetCycleStatusRequest {
-  string cycle_id = 1;
-}
-
-message GetCycleStatusResponse {
-  bool found = 1;
-  int32 status = 2;
 }
 
 // CriterionEvaluation - Standards with Criteria

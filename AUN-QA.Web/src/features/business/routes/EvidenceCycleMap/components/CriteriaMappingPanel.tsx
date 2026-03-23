@@ -1,7 +1,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
-import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useStandardSetOptions } from "@/features/catalog/hooks/useStandardSetOptions";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { RefreshCcw } from "lucide-react";
@@ -98,6 +98,7 @@ export function CriteriaMappingPanel({
             {/* Criteria Table */}
             <StandardCriteriaTable
                 cycleId={cycleIdForm}
+                standardSetId={standardSetId}
                 selectedFileTypeId={fileTypeIdForm}
                 assignedStandardIds={assignedStandardIds}
             />

@@ -66,15 +66,6 @@ export const API_ENDPOINTS = {
       DELETE_LIST: `${CATALOG_BASE}/Faculty/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Faculty/get-all-combobox`,
     },
-    Cycle: {
-      GET_LIST: `${CATALOG_BASE}/Cycle/get-list`,
-      GET_BY_ID: `${CATALOG_BASE}/Cycle/get-by-id`,
-      INSERT: `${CATALOG_BASE}/Cycle/insert`,
-      UPDATE: `${CATALOG_BASE}/Cycle/update`,
-      DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
-      GET_COMBBOX_BY_USER: `${CATALOG_BASE}/Cycle/get-combobox-by-user`,
-      CHANGE_STATUS: `${CATALOG_BASE}/Cycle/change-status`,
-    },
     Stakeholder: {
       GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,
       GET_BY_ID: `${CATALOG_BASE}/Stakeholder/get-by-id`,
@@ -111,6 +102,15 @@ export const API_ENDPOINTS = {
     },
   },
   Business: {
+    Cycle: {
+      GET_LIST: `${BUSINESS_BASE}/Cycle/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/Cycle/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/Cycle/insert`,
+      UPDATE: `${BUSINESS_BASE}/Cycle/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/Cycle/delete-list`,
+      GET_COMBBOX_BY_USER: `${BUSINESS_BASE}/Cycle/get-combobox-by-user`,
+      CHANGE_STATUS: `${BUSINESS_BASE}/Cycle/change-status`,
+    },
     Evidence: {
       GET_LIST: `${BUSINESS_BASE}/Evidence/get-list`,
       GET_BY_ID: `${BUSINESS_BASE}/Evidence/get-by-id`,

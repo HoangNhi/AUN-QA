@@ -44,6 +44,8 @@ import type { ModelCombobox } from "@/types/base/base.types";
 interface StandardCriteriaTableProps {
   /** Existing: fetch by cycleId (used when standards is not provided) */
   cycleId?: string;
+  /** Standard set id for criteria query */
+  standardSetId?: string;
   fileTypeId?: string;
   selectedFileTypeId?: string;
   label?: string;
@@ -233,6 +235,7 @@ const AnimationStyles = () => (
 
 const StandardCriteriaTable = ({
   cycleId,
+  standardSetId,
   fileTypeId,
   selectedFileTypeId,
   emptyMessage = "Vui lòng chọn chu kỳ.",
@@ -247,7 +250,7 @@ const StandardCriteriaTable = ({
 
   // --- Hook-based mode (existing behavior) ---
   const hookResult = useStandardsWithCriteria(
-    isExternalMode ? "" : cycleId || "",
+    isExternalMode ? "" : standardSetId || "",
     isExternalMode ? undefined : fileTypeId,
   );
 
@@ -488,7 +491,7 @@ const StandardCriteriaTable = ({
       );
     }
 
-    if (!cycleId) {
+    if (!standardSetId) {
       return (
         <div className="border border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center gap-2">
           <Layers size={28} className="text-slate-300" />

@@ -14,6 +14,8 @@ using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
+using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
@@ -29,6 +31,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICatalogIntegrationService _catalogService;
+        private readonly ICycleService _cycleService;
         private readonly IBackgroundTaskQueue _taskQueue;
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
@@ -38,6 +41,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
             ICatalogIntegrationService catalogService,
+            ICycleService cycleService,
             IBackgroundTaskQueue taskQueue,
             IEmailService emailService,
             IConfiguration configuration)
@@ -46,6 +50,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _catalogService = catalogService;
+            _cycleService = cycleService;
             _taskQueue = taskQueue;
             _emailService = emailService;
             _configuration = configuration;
@@ -482,7 +487,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
         public async Task<GetListPagingResponse<ModelSurveyCampaignGetListPaging>> GetList(SurveyCampaignGetListPagingRequest request)
         {
-            var cycles = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+            var cycles = await _context.Cycles
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Name })
+                .ToListAsync();
             var activeCycleIds = cycles.Select(c => c.Id).ToList();
 
             var query = _context.SurveyCampaigns
@@ -514,8 +522,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                     .FirstOrDefault(x => x.Type == "name")?.Value;
                 if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var userId))
                 {
-                    var userCycleIds = await _catalogService
-                        .GetCycleIdsByUserAsync(userIdString);
+                    var userCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId);
                     query = query.Where(x => userCycleIds.Contains(x.CycleId));
                 }
                 else
@@ -578,9 +585,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             {
                 var userIdString = _contextAccessor.HttpContext.User.Claims
                     .FirstOrDefault(x => x.Type == "name")?.Value;
-                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out _))
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var comboUserId))
                 {
-                    var userCycleIds = await _catalogService.GetCycleIdsByUserAsync(userIdString);
+                    var userCycleIds = await _cycleService.GetCycleIdsByUserAsync(comboUserId);
                     query = query.Where(x => userCycleIds.Contains(x.CycleId));
                 }
                 else
@@ -1260,7 +1267,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         {
             var userId = _contextAccessor.HttpContext!.User.Claims
                 .FirstOrDefault(x => x.Type == "name")!.Value;
-            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = Guid.Parse(cycleId),
+                UserId = Guid.Parse(userId),
+                AllowedRoles = allowedRoles
+            });
             if (!allowed)
                 throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
         }
@@ -1271,12 +1283,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         /// </summary>
         private async Task CheckCycleStageAsync(string cycleId)
         {
-            var (found, status) = await _catalogService.GetCycleStatusAsync(cycleId);
+            var (found, status) = await _cycleService.GetCycleStatusAsync(Guid.Parse(cycleId));
 
             if (!found)
                 throw new BusinessException("Chu kỳ không tồn tại");
 
-            // CycleStatus.Do == 2 (Thực hiện) — matches CatalogService CommonEnum.CycleStatus.Do
+            // CycleStatus.Do == 2 (Thực hiện)
             const int CycleStatusDo = 2;
             if (status == CycleStatusDo)
                 return;
@@ -1292,11 +1304,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             if (string.IsNullOrEmpty(userId))
                 throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
 
-            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
-                cycleId,
-                userId,
-                null,
-                Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = Guid.Parse(cycleId),
+                UserId = Guid.Parse(userId),
+                AllowedRoles = Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman)
+            });
 
             if (!allowed)
                 throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");

@@ -86,7 +86,7 @@ export const getStandardStatus = (
 // --- Hook ---
 
 export const useStandardsWithCriteria = (
-  cycleId: string,
+  standardSetId: string,
   fileTypeId?: string,
 ) => {
   const [standardsWithCriteria, setStandardsWithCriteria] = useState<Standard[]>([]);
@@ -126,13 +126,13 @@ export const useStandardsWithCriteria = (
   }, [standardsWithCriteria]);
 
   const fetchStandardsWithCriteria = useCallback(
-    async (cycleId: string, fileTypeId?: string) => {
+    async (standardSetId: string, fileTypeId?: string) => {
       setCriteriaLoading(true);
       setCriteriaError(null);
 
       try {
         const res = await standardService.getListWithCriteria({
-          CycleId: cycleId,
+          StandardSetId: standardSetId,
           FileTypeId: fileTypeId || undefined,
         });
 
@@ -164,9 +164,9 @@ export const useStandardsWithCriteria = (
     [],
   );
 
-  // Fetch when cycleId changes (fileTypeId is no longer required)
+  // Fetch when standardSetId changes (fileTypeId is optional filter)
   useEffect(() => {
-    if (!cycleId) {
+    if (!standardSetId) {
       setStandardsWithCriteria([]);
       setExpandedStandardIds({});
       setAutoExpandEnabled(true);
@@ -175,8 +175,8 @@ export const useStandardsWithCriteria = (
       return;
     }
 
-    fetchStandardsWithCriteria(cycleId, fileTypeId);
-  }, [cycleId, fileTypeId, fetchStandardsWithCriteria]);
+    fetchStandardsWithCriteria(standardSetId, fileTypeId);
+  }, [standardSetId, fileTypeId, fetchStandardsWithCriteria]);
 
   // Compute matching criterion IDs based on selectedFileTypeId
   const getMatchingCriterionIds = useCallback(

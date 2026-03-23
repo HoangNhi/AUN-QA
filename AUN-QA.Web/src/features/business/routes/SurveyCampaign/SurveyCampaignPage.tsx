@@ -6,7 +6,7 @@ import { PopupSession } from "./components/PopupSession";
 import { Combobox } from "@/components/ui/combobox";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
-import { useCycleOptions } from "@/features/catalog/hooks/useCycleOptions";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useListPage } from "@/hooks/useListPage";
 
 const SurveyCampaignPage = () => {

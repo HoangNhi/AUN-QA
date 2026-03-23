@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { criterionEvaluationService } from "../api/criterionEvaluation.api";
-import { cycleService } from "@/features/catalog/api/cycle.api";
+import { cycleService } from "@/features/business/api/cycle.api";
 import type {
   ApproveEvaluationRequest,
   EvaluationSubmissionRequest,

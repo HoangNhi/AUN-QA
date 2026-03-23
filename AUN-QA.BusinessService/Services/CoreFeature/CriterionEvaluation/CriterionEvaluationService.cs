@@ -3,6 +3,8 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
+using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.CatalogService.Protos;
 using AUN_QA.Shared.Exceptions;
@@ -17,15 +19,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICatalogIntegrationService _catalogService;
+        private readonly ICycleService _cycleService;
 
         public CriterionEvaluationService(
             BusinessContext context,
             IHttpContextAccessor contextAccessor,
-            ICatalogIntegrationService catalogService)
+            ICatalogIntegrationService catalogService,
+            ICycleService cycleService)
         {
             _context = context;
             _contextAccessor = contextAccessor;
             _catalogService = catalogService;
+            _cycleService = cycleService;
         }
 
         #region Summary
@@ -90,7 +95,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 var search = request.TextSearch.ToLower();
                 evaluations = evaluations.Where(x =>
                     metaLookup.TryGetValue(x.CriterionId, out var meta) &&
-                    (meta.Code.ToLower().Contains(search) || meta.Name.ToLower().Contains(search))
+                    (meta.CriterionCode.ToLower().Contains(search) || meta.CriterionName.ToLower().Contains(search))
                 ).ToList();
             }
 
@@ -124,8 +129,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                             {
                                 Id = x.Id,
                                 CriterionId = x.CriterionId,
-                                CriterionCode = meta?.Code ?? "",
-                                CriterionName = meta?.Name ?? "",
+                                CriterionCode = meta?.CriterionCode ?? "",
+                                CriterionName = meta?.CriterionName ?? "",
                                 IsPrerequisite = meta?.IsPrerequisite ?? false,
                                 Status = x.Status,
                                 OfficialScore = x.OfficialScore,
@@ -335,11 +340,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             if (!criteriaRows.Any())
                 throw new BusinessException("Bộ tiêu chuẩn không có tiêu chí nào");
 
-            var existingCriterionIds = await _context.CriterionEvaluations
+            var existingCriterionIds = (await _context.CriterionEvaluations
                 .AsNoTracking()
                 .Where(x => x.CycleId == request.CycleId && !x.IsDeleted)
                 .Select(x => x.CriterionId)
-                .ToHashSetAsync();
+                .ToListAsync())
+                .ToHashSet();
 
             var userName = GetCurrentUserName();
             var now = DateTime.UtcNow;
@@ -395,9 +401,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             var userId = _contextAccessor.HttpContext!.User.Claims
                 .FirstOrDefault(x => x.Type == "name")?.Value ?? "";
 
-            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(
-                cycleId, userId, null,
-                Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman));
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = Guid.Parse(cycleId),
+                UserId = Guid.Parse(userId),
+                AllowedRoles = Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman)
+            });
 
             if (!allowed)
                 throw new BusinessException("Bạn không có quyền duyệt kết quả đánh giá");

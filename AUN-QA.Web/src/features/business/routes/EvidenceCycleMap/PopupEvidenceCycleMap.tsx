@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import type { UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import { cycleService } from "@/features/catalog/api/cycle.api";
+import { cycleService } from "@/features/business/api/cycle.api";
 import { CriteriaMappingPanel } from "./components/CriteriaMappingPanel";
 import { ApprovalActions } from "./components/ApprovalActions";
 import { EvidenceFormFields } from "@/features/business/components/EvidenceFormFields";

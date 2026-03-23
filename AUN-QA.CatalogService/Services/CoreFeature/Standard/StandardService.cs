@@ -318,30 +318,20 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request)
         {
-            Guid targetStandardSetId;
+            if (!request.StandardSetId.HasValue || request.StandardSetId.Value == Guid.Empty)
+            {
+                throw new BusinessException("Bộ tiêu chuẩn không được để trống");
+            }
 
-            if (request.StandardSetId.HasValue && request.StandardSetId.Value != Guid.Empty)
+            var standardSet = await _context.StandardSets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
+            if (standardSet == null)
             {
-                var standardSet = await _context.StandardSets
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
-                if (standardSet == null)
-                {
-                    throw new BusinessException("Bộ tiêu chuẩn không tồn tại");
-                }
-                targetStandardSetId = standardSet.Id;
+                throw new BusinessException("Bộ tiêu chuẩn không tồn tại");
             }
-            else
-            {
-                var cycle = await _context.Cycles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
-                if (cycle == null)
-                {
-                    throw new BusinessException("Chu kỳ không tồn tại");
-                }
-                targetStandardSetId = cycle.StandardSetId;
-            }
+
+            Guid targetStandardSetId = standardSet.Id;
 
             var standards = await _context.Standards
                 .AsNoTracking()
@@ -427,23 +417,20 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             // Parse GUIDs from request
-            if (!Guid.TryParse(request.CycleId, out var cycleId))
+            if (!Guid.TryParse(request.StandardSetId, out var standardSetId))
                 yield break;
 
             if (!Guid.TryParse(request.FileTypeId, out var fileTypeId))
                 yield break;
 
-            // Query with joins: Cycle → StandardSet → Standard → Criterion → CriterionRequirement
+            // Query with joins: StandardSet → Standard → Criterion → CriterionRequirement
             var query = from criterion in _context.Criteria
                         join standard in _context.Standards on criterion.StandardId equals standard.Id
-                        join standardSet in _context.StandardSets on standard.StandardSetId equals standardSet.Id
-                        join cycle in _context.Cycles on standardSet.Id equals cycle.StandardSetId
                         join requirement in _context.CriterionRequirements on criterion.Id equals requirement.CriterionId
-                        where cycle.Id == cycleId
+                        where standard.StandardSetId == standardSetId
                           && requirement.FileTypeId == fileTypeId
                           && !criterion.IsDeleted && criterion.IsActived
                           && !standard.IsDeleted && standard.IsActived
-                          && !cycle.IsDeleted && cycle.IsActived
                           && !requirement.IsDeleted && requirement.IsActived
                         select criterion;
 

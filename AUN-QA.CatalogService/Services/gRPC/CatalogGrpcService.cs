@@ -1,9 +1,7 @@
 ﻿using AUN_QA.CatalogService.Protos;
-using AUN_QA.CatalogService.Services.CoreFeature.Cycle;
 using AUN_QA.CatalogService.Services.CoreFeature.FileType;
 using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
 using AUN_QA.CatalogService.Services.CoreFeature.Standard;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,14 +12,12 @@ namespace AUN_QA.CatalogService.Services.gRPC
     public class CatalogGrpcService : CatalogProto.CatalogProtoBase
     {
         private readonly IStakeholderService _stakeholderService;
-        private readonly ICycleService _cycleService;
         private readonly IStandardService _standardService;
         private readonly IFileTypeService _fileTypeService;
 
-        public CatalogGrpcService(IStakeholderService stakeholderService, ICycleService cycleService, IStandardService standardService, IFileTypeService fileTypeService)
+        public CatalogGrpcService(IStakeholderService stakeholderService, IStandardService standardService, IFileTypeService fileTypeService)
         {
             _stakeholderService = stakeholderService;
-            _cycleService = cycleService;
             _standardService = standardService;
             _fileTypeService = fileTypeService;
         }
@@ -39,65 +35,6 @@ namespace AUN_QA.CatalogService.Services.gRPC
                 await responseStream.WriteAsync(item);
             }
         }
-        #endregion
-
-        #region Cycle Service
-        public override async Task GetCyclesStream(
-            GetCyclesStreamRequest request,
-            IServerStreamWriter<CycleInfo> responseStream,
-            ServerCallContext context)
-        {
-            await foreach (var item in _cycleService.GetCyclesStreamAsync(
-                request,
-                context.CancellationToken))
-            {
-                await responseStream.WriteAsync(item);
-            }
-        }
-
-        public override async Task<Int32Value> GetUserRole(GetUserRoleRequest request, ServerCallContext context)
-        {
-            var result = await _cycleService.GetUserRoleAsync(request);
-            return new Int32Value { Value = (int)result };
-        }
-
-        public override async Task<BoolValue> IsUserInRole(IsUserInRoleRequest request, ServerCallContext context)
-        {
-            var result = await _cycleService.IsUserInRoleAsync(request);
-            return new BoolValue { Value = result };
-        }
-
-        public override async Task<BoolValue> CanUserDoActionInPdca(
-            CanUserDoActionInPdcaRequest request,
-            ServerCallContext context)
-        {
-            var result = await _cycleService.CanUserDoActionInPdcaAsync(new CatalogService.DTOs.CoreFeature.Cycle.Requests.PdcaActionCheckRequest
-            {
-                UserId = Guid.Parse(request.UserId),
-                CycleId = Guid.Parse(request.CycleId),
-                StandardId = !string.IsNullOrEmpty(request.StandardId) ? Guid.Parse(request.StandardId) : null,
-                AllowedRoles = request.AllowedRoles.Count > 0 ? request.AllowedRoles.ToList() : null
-            });
-            return new BoolValue { Value = result };
-        }
-
-        public override async Task<CycleIdsByUserResponse> GetCycleIdsByUser(
-            GetCycleIdsByUserRequest request,
-            ServerCallContext context)
-        {
-            var cycleIds = await _cycleService.GetCycleIdsByUserAsync(Guid.Parse(request.UserId));
-            var response = new CycleIdsByUserResponse();
-            response.CycleIds.AddRange(cycleIds.Select(id => id.ToString()));
-            return response;
-        }
-
-        public override async Task<GetCycleStatusResponse> GetCycleStatus(
-            GetCycleStatusRequest request,
-            ServerCallContext context)
-        {
-            return await _cycleService.GetCycleStatusAsync(request);
-        }
-
         #endregion
 
         #region Standard Service

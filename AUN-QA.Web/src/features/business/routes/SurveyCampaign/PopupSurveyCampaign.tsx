@@ -29,7 +29,7 @@ import type {
   SurveyCampaign,
   SurveyView,
 } from "../../types/survey-campaign.types";
-import { cycleService } from "@/features/catalog/api/cycle.api";
+import { cycleService } from "@/features/business/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";

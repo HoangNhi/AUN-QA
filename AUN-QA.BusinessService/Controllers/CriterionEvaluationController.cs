@@ -75,5 +75,13 @@ namespace AUN_QA.BusinessService.Controllers
             await _service.InitializeForCycle(request);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpPost("get-evidences")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetEvidences([FromBody] GetCriterionEvidencesRequest request)
+        {
+            var result = await _service.GetEvidencesForCriterion(request.Id, request.CycleId);
+            return Ok(new BaseResponse<List<ModelCriterionEvidence>> { Data = result, Success = true });
+        }
     }
 }

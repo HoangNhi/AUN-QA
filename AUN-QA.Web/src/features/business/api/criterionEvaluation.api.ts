@@ -3,6 +3,7 @@ import type { ApiResponse } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config";
 import type {
   ApproveEvaluationRequest,
+  CriterionEvidence,
   CriterionEvaluationGetListRequest,
   CriterionEvaluationSummary,
   EvaluationSubmission,
@@ -67,6 +68,16 @@ export const criterionEvaluationService = {
     return api.post(
       API_ENDPOINTS.Business.CriterionEvaluation.INITIALIZE,
       request,
+    );
+  },
+
+  getEvidences: async (
+    criterionEvaluationId: string,
+    cycleId: string,
+  ): Promise<ApiResponse<CriterionEvidence[]>> => {
+    return api.post<CriterionEvidence[]>(
+      API_ENDPOINTS.Business.CriterionEvaluation.GET_EVIDENCES,
+      { Id: criterionEvaluationId, CycleId: cycleId },
     );
   },
 };

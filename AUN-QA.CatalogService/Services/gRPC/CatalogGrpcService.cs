@@ -1,4 +1,4 @@
-﻿using AUN_QA.CatalogService.Protos;
+using AUN_QA.CatalogService.Protos;
 using AUN_QA.CatalogService.Services.CoreFeature.FileType;
 using AUN_QA.CatalogService.Services.CoreFeature.Stakeholder;
 using AUN_QA.CatalogService.Services.CoreFeature.Standard;
@@ -57,6 +57,19 @@ namespace AUN_QA.CatalogService.Services.gRPC
             ServerCallContext context)
         {
             await foreach (var item in _standardService.GetStandardsWithCriteriaStreamAsync(
+                request,
+                context.CancellationToken))
+            {
+                await responseStream.WriteAsync(item);
+            }
+        }
+
+        public override async Task GetFileTypesByCriterionStream(
+            GetFileTypesByCriterionStreamRequest request,
+            IServerStreamWriter<FileTypeInfo> responseStream,
+            ServerCallContext context)
+        {
+            await foreach (var item in _standardService.GetFileTypesByCriterionStreamAsync(
                 request,
                 context.CancellationToken))
             {

@@ -24,5 +24,9 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         IAsyncEnumerable<StandardWithCriteriaInfo> GetStandardsWithCriteriaStreamAsync(
             GetStandardsWithCriteriaStreamRequest request,
             CancellationToken cancellationToken = default);
+
+        IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(
+            GetFileTypesByCriterionStreamRequest request,
+            CancellationToken cancellationToken = default);
     }
 }

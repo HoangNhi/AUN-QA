@@ -9,7 +9,7 @@ import { CriteriaGrid } from "./components/CriteriaGrid";
 import { CriterionPopup } from "./components/CriterionPopup";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
 import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
 import type { ModelCombobox } from "@/types/base/base.types";
@@ -37,6 +37,7 @@ export function CriterionEvaluationPage() {
     summary,
     groups,
     submissions,
+    evidences,
     mySubmission,
     isSummaryLoading,
     isListLoading,
@@ -91,7 +92,7 @@ export function CriterionEvaluationPage() {
           <Combobox
             options={cycleOptions}
             value={selectedCycleId}
-            onChange={(val) => setSelectedCycleId(val ?? "")}
+            onValueChange={(val) => setSelectedCycleId(val ?? "")}
             placeholder={isCycleLoading ? "Đang tải..." : "Chọn chu kỳ..."}
             className="w-[260px]"
           />
@@ -137,7 +138,7 @@ export function CriterionEvaluationPage() {
           <Combobox
             options={STATUS_FILTER_OPTIONS}
             value={filters.Status?.toString() ?? ""}
-            onChange={(val) =>
+            onValueChange={(val) =>
               setFilters((f) => ({
                 ...f,
                 Status: val ? (Number(val) as EvaluationStatus) : undefined,
@@ -173,6 +174,7 @@ export function CriterionEvaluationPage() {
         <CriterionPopup
           item={activeItem}
           submissions={submissions}
+          evidences={evidences}
           mySubmission={mySubmission}
           framework={framework}
           cycleStatus={cycleStatus}
@@ -181,8 +183,8 @@ export function CriterionEvaluationPage() {
           isSubmitting={isSubmitting}
           isApproving={isApproving}
           onClose={() => setActiveItemId(null)}
-          onSubmit={handleSubmit}
-          onApprove={handleApprove}
+          onSubmit={async (req) => { await handleSubmit(req); }}
+          onApprove={async (req) => { await handleApprove(req); }}
         />
       )}
     </div>

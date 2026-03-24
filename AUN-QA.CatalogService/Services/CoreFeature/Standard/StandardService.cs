@@ -490,6 +490,24 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 };
             }
         }
+
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(
+            GetFileTypesByCriterionStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (!Guid.TryParse(request.CriterionId, out var criterionId))
+                yield break;
+
+            var requirements = await _context.CriterionRequirements
+                .AsNoTracking()
+                .Where(x => x.CriterionId == criterionId && !x.IsDeleted && x.IsActived)
+                .ToListAsync(cancellationToken);
+
+            foreach (var req in requirements)
+            {
+                yield return new FileTypeInfo { Id = req.FileTypeId.ToString() };
+            }
+        }
         #endregion
     }
 }

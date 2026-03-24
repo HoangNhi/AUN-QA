@@ -511,6 +511,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             return result;
         }
+        
         public async Task<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> GetVerifiedForReuseAsync(VerifiedEvidenceForReuseRequest request)
         {
             var query = _context.Evidences

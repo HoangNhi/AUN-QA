@@ -325,6 +325,51 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         }
         #endregion
 
+        #region GetEvidencesForCriterion
+        public async Task<List<ModelCriterionEvidence>> GetEvidencesForCriterion(Guid criterionEvaluationId, Guid cycleId)
+        {
+            var evaluation = await _context.CriterionEvaluations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == criterionEvaluationId && !x.IsDeleted && x.IsActived);
+
+            if (evaluation == null)
+                throw new BusinessException("Không tìm thấy tiêu chí đánh giá");
+
+            var grpcRequest = new AUN_QA.CatalogService.Protos.GetFileTypesByCriterionStreamRequest
+            {
+                CriterionId = evaluation.CriterionId.ToString()
+            };
+
+            var fileTypeIds = new List<Guid>();
+            await foreach (var ft in _catalogService.GetFileTypesByCriterionStreamAsync(grpcRequest))
+            {
+                if (Guid.TryParse(ft.Id, out var ftId))
+                    fileTypeIds.Add(ftId);
+            }
+
+            if (!fileTypeIds.Any())
+                return new List<ModelCriterionEvidence>();
+
+            var result = await (
+                from ecm in _context.EvidenceCycleMaps
+                join ev in _context.Evidences on ecm.EvidenceId equals ev.Id
+                where ecm.CycleId == cycleId
+                   && !ecm.IsDeleted && ecm.IsActived
+                   && ev.Status == (int)EvidenceStatus.Verified
+                   && fileTypeIds.Contains(ev.FileTypeId)
+                   && !ev.IsDeleted && ev.IsActived
+                select new ModelCriterionEvidence
+                {
+                    Id = ev.Id,
+                    Code = ev.Code,
+                    Name = ev.Name
+                }
+            ).ToListAsync();
+
+            return result;
+        }
+        #endregion
+
         #region Initialize
         public async Task InitializeForCycle(InitializeCycleEvaluationRequest request)
         {

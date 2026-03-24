@@ -1,10 +1,28 @@
 import { useState } from "react";
-import { X, Eye, ChevronDown, ChevronRight, Loader2, Zap } from "lucide-react";
+import {
+  X,
+  Eye,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Zap,
+  FileEdit,
+  FolderOpen,
+  ExternalLink,
+  Users,
+  Target,
+  ThumbsUp,
+  AlertCircle,
+  Lightbulb,
+  Check,
+  PieChart,
+  Undo2,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import type {
   ApproveEvaluationRequest,
+  CriterionEvidence,
   CriterionEvaluationItem,
   EvaluationSubmission,
   EvaluationSubmissionRequest,
@@ -14,6 +32,7 @@ import type {
 interface CriterionPopupProps {
   item: CriterionEvaluationItem;
   submissions: EvaluationSubmission[];
+  evidences: CriterionEvidence[];
   mySubmission: EvaluationSubmissionRequest | null;
   framework: FrameworkType;
   cycleStatus: number;
@@ -28,67 +47,22 @@ interface CriterionPopupProps {
 
 const SCORE_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
 
-function ScoreSelector({
-  framework,
-  value,
-  boolValue,
-  onChange,
-  onBoolChange,
-  disabled,
-}: {
-  framework: FrameworkType;
-  value: number | null | undefined;
-  boolValue: boolean | null | undefined;
-  onChange: (v: number | null) => void;
-  onBoolChange: (v: boolean | null) => void;
-  disabled?: boolean;
-}) {
-  if (framework === "AUN") {
-    return (
-      <div className="flex gap-1.5 flex-wrap">
-        {SCORE_OPTIONS.map((s) => (
-          <button
-            key={s}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(value === s ? null : s)}
-            className={`w-8 h-8 rounded text-sm font-medium border transition-colors ${
-              value === s
-                ? "bg-blue-600 text-white border-blue-600"
-                : "border-border hover:bg-muted"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    );
-  }
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(-2)
+    .join("")
+    .toUpperCase();
+}
 
-  return (
-    <div className="flex gap-2">
-      {[
-        { label: "Đạt", val: true },
-        { label: "Không đạt", val: false },
-      ].map(({ label, val }) => (
-        <button
-          key={label}
-          type="button"
-          disabled={disabled}
-          onClick={() => onBoolChange(boolValue === val ? null : val)}
-          className={`px-4 py-1.5 rounded text-sm font-medium border transition-colors ${
-            boolValue === val
-              ? val
-                ? "bg-green-600 text-white border-green-600"
-                : "bg-red-600 text-white border-red-600"
-              : "border-border hover:bg-muted"
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
+function formatTimeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins} phút trước`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} giờ trước`;
+  return `${Math.floor(hrs / 24)} ngày trước`;
 }
 
 function EvaluationForm({
@@ -114,8 +88,8 @@ function EvaluationForm({
 }) {
   const isReadOnly =
     !canSubmit ||
-    cycleStatus !== 2 || // Not Ongoing
-    item.Status === 3 || // Already approved
+    cycleStatus !== 2 ||
+    item.Status === 3 ||
     viewingSubmission !== null;
 
   const [form, setForm] = useState<EvaluationSubmissionRequest>({
@@ -140,124 +114,254 @@ function EvaluationForm({
       }
     : form;
 
-  const handleSubmit = async () => {
-    await onSubmit({
-      ...form,
-      CriterionEvaluationId: item.Id,
-    });
-  };
+  const isViewing = viewingSubmission !== null;
+
+  const textareaClass = (focusColor: string) =>
+    isViewing
+      ? "w-full text-sm p-3.5 rounded-xl outline-none bg-slate-100 text-slate-600 border-transparent cursor-not-allowed resize-none border"
+      : `w-full text-sm p-3.5 rounded-xl outline-none transition-all resize-y bg-slate-50/50 border border-slate-300 text-slate-700 placeholder:text-slate-400 focus:bg-white ${focusColor}`;
 
   return (
-    <div className="flex flex-col gap-4">
-      {viewingSubmission && (
-        <div className="flex items-center justify-between rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700">
-          <span>
-            Đang xem phiếu của{" "}
-            <strong>{viewingSubmission.EvaluatorName}</strong>
-          </span>
-          <button
-            onClick={onClearViewing}
-            className="text-xs underline hover:no-underline"
-          >
-            Quay lại phiếu của tôi
-          </button>
+    <div className="flex flex-col gap-5">
+      {/* Form header */}
+      {isViewing ? (
+        <div className="flex items-center gap-3 bg-amber-100/50 border border-amber-200 p-3 rounded-xl">
+          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <Eye className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-bold text-amber-800 text-base">
+              Đang xem phiếu của {viewingSubmission.EvaluatorName}
+            </p>
+            <p className="text-xs text-amber-700">
+              Chế độ chỉ đọc — bạn không thể chỉnh sửa.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+            <FileEdit className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-bold text-slate-800 text-base">
+              Phiếu Đánh giá Cá nhân
+            </p>
+            <p className="text-xs text-slate-500">
+              Nhập nhận định độc lập và đề xuất mức điểm cho tiêu chí này.
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="space-y-3">
+      {/* Form card */}
+      <div
+        className={`rounded-[20px] shadow-sm border p-5 flex flex-col gap-5 transition-colors ${isViewing ? "bg-slate-50 border-slate-200" : "bg-white border-slate-200/60"}`}
+      >
+        {/* Thực trạng */}
         <div>
-          <Label className="text-xs text-muted-foreground mb-1">
-            Mô tả thực trạng
-          </Label>
-          <Textarea
+          <label className="flex items-center gap-2 mb-2">
+            <Target
+              className={`w-4 h-4 ${isViewing ? "text-slate-400" : "text-blue-500"}`}
+            />
+            <span
+              className={`font-bold text-sm ${isViewing ? "text-slate-500" : "text-slate-700"}`}
+            >
+              Mô tả Thực trạng
+            </span>
+          </label>
+          <textarea
+            rows={3}
+            readOnly={isReadOnly}
             value={displayForm.CurrentState ?? ""}
             onChange={(e) =>
-              !isReadOnly && setForm((f) => ({ ...f, CurrentState: e.target.value }))
+              !isReadOnly &&
+              setForm((f) => ({ ...f, CurrentState: e.target.value }))
             }
-            readOnly={isReadOnly}
-            rows={3}
-            placeholder={isReadOnly ? "" : "Mô tả thực trạng của tiêu chí..."}
-            className="resize-none text-sm"
+            className={textareaClass(
+              "focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10",
+            )}
+            placeholder={isReadOnly ? "" : "Nhận định của bạn về thực trạng tiêu chí..."}
           />
         </div>
 
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1">
-            Điểm mạnh
-          </Label>
-          <Textarea
-            value={displayForm.Strengths ?? ""}
-            onChange={(e) =>
-              !isReadOnly && setForm((f) => ({ ...f, Strengths: e.target.value }))
-            }
-            readOnly={isReadOnly}
-            rows={3}
-            placeholder={isReadOnly ? "" : "Điểm mạnh của chương trình..."}
-            className="resize-none text-sm"
-          />
+        {/* Điểm mạnh & Tồn tại — 2 cột */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="flex items-center gap-2 mb-2">
+              <ThumbsUp
+                className={`w-4 h-4 ${isViewing ? "text-slate-400" : "text-emerald-500"}`}
+              />
+              <span
+                className={`font-bold text-sm ${isViewing ? "text-slate-500" : "text-slate-700"}`}
+              >
+                Điểm mạnh (Strengths)
+              </span>
+            </label>
+            <textarea
+              rows={3}
+              readOnly={isReadOnly}
+              value={displayForm.Strengths ?? ""}
+              onChange={(e) =>
+                !isReadOnly &&
+                setForm((f) => ({ ...f, Strengths: e.target.value }))
+              }
+              className={textareaClass(
+                "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10",
+              )}
+              placeholder={isReadOnly ? "" : "Tiêu chí này có điểm mạnh gì?"}
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-2 mb-2">
+              <AlertCircle
+                className={`w-4 h-4 ${isViewing ? "text-slate-400" : "text-rose-500"}`}
+              />
+              <span
+                className={`font-bold text-sm ${isViewing ? "text-slate-500" : "text-slate-700"}`}
+              >
+                Điểm tồn tại / Gap
+              </span>
+            </label>
+            <textarea
+              rows={3}
+              readOnly={isReadOnly}
+              value={displayForm.Weaknesses ?? ""}
+              onChange={(e) =>
+                !isReadOnly &&
+                setForm((f) => ({ ...f, Weaknesses: e.target.value }))
+              }
+              className={textareaClass(
+                "focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10",
+              )}
+              placeholder={isReadOnly ? "" : "Những điểm nào chưa đạt yêu cầu?"}
+            />
+          </div>
         </div>
 
+        {/* Kế hoạch hành động */}
         <div>
-          <Label className="text-xs text-muted-foreground mb-1">
-            Tồn tại / Gap
-          </Label>
-          <Textarea
-            value={displayForm.Weaknesses ?? ""}
-            onChange={(e) =>
-              !isReadOnly && setForm((f) => ({ ...f, Weaknesses: e.target.value }))
-            }
+          <label className="flex items-center gap-2 mb-2">
+            <Lightbulb
+              className={`w-4 h-4 ${isViewing ? "text-slate-400" : "text-purple-500"}`}
+            />
+            <span
+              className={`font-bold text-sm ${isViewing ? "text-slate-500" : "text-slate-700"}`}
+            >
+              Đề xuất Kế hoạch hành động
+            </span>
+          </label>
+          <textarea
+            rows={2}
             readOnly={isReadOnly}
-            rows={3}
-            placeholder={isReadOnly ? "" : "Các điểm tồn tại hoặc khoảng cách..."}
-            className="resize-none text-sm"
-          />
-        </div>
-
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1">
-            Kế hoạch hành động
-          </Label>
-          <Textarea
             value={displayForm.ActionPlan ?? ""}
             onChange={(e) =>
-              !isReadOnly && setForm((f) => ({ ...f, ActionPlan: e.target.value }))
+              !isReadOnly &&
+              setForm((f) => ({ ...f, ActionPlan: e.target.value }))
             }
-            readOnly={isReadOnly}
-            rows={3}
-            placeholder={isReadOnly ? "" : "Đề xuất kế hoạch cải tiến..."}
-            className="resize-none text-sm"
+            className={textareaClass(
+              "focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10",
+            )}
+            placeholder={isReadOnly ? "" : "Đề xuất các bước khắc phục cho các tồn tại..."}
           />
         </div>
 
-        <div>
-          <Label className="text-xs text-muted-foreground mb-1">
-            {framework === "AUN" ? "Đề xuất điểm (1-7)" : "Đề xuất kết quả"}
-          </Label>
-          <ScoreSelector
-            framework={framework}
-            value={displayForm.ProposedScore}
-            boolValue={displayForm.ProposedResult}
-            onChange={(v) => !isReadOnly && setForm((f) => ({ ...f, ProposedScore: v }))}
-            onBoolChange={(v) =>
-              !isReadOnly && setForm((f) => ({ ...f, ProposedResult: v }))
-            }
-            disabled={isReadOnly}
-          />
+        <div className="h-px w-full bg-slate-200" />
+
+        {/* Điểm đề xuất + Gửi phiếu */}
+        <div
+          className={`flex flex-col sm:flex-row items-center gap-4 p-4 rounded-xl ${isViewing ? "bg-slate-100" : "bg-blue-50/50"}`}
+        >
+          <div className="flex-1 w-full flex items-center gap-3">
+            <label
+              className={`text-sm font-bold whitespace-nowrap ${isViewing ? "text-slate-500" : "text-slate-700"}`}
+            >
+              {isViewing ? "Mức điểm đề xuất:" : "Đề xuất điểm:"}
+            </label>
+            {framework === "AUN" ? (
+              <select
+                disabled={isReadOnly}
+                value={displayForm.ProposedScore ?? ""}
+                onChange={(e) =>
+                  !isReadOnly &&
+                  setForm((f) => ({
+                    ...f,
+                    ProposedScore: e.target.value ? Number(e.target.value) : null,
+                  }))
+                }
+                className={`flex-1 text-sm p-2.5 font-semibold rounded-xl outline-none transition-all ${
+                  isViewing
+                    ? "bg-transparent border-transparent text-slate-800 cursor-not-allowed"
+                    : "bg-white border border-slate-300 text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer"
+                }`}
+              >
+                <option value="">-- Chọn mức --</option>
+                {SCORE_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                disabled={isReadOnly}
+                value={
+                  displayForm.ProposedResult === true
+                    ? "PASS"
+                    : displayForm.ProposedResult === false
+                      ? "FAIL"
+                      : ""
+                }
+                onChange={(e) =>
+                  !isReadOnly &&
+                  setForm((f) => ({
+                    ...f,
+                    ProposedResult:
+                      e.target.value === "PASS"
+                        ? true
+                        : e.target.value === "FAIL"
+                          ? false
+                          : null,
+                  }))
+                }
+                className={`flex-1 text-sm p-2.5 font-semibold rounded-xl outline-none transition-all ${
+                  isViewing
+                    ? "bg-transparent border-transparent text-slate-800 cursor-not-allowed"
+                    : "bg-white border border-slate-300 text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer"
+                }`}
+              >
+                <option value="">-- Chọn kết quả --</option>
+                <option value="PASS">ĐẠT YÊU CẦU</option>
+                <option value="FAIL">KHÔNG ĐẠT</option>
+              </select>
+            )}
+          </div>
+
+          {isViewing ? (
+            <button
+              onClick={onClearViewing}
+              className="w-full sm:w-auto bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap"
+            >
+              <Undo2 className="w-4 h-4" /> Quay lại phiếu của tôi
+            </button>
+          ) : (
+            !isReadOnly && (
+              <button
+                onClick={() =>
+                  onSubmit({ ...form, CriterionEvaluationId: item.Id })
+                }
+                disabled={isSubmitting}
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : null}
+                {mySubmission ? "Cập nhật phiếu" : "Gửi Phiếu"}
+              </button>
+            )
+          )}
         </div>
       </div>
-
-      {!isReadOnly && !viewingSubmission && (
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full mt-2"
-        >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : null}
-          {mySubmission ? "Cập nhật phiếu" : "Gửi Phiếu"}
-        </Button>
-      )}
     </div>
   );
 }
@@ -265,6 +369,7 @@ function EvaluationForm({
 export function CriterionPopup({
   item,
   submissions,
+  evidences,
   mySubmission,
   framework,
   cycleStatus,
@@ -278,13 +383,16 @@ export function CriterionPopup({
 }: CriterionPopupProps) {
   const [viewingSubmission, setViewingSubmission] =
     useState<EvaluationSubmission | null>(null);
-  const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
+  const [isEvidenceOpen, setIsEvidenceOpen] = useState(true);
+  const [isSurveyOpen, setIsSurveyOpen] = useState(true);
   const [officialScore, setOfficialScore] = useState<number | null>(
     item.OfficialScore,
   );
   const [officialResult, setOfficialResult] = useState<boolean | null>(
     item.OfficialResult,
   );
+
+  const isApproved = item.Status === 3;
 
   const handleApprove = async () => {
     await onApprove({
@@ -296,170 +404,325 @@ export function CriterionPopup({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-xl shadow-2xl w-full max-w-[1300px] max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-325 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b flex-shrink-0">
-          <div className="flex items-start gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             {item.IsPrerequisite && (
-              <Zap className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <Zap className="h-4 w-4 text-amber-500 shrink-0" />
             )}
-            <div>
-              <p className="text-xs font-mono text-muted-foreground">
-                {item.CriterionCode}
-              </p>
-              <h2 className="font-semibold text-sm mt-0.5 max-w-[700px]">
-                {item.CriterionName}
-              </h2>
-            </div>
+            <span className="font-mono text-xs text-slate-500 shrink-0">
+              {item.CriterionCode}
+            </span>
+            <span className="text-slate-300">|</span>
+            <h2 className="font-semibold text-sm text-slate-800 truncate max-w-150">
+              {item.CriterionName}
+            </h2>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 hover:bg-muted transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-3 shrink-0 ml-4">
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                {!isApproved && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                )}
+                <span
+                  className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isApproved ? "bg-emerald-500" : "bg-blue-500"}`}
+                />
+              </span>
+              <span className="text-sm font-semibold text-slate-600">
+                {isApproved ? "Đã duyệt" : "Đang xử lý"}
+              </span>
+            </div>
+            <div className="hidden sm:block w-px h-6 bg-slate-200" />
+            <button
+              onClick={onClose}
+              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left: Evaluation Form */}
-          <div className="w-[480px] flex-shrink-0 overflow-y-auto border-r px-6 py-4">
-            <h3 className="text-sm font-medium mb-3">Phiếu đánh giá (Biểu 04)</h3>
-            <EvaluationForm
-              item={item}
-              framework={framework}
-              mySubmission={mySubmission}
-              viewingSubmission={viewingSubmission}
-              cycleStatus={cycleStatus}
-              canSubmit={canSubmit}
-              isSubmitting={isSubmitting}
-              onSubmit={onSubmit}
-              onClearViewing={() => setViewingSubmission(null)}
-            />
-          </div>
+        <div className="flex flex-1 overflow-hidden min-h-0 bg-slate-100/50">
+          <div className="flex-1 overflow-y-auto p-5 lg:p-8">
+            <div className="flex flex-col lg:flex-row items-start gap-6">
+              {/* Left: Evaluation Form */}
+              <div className="flex-1 w-full min-w-0">
+                <EvaluationForm
+                  item={item}
+                  framework={framework}
+                  mySubmission={mySubmission}
+                  viewingSubmission={viewingSubmission}
+                  cycleStatus={cycleStatus}
+                  canSubmit={canSubmit}
+                  isSubmitting={isSubmitting}
+                  onSubmit={onSubmit}
+                  onClearViewing={() => setViewingSubmission(null)}
+                />
+              </div>
 
-          {/* Right: Reference + Council + Approval */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
-            {/* Evidence (collapsible) */}
-            <div>
-              <button
-                className="flex items-center gap-2 w-full text-sm font-medium py-1"
-                onClick={() => setIsEvidenceOpen((v) => !v)}
-              >
-                {isEvidenceOpen ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                Minh chứng liên kết ({item.EvidenceCount})
-              </button>
-              {isEvidenceOpen && (
-                <div className="mt-2 rounded-lg border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-                  {item.EvidenceCount === 0
-                    ? "Chưa có minh chứng nào được liên kết."
-                    : "Danh sách minh chứng sẽ được hiển thị ở đây."}
-                </div>
-              )}
-            </div>
+              {/* Right: Reference + Council + Approval */}
+              <div className="w-full lg:w-105 flex flex-col gap-5 shrink-0">
+                {/* 1. Dữ liệu Tham chiếu */}
+                <div className="bg-white rounded-[20px] shadow-sm border border-slate-200/60 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FolderOpen className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-bold text-slate-800 text-base">
+                      Dữ liệu Tham chiếu
+                    </h3>
+                  </div>
 
-            {/* Council submissions */}
-            <div>
-              <h3 className="text-sm font-medium mb-2">
-                Phiếu thành viên Hội đồng ({submissions.length})
-              </h3>
-              {submissions.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Chưa có thành viên nào gửi phiếu.
-                </p>
-              ) : (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                  {submissions.map((sub) => (
-                    <div
-                      key={sub.Id}
-                      className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${
-                        viewingSubmission?.Id === sub.Id
-                          ? "border-primary bg-primary/5"
-                          : "hover:bg-muted/40"
-                      }`}
+                  {/* Evidence section */}
+                  <div className="mb-3">
+                    <button
+                      className="w-full flex items-center justify-between mb-2 group outline-none"
+                      onClick={() => setIsEvidenceOpen((v) => !v)}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{sub.EvaluatorName}</span>
-                        {framework === "AUN" && sub.ProposedScore != null && (
-                          <span className="text-xs bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">
-                            {sub.ProposedScore}/7
-                          </span>
-                        )}
-                        {framework === "MOET" && sub.ProposedResult != null && (
-                          <span
-                            className={`text-xs rounded px-1.5 py-0.5 ${
-                              sub.ProposedResult
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {sub.ProposedResult ? "Đạt" : "Không đạt"}
-                          </span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition-colors">
+                          Minh chứng đính kèm
+                        </span>
+                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                          {evidences.length}
+                        </span>
+                      </div>
+                      {isEvidenceOpen ? (
+                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                      )}
+                    </button>
+                    {isEvidenceOpen && (
+                      <div className="space-y-2 mt-1">
+                        {evidences.length === 0 ? (
+                          <p className="text-xs text-slate-400 py-2 px-3">
+                            Chưa có minh chứng nào được liên kết.
+                          </p>
+                        ) : (
+                          evidences.map((ev) => (
+                            <div
+                              key={ev.Id}
+                              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-blue-50/50 hover:border-blue-100 cursor-pointer transition-colors group"
+                            >
+                              <div className="flex items-center gap-2.5 pr-2 min-w-0">
+                                <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+                                <p
+                                  className="text-sm font-semibold text-slate-700 truncate group-hover:text-blue-700 transition-colors"
+                                  title={`[${ev.Code}] ${ev.Name}`}
+                                >
+                                  [{ev.Code}] {ev.Name}
+                                </p>
+                              </div>
+                              <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-600 shrink-0 transition-colors" />
+                            </div>
+                          ))
                         )}
                       </div>
-                      <button
-                        onClick={() =>
-                          setViewingSubmission(
-                            viewingSubmission?.Id === sub.Id ? null : sub,
-                          )
-                        }
-                        className="p-1 rounded hover:bg-muted transition-colors"
-                        title="Xem phiếu"
-                      >
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    )}
+                  </div>
 
-            {/* Approval panel — CTH / PCT only */}
-            {canApprove && (
-              <div className="rounded-xl bg-slate-800 text-white px-5 py-4 mt-auto">
-                <h3 className="text-sm font-semibold mb-3">
-                  Chốt kết quả chính thức
-                </h3>
-                <div className="mb-3">
-                  <p className="text-xs text-slate-400 mb-2">
-                    {framework === "AUN"
-                      ? "Điểm AUN (1-7)"
-                      : "Kết quả MOET"}
-                  </p>
-                  <ScoreSelector
-                    framework={framework}
-                    value={officialScore}
-                    boolValue={officialResult}
-                    onChange={setOfficialScore}
-                    onBoolChange={setOfficialResult}
-                    disabled={item.Status === 3 || isApproving}
-                  />
+                  {isEvidenceOpen && isSurveyOpen && (
+                    <div className="h-px w-full bg-slate-100 my-2" />
+                  )}
+
+                  {/* Survey section */}
+                  <div>
+                    <button
+                      className="w-full flex items-center justify-between mb-2 group outline-none"
+                      onClick={() => setIsSurveyOpen((v) => !v)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-purple-600 transition-colors">
+                          Số liệu Khảo sát
+                        </span>
+                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                          0
+                        </span>
+                      </div>
+                      {isSurveyOpen ? (
+                        <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                      )}
+                    </button>
+                    {isSurveyOpen && (
+                      <p className="text-xs text-slate-400 py-2 px-3">
+                        Chưa có số liệu khảo sát liên kết.
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {item.Status !== 3 ? (
-                  <Button
-                    onClick={handleApprove}
-                    disabled={
-                      isApproving ||
-                      (framework === "AUN" ? !officialScore : officialResult == null)
-                    }
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    {isApproving ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    Duyệt
-                  </Button>
-                ) : (
-                  <p className="text-xs text-green-400 text-center">
-                    ✓ Đã duyệt
-                  </p>
+
+                {/* 2. Hội đồng đã nộp */}
+                <div className="bg-white rounded-[20px] shadow-sm border border-slate-200/60 p-5">
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <h3 className="font-bold text-slate-800 text-base">
+                        Hội đồng đã nộp
+                      </h3>
+                    </div>
+                    <span className="text-[11px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
+                      {submissions.length} Phiếu
+                    </span>
+                  </div>
+
+                  {submissions.length === 0 ? (
+                    <p className="text-xs text-slate-400">
+                      Chưa có thành viên nào gửi phiếu.
+                    </p>
+                  ) : (
+                    <div className="space-y-3 max-h-55 overflow-y-auto pr-1">
+                      {submissions.map((sub) => (
+                        <div
+                          key={sub.Id}
+                          className={`p-3 border rounded-xl flex items-center justify-between transition-colors ${
+                            viewingSubmission?.Id === sub.Id
+                              ? "bg-blue-50 border-blue-200"
+                              : "bg-slate-50 border-slate-100 hover:border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-white text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm shrink-0">
+                              {getInitials(sub.EvaluatorName)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 leading-tight">
+                                {sub.EvaluatorName}
+                              </p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                {formatTimeAgo(sub.UpdatedAt ?? sub.CreatedAt)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            {framework === "AUN" && sub.ProposedScore != null && (
+                              <span className="text-xs font-bold bg-emerald-100/80 text-emerald-700 px-2.5 py-1 rounded-lg">
+                                ĐẠT ({sub.ProposedScore})
+                              </span>
+                            )}
+                            {framework === "MOET" &&
+                              sub.ProposedResult != null && (
+                                <span
+                                  className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
+                                    sub.ProposedResult
+                                      ? "bg-emerald-100/80 text-emerald-700"
+                                      : "bg-red-100 text-red-700"
+                                  }`}
+                                >
+                                  {sub.ProposedResult ? "ĐẠT" : "KHÔNG ĐẠT"}
+                                </span>
+                              )}
+                            <button
+                              onClick={() =>
+                                setViewingSubmission(
+                                  viewingSubmission?.Id === sub.Id ? null : sub,
+                                )
+                              }
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                viewingSubmission?.Id === sub.Id
+                                  ? "text-blue-700 bg-blue-100"
+                                  : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                              }`}
+                              title="Xem phiếu"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Approval panel */}
+                {canApprove && (
+                  <div className="bg-slate-800 p-6 rounded-[20px] shadow-xl border border-slate-700/80 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
+                    <div className="relative z-10">
+                      <h3 className="font-bold text-white mb-1 flex items-center gap-2 text-base">
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        Chốt & Phê duyệt
+                      </h3>
+                      <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                        Dành cho Chủ tịch HĐ. Xem xét ý kiến để chốt điểm cuối.
+                      </p>
+
+                      {isApproved ? (
+                        <p className="text-sm text-emerald-400 font-semibold text-center py-2">
+                          ✓ Đã duyệt
+                        </p>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                          {framework === "AUN" ? (
+                            <select
+                              value={officialScore ?? ""}
+                              onChange={(e) =>
+                                setOfficialScore(
+                                  e.target.value ? Number(e.target.value) : null,
+                                )
+                              }
+                              disabled={isApproving}
+                              className="w-full sm:flex-1 text-sm p-3 border border-slate-600 bg-slate-700 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold shadow-inner cursor-pointer disabled:opacity-50"
+                            >
+                              <option value="">-- Chọn điểm chốt --</option>
+                              {SCORE_OPTIONS.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <select
+                              value={
+                                officialResult === true
+                                  ? "PASS"
+                                  : officialResult === false
+                                    ? "FAIL"
+                                    : ""
+                              }
+                              onChange={(e) =>
+                                setOfficialResult(
+                                  e.target.value === "PASS"
+                                    ? true
+                                    : e.target.value === "FAIL"
+                                      ? false
+                                      : null,
+                                )
+                              }
+                              disabled={isApproving}
+                              className="w-full sm:flex-1 text-sm p-3 border border-slate-600 bg-slate-700 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold shadow-inner cursor-pointer disabled:opacity-50"
+                            >
+                              <option value="">-- Chọn kết quả --</option>
+                              <option value="PASS">ĐẠT YÊU CẦU</option>
+                              <option value="FAIL">KHÔNG ĐẠT</option>
+                            </select>
+                          )}
+                          <Button
+                            onClick={handleApprove}
+                            disabled={
+                              isApproving ||
+                              (framework === "AUN"
+                                ? !officialScore
+                                : officialResult == null)
+                            }
+                            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                          >
+                            {isApproving ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Check className="w-4 h-4" />
+                            )}
+                            Duyệt
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

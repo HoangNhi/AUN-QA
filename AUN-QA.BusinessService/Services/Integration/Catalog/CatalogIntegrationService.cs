@@ -123,6 +123,28 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
         #endregion
 
         #region FileType Service
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(GetFileTypesByCriterionStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lst = new List<FileTypeInfo>();
+            try
+            {
+                using var call = _grpcClient.GetFileTypesByCriterionStream(request, cancellationToken: cancellationToken);
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    lst.Add(item);
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
+            }
+        }
+
         public async IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lst = new List<FileTypeInfo>();

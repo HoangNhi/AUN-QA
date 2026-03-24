@@ -75,6 +75,16 @@ export const useCriterionEvaluation = () => {
 
   const submissions = submissionsResponse?.Data ?? [];
 
+  // Evidences for active popup item
+  const { data: evidencesResponse } = useQuery({
+    queryKey: ["criterionEvaluation", "evidences", activeItemId],
+    queryFn: () =>
+      criterionEvaluationService.getEvidences(activeItemId!, selectedCycleId),
+    enabled: !!activeItemId && !!selectedCycleId,
+  });
+
+  const evidences = evidencesResponse?.Data ?? [];
+
   // Current user's submission for active item
   const { data: mySubmissionResponse } = useQuery({
     queryKey: ["criterionEvaluation", "mySubmission", activeItemId],
@@ -182,6 +192,7 @@ export const useCriterionEvaluation = () => {
     summary,
     groups,
     submissions,
+    evidences,
     mySubmission,
     // Loading
     isSummaryLoading,

@@ -12,5 +12,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         Task Submit(EvaluationSubmissionRequest request);
         Task Approve(ApproveEvaluationRequest request);
         Task InitializeForCycle(InitializeCycleEvaluationRequest request);
+        Task<List<ModelCriterionEvidence>> GetEvidencesForCriterion(Guid criterionEvaluationId, Guid cycleId);
     }
 }

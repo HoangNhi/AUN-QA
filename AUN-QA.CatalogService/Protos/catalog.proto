@@ -11,6 +11,7 @@ service CatalogProto {
   rpc GetStakeholdersStream (GetStakeholdersStreamRequest) returns (stream StakeholderInfo);
   rpc GetCriterionsForEvidenceStream (GetCriterionsForEvidenceStreamRequest) returns (stream CriterionInfo);
   rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
+  rpc GetFileTypesByCriterionStream (GetFileTypesByCriterionStreamRequest) returns (stream FileTypeInfo);
   rpc GetStandardsWithCriteriaStream (GetStandardsWithCriteriaStreamRequest) returns (stream StandardWithCriteriaInfo);
 }
 
@@ -54,6 +55,10 @@ message FileTypeInfo {
 
 message GetFileTypesStreamRequest {
   google.protobuf.StringValue id = 1;
+}
+
+message GetFileTypesByCriterionStreamRequest {
+  string criterion_id = 1;
 }
 
 // CriterionEvaluation - Standards with Criteria

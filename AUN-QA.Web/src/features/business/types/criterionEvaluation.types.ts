@@ -101,3 +101,9 @@ export interface InitializeCycleEvaluationRequest {
   CycleId: string;
   StandardSetId: string;
 }
+
+export interface CriterionEvidence {
+  Id: string;
+  Code: string;
+  Name: string;
+}

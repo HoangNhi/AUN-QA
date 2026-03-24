@@ -170,6 +170,7 @@ export const API_ENDPOINTS = {
       SUBMIT: `${BUSINESS_BASE}/CriterionEvaluation/submit`,
       APPROVE: `${BUSINESS_BASE}/CriterionEvaluation/approve`,
       INITIALIZE: `${BUSINESS_BASE}/CriterionEvaluation/initialize`,
+      GET_EVIDENCES: `${BUSINESS_BASE}/CriterionEvaluation/get-evidences`,
     },
   },
   File: {

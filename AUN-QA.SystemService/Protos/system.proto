@@ -6,6 +6,7 @@ package system;
 
 service SystemProto {
   rpc CheckPermission (CheckPermissionRequest) returns (CheckActionResponse);
+  rpc GetUsersByIds (GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
 }
 
 message CheckPermissionRequest {
@@ -16,4 +17,18 @@ message CheckPermissionRequest {
 
 message CheckActionResponse {
   bool success = 1;
+}
+
+message GetUsersByIdsRequest {
+  repeated string user_ids = 1;
+}
+
+message UserInfo {
+  string id = 1;
+  string fullname = 2;
+  string avatar = 3;
+}
+
+message GetUsersByIdsResponse {
+  repeated UserInfo users = 1;
 }

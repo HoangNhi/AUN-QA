@@ -17,6 +17,7 @@ interface CriteriaMappingPanelProps {
     cycleId_Change: (val: string) => Promise<void>;
     onShowReusePopup?: () => void;
     isPending?: boolean;
+    readOnly?: boolean;
 }
 
 export function CriteriaMappingPanel({
@@ -29,6 +30,7 @@ export function CriteriaMappingPanel({
     cycleId_Change,
     onShowReusePopup,
     isPending,
+    readOnly,
 }: CriteriaMappingPanelProps) {
     const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
     const { options: standardSetOptions, isLoading: isStandardSetLoading } = useStandardSetOptions();
@@ -45,7 +47,7 @@ export function CriteriaMappingPanel({
                             <FormLabel>
                                 Chu kỳ <span className="text-red-500">*</span>
                             </FormLabel>
-                            {onShowReusePopup && !isPending && (
+                            {onShowReusePopup && !isPending && !readOnly && (
                                 <Button
                                     variant="ghost"
                                     type="button"
@@ -65,12 +67,14 @@ export function CriteriaMappingPanel({
                                 loading={isCycleLoading}
                                 value={field.value}
                                 onValueChange={async (val) => {
+                                    if (readOnly) return;
                                     field.onChange(val || "");
                                     cycleId_Change(val || "");
                                 }}
                                 placeholder="Chọn chu kỳ"
                                 searchPlaceholder="Tìm kiếm chu kỳ..."
                                 emptyText="Không tìm thấy chu kỳ."
+                                readonly={!!readOnly}
                             />
                         </FormControl>
                         <FormMessage />

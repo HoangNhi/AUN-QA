@@ -30,5 +30,20 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                 Success = permission.HasPermission
             };
         }
+
+        public override async Task<GetUsersByIdsResponse> GetUsersByIds(GetUsersByIdsRequest request, ServerCallContext context)
+        {
+            var ids = request.UserIds.Select(Guid.Parse).ToList();
+            var users = await _userService.GetByIds(ids);
+
+            var response = new GetUsersByIdsResponse();
+            response.Users.AddRange(users.Select(u => new UserInfo
+            {
+                Id = u.Id.ToString(),
+                Fullname = u.Fullname,
+                Avatar = u.Avatar ?? string.Empty
+            }));
+            return response;
+        }
     }
 }

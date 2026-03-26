@@ -58,6 +58,7 @@ export interface EvaluationSubmission {
   Id: string;
   EvaluatorId: string;
   EvaluatorName: string;
+  EvaluatorAvatar?: string;
   CurrentState: string | null;
   Strengths: string | null;
   Weaknesses: string | null;
@@ -106,4 +107,5 @@ export interface CriterionEvidence {
   Id: string;
   Code: string;
   Name: string;
+  EvidenceCycleMapId: string;
 }

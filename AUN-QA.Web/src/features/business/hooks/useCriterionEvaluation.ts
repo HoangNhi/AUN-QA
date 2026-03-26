@@ -86,7 +86,7 @@ export const useCriterionEvaluation = () => {
   const evidences = evidencesResponse?.Data ?? [];
 
   // Current user's submission for active item
-  const { data: mySubmissionResponse } = useQuery({
+  const { data: mySubmissionResponse, isLoading: isMySubmissionLoading } = useQuery({
     queryKey: ["criterionEvaluation", "mySubmission", activeItemId],
     queryFn: () =>
       criterionEvaluationService.getMySubmission(activeItemId!),
@@ -198,6 +198,7 @@ export const useCriterionEvaluation = () => {
     isSummaryLoading,
     isListLoading,
     isSubmissionsLoading,
+    isMySubmissionLoading,
     isSubmitting: submitMutation.isPending,
     isApproving: approveMutation.isPending,
     // Actions

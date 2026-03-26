@@ -7,6 +7,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.CatalogService.Protos;
+using AUN_QA.SystemService.Protos;
 using AUN_QA.Shared.Exceptions;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.EntityFrameworkCore;
@@ -20,17 +21,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICatalogIntegrationService _catalogService;
         private readonly ICycleService _cycleService;
+        private readonly SystemProto.SystemProtoClient _systemClient;
 
         public CriterionEvaluationService(
             BusinessContext context,
             IHttpContextAccessor contextAccessor,
             ICatalogIntegrationService catalogService,
-            ICycleService cycleService)
+            ICycleService cycleService,
+            SystemProto.SystemProtoClient systemClient)
         {
             _context = context;
             _contextAccessor = contextAccessor;
             _catalogService = catalogService;
             _cycleService = cycleService;
+            _systemClient = systemClient;
         }
 
         #region Summary
@@ -184,19 +188,30 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
 
-            return submissions.Select(x => new ModelEvaluationSubmission
+            var userIds = submissions.Select(x => x.EvaluatorId.ToString()).Distinct().ToList();
+            var grpcRequest = new GetUsersByIdsRequest();
+            grpcRequest.UserIds.AddRange(userIds);
+            var grpcResponse = await _systemClient.GetUsersByIdsAsync(grpcRequest);
+            var userMap = grpcResponse.Users.ToDictionary(u => Guid.Parse(u.Id));
+
+            return submissions.Select(x =>
             {
-                Id = x.Id,
-                EvaluatorId = x.EvaluatorId,
-                EvaluatorName = x.CreatedBy,
-                CurrentState = x.CurrentState,
-                Strengths = x.Strengths,
-                Weaknesses = x.Weaknesses,
-                ActionPlan = x.ActionPlan,
-                ProposedScore = x.ProposedScore,
-                ProposedResult = x.ProposedResult,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt
+                userMap.TryGetValue(x.EvaluatorId, out var userInfo);
+                return new ModelEvaluationSubmission
+                {
+                    Id = x.Id,
+                    EvaluatorId = x.EvaluatorId,
+                    EvaluatorName = userInfo?.Fullname ?? x.CreatedBy,
+                    EvaluatorAvatar = string.IsNullOrEmpty(userInfo?.Avatar) ? null : userInfo.Avatar,
+                    CurrentState = x.CurrentState,
+                    Strengths = x.Strengths,
+                    Weaknesses = x.Weaknesses,
+                    ActionPlan = x.ActionPlan,
+                    ProposedScore = x.ProposedScore,
+                    ProposedResult = x.ProposedResult,
+                    CreatedAt = x.CreatedAt,
+                    UpdatedAt = x.UpdatedAt
+                };
             }).ToList();
         }
 
@@ -239,6 +254,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             if (evaluation.Status == (int)CriterionEvaluationStatus.Approved)
                 throw new BusinessException("Tiêu chí đã được duyệt, không thể chỉnh sửa phiếu đánh giá");
 
+            // Required-field validation is enforced by FluentValidation on EvaluationSubmissionRequest.
+            var currentState = request.CurrentState!.Trim();
+            var strengths = request.Strengths!.Trim();
+            var weaknesses = request.Weaknesses!.Trim();
+            var actionPlan = request.ActionPlan!.Trim();
+
             var userId = GetCurrentUserId();
             var userName = GetCurrentUserName();
 
@@ -250,10 +271,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
 
             if (existing != null)
             {
-                existing.CurrentState = request.CurrentState;
-                existing.Strengths = request.Strengths;
-                existing.Weaknesses = request.Weaknesses;
-                existing.ActionPlan = request.ActionPlan;
+                existing.CurrentState = currentState;
+                existing.Strengths = strengths;
+                existing.Weaknesses = weaknesses;
+                existing.ActionPlan = actionPlan;
                 existing.ProposedScore = request.ProposedScore;
                 existing.ProposedResult = request.ProposedResult;
                 existing.UpdatedAt = DateTime.UtcNow;
@@ -267,10 +288,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                     Id = Guid.NewGuid(),
                     CriterionEvaluationId = request.CriterionEvaluationId,
                     EvaluatorId = userId,
-                    CurrentState = request.CurrentState,
-                    Strengths = request.Strengths,
-                    Weaknesses = request.Weaknesses,
-                    ActionPlan = request.ActionPlan,
+                    CurrentState = currentState,
+                    Strengths = strengths,
+                    Weaknesses = weaknesses,
+                    ActionPlan = actionPlan,
                     ProposedScore = request.ProposedScore,
                     ProposedResult = request.ProposedResult,
                     CreatedAt = DateTime.UtcNow,
@@ -362,7 +383,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 {
                     Id = ev.Id,
                     Code = ev.Code,
-                    Name = ev.Name
+                    Name = ev.Name,
+                    EvidenceCycleMapId = ecm.Id
                 }
             ).ToListAsync();
 
@@ -474,3 +496,4 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         #endregion
     }
 }
+

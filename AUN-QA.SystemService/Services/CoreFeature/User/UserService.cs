@@ -47,6 +47,15 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             return result;
         }
 
+        public async Task<List<ModelUser>> GetByIds(List<Guid> ids)
+        {
+            var users = await _context.Users
+                .AsNoTracking()
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+            return users.Select(x => _mapper.Map<ModelUser>(x)).ToList();
+        }
+
         public async Task<ModelUser> GetCurrentUser()
         {
             var userId = _contextAccessor.HttpContext?.User?.Claims.FirstOrDefault(x => x.Type == "name")?.Value;

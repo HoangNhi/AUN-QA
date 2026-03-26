@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -41,6 +42,7 @@ interface PopupEvidenceCycleMapProps {
   isLoading?: boolean;
   onApprove: (id: string, status: number, reason?: string) => void;
   isApproving?: boolean;
+  readOnly?: boolean;
 }
 
 const formSchema = z
@@ -79,6 +81,7 @@ const PopupEvidenceCycleMap = ({
   isLoading,
   onApprove,
   isApproving,
+  readOnly,
 }: PopupEvidenceCycleMapProps) => {
   const { user } = useAuth();
   const [assignedStandardIds, setAssignedStandardIds] = useState<string[]>([]);
@@ -285,9 +288,11 @@ const PopupEvidenceCycleMap = ({
         >
           <DialogHeader className="border-b pb-2">
             <DialogTitle>
-              {evidenceCycleMap?.IsEdit
-                ? "Cập nhật Minh chứng theo chu kỳ"
-                : "Thêm mới Minh chứng theo chu kỳ"}
+              {readOnly
+                ? "Xem chi tiết Minh chứng"
+                : evidenceCycleMap?.IsEdit
+                  ? "Cập nhật Minh chứng theo chu kỳ"
+                  : "Thêm mới Minh chứng theo chu kỳ"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Biểu mẫu thêm hoặc cập nhật minh chứng theo chu kỳ đánh giá.
@@ -341,6 +346,7 @@ const PopupEvidenceCycleMap = ({
                     cycleId_Change={cycleId_Change}
                     onShowReusePopup={() => setShowReusePopup(true)}
                     isPending={isPending}
+                    readOnly={!!readOnly}
                   />
                 </div>
               </form>
@@ -349,7 +355,11 @@ const PopupEvidenceCycleMap = ({
 
           {/* Footer */}
           <DialogFooter className="border-t pt-2">
-            {pendingReuseEvidence ? (
+            {readOnly ? (
+              <DialogClose asChild>
+                <Button variant="outline">Đóng</Button>
+              </DialogClose>
+            ) : pendingReuseEvidence ? (
               <>
                 <Button
                   variant="outline"

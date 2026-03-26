@@ -1,4 +1,10 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { evidenceCycleMapService } from "../../../api/evidenceCycleMap.api";
+import PopupEvidenceCycleMap from "../../EvidenceCycleMap/PopupEvidenceCycleMap";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getFileUrl } from "@/lib/utils";
 import {
   X,
   Eye,
@@ -15,11 +21,10 @@ import {
   AlertCircle,
   Lightbulb,
   Check,
-  PieChart,
   Undo2,
   CheckCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import type {
   ApproveEvaluationRequest,
   CriterionEvidence,
@@ -34,6 +39,7 @@ interface CriterionPopupProps {
   submissions: EvaluationSubmission[];
   evidences: CriterionEvidence[];
   mySubmission: EvaluationSubmissionRequest | null;
+  isMySubmissionLoading: boolean;
   framework: FrameworkType;
   cycleStatus: number;
   canSubmit: boolean;
@@ -46,6 +52,9 @@ interface CriterionPopupProps {
 }
 
 const SCORE_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+type RequiredFieldError = Partial<
+  Record<"CurrentState" | "Strengths" | "Weaknesses" | "ActionPlan", string>
+>;
 
 function getInitials(name: string): string {
   return name
@@ -55,6 +64,7 @@ function getInitials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
 
 function formatTimeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -70,6 +80,7 @@ function EvaluationForm({
   framework,
   mySubmission,
   viewingSubmission,
+  getDisplayName,
   cycleStatus,
   canSubmit,
   isSubmitting,
@@ -80,6 +91,7 @@ function EvaluationForm({
   framework: FrameworkType;
   mySubmission: EvaluationSubmissionRequest | null;
   viewingSubmission: EvaluationSubmission | null;
+  getDisplayName: (submission: EvaluationSubmission) => string;
   cycleStatus: number;
   canSubmit: boolean;
   isSubmitting: boolean;
@@ -102,6 +114,7 @@ function EvaluationForm({
     ProposedScore: mySubmission?.ProposedScore ?? null,
     ProposedResult: mySubmission?.ProposedResult ?? null,
   });
+  const [errors, setErrors] = useState<RequiredFieldError>({});
 
   const displayForm = viewingSubmission
     ? {
@@ -116,10 +129,39 @@ function EvaluationForm({
 
   const isViewing = viewingSubmission !== null;
 
-  const textareaClass = (focusColor: string) =>
+  const textareaClass = (focusColor: string, hasError: boolean = false) =>
     isViewing
       ? "w-full text-sm p-3.5 rounded-xl outline-none bg-slate-100 text-slate-600 border-transparent cursor-not-allowed resize-none border"
-      : `w-full text-sm p-3.5 rounded-xl outline-none transition-all resize-y bg-slate-50/50 border border-slate-300 text-slate-700 placeholder:text-slate-400 focus:bg-white ${focusColor}`;
+      : `w-full text-sm p-3.5 rounded-xl outline-none transition-all resize-y bg-slate-50/50 border text-slate-700 placeholder:text-slate-400 focus:bg-white ${
+          hasError
+            ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
+            : `border-slate-300 ${focusColor}`
+        }`;
+
+  const validateRequiredFields = (): boolean => {
+    const nextErrors: RequiredFieldError = {};
+
+    if (!form.CurrentState?.trim()) {
+      nextErrors.CurrentState = "Vui lòng nhập mô tả thực trạng.";
+    }
+    if (!form.Strengths?.trim()) {
+      nextErrors.Strengths = "Vui lòng nhập điểm mạnh.";
+    }
+    if (!form.Weaknesses?.trim()) {
+      nextErrors.Weaknesses = "Vui lòng nhập điểm tồn tại / gap.";
+    }
+    if (!form.ActionPlan?.trim()) {
+      nextErrors.ActionPlan = "Vui lòng nhập đề xuất kế hoạch hành động.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmitClick = async () => {
+    if (!validateRequiredFields()) return;
+    await onSubmit({ ...form, CriterionEvaluationId: item.Id });
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -131,7 +173,7 @@ function EvaluationForm({
           </div>
           <div>
             <p className="font-bold text-amber-800 text-base">
-              Đang xem phiếu của {viewingSubmission.EvaluatorName}
+              Đang xem phiếu của {getDisplayName(viewingSubmission)}
             </p>
             <p className="text-xs text-amber-700">
               Chế độ chỉ đọc — bạn không thể chỉnh sửa.
@@ -174,15 +216,20 @@ function EvaluationForm({
             rows={3}
             readOnly={isReadOnly}
             value={displayForm.CurrentState ?? ""}
-            onChange={(e) =>
-              !isReadOnly &&
-              setForm((f) => ({ ...f, CurrentState: e.target.value }))
-            }
+            onChange={(e) => {
+              if (isReadOnly) return;
+              setForm((f) => ({ ...f, CurrentState: e.target.value }));
+              setErrors((prev) => ({ ...prev, CurrentState: undefined }));
+            }}
             className={textareaClass(
               "focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10",
+              !!errors.CurrentState,
             )}
             placeholder={isReadOnly ? "" : "Nhận định của bạn về thực trạng tiêu chí..."}
           />
+          {!isReadOnly && errors.CurrentState && (
+            <p className="text-xs text-rose-600 mt-1">{errors.CurrentState}</p>
+          )}
         </div>
 
         {/* Điểm mạnh & Tồn tại — 2 cột */}
@@ -202,15 +249,20 @@ function EvaluationForm({
               rows={3}
               readOnly={isReadOnly}
               value={displayForm.Strengths ?? ""}
-              onChange={(e) =>
-                !isReadOnly &&
-                setForm((f) => ({ ...f, Strengths: e.target.value }))
-              }
+              onChange={(e) => {
+                if (isReadOnly) return;
+                setForm((f) => ({ ...f, Strengths: e.target.value }));
+                setErrors((prev) => ({ ...prev, Strengths: undefined }));
+              }}
               className={textareaClass(
                 "focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10",
+                !!errors.Strengths,
               )}
               placeholder={isReadOnly ? "" : "Tiêu chí này có điểm mạnh gì?"}
             />
+          {!isReadOnly && errors.Strengths && (
+            <p className="text-xs text-rose-600 mt-1">{errors.Strengths}</p>
+          )}
           </div>
           <div>
             <label className="flex items-center gap-2 mb-2">
@@ -227,15 +279,20 @@ function EvaluationForm({
               rows={3}
               readOnly={isReadOnly}
               value={displayForm.Weaknesses ?? ""}
-              onChange={(e) =>
-                !isReadOnly &&
-                setForm((f) => ({ ...f, Weaknesses: e.target.value }))
-              }
+              onChange={(e) => {
+                if (isReadOnly) return;
+                setForm((f) => ({ ...f, Weaknesses: e.target.value }));
+                setErrors((prev) => ({ ...prev, Weaknesses: undefined }));
+              }}
               className={textareaClass(
                 "focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10",
+                !!errors.Weaknesses,
               )}
               placeholder={isReadOnly ? "" : "Những điểm nào chưa đạt yêu cầu?"}
             />
+          {!isReadOnly && errors.Weaknesses && (
+            <p className="text-xs text-rose-600 mt-1">{errors.Weaknesses}</p>
+          )}
           </div>
         </div>
 
@@ -255,15 +312,20 @@ function EvaluationForm({
             rows={2}
             readOnly={isReadOnly}
             value={displayForm.ActionPlan ?? ""}
-            onChange={(e) =>
-              !isReadOnly &&
-              setForm((f) => ({ ...f, ActionPlan: e.target.value }))
-            }
+            onChange={(e) => {
+              if (isReadOnly) return;
+              setForm((f) => ({ ...f, ActionPlan: e.target.value }));
+              setErrors((prev) => ({ ...prev, ActionPlan: undefined }));
+            }}
             className={textareaClass(
               "focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10",
+              !!errors.ActionPlan,
             )}
             placeholder={isReadOnly ? "" : "Đề xuất các bước khắc phục cho các tồn tại..."}
           />
+          {!isReadOnly && errors.ActionPlan && (
+            <p className="text-xs text-rose-600 mt-1">{errors.ActionPlan}</p>
+          )}
         </div>
 
         <div className="h-px w-full bg-slate-200" />
@@ -279,31 +341,30 @@ function EvaluationForm({
               {isViewing ? "Mức điểm đề xuất:" : "Đề xuất điểm:"}
             </label>
             {framework === "AUN" ? (
-              <select
+              <Select
                 disabled={isReadOnly}
-                value={displayForm.ProposedScore ?? ""}
-                onChange={(e) =>
+                value={displayForm.ProposedScore?.toString() ?? ""}
+                onValueChange={(val) =>
                   !isReadOnly &&
                   setForm((f) => ({
                     ...f,
-                    ProposedScore: e.target.value ? Number(e.target.value) : null,
+                    ProposedScore: val ? Number(val) : null,
                   }))
                 }
-                className={`flex-1 text-sm p-2.5 font-semibold rounded-xl outline-none transition-all ${
-                  isViewing
-                    ? "bg-transparent border-transparent text-slate-800 cursor-not-allowed"
-                    : "bg-white border border-slate-300 text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer"
-                }`}
               >
-                <option value="">-- Chọn mức --</option>
-                {SCORE_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="flex-1 font-semibold">
+                  <SelectValue placeholder="-- Chọn mức --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SCORE_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s.toString()}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
-              <select
+              <Select
                 disabled={isReadOnly}
                 value={
                   displayForm.ProposedResult === true
@@ -312,28 +373,23 @@ function EvaluationForm({
                       ? "FAIL"
                       : ""
                 }
-                onChange={(e) =>
+                onValueChange={(val) =>
                   !isReadOnly &&
                   setForm((f) => ({
                     ...f,
                     ProposedResult:
-                      e.target.value === "PASS"
-                        ? true
-                        : e.target.value === "FAIL"
-                          ? false
-                          : null,
+                      val === "PASS" ? true : val === "FAIL" ? false : null,
                   }))
                 }
-                className={`flex-1 text-sm p-2.5 font-semibold rounded-xl outline-none transition-all ${
-                  isViewing
-                    ? "bg-transparent border-transparent text-slate-800 cursor-not-allowed"
-                    : "bg-white border border-slate-300 text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm cursor-pointer"
-                }`}
               >
-                <option value="">-- Chọn kết quả --</option>
-                <option value="PASS">ĐẠT YÊU CẦU</option>
-                <option value="FAIL">KHÔNG ĐẠT</option>
-              </select>
+                <SelectTrigger className="flex-1 font-semibold">
+                  <SelectValue placeholder="-- Chọn kết quả --" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PASS">ĐẠT YÊU CẦU</SelectItem>
+                  <SelectItem value="FAIL">KHÔNG ĐẠT</SelectItem>
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -347,9 +403,7 @@ function EvaluationForm({
           ) : (
             !isReadOnly && (
               <button
-                onClick={() =>
-                  onSubmit({ ...form, CriterionEvaluationId: item.Id })
-                }
+                onClick={handleSubmitClick}
                 disabled={isSubmitting}
                 className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-60"
               >
@@ -371,6 +425,7 @@ export function CriterionPopup({
   submissions,
   evidences,
   mySubmission,
+  isMySubmissionLoading,
   framework,
   cycleStatus,
   canSubmit,
@@ -391,6 +446,17 @@ export function CriterionPopup({
   const [officialResult, setOfficialResult] = useState<boolean | null>(
     item.OfficialResult,
   );
+  const [viewingEcmId, setViewingEcmId] = useState<string | null>(null);
+
+  const { data: ecmData, isLoading: isEcmLoading } = useQuery({
+    queryKey: ["evidenceCycleMap", viewingEcmId],
+    queryFn: () => evidenceCycleMapService.getById(viewingEcmId!),
+    enabled: !!viewingEcmId,
+  });
+
+  const getDisplayName = (submission: EvaluationSubmission): string => {
+    return submission.EvaluatorName;
+  };
 
   const isApproved = item.Status === 3;
 
@@ -449,17 +515,24 @@ export function CriterionPopup({
             <div className="flex flex-col lg:flex-row items-start gap-6">
               {/* Left: Evaluation Form */}
               <div className="flex-1 w-full min-w-0">
-                <EvaluationForm
-                  item={item}
-                  framework={framework}
-                  mySubmission={mySubmission}
-                  viewingSubmission={viewingSubmission}
-                  cycleStatus={cycleStatus}
-                  canSubmit={canSubmit}
-                  isSubmitting={isSubmitting}
-                  onSubmit={onSubmit}
-                  onClearViewing={() => setViewingSubmission(null)}
-                />
+                {isMySubmissionLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <EvaluationForm
+                    item={item}
+                    framework={framework}
+                    mySubmission={mySubmission}
+                    viewingSubmission={viewingSubmission}
+                    getDisplayName={getDisplayName}
+                    cycleStatus={cycleStatus}
+                    canSubmit={canSubmit}
+                    isSubmitting={isSubmitting}
+                    onSubmit={onSubmit}
+                    onClearViewing={() => setViewingSubmission(null)}
+                  />
+                )}
               </div>
 
               {/* Right: Reference + Council + Approval */}
@@ -503,6 +576,7 @@ export function CriterionPopup({
                           evidences.map((ev) => (
                             <div
                               key={ev.Id}
+                              onClick={() => setViewingEcmId(ev.EvidenceCycleMapId)}
                               className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-blue-50/50 hover:border-blue-100 cursor-pointer transition-colors group"
                             >
                               <div className="flex items-center gap-2.5 pr-2 min-w-0">
@@ -584,12 +658,18 @@ export function CriterionPopup({
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-white text-slate-600 flex items-center justify-center text-xs font-bold border border-slate-200 shadow-sm shrink-0">
-                              {getInitials(sub.EvaluatorName)}
-                            </div>
+                            <Avatar className="w-9 h-9 rounded-full shrink-0">
+                              <AvatarImage
+                                src={getFileUrl(sub.EvaluatorAvatar)}
+                                alt={getDisplayName(sub)}
+                              />
+                              <AvatarFallback className="rounded-full bg-white text-slate-600 text-xs font-bold border border-slate-200 shadow-sm">
+                                {getInitials(getDisplayName(sub))}
+                              </AvatarFallback>
+                            </Avatar>
                             <div>
                               <p className="text-sm font-bold text-slate-800 leading-tight">
-                                {sub.EvaluatorName}
+                                {getDisplayName(sub)}
                               </p>
                               <p className="text-[11px] text-slate-500 mt-0.5">
                                 {formatTimeAgo(sub.UpdatedAt ?? sub.CreatedAt)}
@@ -726,6 +806,22 @@ export function CriterionPopup({
           </div>
         </div>
       </div>
+
+      {/* Evidence popup */}
+      {viewingEcmId && (
+        <PopupEvidenceCycleMap
+          evidenceCycleMap={ecmData?.Data ?? null}
+          isOpen={!!viewingEcmId}
+          onOpenChange={(open) => {
+            if (!open) setViewingEcmId(null);
+          }}
+          readOnly={true}
+          isLoading={isEcmLoading}
+          saveChange={() => {}}
+          onApprove={() => {}}
+        />
+      )}
     </div>
   );
 }
+

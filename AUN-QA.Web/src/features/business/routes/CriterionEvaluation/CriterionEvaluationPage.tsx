@@ -41,6 +41,7 @@ export function CriterionEvaluationPage() {
     mySubmission,
     isSummaryLoading,
     isListLoading,
+    isMySubmissionLoading,
     isSubmitting,
     isApproving,
     handleSubmit,
@@ -176,6 +177,7 @@ export function CriterionEvaluationPage() {
           submissions={submissions}
           evidences={evidences}
           mySubmission={mySubmission}
+          isMySubmissionLoading={isMySubmissionLoading}
           framework={framework}
           cycleStatus={cycleStatus}
           canSubmit={canSubmit}

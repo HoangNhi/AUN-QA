@@ -110,7 +110,11 @@ export function Combobox({
     }
   }, [eagerLoading, open, loadData, hasLoaded, externalOptions]);
 
-  const selectedOption = options.find((option) => option.Value === value);
+  const normalizeValue = (val?: string) => (val || "").trim().toLowerCase();
+  const isSelectedValue = (optionValue?: string) =>
+    normalizeValue(optionValue) === normalizeValue(value);
+
+  const selectedOption = options.find((option) => isSelectedValue(option.Value));
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
@@ -157,11 +161,12 @@ export function Combobox({
                       className={cn(
                         "cursor-pointer",
                         "flex w-full items-center gap-2",
-                        value === option.Value && "font-semibold text-primary",
+                        isSelectedValue(option.Value) && "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
-                        const newValue = option.Value === value ? "" : (option.Value || "");
-                        const newText = option.Value === value ? "" : (option.Text || "");
+                        const currentlySelected = isSelectedValue(option.Value);
+                        const newValue = currentlySelected ? "" : (option.Value || "");
+                        const newText = currentlySelected ? "" : (option.Text || "");
                         onValueChange(newValue, newText);
                         setOpen(false);
                       }}
@@ -169,7 +174,7 @@ export function Combobox({
                       <div
                         className={cn(
                           "flex h-4 w-4 items-center justify-center shrink-0",
-                          value === option.Value ? "opacity-100" : "opacity-0",
+                          isSelectedValue(option.Value) ? "opacity-100" : "opacity-0",
                         )}
                       >
                         <Check className="h-4 w-4" />

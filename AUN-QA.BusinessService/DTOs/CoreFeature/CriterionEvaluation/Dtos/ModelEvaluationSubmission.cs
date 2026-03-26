@@ -5,6 +5,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Dtos
         public Guid Id { get; set; }
         public Guid EvaluatorId { get; set; }
         public string EvaluatorName { get; set; } = null!;
+        public string? EvaluatorAvatar { get; set; }
         public string? CurrentState { get; set; }
         public string? Strengths { get; set; }
         public string? Weaknesses { get; set; }

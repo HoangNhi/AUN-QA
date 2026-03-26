@@ -7,6 +7,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
     public interface IUserService
     {
         Task<ModelUser> GetById(GetByIdRequest request);
+        Task<List<ModelUser>> GetByIds(List<Guid> ids);
         Task<ModelUser> Insert(UserRequest request);
         Task<ModelUser> Update(UserRequest request);
         Task<string> DeleteList(DeleteListRequest request);

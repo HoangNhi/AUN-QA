@@ -129,3 +129,49 @@ export interface SurveyViewQuestion extends TemplateQuestion {
 export interface SurveyViewTextQuestion extends TemplateTextQuestion {
   Answer?: string;
 }
+
+// Aggregated Results
+export interface AggregatedSurveyResult {
+  CampaignId: string;
+  TotalRespondents: number;
+  Topics: AggregatedTopic[];
+}
+
+export interface AggregatedTopic {
+  TopicId: string;
+  Title: string;
+  Sort: number;
+  Categories: AggregatedCategory[];
+  TextQuestions: AggregatedTextQuestion[];
+}
+
+export interface AggregatedCategory {
+  CategoryId: string;
+  Name: string;
+  Sort: number;
+  Questions: AggregatedRatingQuestion[];
+}
+
+export interface AggregatedRatingQuestion {
+  QuestionId: string;
+  Content: string;
+  Sort: number;
+  Score1Count: number;
+  Score2Count: number;
+  Score3Count: number;
+  Score4Count: number;
+  Score5Count: number;
+  Total: number;
+}
+
+export interface AggregatedTextQuestion {
+  TextQuestionId: string;
+  Content: string;
+  Sort: number;
+  Answers: AnswerFrequency[];
+}
+
+export interface AnswerFrequency {
+  Content: string;
+  Frequency: number;
+}

@@ -161,6 +161,7 @@ export const API_ENDPOINTS = {
       SEND_SURVEY_INVITATION: `${BUSINESS_BASE}/SurveyCampaign/send-survey-invitation`,
       GET_SURVEY_BY_TOKEN: `${BUSINESS_BASE}/SurveyCampaign/get-survey-by-token`,
       SUBMIT_SURVEY: `${BUSINESS_BASE}/SurveyCampaign/submit-survey`,
+      GET_AGGREGATED_RESULTS: `${BUSINESS_BASE}/SurveyCampaign/get-aggregated-results`,
     },
     CriterionEvaluation: {
       GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,

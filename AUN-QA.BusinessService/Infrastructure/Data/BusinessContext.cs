@@ -28,6 +28,8 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<EvidenceCycleMap> EvidenceCycleMaps { get; set; }
 
+    public virtual DbSet<SarReport> SarReports { get; set; }
+
     public virtual DbSet<SurveyCampaign> SurveyCampaigns { get; set; }
 
     public virtual DbSet<SurveyScore> SurveyScores { get; set; }
@@ -203,6 +205,27 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<SarReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SarRepor__3214EC0728CE31E1");
+
+            entity.ToTable("SarReport");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.LastSavedAt).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.YdocSnapshot).HasColumnName("YDocSnapshot");
         });
 
         modelBuilder.Entity<SurveyCampaign>(entity =>

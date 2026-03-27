@@ -60,6 +60,7 @@ export function CriterionEvaluationPage() {
     enabled: !!standardSetId,
   });
 
+
   const framework: FrameworkType =
     standardSetData?.EvaluationMode === 2 ? "MOET" : "AUN";
 
@@ -176,6 +177,7 @@ export function CriterionEvaluationPage() {
           item={activeItem}
           submissions={submissions}
           evidences={evidences}
+          cycleId={selectedCycleId}
           mySubmission={mySubmission}
           isMySubmissionLoading={isMySubmissionLoading}
           framework={framework}

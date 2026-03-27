@@ -96,6 +96,14 @@ namespace AUN_QA.BusinessService.Controllers
             await _service.SubmitSurvey(request);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpGet, Route("get-aggregated-results")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAggregatedResults([FromQuery] Guid campaignId)
+        {
+            var result = await _service.GetAggregatedResults(campaignId);
+            return Ok(new BaseResponse<AggregatedSurveyResultsDto> { Data = result, Success = true });
+        }
         #endregion
 
         #region Session

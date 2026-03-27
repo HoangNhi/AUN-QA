@@ -2,6 +2,7 @@ import api, { type ApiResponse } from "@/lib/api";
 import type {
   AddAllStakeholderToCampaignRequest,
   AddListStakeholderToCampaignRequest,
+  AggregatedSurveyResult,
   GetListSessionRequest,
   GetStakeholderNotInCampaignRequest,
   SurveyCampaign,
@@ -143,6 +144,17 @@ export const surveyCampaignService = {
     return api.post<boolean>(
       API_ENDPOINTS.Business.SurveyCampaign.SUBMIT_SURVEY,
       data,
+    );
+  },
+
+  getAggregatedResults: async (
+    campaignId: string,
+  ): Promise<ApiResponse<AggregatedSurveyResult>> => {
+    return api.get<AggregatedSurveyResult>(
+      API_ENDPOINTS.Business.SurveyCampaign.GET_AGGREGATED_RESULTS,
+      {
+        params: { campaignId },
+      },
     );
   },
 };

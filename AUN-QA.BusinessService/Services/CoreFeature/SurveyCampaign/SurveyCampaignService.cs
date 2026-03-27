@@ -727,7 +727,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new BusinessException("Chiến dịch chưa bắt đầu");
             }
 
-            if (campaignReq.Status == (int)SurveyCampaignStatus.Completed)
+            var isSessionCompleted = session.Status == (int)SurveySessionStatus.Completed;
+
+            // Campaign is ended: only allow read-back for sessions that already completed.
+            if (campaignReq.Status == (int)SurveyCampaignStatus.Completed && !isSessionCompleted)
             {
                 throw new BusinessException("Chiến dịch đã kết thúc");
             }
@@ -738,7 +741,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 Id = campaignReq.Id,
                 Name = campaignReq.Name,
                 StakeholderType = campaignReq.StakeholderType,
-                IsSessionCompleted = session.Status == (int)SurveySessionStatus.Completed,
+                IsSessionCompleted = isSessionCompleted,
                 ListTopic = campaignReq.ListTopic.Select(t => new TemplateTopicRequest
                 {
                     Id = t.Id,
@@ -826,6 +829,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new BusinessException("Chiến dịch chưa bắt đầu");
             }
 
+            if (campaign.Status == (int)SurveyCampaignStatus.Completed)
+            {
+                throw new BusinessException("Chiến dịch đã kết thúc");
+            }
+
             // NEW: Clean up existing answers if re-submitting (for editing)
             if (session.Status == (int)SurveySessionStatus.Completed)
             {
@@ -873,6 +881,130 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             _context.SurveySessions.Update(session);
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<AggregatedSurveyResultsDto> GetAggregatedResults(Guid campaignId)
+        {
+            // 1. Get all session IDs for this campaign
+            var sessionIds = await _context.SurveySessions
+                .AsNoTracking()
+                .Where(x => x.CampaignId == campaignId && !x.IsDeleted)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            // 2. Fetch campaign structure
+            var topics = await _context.TemplateTopics
+                .AsNoTracking()
+                .Where(x => x.CampaignId == campaignId && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var topicIds = topics.Select(x => x.Id).ToList();
+
+            var categories = await _context.TemplateCategories
+                .AsNoTracking()
+                .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var categoryIds = categories.Select(x => x.Id).ToList();
+
+            var questions = await _context.TemplateQuestions
+                .AsNoTracking()
+                .Where(x => categoryIds.Contains(x.CategoryId) && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            var textQuestions = await _context.TemplateTextQuestions
+                .AsNoTracking()
+                .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
+                .OrderBy(x => x.Sort)
+                .ToListAsync();
+
+            // 3. Aggregate scores
+            var questionIds = questions.Select(x => x.Id).ToList();
+            var scoreGroups = await _context.SurveyScores
+                .AsNoTracking()
+                .Where(x => sessionIds.Contains(x.SessionId) && questionIds.Contains(x.QuestionId) && !x.IsDeleted)
+                .GroupBy(x => x.QuestionId)
+                .Select(g => new
+                {
+                    QuestionId = g.Key,
+                    Score1 = g.Count(x => x.Score == 1),
+                    Score2 = g.Count(x => x.Score == 2),
+                    Score3 = g.Count(x => x.Score == 3),
+                    Score4 = g.Count(x => x.Score == 4),
+                    Score5 = g.Count(x => x.Score == 5),
+                    Total = g.Count()
+                })
+                .ToListAsync();
+
+            // 4. Aggregate text answers
+            var textQuestionIds = textQuestions.Select(x => x.Id).ToList();
+            var textGroups = await _context.SurveyTextAnswers
+                .AsNoTracking()
+                .Where(x => sessionIds.Contains(x.SessionId) && textQuestionIds.Contains(x.TextQuestionId)
+                            && !x.IsDeleted && !string.IsNullOrWhiteSpace(x.Content))
+                .GroupBy(x => new { x.TextQuestionId, x.Content })
+                .Select(g => new { g.Key.TextQuestionId, g.Key.Content, Frequency = g.Count() })
+                .ToListAsync();
+
+            // 5. Assemble result
+            var scoreDict = scoreGroups.ToDictionary(x => x.QuestionId);
+            var textDict = textGroups.GroupBy(x => x.TextQuestionId)
+                                     .ToDictionary(g => g.Key, g => g.ToList());
+            var catsByTopic = categories.GroupBy(x => x.TopicId)
+                                        .ToDictionary(g => g.Key, g => g.ToList());
+            var questionsByCat = questions.GroupBy(x => x.CategoryId)
+                                          .ToDictionary(g => g.Key, g => g.ToList());
+            var textByTopic = textQuestions.GroupBy(x => x.TopicId)
+                                           .ToDictionary(g => g.Key, g => g.ToList());
+
+            var result = new AggregatedSurveyResultsDto
+            {
+                CampaignId = campaignId,
+                TotalRespondents = sessionIds.Count,
+                Topics = topics.Select(topic => new AggregatedTopicDto
+                {
+                    TopicId = topic.Id,
+                    Title = topic.Title,
+                    Sort = topic.Sort,
+                    Categories = catsByTopic.GetValueOrDefault(topic.Id, []).Select(cat => new AggregatedCategoryDto
+                    {
+                        CategoryId = cat.Id,
+                        Name = cat.Name,
+                        Sort = cat.Sort,
+                        Questions = questionsByCat.GetValueOrDefault(cat.Id, []).Select(q =>
+                        {
+                            var s = scoreDict.GetValueOrDefault(q.Id);
+                            return new AggregatedRatingQuestionDto
+                            {
+                                QuestionId = q.Id,
+                                Content = q.Content,
+                                Sort = q.Sort,
+                                Score1Count = s?.Score1 ?? 0,
+                                Score2Count = s?.Score2 ?? 0,
+                                Score3Count = s?.Score3 ?? 0,
+                                Score4Count = s?.Score4 ?? 0,
+                                Score5Count = s?.Score5 ?? 0,
+                                Total = s?.Total ?? 0,
+                            };
+                        }).ToList()
+                    }).ToList(),
+                    TextQuestions = textByTopic.GetValueOrDefault(topic.Id, []).Select(tq => new AggregatedTextQuestionDto
+                    {
+                        TextQuestionId = tq.Id,
+                        Content = tq.Content,
+                        Sort = tq.Sort,
+                        Answers = textDict.GetValueOrDefault(tq.Id, [])
+                            .Select(a => new AnswerFrequencyDto { Content = a.Content, Frequency = a.Frequency })
+                            .OrderByDescending(a => a.Frequency)
+                            .ToList()
+                    }).ToList()
+                }).ToList()
+            };
+
+            return result;
         }
         #endregion
 

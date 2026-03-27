@@ -19,6 +19,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task ChangeStatus(GetByIdRequest request);
         Task<ModelDoSurvey> GetSurveyByToken(GetSurveyByTokenRequest request);
         Task SubmitSurvey(SurveySubmissionRequest request);
+        Task<AggregatedSurveyResultsDto> GetAggregatedResults(Guid campaignId);
         #endregion
 
         #region Session

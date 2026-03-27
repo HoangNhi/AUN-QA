@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { evidenceCycleMapService } from "../../../api/evidenceCycleMap.api";
+import { surveyCampaignService } from "../../../api/survey-campaign.api";
 import PopupEvidenceCycleMap from "../../EvidenceCycleMap/PopupEvidenceCycleMap";
+import { PopupSurveyCampaignCriterion } from "./PopupSurveyCampaignCriterion";
+import { getCompletedCampaignsForCycle } from "../../../utils/criterionEvaluationSurvey";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getFileUrl } from "@/lib/utils";
@@ -33,11 +36,13 @@ import type {
   EvaluationSubmissionRequest,
   FrameworkType,
 } from "../../../types/criterionEvaluation.types";
+import type { SurveyCampaignGetListPaging } from "../../../types/survey-campaign.types";
 
 interface CriterionPopupProps {
   item: CriterionEvaluationItem;
   submissions: EvaluationSubmission[];
   evidences: CriterionEvidence[];
+  cycleId: string;
   mySubmission: EvaluationSubmissionRequest | null;
   isMySubmissionLoading: boolean;
   framework: FrameworkType;
@@ -424,6 +429,7 @@ export function CriterionPopup({
   item,
   submissions,
   evidences,
+  cycleId,
   mySubmission,
   isMySubmissionLoading,
   framework,
@@ -447,12 +453,31 @@ export function CriterionPopup({
     item.OfficialResult,
   );
   const [viewingEcmId, setViewingEcmId] = useState<string | null>(null);
+  const [viewingSurveyCampaign, setViewingSurveyCampaign] =
+    useState<SurveyCampaignGetListPaging | null>(null);
 
   const { data: ecmData, isLoading: isEcmLoading } = useQuery({
     queryKey: ["evidenceCycleMap", viewingEcmId],
     queryFn: () => evidenceCycleMapService.getById(viewingEcmId!),
     enabled: !!viewingEcmId,
   });
+  const { data: surveyCampaigns = [], isLoading: isSurveyCampaignsLoading } =
+    useQuery<SurveyCampaignGetListPaging[]>({
+      queryKey: ["criterionEvaluation", "surveyCampaigns", "popup", cycleId],
+      queryFn: async () => {
+        const res = await surveyCampaignService.getList({
+          PageIndex: 1,
+          PageSize: 1000,
+          TextSearch: null,
+          CycleId: cycleId,
+          StakeholderType: undefined,
+        });
+        if (!res.Success) return [];
+        return getCompletedCampaignsForCycle(res.Data?.Data ?? [], cycleId);
+      },
+      enabled: !!cycleId,
+      refetchOnMount: "always",
+    });
 
   const getDisplayName = (submission: EvaluationSubmission): string => {
     return submission.EvaluatorName;
@@ -611,7 +636,7 @@ export function CriterionPopup({
                           Số liệu Khảo sát
                         </span>
                         <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                          0
+                          {surveyCampaigns.length}
                         </span>
                       </div>
                       {isSurveyOpen ? (
@@ -621,9 +646,38 @@ export function CriterionPopup({
                       )}
                     </button>
                     {isSurveyOpen && (
-                      <p className="text-xs text-slate-400 py-2 px-3">
-                        Chưa có số liệu khảo sát liên kết.
-                      </p>
+                      <div className="space-y-2 mt-1">
+                        {isSurveyCampaignsLoading ? (
+                          <p className="text-xs text-slate-400 py-2 px-3">
+                            Đang tải dữ liệu khảo sát...
+                          </p>
+                        ) : surveyCampaigns.length === 0 ? (
+                          <p className="text-xs text-slate-400 py-2 px-3">
+                            Chưa có campaign khảo sát đã kết thúc trong chu kỳ này.
+                          </p>
+                        ) : (
+                          surveyCampaigns.map((campaign) => (
+                            <div
+                              key={campaign.Id}
+                              onClick={() => setViewingSurveyCampaign(campaign)}
+                              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-purple-50/60 hover:border-purple-100 cursor-pointer transition-colors group"
+                            >
+                              <div className="min-w-0 pr-2">
+                                <p
+                                  className="text-sm font-semibold text-slate-700 truncate group-hover:text-purple-700 transition-colors"
+                                  title={campaign.Name}
+                                >
+                                  {campaign.Name}
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                  {campaign.Stakeholder || "Stakeholder"} - Đã kết thúc
+                                </p>
+                              </div>
+                              <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-purple-600 shrink-0 transition-colors" />
+                            </div>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -807,6 +861,13 @@ export function CriterionPopup({
         </div>
       </div>
 
+      <PopupSurveyCampaignCriterion
+        open={!!viewingSurveyCampaign}
+        onOpenChange={(open) => {
+          if (!open) setViewingSurveyCampaign(null);
+        }}
+        campaign={viewingSurveyCampaign}
+      />
       {/* Evidence popup */}
       {viewingEcmId && (
         <PopupEvidenceCycleMap
@@ -824,4 +885,3 @@ export function CriterionPopup({
     </div>
   );
 }
-

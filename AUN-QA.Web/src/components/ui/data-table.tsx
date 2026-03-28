@@ -1,4 +1,4 @@
-import {
+﻿import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -6,7 +6,7 @@ import {
   type RowSelectionState,
   type OnChangeFn,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -72,10 +72,10 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("space-y-4 w-full", className)}>
-      {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
+      {/* Khung bao ngoÃ i cÃ¹ng: Bo gÃ³c, cÃ³ viá»n, ná»n tráº¯ng */}
       <div className="relative w-full overflow-clip rounded-md border flex flex-col bg-white">
 
-        {/* Wrapper cho khung cuộn để neo Overlay Loading đúng phần Body */}
+        {/* Wrapper cho khung cuá»™n Ä‘á»ƒ neo Overlay Loading Ä‘Ãºng pháº§n Body */}
         <div className="relative w-full">
           {/* Loading Overlay */}
           {isLoading && (
@@ -84,10 +84,10 @@ export function DataTable<TData, TValue>({
             </div>
           )}
 
-          {/* 👇 KHUNG CUỘN CHÍNH (Nơi chứa thanh cuộn) */}
+          {/* ðŸ‘‡ KHUNG CUá»˜N CHÃNH (NÆ¡i chá»©a thanh cuá»™n) */}
           <div className={cn(
             containerClassName,
-            // Custom scrollbar để margin-top hoạt động (bắt buộc phải có width/height thì track/thumb mới được render custom)
+            // Custom scrollbar Ä‘á»ƒ margin-top hoáº¡t Ä‘á»™ng (báº¯t buá»™c pháº£i cÃ³ width/height thÃ¬ track/thumb má»›i Ä‘Æ°á»£c render custom)
             "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
             "[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:mt-[48px]",
             "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
@@ -103,7 +103,7 @@ export function DataTable<TData, TValue>({
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        // Dùng pseudo-element vẽ border 1px ở dưới màng sticky, kết hợp shadow
+                        // DÃ¹ng pseudo-element váº½ border 1px á»Ÿ dÆ°á»›i mÃ ng sticky, káº¿t há»£p shadow
                         className={cn(
                           "h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-white",
                           "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-border",
@@ -169,7 +169,7 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
 
-        {/* 👇 PAGINATION: Nằm trong khung border, ngăn cách bằng border-t */}
+        {/* ðŸ‘‡ PAGINATION: Náº±m trong khung border, ngÄƒn cÃ¡ch báº±ng border-t */}
         {pageRequest && totalRow !== undefined && (
           <div className="shrink-0 border-t bg-white">
             <DataTablePagination
@@ -207,7 +207,7 @@ function DataTablePagination({
       <div className="flex-1 text-sm text-muted-foreground hidden sm:block">
         {totalRow > 0 ? (
           <>
-            Hiển thị{" "}
+            Hiá»ƒn thá»‹{" "}
             <span className="font-medium">
               {(pageRequest.PageIndex - 1) * pageRequest.PageSize + 1}
             </span>{" "}
@@ -215,7 +215,7 @@ function DataTablePagination({
             <span className="font-medium">
               {Math.min(pageRequest.PageIndex * pageRequest.PageSize, totalRow)}
             </span>{" "}
-            trong <span className="font-medium">{totalRow}</span> mục
+            trong <span className="font-medium">{totalRow}</span> má»¥c
           </>
         ) : (
           "Không có dữ liệu"
@@ -224,7 +224,7 @@ function DataTablePagination({
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium hidden sm:block">
-            Số dòng mỗi trang
+            Sá»‘ dÃ²ng má»—i trang
           </p>
           <Select
             value={`${pageRequest.PageSize}`}
@@ -316,7 +316,7 @@ function DataTablePagination({
                 variant="outline"
                 className="h-8 w-8 p-0 ml-2"
                 onClick={onRefresh}
-                title="Làm mới"
+                title="LÃ m má»›i"
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
@@ -327,3 +327,4 @@ function DataTablePagination({
     </div>
   );
 }
+

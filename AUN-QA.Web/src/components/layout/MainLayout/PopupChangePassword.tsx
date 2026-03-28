@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -28,7 +28,7 @@ const PopupChangePassword = ({
 
   const onSubmit = () => {
     if (!oldPassword) {
-      toast.error("Vui lòng nhập mật khẩu cũ");
+      toast.error("Vui lòng nháº­p máº­t kháº©u cÅ©");
       return;
     }
     if (!newPassword) {
@@ -61,12 +61,12 @@ const PopupChangePassword = ({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Đổi mật khẩu</DialogTitle>
+            <DialogTitle>Äá»•i máº­t kháº©u</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="old-password">Mật khẩu cũ</Label>
+              <Label htmlFor="old-password">Máº­t kháº©u cÅ©</Label>
               <Input
                 id="old-password"
                 type="password"
@@ -107,3 +107,4 @@ const PopupChangePassword = ({
 };
 
 export default PopupChangePassword;
+

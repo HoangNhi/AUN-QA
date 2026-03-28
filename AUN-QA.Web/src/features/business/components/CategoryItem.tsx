@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, GripVertical, Plus } from "lucide-react";
 import type { TemplateCategory } from "../types/survey-template.types";
@@ -41,7 +41,7 @@ export const CategoryItem = ({
             onUpdateCategory(topicId, category.Id, e.target.value)
           }
           className="font-semibold text-gray-700 bg-gray-50 flex-1 focus-visible:ring-blue-400"
-          placeholder="Nhập tên nhóm tiêu chí (VD: 1. Đề cương...)"
+          placeholder="Nhập tÃªn nhÃ³m tiÃªu chÃ­ (VD: 1. Äá» cÆ°Æ¡ng...)"
         />
         <Button
           type="button"
@@ -75,9 +75,10 @@ export const CategoryItem = ({
           onClick={() => onAddQuestion(topicId, category.Id)}
           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium text-xs h-8"
         >
-          <Plus size={14} className="mr-1" /> Thêm câu hỏi
+          <Plus size={14} className="mr-1" /> Thêm cÃ¢u há»i
         </Button>
       </div>
     </div>
   );
 };
+

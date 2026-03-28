@@ -1,6 +1,6 @@
-import type { ColumnDef } from "@tanstack/react-table";
+﻿import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Trash } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
 import { Combobox } from "@/components/ui/combobox";
@@ -9,9 +9,9 @@ import type { Council } from "@/features/business/types/cycle.types";
 import { COUNCIL_ROLES } from "@/constants/catalog.constants";
 import type { StandardOption } from "@/features/catalog/api/standard.api";
 
-// Council role constants — matches CouncilRole enum in BE
-const ROLE_HEAD = 1; // Chủ tịch HĐ — phụ trách tất cả TC
-const ROLE_SECRETARY = 3; // Thư ký — không cần phân công TC
+// Council role constants â€” matches CouncilRole enum in BE
+const ROLE_HEAD = 1; // Chá»§ tá»‹ch HÄ â€” phá»¥ trÃ¡ch táº¥t cáº£ TC
+const ROLE_SECRETARY = 3; // ThÆ° kÃ½ â€” khÃ´ng cáº§n phÃ¢n cÃ´ng TC
 
 // --- Council table column factory ---
 interface CouncilColumnHandlers {
@@ -34,7 +34,7 @@ function getCouncilColumns({
     return [
         {
             id: "UserId",
-            header: "Thành viên",
+            header: "ThÃ nh viÃªn",
             meta: { className: "w-[220px]" },
             cell: ({ row }) => (
                 <Combobox
@@ -43,14 +43,14 @@ function getCouncilColumns({
                     onValueChange={(v) =>
                         handleChangeCouncil(row.original.Id, "UserId", v)
                     }
-                    placeholder="Chọn thành viên"
+                    placeholder="Chá»n thÃ nh viÃªn"
                     modal
                 />
             ),
         },
         {
             id: "RoleId",
-            header: "Vai trò",
+            header: "Vai trÃ²",
             meta: { className: "w-[160px]" },
             cell: ({ row }) => (
                 <Combobox
@@ -59,7 +59,7 @@ function getCouncilColumns({
                     onValueChange={(v) =>
                         handleChangeCouncil(row.original.Id, "RoleId", Number(v))
                     }
-                    placeholder="Chọn vai trò"
+                    placeholder="Chá»n vai trÃ²"
                     modal
                 />
             ),
@@ -72,7 +72,7 @@ function getCouncilColumns({
                 if (role === ROLE_HEAD) {
                     return (
                         <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            Tất cả TC
+                            Táº¥t cáº£ TC
                         </span>
                     );
                 }
@@ -104,7 +104,7 @@ function getCouncilColumns({
                                 opts.map((o) => o.value),
                             )
                         }
-                        placeholder="Chọn tiêu chuẩn..."
+                        placeholder="Chá»n tiÃªu chuáº©n..."
                         hidePlaceholderWhenSelected
                     />
                 );
@@ -171,10 +171,10 @@ export function CouncilTab({
 
     return (
         <div className="grid gap-3">
-            {/* Đ15 validation summary bar */}
+            {/* Ä15 validation summary bar */}
             {listCouncil.length > 0 && (
                 <div className="rounded-lg border bg-gray-50 px-3 py-2.5 space-y-1 text-xs">
-                    <p className="font-semibold text-gray-700 mb-1">Kiểm tra Đ15</p>
+                    <p className="font-semibold text-gray-700 mb-1">Kiá»ƒm tra Ä15</p>
                     <div className="flex items-center gap-2">
                         <span
                             className={
@@ -183,12 +183,12 @@ export function CouncilTab({
                                     : "text-red-500 font-bold"
                             }
                         >
-                            {d15.enoughMembers ? "✓" : "✗"}
+                            {d15.enoughMembers ? "âœ“" : "âœ—"}
                         </span>
                         <span>
-                            Tổng thành viên: <strong>{d15.totalMembers}</strong>
+                            Tá»•ng thÃ nh viÃªn: <strong>{d15.totalMembers}</strong>
                             {!d15.enoughMembers && (
-                                <span className="text-red-500 ml-1">(cần ≥ 9 — Đ15.k1)</span>
+                                <span className="text-red-500 ml-1">(cáº§n â‰¥ 9 â€” Ä15.k1)</span>
                             )}
                         </span>
                     </div>
@@ -202,12 +202,12 @@ export function CouncilTab({
                                             : "text-amber-500 font-bold"
                                     }
                                 >
-                                    {d15.insufficientEval.length === 0 ? "✓" : "⚠"}
+                                    {d15.insufficientEval.length === 0 ? "âœ“" : "âš "}
                                 </span>
                                 <span>
-                                    TC có &lt; 3 thành viên ĐG:{" "}
+                                    TC cÃ³ &lt; 3 thÃ nh viÃªn ÄG:{" "}
                                     {d15.insufficientEval.length === 0 ? (
-                                        <span className="text-green-600">Tất cả đạt</span>
+                                        <span className="text-green-600">Táº¥t cáº£ Ä‘áº¡t</span>
                                     ) : (
                                         <span className="text-amber-600">
                                             {d15.insufficientEval.map((s) => s.Code).join(", ")}
@@ -223,12 +223,12 @@ export function CouncilTab({
                                             : "text-amber-500 font-bold"
                                     }
                                 >
-                                    {d15.uncoveredProvider.length === 0 ? "✓" : "⚠"}
+                                    {d15.uncoveredProvider.length === 0 ? "âœ“" : "âš "}
                                 </span>
                                 <span>
-                                    TC chưa có người cung cấp MC:{" "}
+                                    TC chÆ°a cÃ³ ngÆ°á»i cung cáº¥p MC:{" "}
                                     {d15.uncoveredProvider.length === 0 ? (
-                                        <span className="text-green-600">Tất cả đạt</span>
+                                        <span className="text-green-600">Táº¥t cáº£ Ä‘áº¡t</span>
                                     ) : (
                                         <span className="text-amber-600">
                                             {d15.uncoveredProvider.map((s) => s.Code).join(", ")}
@@ -242,14 +242,14 @@ export function CouncilTab({
             )}
 
             <div className="flex justify-between items-center">
-                <Label>Danh sách hội đồng</Label>
+                <Label>Danh sÃ¡ch há»™i Ä‘á»“ng</Label>
                 <Button
                     type="button"
                     size="sm"
                     onClick={onAdd}
                     className="flex gap-2"
                 >
-                    <Plus className="w-4 h-4" /> Thêm thành viên
+                    <Plus className="w-4 h-4" /> Thêm thÃ nh viÃªn
                 </Button>
             </div>
 
@@ -279,7 +279,7 @@ export function CouncilTab({
             {standards.length > 0 && listCouncil.length > 0 && (
                 <div className="rounded-lg border p-3 bg-white">
                     <p className="text-xs font-semibold text-gray-700 mb-2">
-                        Tổng hợp Nhóm công tác
+                        Tá»•ng há»£p NhÃ³m cÃ´ng tÃ¡c
                     </p>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs border-collapse">
@@ -289,10 +289,10 @@ export function CouncilTab({
                                         Tiêu chuẩn
                                     </th>
                                     <th className="border px-2 py-1 text-center font-medium text-gray-600">
-                                        Thành viên ĐG
+                                        ThÃ nh viÃªn ÄG
                                     </th>
                                     <th className="border px-2 py-1 text-center font-medium text-gray-600">
-                                        Người cung cấp MC
+                                        NgÆ°á»i cung cáº¥p MC
                                     </th>
                                 </tr>
                             </thead>
@@ -340,3 +340,4 @@ export function CouncilTab({
         </div>
     );
 }
+

@@ -1,5 +1,5 @@
-import { GalleryVerticalEnd } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+﻿import { GalleryVerticalEnd } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -18,8 +18,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
-  username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),
-  password: z.string().min(1, "Vui lòng nhập mật khẩu"),
+  username: z.string().min(1, "Vui lòng nháº­p tÃªn Ä‘Äƒng nháº­p"),
+  password: z.string().min(1, "Vui lòng nháº­p máº­t kháº©u"),
 });
 
 const LoginPage = () => {
@@ -38,10 +38,10 @@ const LoginPage = () => {
     try {
       const result = await login(values.username, values.password);
       if (!result.Success) {
-        toast.error(result.Message || "Đăng nhập thất bại");
+        toast.error(result.Message || "ÄÄƒng nháº­p tháº¥t báº¡i");
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Đăng nhập thất bại");
+      toast.error(err instanceof Error ? err.message : "ÄÄƒng nháº­p tháº¥t báº¡i");
     }
   };
 
@@ -82,9 +82,9 @@ const LoginPage = () => {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tên đăng nhập</FormLabel>
+                        <FormLabel>TÃªn Ä‘Äƒng nháº­p</FormLabel>
                         <FormControl>
-                          <Input placeholder="Tên đăng nhập" {...field} />
+                          <Input placeholder="TÃªn Ä‘Äƒng nháº­p" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -97,16 +97,16 @@ const LoginPage = () => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between">
-                          <FormLabel>Mật khẩu</FormLabel>
+                          <FormLabel>Máº­t kháº©u</FormLabel>
                           <a
                             href="#"
                             className="text-sm underline-offset-4 hover:underline"
                           >
-                            Quên mật khẩu?
+                            QuÃªn máº­t kháº©u?
                           </a>
                         </div>
                         <FormControl>
-                          <Input type="password" placeholder="Mật khẩu" {...field} />
+                          <Input type="password" placeholder="Máº­t kháº©u" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -114,7 +114,7 @@ const LoginPage = () => {
                   />
 
                   <Button type="submit" className="w-full">
-                    Đăng nhập
+                    ÄÄƒng nháº­p
                   </Button>
                 </div>
               </form>
@@ -134,3 +134,4 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+

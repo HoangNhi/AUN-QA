@@ -172,6 +172,12 @@ export const API_ENDPOINTS = {
       APPROVE: `${BUSINESS_BASE}/CriterionEvaluation/approve`,
       INITIALIZE: `${BUSINESS_BASE}/CriterionEvaluation/initialize`,
       GET_EVIDENCES: `${BUSINESS_BASE}/CriterionEvaluation/get-evidences`,
+      GET_POPUP_DATA: `${BUSINESS_BASE}/CriterionEvaluation/get-popup-data`,
+    },
+    Sar: {
+      GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
+      GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
+      SAVE_DRAFT: `${BUSINESS_BASE}/Sar/save-draft`,
     },
   },
   File: {

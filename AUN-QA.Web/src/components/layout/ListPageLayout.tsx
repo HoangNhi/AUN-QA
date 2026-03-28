@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { SearchIcon } from "lucide-react";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,14 +77,14 @@ export function ListPageLayout<TData>({
             <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
                 <CardContent className="p-4">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-sm font-medium">Lọc danh sách</h3>
+                        <h3 className="text-sm font-medium">Lá»c danh sÃ¡ch</h3>
                         <Button
                             variant="ghost"
                             size="sm"
                             className="h-8 px-2 text-xs"
                             onClick={onResetFilters}
                         >
-                            Đặt lại bộ lọc
+                            Äáº·t láº¡i bá»™ lá»c
                         </Button>
                     </div>
                     <div className={`grid grid-cols-1 gap-4 ${filterGridCols}`}>
@@ -168,3 +168,4 @@ export function ListPageLayout<TData>({
         </div>
     );
 }
+

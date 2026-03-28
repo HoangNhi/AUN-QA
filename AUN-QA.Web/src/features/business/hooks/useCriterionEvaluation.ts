@@ -64,36 +64,22 @@ export const useCriterionEvaluation = () => {
 
   const groups = listResponse?.Data ?? [];
 
-  // Submissions for active popup item
-  const { data: submissionsResponse, isLoading: isSubmissionsLoading } =
-    useQuery({
-      queryKey: ["criterionEvaluation", "submissions", activeItemId],
-      queryFn: () =>
-        criterionEvaluationService.getSubmissions(activeItemId!),
-      enabled: !!activeItemId,
-    });
-
-  const submissions = submissionsResponse?.Data ?? [];
-
-  // Evidences for active popup item
-  const { data: evidencesResponse } = useQuery({
-    queryKey: ["criterionEvaluation", "evidences", activeItemId],
+  // Combined popup data query (submissions, evidences, mySubmission, survey campaigns, evaluation mode)
+  const { data: popupDataResponse, isLoading: isPopupDataLoading } = useQuery({
+    queryKey: ["criterionEvaluation", "popupData", activeItemId, selectedCycleId],
     queryFn: () =>
-      criterionEvaluationService.getEvidences(activeItemId!, selectedCycleId),
+      criterionEvaluationService.getPopupData({
+        CriterionEvaluationId: activeItemId!,
+        CycleId: selectedCycleId,
+      }),
     enabled: !!activeItemId && !!selectedCycleId,
   });
 
-  const evidences = evidencesResponse?.Data ?? [];
-
-  // Current user's submission for active item
-  const { data: mySubmissionResponse, isLoading: isMySubmissionLoading } = useQuery({
-    queryKey: ["criterionEvaluation", "mySubmission", activeItemId],
-    queryFn: () =>
-      criterionEvaluationService.getMySubmission(activeItemId!),
-    enabled: !!activeItemId,
-  });
-
-  const mySubmission = mySubmissionResponse?.Data ?? null;
+  const submissions = popupDataResponse?.Data?.Submissions ?? [];
+  const evidences = popupDataResponse?.Data?.Evidences ?? [];
+  const mySubmission = popupDataResponse?.Data?.MySubmission ?? null;
+  const surveyCampaigns = popupDataResponse?.Data?.SurveyCampaigns ?? [];
+  const evaluationMode = popupDataResponse?.Data?.EvaluationMode ?? 1;
 
   // Submit mutation
   const submitMutation = useMutation({
@@ -105,10 +91,7 @@ export const useCriterionEvaluation = () => {
     onSuccess: () => {
       toast.success("Gửi phiếu đánh giá thành công");
       queryClient.invalidateQueries({
-        queryKey: ["criterionEvaluation", "submissions", activeItemId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["criterionEvaluation", "mySubmission", activeItemId],
+        queryKey: ["criterionEvaluation", "popupData", activeItemId],
       });
       queryClient.invalidateQueries({
         queryKey: ["criterionEvaluation", "list", selectedCycleId],
@@ -194,11 +177,12 @@ export const useCriterionEvaluation = () => {
     submissions,
     evidences,
     mySubmission,
+    surveyCampaigns,
+    evaluationMode,
     // Loading
     isSummaryLoading,
     isListLoading,
-    isSubmissionsLoading,
-    isMySubmissionLoading,
+    isPopupDataLoading,
     isSubmitting: submitMutation.isPending,
     isApproving: approveMutation.isPending,
     // Actions

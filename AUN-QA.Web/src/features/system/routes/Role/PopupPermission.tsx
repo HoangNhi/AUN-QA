@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -54,7 +54,7 @@ const PopupPermission = ({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Cập nhật phân quyền</DialogTitle>
+            <DialogTitle>Cập nhật phÃ¢n quyá»n</DialogTitle>
           </DialogHeader>
 
           <div className="flex w-full flex-col gap-6">
@@ -90,13 +90,13 @@ const PopupPermission = ({
                                 <TableHead className="text-center">
                                   Thêm
                                 </TableHead>
-                                <TableHead className="text-center">Sửa</TableHead>
+                                <TableHead className="text-center">Sá»­a</TableHead>
                                 <TableHead className="text-center">Xóa</TableHead>
                                 <TableHead className="text-center">
                                   Duyệt
                                 </TableHead>
                                 <TableHead className="text-center">
-                                  Thống kê
+                                  Thá»‘ng kÃª
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
@@ -216,3 +216,4 @@ const PopupPermission = ({
 };
 
 export default PopupPermission;
+

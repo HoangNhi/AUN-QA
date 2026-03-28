@@ -18,5 +18,9 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
         #region FileType
         IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, CancellationToken cancellationToken = default);
         #endregion
+
+        #region StandardSet
+        Task<int> GetStandardSetEvaluationModeAsync(string standardSetId);
+        #endregion
     }
 }

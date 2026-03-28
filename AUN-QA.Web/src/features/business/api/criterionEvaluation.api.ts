@@ -6,9 +6,11 @@ import type {
   CriterionEvidence,
   CriterionEvaluationGetListRequest,
   CriterionEvaluationSummary,
+  CriterionPopupData,
   EvaluationSubmission,
   EvaluationSubmissionRequest,
   GetCriterionEvaluationSummaryRequest,
+  GetPopupDataRequest,
   InitializeCycleEvaluationRequest,
   StandardEvaluationGroup,
 } from "../types/criterionEvaluation.types";
@@ -78,6 +80,15 @@ export const criterionEvaluationService = {
     return api.post<CriterionEvidence[]>(
       API_ENDPOINTS.Business.CriterionEvaluation.GET_EVIDENCES,
       { Id: criterionEvaluationId, CycleId: cycleId },
+    );
+  },
+
+  getPopupData: async (
+    request: GetPopupDataRequest,
+  ): Promise<ApiResponse<CriterionPopupData>> => {
+    return api.post<CriterionPopupData>(
+      API_ENDPOINTS.Business.CriterionEvaluation.GET_POPUP_DATA,
+      request,
     );
   },
 };

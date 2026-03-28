@@ -123,6 +123,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
             }
             #endregion
 
+            var addSarReport = new Entities.SarReport
+            {
+                Id = Guid.NewGuid(),
+                CycleId = add.Id,
+                Status = 1,
+                CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System",
+                CreatedAt = DateTime.UtcNow,
+                IsActived = true,
+                IsDeleted = false
+            };
+            await _context.SarReports.AddAsync(addSarReport);
+
             await _context.SaveChangesAsync();
         }
 

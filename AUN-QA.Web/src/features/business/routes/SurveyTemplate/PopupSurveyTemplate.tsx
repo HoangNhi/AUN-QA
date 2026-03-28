@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -41,8 +41,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
-  title: z.string().min(1, "Vui lòng nhập tiêu đề"),
-  stakeholderType: z.string().min(1, "Vui lòng chọn loại đối tượng"),
+  title: z.string().min(1, "Vui lòng nhập tiêu đề"),
+  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng"),
   description: z.string().optional(),
   isActived: z.boolean(),
 });
@@ -115,7 +115,7 @@ const PopupSurveyTemplate = ({
     const values = form.getValues();
     return {
       Id: id,
-      Name: values.title || "Tiêu đề mẫu (Xem trước)",
+      Name: values.title || "Tiêu đề máº«u (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType),
       IsSessionCompleted: false,
       ListTopic:
@@ -169,8 +169,8 @@ const PopupSurveyTemplate = ({
                   )}
                   <span>
                     {surveyTemplate?.IsEdit
-                      ? "Cập nhật mẫu khảo sát"
-                      : "Thêm mới mẫu khảo sát"}
+                      ? "Cập nhật máº«u kháº£o sÃ¡t"
+                      : "Thêm mới máº«u kháº£o sÃ¡t"}
                   </span>
                 </div>
 
@@ -210,14 +210,14 @@ const PopupSurveyTemplate = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Tiêu đề
+                            Tiêu đề
                           </FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               required
                               maxLength={255}
-                              placeholder="Nhập tiêu đề"
+                              placeholder="Nhập tiÃªu Ä‘á»"
                               className="bg-white"
                             />
                           </FormControl>
@@ -255,7 +255,7 @@ const PopupSurveyTemplate = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                Loại đối tượng
+                                Loáº¡i Ä‘á»‘i tÆ°á»£ng
                               </FormLabel>
                               <Select
                                 onValueChange={field.onChange}
@@ -263,14 +263,14 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chọn loại đối tượng" />
+                                    <SelectValue placeholder="Chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="1">Sinh viên</SelectItem>
                                   <SelectItem value="2">Cựu sinh viên</SelectItem>
                                   <SelectItem value="4">Giảng viên</SelectItem>
-                                  <SelectItem value="3">Nhà tuyển dụng</SelectItem>
+                                  <SelectItem value="3">NhÃ  tuyá»ƒn dá»¥ng</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -292,7 +292,7 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chọn trạng thái" />
+                                    <SelectValue placeholder="Chá»n tráº¡ng thÃ¡i" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -326,7 +326,7 @@ const PopupSurveyTemplate = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("Đây chỉ là bản xem trước!");
+                    toast.success("ÄÃ¢y chá»‰ lÃ  báº£n xem trÆ°á»›c!");
                   }}
                 />
               </div>
@@ -350,7 +350,7 @@ const PopupSurveyTemplate = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu và thêm tiếp
+                    Lưu vÃ  thÃªm tiáº¿p
                   </Button>
                 )}
               </DialogFooter>
@@ -363,3 +363,4 @@ const PopupSurveyTemplate = ({
 };
 
 export default PopupSurveyTemplate;
+

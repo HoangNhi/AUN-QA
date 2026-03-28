@@ -13,6 +13,7 @@ service CatalogProto {
   rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
   rpc GetFileTypesByCriterionStream (GetFileTypesByCriterionStreamRequest) returns (stream FileTypeInfo);
   rpc GetStandardsWithCriteriaStream (GetStandardsWithCriteriaStreamRequest) returns (stream StandardWithCriteriaInfo);
+  rpc GetStandardSetEvaluationMode (GetStandardSetEvaluationModeRequest) returns (GetStandardSetEvaluationModeResponse);
 }
 
 message GetStakeholdersStreamRequest {
@@ -76,4 +77,13 @@ message StandardWithCriteriaInfo {
   string criterion_name = 7;
   bool is_prerequisite = 8;
   int32 criterion_order = 9;
+}
+
+// StandardSet EvaluationMode
+message GetStandardSetEvaluationModeRequest {
+  string standard_set_id = 1;
+}
+
+message GetStandardSetEvaluationModeResponse {
+  int32 evaluation_mode = 1; // 1: SCORING_7 (AUN), 2: PASS_FAIL (MOET)
 }

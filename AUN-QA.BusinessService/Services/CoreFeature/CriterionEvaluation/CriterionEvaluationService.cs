@@ -11,6 +11,7 @@ using AUN_QA.SystemService.Protos;
 using AUN_QA.Shared.Exceptions;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.EntityFrameworkCore;
+using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
 {
@@ -389,6 +390,54 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             ).ToListAsync();
 
             return result;
+        }
+        #endregion
+
+        #region Popup Data
+        public async Task<ModelCriterionPopupData> GetPopupData(GetPopupDataRequest request)
+        {
+            var submissions = await GetSubmissions(request.CriterionEvaluationId);
+            var mySubmission = await GetMySubmission(request.CriterionEvaluationId);
+            var evidences = await GetEvidencesForCriterion(request.CriterionEvaluationId, request.CycleId);
+
+            // Get cycle with StandardSetId
+            var cycle = await _context.Cycles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
+
+            if (cycle == null)
+                throw new BusinessException("Không tìm thấy chu kỳ đánh giá");
+
+            // Get EvaluationMode from CatalogService via gRPC
+            var evaluationMode = await _catalogService.GetStandardSetEvaluationModeAsync(cycle.StandardSetId.ToString());
+
+            // Get survey campaigns for the cycle
+            var surveyCampaigns = await _context.SurveyCampaigns
+                .AsNoTracking()
+                .Where(x => x.CycleId == request.CycleId && !x.IsDeleted && x.IsActived)
+                .Select(x => new ModelSurveyCampaign
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Status = x.Status,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return new ModelCriterionPopupData
+            {
+                Submissions = submissions,
+                MySubmission = mySubmission,
+                Evidences = evidences.Select(e => new CriterionEvidence
+                {
+                    Id = e.Id,
+                    Code = e.Code,
+                    Name = e.Name,
+                    EvidenceCycleMapId = e.EvidenceCycleMapId
+                }).ToList(),
+                SurveyCampaigns = surveyCampaigns,
+                EvaluationMode = evaluationMode
+            };
         }
         #endregion
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { getViewStakeholderColumns } from "./session-columns";
 import { PopupChooseStakeholder } from "./PopupChooseStakeholder";
@@ -111,10 +111,10 @@ export const PopupSession = ({
     async (item: SurveySession) => {
       try {
         await surveyCampaignService.sendSurveyInvitation(item.Id);
-        toast.success("Gửi khảo sát thành công");
+        toast.success("Gá»­i kháº£o sÃ¡t thÃ nh cÃ´ng");
         refetch();
       } catch {
-        toast.error("Gửi khảo sát thất bại");
+        toast.error("Gá»­i kháº£o sÃ¡t tháº¥t báº¡i");
       }
     },
     [refetch],
@@ -148,7 +148,7 @@ export const PopupSession = ({
         <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
-              Danh sách người tham gia
+              Danh sÃ¡ch ngÆ°á»i tham gia
               {campaignName && (
                 <span className="text-muted-foreground font-normal">
                   {" "}
@@ -157,7 +157,7 @@ export const PopupSession = ({
               )}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Danh sách người tham gia khảo sát
+              Danh sÃ¡ch ngÆ°á»i tham gia kháº£o sÃ¡t
             </DialogDescription>
           </DialogHeader>
 
@@ -198,9 +198,9 @@ export const PopupSession = ({
                         PageIndex: 1,
                       });
                     }}
-                    placeholder="Tất cả trạng thái"
-                    searchPlaceholder="Tìm kiếm trạng thái..."
-                    emptyText="Không tìm thấy trạng thái."
+                    placeholder="Táº¥t cáº£ tráº¡ng thÃ¡i"
+                    searchPlaceholder="Tìm kiếm tráº¡ng thÃ¡i..."
+                    emptyText="Không tìm thấy tráº¡ng thÃ¡i."
                   />
 
                   <InputGroup className="bg-white">
@@ -232,7 +232,7 @@ export const PopupSession = ({
 
           <DialogFooter className="p-4 border-t shrink-0 bg-white">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Đóng
+              ÄÃ³ng
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -260,3 +260,4 @@ export const PopupSession = ({
     </>
   );
 };
+

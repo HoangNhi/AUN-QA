@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -66,7 +66,7 @@ const PopupEditProfile = ({
         >
           <DialogHeader>
             <DialogTitle>
-              {user?.IsEdit ? "Cập nhật Tài khoản" : "Thêm mới Tài khoản"}
+              {user?.IsEdit ? "Cập nhật TÃ i khoáº£n" : "Thêm mới TÃ i khoáº£n"}
             </DialogTitle>
           </DialogHeader>
 
@@ -80,7 +80,7 @@ const PopupEditProfile = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-3">
-              <Label>Họ và tên</Label>
+              <Label>Há» vÃ  tÃªn</Label>
               <Input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -104,3 +104,4 @@ const PopupEditProfile = ({
 };
 
 export default PopupEditProfile;
+

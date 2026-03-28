@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import { Loader2, Edit3, Eye, ArrowLeft } from "lucide-react";
 import {
   Dialog,
@@ -40,11 +40,11 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, "Vui lòng nhập tên khảo sát"),
-  stakeholderType: z.string().min(1, "Vui lòng chọn loại đối tượng"),
+  name: z.string().min(1, "Vui lòng nháº­p tÃªn kháº£o sÃ¡t"),
+  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng"),
   status: z.string(),
-  cycleId: z.string().min(1, "Vui lòng chọn chu kỳ đánh giá"),
-  templateId: z.string().min(1, "Vui lòng chọn mẫu khảo sát"),
+  cycleId: z.string().min(1, "Vui lòng chá»n chu ká»³ Ä‘Ã¡nh giÃ¡"),
+  templateId: z.string().min(1, "Vui lòng chá»n máº«u kháº£o sÃ¡t"),
 });
 
 const PopupSurveyCampaign = ({
@@ -128,7 +128,7 @@ const PopupSurveyCampaign = ({
     const values = form.getValues();
     return {
       Id: values.id,
-      Name: values.name || "Tên khảo sát (Xem trước)",
+      Name: values.name || "TÃªn kháº£o sÃ¡t (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType || "1"),
       IsSessionCompleted: false,
       ListTopic:
@@ -184,8 +184,8 @@ const PopupSurveyCampaign = ({
                   )}
                   <span>
                     {surveyCampaign?.IsEdit
-                      ? "Cập nhật khảo sát"
-                      : "Thêm mới khảo sát"}
+                      ? "Cập nhật kháº£o sÃ¡t"
+                      : "Thêm mới kháº£o sÃ¡t"}
                   </span>
                 </div>
 
@@ -218,7 +218,7 @@ const PopupSurveyCampaign = ({
               <div className="bg-white rounded-lg border shadow-sm p-4 mb-6 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-700">Thông tin chung</h3>
+                  <h3 className="font-semibold text-gray-700">ThÃ´ng tin chung</h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -229,12 +229,12 @@ const PopupSurveyCampaign = ({
                     render={({ field }) => (
                       <FormItem className="grid gap-2">
                         <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                          Tên khảo sát
+                          TÃªn kháº£o sÃ¡t
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Nhập tên khảo sát"
+                            placeholder="Nhập tÃªn kháº£o sÃ¡t"
                             className="bg-white"
                           />
                         </FormControl>
@@ -251,7 +251,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Chu kỳ đánh giá
+                            Chu ká»³ Ä‘Ã¡nh giÃ¡
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -264,9 +264,9 @@ const PopupSurveyCampaign = ({
                               }}
                               value={field.value}
                               onValueChange={field.onChange}
-                              placeholder="Chọn chu kỳ"
-                              searchPlaceholder="Tìm kiếm chu kỳ..."
-                              emptyText="Không tìm thấy chu kỳ."
+                              placeholder="Chá»n chu ká»³"
+                              searchPlaceholder="Tìm kiếm chu ká»³..."
+                              emptyText="Không tìm thấy chu ká»³."
                             />
                           </FormControl>
                           <FormMessage />
@@ -280,7 +280,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Loại đối tượng
+                            Loáº¡i Ä‘á»‘i tÆ°á»£ng
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -290,9 +290,9 @@ const PopupSurveyCampaign = ({
                                 field.onChange(val);
                                 form.setValue("templateId", "");
                               }}
-                              placeholder="Chọn đối tượng"
-                              searchPlaceholder="Tìm kiếm đối tượng..."
-                              emptyText="Không tìm thấy đối tượng."
+                              placeholder="Chá»n Ä‘á»‘i tÆ°á»£ng"
+                              searchPlaceholder="Tìm kiếm Ä‘á»‘i tÆ°á»£ng..."
+                              emptyText="Không tìm thấy Ä‘á»‘i tÆ°á»£ng."
                             />
                           </FormControl>
                           <FormMessage />
@@ -309,7 +309,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Mẫu khảo sát
+                            Máº«u kháº£o sÃ¡t
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -343,9 +343,9 @@ const PopupSurveyCampaign = ({
                                   setListTopic([]);
                                 }
                               }}
-                              placeholder="Chọn mẫu khảo sát"
-                              searchPlaceholder="Tìm kiếm mẫu khảo sát..."
-                              emptyText="Không tìm thấy mẫu khảo sát."
+                              placeholder="Chá»n máº«u kháº£o sÃ¡t"
+                              searchPlaceholder="Tìm kiếm máº«u kháº£o sÃ¡t..."
+                              emptyText="Không tìm thấy máº«u kháº£o sÃ¡t."
                             />
                           </FormControl>
                           <FormMessage />
@@ -365,8 +365,8 @@ const PopupSurveyCampaign = ({
                                 options={CAMPAIGN_STATUS_OPTIONS}
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                placeholder="Chọn trạng thái"
-                                searchPlaceholder="Tìm kiếm trạng thái..."
+                                placeholder="Chá»n tráº¡ng thÃ¡i"
+                                searchPlaceholder="Tìm kiếm tráº¡ng thÃ¡i..."
                                 readonly={true}
                               />
                             </FormControl>
@@ -384,7 +384,7 @@ const PopupSurveyCampaign = ({
                   isLoadingTemplate ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                      <p>Đang tải dữ liệu mẫu khảo sát...</p>
+                      <p>Äang táº£i dá»¯ liá»‡u máº«u kháº£o sÃ¡t...</p>
                     </div>
                   ) : (
                     <TopicListEditor
@@ -395,7 +395,7 @@ const PopupSurveyCampaign = ({
                   )
                 ) : (
                   <div className="flex items-center justify-center h-48 border rounded-lg bg-gray-50 text-gray-500">
-                    Vui lòng chọn Mẫu khảo sát trước.
+                    Vui lòng chá»n Máº«u kháº£o sÃ¡t trÆ°á»›c.
                   </div>
                 )}
               </div>
@@ -411,7 +411,7 @@ const PopupSurveyCampaign = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("Đây chỉ là bản xem trước!");
+                    toast.success("ÄÃ¢y chá»‰ lÃ  báº£n xem trÆ°á»›c!");
                   }}
                 />
               </div>
@@ -441,7 +441,7 @@ const PopupSurveyCampaign = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu và thêm tiếp
+                    Lưu vÃ  thÃªm tiáº¿p
                   </Button>
                 )}
               </DialogFooter>
@@ -454,3 +454,4 @@ const PopupSurveyCampaign = ({
 };
 
 export default PopupSurveyCampaign;
+

@@ -171,5 +171,21 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
         }
         #endregion
+
+        #region StandardSet Service
+        public async Task<int> GetStandardSetEvaluationModeAsync(string standardSetId)
+        {
+            try
+            {
+                var request = new GetStandardSetEvaluationModeRequest { StandardSetId = standardSetId };
+                var response = await _grpcClient.GetStandardSetEvaluationModeAsync(request);
+                return response.EvaluationMode;
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+        }
+        #endregion
     }
 }

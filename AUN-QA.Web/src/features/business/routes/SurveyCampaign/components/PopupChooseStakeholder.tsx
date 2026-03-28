@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { getChooseStakeholderColumns } from "./choose-stakeholder-columns";
 import { SearchIcon } from "lucide-react";
@@ -83,7 +83,7 @@ export const PopupChooseStakeholder = ({
       const response =
         await surveyCampaignService.getStakeholderNotInCampaign(pageRequest);
       if (!response.Success) {
-        toast.error(response.Message || "Lỗi tải dữ liệu");
+        toast.error(response.Message || "Lá»—i táº£i dá»¯ liá»‡u");
         throw new Error(response.Message);
       }
       return response;
@@ -137,7 +137,7 @@ export const PopupChooseStakeholder = ({
       } else {
         const selectedIds = Object.keys(rowSelection);
         if (selectedIds.length === 0) {
-          toast.warning("Vui lòng chọn ít nhất một người tham gia");
+          toast.warning("Vui lòng chá»n Ã­t nháº¥t má»™t ngÆ°á»i tham gia");
           setIsLoading(false);
           return;
         }
@@ -149,14 +149,14 @@ export const PopupChooseStakeholder = ({
       }
 
       if (res.Success) {
-        toast.success("Thêm người tham gia thành công");
+        toast.success("Thêm ngÆ°á»i tham gia thÃ nh cÃ´ng");
         onAdd?.([]);
         onOpenChange(false);
       } else {
-        toast.error(res.Message || "Thêm người tham gia thất bại");
+        toast.error(res.Message || "Thêm ngÆ°á»i tham gia tháº¥t báº¡i");
       }
     } catch {
-      toast.error("Lỗi khi thêm người tham gia");
+      toast.error("Lá»—i khi thÃªm ngÆ°á»i tham gia");
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +166,7 @@ export const PopupChooseStakeholder = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
         <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
-          <DialogTitle>Thêm người tham gia vào khảo sát</DialogTitle>
+          <DialogTitle>Thêm ngÆ°á»i tham gia vÃ o kháº£o sÃ¡t</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
@@ -214,13 +214,14 @@ export const PopupChooseStakeholder = ({
             }
           >
             {isLoading
-              ? "Đang thêm..."
+              ? "Äang thÃªm..."
               : isSelectingAll
-                ? "Thêm tất cả"
-                : `Thêm ${Object.keys(rowSelection).length} người`}
+                ? "Thêm táº¥t cáº£"
+                : `Thêm ${Object.keys(rowSelection).length} ngÆ°á»i`}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+

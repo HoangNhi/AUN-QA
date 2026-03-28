@@ -1,6 +1,6 @@
-import { type ColumnDef } from "@tanstack/react-table";
+﻿import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import type { ModelVerifiedEvidenceForReuse } from "../../types/evidence-cycle-map.types";
 
 export const getReuseColumns = (
@@ -22,14 +22,14 @@ export const getReuseColumns = (
         {isPending ? (
           <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
-          "Chọn"
+          "Chá»n"
         )}
       </Button>
     ),
   },
   {
     accessorKey: "evidenceCode",
-    header: "Mã",
+    header: "MÃ£",
     meta: { className: "w-36 font-mono text-xs text-muted-foreground" },
   },
   {
@@ -38,10 +38,11 @@ export const getReuseColumns = (
   },
   {
     accessorKey: "FileTypeId",
-    header: "Loại tài liệu",
+    header: "Loáº¡i tÃ i liá»‡u",
     cell: ({ row }) => {
       const id = row.original.FileTypeId;
-      return id ? (fileTypeMap[id] ?? "—") : "—";
+      return id ? (fileTypeMap[id] ?? "â€”") : "â€”";
     },
   },
 ];
+

@@ -1,11 +1,11 @@
-import type { UseFormReturn } from "react-hook-form";
+﻿import type { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useStandardSetOptions } from "@/features/catalog/hooks/useStandardSetOptions";
 import StandardCriteriaTable from "@/features/catalog/components/StandardCriteriaTable";
 import { RefreshCcw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 
 interface CriteriaMappingPanelProps {
     form: UseFormReturn<any>;
@@ -45,7 +45,7 @@ export function CriteriaMappingPanel({
                     <FormItem>
                         <div className="flex items-center justify-between">
                             <FormLabel>
-                                Chu kỳ <span className="text-red-500">*</span>
+                                Chu ká»³ <span className="text-red-500">*</span>
                             </FormLabel>
                             {onShowReusePopup && !isPending && !readOnly && (
                                 <Button
@@ -71,9 +71,9 @@ export function CriteriaMappingPanel({
                                     field.onChange(val || "");
                                     cycleId_Change(val || "");
                                 }}
-                                placeholder="Chọn chu kỳ"
-                                searchPlaceholder="Tìm kiếm chu kỳ..."
-                                emptyText="Không tìm thấy chu kỳ."
+                                placeholder="Chá»n chu ká»³"
+                                searchPlaceholder="Tìm kiếm chu ká»³..."
+                                emptyText="Không tìm thấy chu ká»³."
                                 readonly={!!readOnly}
                             />
                         </FormControl>
@@ -85,16 +85,16 @@ export function CriteriaMappingPanel({
             {/* Standard Set */}
             <div className="space-y-2">
                 <FormLabel>
-                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
+                    Bá»™ tiÃªu chuáº©n <span className="text-red-500">*</span>
                 </FormLabel>
                 <Combobox
                     options={standardSetOptions}
                     loading={isStandardSetLoading}
                     value={standardSetId}
                     onValueChange={(val) => setStandardSetId(val || "")}
-                    placeholder="Chọn bộ tiêu chuẩn"
-                    searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                    emptyText="Không tìm thấy bộ tiêu chuẩn."
+                    placeholder="Chá»n bá»™ tiÃªu chuáº©n"
+                    searchPlaceholder="Tìm kiếm bá»™ tiÃªu chuáº©n..."
+                    emptyText="Không tìm thấy bá»™ tiÃªu chuáº©n."
                     readonly={true}
                 />
             </div>
@@ -108,9 +108,10 @@ export function CriteriaMappingPanel({
             />
             {cycleIdForm && (
                 <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                    Tiêu chí lọc theo loại tài liệu đã chọn. Tiến độ cập nhật sau khi minh chứng được phê duyệt.
+                    Tiêu chí lá»c theo loáº¡i tÃ i liá»‡u Ä‘Ã£ chá»n. Tiáº¿n Ä‘á»™ cáº­p nháº­t sau khi minh chá»©ng Ä‘Æ°á»£c phÃª duyá»‡t.
                 </p>
             )}
         </div>
     );
 }
+

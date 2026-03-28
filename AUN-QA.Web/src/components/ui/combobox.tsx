@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { ChevronsUpDown, Check } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "./Button";
+import { Button } from "./button";
 import type { ModelCombobox } from "@/types/base/base.types";
 
 // Type for API fetcher function
@@ -56,7 +56,7 @@ export function Combobox({
   placeholder = "Select option...",
   searchPlaceholder = "Search...",
   emptyText = "No results found.",
-  loadingText = "Đang tải...",
+  loadingText = "Äang táº£i...",
   loading = false,
   className,
   disabled = false,
@@ -193,3 +193,4 @@ export function Combobox({
     </Popover>
   );
 }
+

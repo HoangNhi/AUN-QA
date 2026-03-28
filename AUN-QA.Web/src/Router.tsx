@@ -1,6 +1,6 @@
-import type { FC } from "react";
+﻿import type { FC } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/home/HomePage";
+import HomePage from "./pages/Home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
@@ -21,6 +21,7 @@ import StandardPage from "./features/catalog/routes/Standard/StandardPage";
 import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPage";
 import AuditLogPage from "./features/system/routes/AuditLog/AuditLogPage";
 import { CriterionEvaluationPage } from "./features/business/routes/CriterionEvaluation/CriterionEvaluationPage";
+import SarPage from "./features/business/routes/Sar/SarPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -57,6 +58,7 @@ const Router: FC = () => {
           <Route path="/standardset" element={<StandardSetPage />} />
           <Route path="/auditlog" element={<AuditLogPage />} />
           <Route path="/criterionevaluation" element={<CriterionEvaluationPage />} />
+          <Route path="/sar" element={<SarPage />} />
         </Route>
 
         <Route element={<MainLayout />}>
@@ -68,3 +70,4 @@ const Router: FC = () => {
 };
 
 export default Router;
+

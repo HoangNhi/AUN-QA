@@ -13,5 +13,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         Task Approve(ApproveEvaluationRequest request);
         Task InitializeForCycle(InitializeCycleEvaluationRequest request);
         Task<List<ModelCriterionEvidence>> GetEvidencesForCriterion(Guid criterionEvaluationId, Guid cycleId);
+        Task<ModelCriterionPopupData> GetPopupData(GetPopupDataRequest request);
     }
 }

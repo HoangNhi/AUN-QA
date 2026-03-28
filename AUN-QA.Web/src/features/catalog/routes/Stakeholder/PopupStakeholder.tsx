@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -29,9 +29,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  fullName: z.string().min(1, "Họ và tên không được để trống"),
-  email: z.string().email("Email không hợp lệ").min(1, "Email không được để trống"),
-  type: z.string().min(1, "Loại đối tượng không được để trống"),
+  fullName: z.string().min(1, "Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  email: z.string().email("Email khÃ´ng há»£p lá»‡").min(1, "Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  type: z.string().min(1, "Loáº¡i Ä‘á»‘i tÆ°á»£ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
   description: z.string().optional(),
 });
 
@@ -112,8 +112,8 @@ const PopupStakeholder = ({
             <DialogHeader className="border-b pb-2">
               <DialogTitle>
                 {stakeholder?.IsEdit
-                  ? "Cập nhật đối tượng khảo sát"
-                  : "Thêm mới đối tượng khảo sát"}
+                  ? "Cập nhật Ä‘á»‘i tÆ°á»£ng kháº£o sÃ¡t"
+                  : "Thêm mới Ä‘á»‘i tÆ°á»£ng kháº£o sÃ¡t"}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -123,10 +123,10 @@ const PopupStakeholder = ({
                 render={({ field }) => (
                   <FormItem className="grid gap-2">
                     <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                      Họ và tên
+                      Há» vÃ  tÃªn
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Nhập họ và tên" />
+                      <Input {...field} placeholder="Nhập há» vÃ  tÃªn" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -159,14 +159,14 @@ const PopupStakeholder = ({
                 render={({ field }) => (
                   <FormItem className="grid gap-2">
                     <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                      Loại đối tượng
+                      Loáº¡i Ä‘á»‘i tÆ°á»£ng
                     </FormLabel>
                     <FormControl>
                       <Combobox
                         options={STAKEHOLDER_TYPES}
                         value={field.value}
                         onValueChange={field.onChange}
-                        placeholder="Chọn loại đối tượng"
+                        placeholder="Chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng"
                         searchPlaceholder="Tìm kiếm..."
                         emptyText="Không tìm thấy."
                       />
@@ -183,7 +183,7 @@ const PopupStakeholder = ({
                   <FormItem className="grid gap-2">
                     <FormLabel>Mô tả</FormLabel>
                     <FormControl>
-                      <Textarea {...field} placeholder="Nhập mô tả" />
+                      <Textarea {...field} placeholder="Nhập mÃ´ táº£" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -205,7 +205,7 @@ const PopupStakeholder = ({
                   disabled={isLoading}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Lưu và thêm tiếp
+                  Lưu vÃ  thÃªm tiáº¿p
                 </Button>
               )}
             </DialogFooter>
@@ -217,3 +217,4 @@ const PopupStakeholder = ({
 };
 
 export default PopupStakeholder;
+

@@ -83,5 +83,13 @@ namespace AUN_QA.BusinessService.Controllers
             var result = await _service.GetEvidencesForCriterion(request.Id, request.CycleId);
             return Ok(new BaseResponse<List<ModelCriterionEvidence>> { Data = result, Success = true });
         }
+
+        [HttpPost("get-popup-data")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetPopupData([FromBody] GetPopupDataRequest request)
+        {
+            var result = await _service.GetPopupData(request);
+            return Ok(new BaseResponse<ModelCriterionPopupData> { Data = result, Success = true });
+        }
     }
 }

@@ -109,3 +109,25 @@ export interface CriterionEvidence {
   Name: string;
   EvidenceCycleMapId: string;
 }
+
+export interface SurveyCampaignItem {
+  Id: string;
+  Name: string;
+  Status: number;
+  CreatedAt: string;
+  Cycle?: string;
+  Stakeholder?: string;
+}
+
+export interface CriterionPopupData {
+  Submissions: EvaluationSubmission[];
+  MySubmission: EvaluationSubmissionRequest | null;
+  Evidences: CriterionEvidence[];
+  SurveyCampaigns: SurveyCampaignItem[];
+  EvaluationMode: number; // 1: AUN, 2: MOET
+}
+
+export interface GetPopupDataRequest {
+  CriterionEvaluationId: string;
+  CycleId: string;
+}

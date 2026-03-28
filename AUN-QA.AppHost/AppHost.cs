@@ -10,6 +10,10 @@ var catalogService = builder.AddProject<Projects.AUN_QA_CatalogService>("Catalog
     .WithReference(systemService)
     .WithReference(fileService);
 
+builder.AddNpmApp("CollabService", "../AUN-QA.CollabService", "dev")
+    .WithHttpEndpoint(env: "PORT", port: 1234)
+    .WithExternalHttpEndpoints();
+
 var businessService = builder.AddProject<Projects.AUN_QA_BusinessService>("BusinessService")
     .WithReference(systemService)
     .WithReference(fileService)

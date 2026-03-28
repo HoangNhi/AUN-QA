@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -37,11 +37,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không được để trống"),
-  code: z.string().min(1, "Mã tiêu chuẩn không được để trống"),
-  name: z.string().min(1, "Tên tiêu chuẩn không được để trống"),
+  standardSetId: z.string().min(1, "Bá»™ tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  code: z.string().min(1, "MÃ£ tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  name: z.string().min(1, "TÃªn tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
   description: z.string().optional(),
-  order: z.number().min(0, "Thứ tự phải lớn hoặc bằng 0"),
+  order: z.number().min(0, "Thá»© tá»± pháº£i lá»›n hoáº·c báº±ng 0"),
   isActived: z.boolean(),
 });
 
@@ -266,14 +266,14 @@ const PopupStandard = ({
 
     // Criterions validation
     if (criterions.length === 0) {
-      newErrors.criterions = "Phải có ít nhất 1 tiêu chí";
-      toast.error("Phải có ít nhất 1 tiêu chí");
+      newErrors.criterions = "Pháº£i cÃ³ Ã­t nháº¥t 1 tiÃªu chÃ­";
+      toast.error("Pháº£i cÃ³ Ã­t nháº¥t 1 tiÃªu chÃ­");
     } else {
       // Validate each criterion
       for (const criterion of criterions) {
         if (!criterion.Code.trim() || !criterion.Name.trim()) {
-          newErrors.criterions = "Tất cả tiêu chí phải có Mã và Tên";
-          toast.error("Tất cả tiêu chí phải có Mã và Tên");
+          newErrors.criterions = "Táº¥t cáº£ tiÃªu chÃ­ pháº£i cÃ³ MÃ£ vÃ  TÃªn";
+          toast.error("Táº¥t cáº£ tiÃªu chÃ­ pháº£i cÃ³ MÃ£ vÃ  TÃªn");
           break;
         }
 
@@ -283,21 +283,21 @@ const PopupStandard = ({
           criterion.CriterionRequirements.length === 0
         ) {
           newErrors.criterions =
-            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng";
-          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng");
+            "Má»—i tiÃªu chÃ­ pháº£i cÃ³ Ã­t nháº¥t 1 yÃªu cáº§u minh chá»©ng";
+          toast.error("Má»—i tiÃªu chÃ­ pháº£i cÃ³ Ã­t nháº¥t 1 yÃªu cáº§u minh chá»©ng");
           break;
         }
 
         for (const req of criterion.CriterionRequirements) {
           if (!req.FileTypeId) {
             newErrors.criterions =
-              "Tất cả yêu cầu minh chứng phải chọn Loại tài liệu";
-            toast.error("Tất cả yêu cầu minh chứng phải chọn Loại tài liệu");
+              "Táº¥t cáº£ yÃªu cáº§u minh chá»©ng pháº£i chá»n Loáº¡i tÃ i liá»‡u";
+            toast.error("Táº¥t cáº£ yÃªu cáº§u minh chá»©ng pháº£i chá»n Loáº¡i tÃ i liá»‡u");
             break;
           }
           if (req.MinQuantity < 0) {
-            newErrors.criterions = "Số lượng tối thiểu phải >= 0";
-            toast.error("Số lượng tối thiểu phải >= 0");
+            newErrors.criterions = "Sá»‘ lÆ°á»£ng tá»‘i thiá»ƒu pháº£i >= 0";
+            toast.error("Sá»‘ lÆ°á»£ng tá»‘i thiá»ƒu pháº£i >= 0");
             break;
           }
         }
@@ -399,7 +399,7 @@ const PopupStandard = ({
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu và thêm tiếp
+              Lưu vÃ  thÃªm tiáº¿p
             </Button>
           )}
         </DialogFooter>
@@ -409,3 +409,4 @@ const PopupStandard = ({
 };
 
 export default PopupStandard;
+

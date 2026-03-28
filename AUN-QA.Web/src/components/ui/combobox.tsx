@@ -56,7 +56,7 @@ export function Combobox({
   placeholder = "Select option...",
   searchPlaceholder = "Search...",
   emptyText = "No results found.",
-  loadingText = "Äang táº£i...",
+  loadingText = "Đang táº£i...",
   loading = false,
   className,
   disabled = false,

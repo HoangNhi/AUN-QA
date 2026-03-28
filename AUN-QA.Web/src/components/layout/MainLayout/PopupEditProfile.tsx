@@ -66,7 +66,7 @@ const PopupEditProfile = ({
         >
           <DialogHeader>
             <DialogTitle>
-              {user?.IsEdit ? "Cập nhật TÃ i khoáº£n" : "Thêm mới TÃ i khoáº£n"}
+              {user?.IsEdit ? "Cập nhật Tài khoán" : "Thêm mới Tài khoản"}
             </DialogTitle>
           </DialogHeader>
 
@@ -80,7 +80,7 @@ const PopupEditProfile = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-3">
-              <Label>Há» vÃ  tÃªn</Label>
+              <Label>Họ và tên</Label>
               <Input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}

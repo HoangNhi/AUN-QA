@@ -42,7 +42,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   title: z.string().min(1, "Vui lòng nhập tiêu đề"),
-  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng"),
+  stakeholderType: z.string().min(1, "Vui lòng chơn loại Đ‘ơ‘i tương"),
   description: z.string().optional(),
   isActived: z.boolean(),
 });
@@ -115,7 +115,7 @@ const PopupSurveyTemplate = ({
     const values = form.getValues();
     return {
       Id: id,
-      Name: values.title || "Tiêu đề máº«u (Xem trước)",
+      Name: values.title || "Tiêu đề mẫu (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType),
       IsSessionCompleted: false,
       ListTopic:
@@ -169,8 +169,8 @@ const PopupSurveyTemplate = ({
                   )}
                   <span>
                     {surveyTemplate?.IsEdit
-                      ? "Cập nhật máº«u kháº£o sÃ¡t"
-                      : "Thêm mới máº«u kháº£o sÃ¡t"}
+                      ? "Cập nhật mẫu khảo sát"
+                      : "Thêm mới mẫu khảo sát"}
                   </span>
                 </div>
 
@@ -217,7 +217,7 @@ const PopupSurveyTemplate = ({
                               {...field}
                               required
                               maxLength={255}
-                              placeholder="Nhập tiÃªu Ä‘á»"
+                              placeholder="Nhập tiêu Đ‘ơ"
                               className="bg-white"
                             />
                           </FormControl>
@@ -255,7 +255,7 @@ const PopupSurveyTemplate = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                Loáº¡i Ä‘á»‘i tÆ°á»£ng
+                                Loại Đ‘ơ‘i tương
                               </FormLabel>
                               <Select
                                 onValueChange={field.onChange}
@@ -263,14 +263,14 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng" />
+                                    <SelectValue placeholder="Chơn loại Đ‘ơ‘i tương" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="1">Sinh viên</SelectItem>
                                   <SelectItem value="2">Cựu sinh viên</SelectItem>
                                   <SelectItem value="4">Giảng viên</SelectItem>
-                                  <SelectItem value="3">NhÃ  tuyá»ƒn dá»¥ng</SelectItem>
+                                  <SelectItem value="3">NhÃ  tuyơƒn dơ¥ng</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -292,7 +292,7 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chá»n tráº¡ng thÃ¡i" />
+                                    <SelectValue placeholder="Chơn tráº¡ng thái" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -326,7 +326,7 @@ const PopupSurveyTemplate = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("ÄÃ¢y chá»‰ lÃ  báº£n xem trÆ°á»›c!");
+                    toast.success("Đây chơ‰ lÃ  bản xem trươ›c!");
                   }}
                 />
               </div>
@@ -350,7 +350,7 @@ const PopupSurveyTemplate = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu vÃ  thÃªm tiáº¿p
+                    Lưu vÃ  thêm tiếp
                   </Button>
                 )}
               </DialogFooter>

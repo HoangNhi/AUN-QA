@@ -41,7 +41,7 @@ export const CategoryItem = ({
             onUpdateCategory(topicId, category.Id, e.target.value)
           }
           className="font-semibold text-gray-700 bg-gray-50 flex-1 focus-visible:ring-blue-400"
-          placeholder="Nhập tÃªn nhÃ³m tiÃªu chÃ­ (VD: 1. Äá» cÆ°Æ¡ng...)"
+          placeholder="Nhập tên nhóm tiêu chí (VD: 1. Đơ cưÆ¡ng...)"
         />
         <Button
           type="button"
@@ -75,7 +75,7 @@ export const CategoryItem = ({
           onClick={() => onAddQuestion(topicId, category.Id)}
           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-medium text-xs h-8"
         >
-          <Plus size={14} className="mr-1" /> Thêm cÃ¢u há»i
+          <Plus size={14} className="mr-1" /> Thêm câu hơi
         </Button>
       </div>
     </div>

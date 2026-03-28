@@ -111,10 +111,10 @@ export const PopupSession = ({
     async (item: SurveySession) => {
       try {
         await surveyCampaignService.sendSurveyInvitation(item.Id);
-        toast.success("Gá»­i kháº£o sÃ¡t thÃ nh cÃ´ng");
+        toast.success("Gửi khảo sát thÃ nh công");
         refetch();
       } catch {
-        toast.error("Gá»­i kháº£o sÃ¡t tháº¥t báº¡i");
+        toast.error("Gửi khảo sát thất bại");
       }
     },
     [refetch],
@@ -148,7 +148,7 @@ export const PopupSession = ({
         <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
-              Danh sÃ¡ch ngÆ°á»i tham gia
+              Danh sách ngươi tham gia
               {campaignName && (
                 <span className="text-muted-foreground font-normal">
                   {" "}
@@ -157,7 +157,7 @@ export const PopupSession = ({
               )}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Danh sÃ¡ch ngÆ°á»i tham gia kháº£o sÃ¡t
+              Danh sách ngươi tham gia khảo sát
             </DialogDescription>
           </DialogHeader>
 
@@ -198,9 +198,9 @@ export const PopupSession = ({
                         PageIndex: 1,
                       });
                     }}
-                    placeholder="Táº¥t cáº£ tráº¡ng thÃ¡i"
-                    searchPlaceholder="Tìm kiếm tráº¡ng thÃ¡i..."
-                    emptyText="Không tìm thấy tráº¡ng thÃ¡i."
+                    placeholder="Tất cả tráº¡ng thái"
+                    searchPlaceholder="Tìm kiếm tráº¡ng thái..."
+                    emptyText="Không tìm thấy tráº¡ng thái."
                   />
 
                   <InputGroup className="bg-white">
@@ -232,7 +232,7 @@ export const PopupSession = ({
 
           <DialogFooter className="p-4 border-t shrink-0 bg-white">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              ÄÃ³ng
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>

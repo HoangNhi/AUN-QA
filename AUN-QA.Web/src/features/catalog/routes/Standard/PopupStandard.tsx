@@ -37,11 +37,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  standardSetId: z.string().min(1, "Bá»™ tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
-  code: z.string().min(1, "MÃ£ tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
-  name: z.string().min(1, "TÃªn tiÃªu chuáº©n khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng"),
+  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  code: z.string().min(1, "Mã tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  name: z.string().min(1, "Tên tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
   description: z.string().optional(),
-  order: z.number().min(0, "Thá»© tá»± pháº£i lá»›n hoáº·c báº±ng 0"),
+  order: z.number().min(0, "Thứ tự phải lạ›n hoặc bằng 0"),
   isActived: z.boolean(),
 });
 
@@ -266,14 +266,14 @@ const PopupStandard = ({
 
     // Criterions validation
     if (criterions.length === 0) {
-      newErrors.criterions = "Pháº£i cÃ³ Ã­t nháº¥t 1 tiÃªu chÃ­";
-      toast.error("Pháº£i cÃ³ Ã­t nháº¥t 1 tiÃªu chÃ­");
+      newErrors.criterions = "Phải có ít nhất 1 tiêu chí";
+      toast.error("Phải có ít nhất 1 tiêu chí");
     } else {
       // Validate each criterion
       for (const criterion of criterions) {
         if (!criterion.Code.trim() || !criterion.Name.trim()) {
-          newErrors.criterions = "Táº¥t cáº£ tiÃªu chÃ­ pháº£i cÃ³ MÃ£ vÃ  TÃªn";
-          toast.error("Táº¥t cáº£ tiÃªu chÃ­ pháº£i cÃ³ MÃ£ vÃ  TÃªn");
+          newErrors.criterions = "Tất cả tiêu chí phải có Mã vÃ  Tên";
+          toast.error("Tất cả tiêu chí phải có Mã vÃ  Tên");
           break;
         }
 
@@ -283,21 +283,21 @@ const PopupStandard = ({
           criterion.CriterionRequirements.length === 0
         ) {
           newErrors.criterions =
-            "Má»—i tiÃªu chÃ­ pháº£i cÃ³ Ã­t nháº¥t 1 yÃªu cáº§u minh chá»©ng";
-          toast.error("Má»—i tiÃªu chÃ­ pháº£i cÃ³ Ã­t nháº¥t 1 yÃªu cáº§u minh chá»©ng");
+            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng";
+          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng");
           break;
         }
 
         for (const req of criterion.CriterionRequirements) {
           if (!req.FileTypeId) {
             newErrors.criterions =
-              "Táº¥t cáº£ yÃªu cáº§u minh chá»©ng pháº£i chá»n Loáº¡i tÃ i liá»‡u";
-            toast.error("Táº¥t cáº£ yÃªu cáº§u minh chá»©ng pháº£i chá»n Loáº¡i tÃ i liá»‡u");
+              "Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu";
+            toast.error("Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu");
             break;
           }
           if (req.MinQuantity < 0) {
-            newErrors.criterions = "Sá»‘ lÆ°á»£ng tá»‘i thiá»ƒu pháº£i >= 0";
-            toast.error("Sá»‘ lÆ°á»£ng tá»‘i thiá»ƒu pháº£i >= 0");
+            newErrors.criterions = "Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0";
+            toast.error("Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0");
             break;
           }
         }
@@ -399,7 +399,7 @@ const PopupStandard = ({
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu vÃ  thÃªm tiáº¿p
+              Lưu vÃ  thêm tiếp
             </Button>
           )}
         </DialogFooter>

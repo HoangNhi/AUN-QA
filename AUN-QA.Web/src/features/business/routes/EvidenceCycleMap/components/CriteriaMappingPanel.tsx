@@ -45,7 +45,7 @@ export function CriteriaMappingPanel({
                     <FormItem>
                         <div className="flex items-center justify-between">
                             <FormLabel>
-                                Chu ká»³ <span className="text-red-500">*</span>
+                                Chu kỳ <span className="text-red-500">*</span>
                             </FormLabel>
                             {onShowReusePopup && !isPending && !readOnly && (
                                 <Button
@@ -71,9 +71,9 @@ export function CriteriaMappingPanel({
                                     field.onChange(val || "");
                                     cycleId_Change(val || "");
                                 }}
-                                placeholder="Chá»n chu ká»³"
-                                searchPlaceholder="Tìm kiếm chu ká»³..."
-                                emptyText="Không tìm thấy chu ká»³."
+                                placeholder="Chơn chu kỳ"
+                                searchPlaceholder="Tìm kiếm chu kỳ..."
+                                emptyText="Không tìm thấy chu kỳ."
                                 readonly={!!readOnly}
                             />
                         </FormControl>
@@ -85,16 +85,16 @@ export function CriteriaMappingPanel({
             {/* Standard Set */}
             <div className="space-y-2">
                 <FormLabel>
-                    Bá»™ tiÃªu chuáº©n <span className="text-red-500">*</span>
+                    Bộ tiêu chuáº©n <span className="text-red-500">*</span>
                 </FormLabel>
                 <Combobox
                     options={standardSetOptions}
                     loading={isStandardSetLoading}
                     value={standardSetId}
                     onValueChange={(val) => setStandardSetId(val || "")}
-                    placeholder="Chá»n bá»™ tiÃªu chuáº©n"
-                    searchPlaceholder="Tìm kiếm bá»™ tiÃªu chuáº©n..."
-                    emptyText="Không tìm thấy bá»™ tiÃªu chuáº©n."
+                    placeholder="Chơn bộ tiêu chuáº©n"
+                    searchPlaceholder="Tìm kiếm bộ tiêu chuáº©n..."
+                    emptyText="Không tìm thấy bộ tiêu chuáº©n."
                     readonly={true}
                 />
             </div>
@@ -108,7 +108,7 @@ export function CriteriaMappingPanel({
             />
             {cycleIdForm && (
                 <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                    Tiêu chí lá»c theo loáº¡i tÃ i liá»‡u Ä‘Ã£ chá»n. Tiáº¿n Ä‘á»™ cáº­p nháº­t sau khi minh chá»©ng Ä‘Æ°á»£c phÃª duyá»‡t.
+                    Tiêu chí lạc theo loáº¡i tÃ i liơ‡u Đ‘ã chơn. Tiáº¿n Đ‘ơ™ cập nhật sau khi minh chơ©ng Đ‘ươ£c phê duyơ‡t.
                 </p>
             )}
         </div>

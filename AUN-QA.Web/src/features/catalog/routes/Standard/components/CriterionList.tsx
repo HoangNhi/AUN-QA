@@ -37,7 +37,7 @@ export function CriterionList({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-l-4 border-indigo-500 pl-3">
-                    Danh sÃ¡ch Tiêu chí & YÃªu cáº§u Minh chá»©ng
+                    Danh sách Tiêu chí & Yêu cầu Minh chơ©ng
                 </h3>
                 <Button
                     type="button"
@@ -46,7 +46,7 @@ export function CriterionList({
                     className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100"
                 >
                     <Plus className="h-4 w-4 mr-2" />
-                    Thêm tiÃªu chÃ­
+                    Thêm tiêu chí
                 </Button>
             </div>
 
@@ -66,7 +66,7 @@ export function CriterionList({
                         type="button"
                         onClick={() => onDeleteCriterion(criterion.Id)}
                         className="absolute top-2 right-2 z-20 text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
-                        title="Xóa tiÃªu chÃ­"
+                        title="Xóa tiêu chí"
                     >
                         <X className="h-4 w-4" />
                     </button>
@@ -77,7 +77,7 @@ export function CriterionList({
                             <div className="flex gap-4 mb-4">
                                 <div className="w-20">
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                                        MÃ£
+                                        Mã
                                     </label>
                                     <Input
                                         value={criterion.Code}
@@ -101,7 +101,7 @@ export function CriterionList({
                                                 Name: e.target.value,
                                             })
                                         }
-                                        placeholder="Nhập tÃªn tiÃªu chÃ­..."
+                                        placeholder="Nhập tên tiêu chí..."
                                     />
                                 </div>
                             </div>
@@ -120,10 +120,10 @@ export function CriterionList({
                                     />
                                     <div>
                                         <span className="block text-xs font-bold text-amber-800">
-                                            Tiêu chí Ä‘iá»u kiá»‡n
+                                            Tiêu chí Đ‘iơu kiơ‡n
                                         </span>
                                         <span className="block text-[10px] text-amber-600/80">
-                                            Náº¿u trÆ°á»£t tiÃªu chÃ­ nÃ y, cáº£ tiÃªu chuáº©n bá»‹ trÆ°á»£t
+                                            Náº¿u trươ£t tiêu chí nà y, cả tiêu chuẩn bơ‹ trươ£t
                                         </span>
                                     </div>
                                 </label>
@@ -131,7 +131,7 @@ export function CriterionList({
                                 {/* DiagnosticQuestions */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                                        CÃ¢u há»i cháº©n Ä‘oÃ¡n
+                                        Câu hơi cháº©n Đ‘oán
                                     </label>
                                     <Textarea
                                         rows={3}
@@ -141,11 +141,11 @@ export function CriterionList({
                                                 DiagnosticQuestions: e.target.value,
                                             })
                                         }
-                                        placeholder="- NhÃ  trÆ°á»ng cÃ³ vÄƒn báº£n nÃ o quy Ä‘á»‹nh vá»...?"
+                                        placeholder="- NhÃ  trương có vĐƒn bản nà o quy Đ‘ơ‹nh vơ...?"
                                         className="resize-none text-xs"
                                     />
                                     <p className="text-[9px] text-slate-400 mt-1 text-right">
-                                        Há»— trá»£ viáº¿t bÃ¡o cÃ¡o tá»± Ä‘Ã¡nh giÃ¡
+                                        Hơ— trơ£ viáº¿t báo cáo tổ± Đ‘ánh giá
                                     </p>
                                 </div>
                             </div>
@@ -182,7 +182,7 @@ export function CriterionList({
                                                         FileTypeId: val,
                                                     })
                                                 }
-                                                placeholder="-- Chá»n loáº¡i tÃ i liá»‡u --"
+                                                placeholder="-- Chơn loại tÃ i liệu --"
                                                 searchPlaceholder="Tìm kiếm..."
                                                 emptyText="Không tìm thấy"
                                                 className="flex-1 text-xs h-8"
@@ -239,7 +239,7 @@ export function CriterionList({
                                                     Suggestion: e.target.value,
                                                 })
                                             }
-                                            placeholder="Gá»£i Ã½: 'Quyáº¿t Ä‘á»‹nh thÃ nh láº­p há»™i Ä‘á»“ng'..."
+                                            placeholder="Gửi£i Ã½: 'Quyáº¿t Đ‘ơ‹nh thÃ nh láº­p hơ™i Đ‘ơ“ng'..."
                                             className="bg-transparent text-[11px] text-slate-600 italic placeholder:text-slate-300 border-b border-dashed border-slate-200 focus:border-blue-300 outline-none rounded-none h-6 px-1"
                                         />
                                     </div>
@@ -248,8 +248,8 @@ export function CriterionList({
 
                             <div className="mt-4 pt-3 border-t border-slate-100 text-center">
                                 <p className="text-[10px] text-slate-400 italic">
-                                    Há»‡ thá»‘ng sáº½ Ä‘á»‘i chiáº¿u danh sÃ¡ch nÃ y vá»›i file thá»±c táº¿
-                                    user upload Ä‘á»ƒ bÃ¡o cÃ¡o thiếu/Ä‘á»§.
+                                    Hơ‡ thơ‘ng sáº½ Đ‘ơ‘i chiáº¿u danh sách nà y vơ›i file thơ±c táº¿
+                                    user upload Đ‘ơƒ báo cáo thiếu/Đ‘ơ§.
                                 </p>
                             </div>
                         </div>

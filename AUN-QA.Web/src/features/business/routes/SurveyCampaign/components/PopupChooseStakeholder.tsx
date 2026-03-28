@@ -83,7 +83,7 @@ export const PopupChooseStakeholder = ({
       const response =
         await surveyCampaignService.getStakeholderNotInCampaign(pageRequest);
       if (!response.Success) {
-        toast.error(response.Message || "Lá»—i táº£i dá»¯ liá»‡u");
+        toast.error(response.Message || "Lơ—i táº£i dữ liệu");
         throw new Error(response.Message);
       }
       return response;
@@ -137,7 +137,7 @@ export const PopupChooseStakeholder = ({
       } else {
         const selectedIds = Object.keys(rowSelection);
         if (selectedIds.length === 0) {
-          toast.warning("Vui lòng chá»n Ã­t nháº¥t má»™t ngÆ°á»i tham gia");
+          toast.warning("Vui lòng chơn ít nhất mơ™t ngươi tham gia");
           setIsLoading(false);
           return;
         }
@@ -149,14 +149,14 @@ export const PopupChooseStakeholder = ({
       }
 
       if (res.Success) {
-        toast.success("Thêm ngÆ°á»i tham gia thÃ nh cÃ´ng");
+        toast.success("Thêm ngươi tham gia thÃ nh công");
         onAdd?.([]);
         onOpenChange(false);
       } else {
-        toast.error(res.Message || "Thêm ngÆ°á»i tham gia tháº¥t báº¡i");
+        toast.error(res.Message || "Thêm ngươi tham gia thất bại");
       }
     } catch {
-      toast.error("Lá»—i khi thÃªm ngÆ°á»i tham gia");
+      toast.error("Lơ—i khi thêm ngươi tham gia");
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +166,7 @@ export const PopupChooseStakeholder = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
         <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
-          <DialogTitle>Thêm ngÆ°á»i tham gia vÃ o kháº£o sÃ¡t</DialogTitle>
+          <DialogTitle>Thêm ngươi tham gia vÃ o khảo sát</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
@@ -214,10 +214,10 @@ export const PopupChooseStakeholder = ({
             }
           >
             {isLoading
-              ? "Äang thÃªm..."
+              ? "Đang thêm..."
               : isSelectingAll
-                ? "Thêm táº¥t cáº£"
-                : `Thêm ${Object.keys(rowSelection).length} ngÆ°á»i`}
+                ? "Thêm tất cả"
+                : `Thêm ${Object.keys(rowSelection).length} ngươi`}
           </Button>
         </DialogFooter>
       </DialogContent>

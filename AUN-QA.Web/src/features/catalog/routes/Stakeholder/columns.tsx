@@ -39,7 +39,7 @@ export const getColumns = (
   },
   {
     accessorKey: "FullName",
-    header: "Há» vÃ  tÃªn",
+    header: "Hơ vÃ  tên",
   },
   {
     accessorKey: "Email",
@@ -47,7 +47,7 @@ export const getColumns = (
   },
   {
     accessorKey: "TypeName",
-    header: "Loáº¡i Ä‘á»‘i tÆ°á»£ng",
+    header: "Loại Đ‘ơ‘i tươ£ng",
   },
   {
     accessorKey: "Description",
@@ -89,7 +89,7 @@ const ActionCell = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Chá»©c nÄƒng</DropdownMenuLabel>
+          <DropdownMenuLabel>Chơ©c nĐƒng</DropdownMenuLabel>
           <DropdownMenuItem
             onClick={() => showPopupDetail(row.original.Id, true)}
           >

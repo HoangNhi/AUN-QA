@@ -29,8 +29,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  code: z.string().min(1, "MÃ£ loáº¡i file lÃ  báº¯t buá»™c"),
-  name: z.string().min(2, "TÃªn pháº£i tá»« 2-200 kÃ½ tá»±").max(200, "TÃªn pháº£i tá»« 2-200 kÃ½ tá»±"),
+  code: z.string().min(1, "Mã loại file lÃ  báº¯t buơ™c"),
+  name: z.string().min(2, "Tên phải tổ« 2-200 kÃ½ tổ±").max(200, "Tên phải tổ« 2-200 kÃ½ tổ±"),
   description: z.string().optional(),
   isActived: z.boolean(),
 });
@@ -109,7 +109,7 @@ const PopupFileType = ({
           >
             <DialogHeader>
               <DialogTitle>
-                {fileType?.IsEdit ? "Cập nhật Loáº¡i File" : "Thêm mới Loáº¡i File"}
+                {fileType?.IsEdit ? "Cập nhật Loại File" : "Thêm mới Loại File"}
               </DialogTitle>
             </DialogHeader>
 
@@ -120,10 +120,10 @@ const PopupFileType = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                      MÃ£ loáº¡i file
+                      Mã loại file
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Nhập mÃ£ loáº¡i file" />
+                      <Input {...field} placeholder="Nhập mã loại file" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -136,10 +136,10 @@ const PopupFileType = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                      TÃªn loáº¡i file
+                      Tên loại file
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Nhập tÃªn loáº¡i file" />
+                      <Input {...field} placeholder="Nhập tên loại file" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -155,7 +155,7 @@ const PopupFileType = ({
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Nhập mÃ´ táº£ loáº¡i file"
+                        placeholder="Nhập mô táº£ loại file"
                         rows={3}
                       />
                     </FormControl>
@@ -175,9 +175,9 @@ const PopupFileType = ({
                         options={ACTIVE_STATUS_OPTIONS}
                         value={field.value.toString()}
                         onValueChange={(val) => field.onChange(val === "true")}
-                        placeholder="Chá»n tráº¡ng thÃ¡i"
-                        searchPlaceholder="Tìm kiếm tráº¡ng thÃ¡i..."
-                        emptyText="Không tìm thấy tráº¡ng thÃ¡i."
+                        placeholder="Chơn tráº¡ng thái"
+                        searchPlaceholder="Tìm kiếm tráº¡ng thái..."
+                        emptyText="Không tìm thấy tráº¡ng thái."
                       />
                     </FormControl>
                     <FormMessage />
@@ -201,7 +201,7 @@ const PopupFileType = ({
                   disabled={isLoading}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Lưu vÃ  thÃªm tiáº¿p
+                  Lưu vÃ  thêm tiếp
                 </Button>
               )}
             </DialogFooter>

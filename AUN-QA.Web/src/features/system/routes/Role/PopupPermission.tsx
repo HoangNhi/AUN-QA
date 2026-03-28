@@ -54,7 +54,7 @@ const PopupPermission = ({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Cập nhật phÃ¢n quyá»n</DialogTitle>
+            <DialogTitle>Cập nhật phân quyơn</DialogTitle>
           </DialogHeader>
 
           <div className="flex w-full flex-col gap-6">
@@ -90,13 +90,13 @@ const PopupPermission = ({
                                 <TableHead className="text-center">
                                   Thêm
                                 </TableHead>
-                                <TableHead className="text-center">Sá»­a</TableHead>
+                                <TableHead className="text-center">Sơ­a</TableHead>
                                 <TableHead className="text-center">Xóa</TableHead>
                                 <TableHead className="text-center">
                                   Duyệt
                                 </TableHead>
                                 <TableHead className="text-center">
-                                  Thá»‘ng kÃª
+                                  Thơ‘ng kê
                                 </TableHead>
                               </TableRow>
                             </TableHeader>

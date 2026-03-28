@@ -22,14 +22,14 @@ export const getReuseColumns = (
         {isPending ? (
           <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
-          "Chá»n"
+          "Chơn"
         )}
       </Button>
     ),
   },
   {
     accessorKey: "evidenceCode",
-    header: "MÃ£",
+    header: "Mã",
     meta: { className: "w-36 font-mono text-xs text-muted-foreground" },
   },
   {
@@ -38,7 +38,7 @@ export const getReuseColumns = (
   },
   {
     accessorKey: "FileTypeId",
-    header: "Loáº¡i tÃ i liá»‡u",
+    header: "Loại tÃ i liệu",
     cell: ({ row }) => {
       const id = row.original.FileTypeId;
       return id ? (fileTypeMap[id] ?? "â€”") : "â€”";

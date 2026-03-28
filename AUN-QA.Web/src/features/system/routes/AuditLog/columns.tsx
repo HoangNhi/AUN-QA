@@ -15,7 +15,7 @@ export const getColumns = (
 ): ColumnDef<AuditLog>[] => [
         {
             accessorKey: "CreatedAt",
-            header: "Thá»i gian",
+            header: "Thơi gian",
             cell: ({ row }) => (
                 <span className="whitespace-nowrap text-muted-foreground text-xs">
                     {formatDate(row.original.CreatedAt)}
@@ -25,14 +25,14 @@ export const getColumns = (
         },
         {
             accessorKey: "UserName",
-            header: "TÃ i khoáº£n",
+            header: "Tài khoán",
             cell: ({ row }) => (
                 <span className="font-medium">{row.original.UserName}</span>
             ),
         },
         {
             accessorKey: "Action",
-            header: "HÃ nh Ä‘á»™ng",
+            header: "HÃ nh Đ‘ơ™ng",
             cell: ({ row }) => (
                 <Badge variant="outline">{row.original.Action}</Badge>
             ),
@@ -40,7 +40,7 @@ export const getColumns = (
         },
         {
             accessorKey: "EntityName",
-            header: "TÃ i nguyÃªn",
+            header: "TÃ i nguyên",
             cell: ({ row }) => (
                 <span className="text-muted-foreground">{row.original.EntityName}</span>
             ),
@@ -52,7 +52,7 @@ export const getColumns = (
             cell: ({ row }) =>
                 row.original.IsSuccess ? (
                     <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> ThÃ nh cÃ´ng
+                        <CheckCircle2 className="h-3.5 w-3.5" /> ThÃ nh công
                     </span>
                 ) : (
                     <span
@@ -76,7 +76,7 @@ export const getColumns = (
         },
         {
             accessorKey: "ServiceName",
-            header: "Há»‡ thá»‘ng",
+            header: "Hơ‡ thơ‘ng",
             cell: ({ row }) => (
                 <Badge variant="secondary" className="text-xs font-normal">
                     {row.original.ServiceName?.replace("Service", "")}

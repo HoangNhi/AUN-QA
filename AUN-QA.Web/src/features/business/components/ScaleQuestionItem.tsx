@@ -28,7 +28,7 @@ export const ScaleQuestionItem = ({
         value={question.Content}
         onChange={(e) => onUpdate(question.Id, e.target.value)}
         className="flex-1 text-sm min-h-[40px] resize-none focus-visible:ring-blue-400"
-        placeholder="Ná»™i dung cÃ¢u há»i Ä‘Ã¡nh giÃ¡..."
+        placeholder="Nội dung câu hơi Đ‘ánh giá..."
       />
       <Button
         type="button"

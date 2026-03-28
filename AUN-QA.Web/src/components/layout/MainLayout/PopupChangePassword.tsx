@@ -28,7 +28,7 @@ const PopupChangePassword = ({
 
   const onSubmit = () => {
     if (!oldPassword) {
-      toast.error("Vui lòng nháº­p máº­t kháº©u cÅ©");
+      toast.error("Vui lòng nhập mật khẩu cũ");
       return;
     }
     if (!newPassword) {
@@ -61,12 +61,12 @@ const PopupChangePassword = ({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Äá»•i máº­t kháº©u</DialogTitle>
+            <DialogTitle>Đổi mật khẩu</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="old-password">Máº­t kháº©u cÅ©</Label>
+              <Label htmlFor="old-password">Mật khẩu cũ</Label>
               <Input
                 id="old-password"
                 type="password"

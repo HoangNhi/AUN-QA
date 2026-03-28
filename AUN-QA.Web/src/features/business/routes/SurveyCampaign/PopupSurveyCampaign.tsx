@@ -42,10 +42,10 @@ import { cn } from "@/lib/utils";
 const formSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Vui lòng nhập tên khỏio sát"),
-  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Đ‘á»‘i tưá»£ng"),
+  stakeholderType: z.string().min(1, "Vui lòng chơn loại Đ‘ơ‘i tương"),
   status: z.string(),
-  cycleId: z.string().min(1, "Vui lòng chá»n chu ká»³ Đ‘ánh giá"),
-  templateId: z.string().min(1, "Vui lòng chá»n máº«u khỏio sát"),
+  cycleId: z.string().min(1, "Vui lòng chơn chu kỳ Đ‘ánh giá"),
+  templateId: z.string().min(1, "Vui lòng chơn mẫu khỏio sát"),
 });
 
 const PopupSurveyCampaign = ({
@@ -273,9 +273,9 @@ const PopupSurveyCampaign = ({
                               }}
                               value={field.value}
                               onValueChange={field.onChange}
-                              placeholder="Chá»n chu ká»³"
-                              searchPlaceholder="Tìm kiếm chu ká»³..."
-                              emptyText="Không tìm thấy chu ká»³."
+                              placeholder="Chơn chu kỳ"
+                              searchPlaceholder="Tìm kiếm chu kỳ..."
+                              emptyText="Không tìm thấy chu kỳ."
                             />
                           </FormControl>
                           <FormMessage />
@@ -289,7 +289,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Loáº¡i Đ‘á»‘i tưá»£ng
+                            Loại Đ‘ơ‘i tương
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -299,9 +299,9 @@ const PopupSurveyCampaign = ({
                                 field.onChange(val);
                                 form.setValue("templateId", "");
                               }}
-                              placeholder="Chá»n Đ‘á»‘i tưá»£ng"
-                              searchPlaceholder="Tìm kiếm Đ‘á»‘i tưá»£ng..."
-                              emptyText="Không tìm thấy Đ‘á»‘i tưá»£ng."
+                              placeholder="Chơn Đ‘ơ‘i tương"
+                              searchPlaceholder="Tìm kiếm Đ‘ơ‘i tương..."
+                              emptyText="Không tìm thấy Đ‘ơ‘i tương."
                             />
                           </FormControl>
                           <FormMessage />
@@ -352,9 +352,9 @@ const PopupSurveyCampaign = ({
                                   setListTopic([]);
                                 }
                               }}
-                              placeholder="Chá»n máº«u khỏio sát"
-                              searchPlaceholder="Tìm kiếm máº«u khỏio sát..."
-                              emptyText="Không tìm thấy máº«u khỏio sát."
+                              placeholder="Chơn mẫu khỏio sát"
+                              searchPlaceholder="Tìm kiếm mẫu khỏio sát..."
+                              emptyText="Không tìm thấy mẫu khỏio sát."
                             />
                           </FormControl>
                           <FormMessage />
@@ -374,7 +374,7 @@ const PopupSurveyCampaign = ({
                                 options={CAMPAIGN_STATUS_OPTIONS}
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                placeholder="Chá»n tráº¡ng thái"
+                                placeholder="Chơn tráº¡ng thái"
                                 searchPlaceholder="Tìm kiếm tráº¡ng thái..."
                                 readonly={true}
                               />
@@ -393,7 +393,7 @@ const PopupSurveyCampaign = ({
                   isLoadingTemplate ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                      <p>Đang táº£i dá»¯ liá»‡u máº«u khỏio sát...</p>
+                      <p>Đang táº£i dữ liệu mẫu khỏio sát...</p>
                     </div>
                   ) : (
                     <TopicListEditor
@@ -404,7 +404,7 @@ const PopupSurveyCampaign = ({
                   )
                 ) : (
                   <div className="flex items-center justify-center h-48 border rounded-lg bg-gray-50 text-gray-500">
-                    Vui lòng chá»n Máº«u khỏio sát trưá»›c.
+                    Vui lòng chơn Máº«u khỏio sát trươ›c.
                   </div>
                 )}
               </div>
@@ -420,7 +420,7 @@ const PopupSurveyCampaign = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("Đây chá»‰ lÜ  bản xem trưá»›c!");
+                    toast.success("Đây chơ‰ lÜ  bản xem trươ›c!");
                   }}
                 />
               </div>
@@ -459,7 +459,7 @@ const PopupSurveyCampaign = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu vÜ  thêm tiáº¿p
+                    Lưu vÜ  thêm tiếp
                   </Button>
                 )}
               </DialogFooter>

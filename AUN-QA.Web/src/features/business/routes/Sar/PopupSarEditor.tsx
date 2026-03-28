@@ -1,9 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Collaboration from "@tiptap/extension-collaboration";
 import { WebsocketProvider } from "y-websocket";
 import * as Y from "yjs";
+import { createSarEditorExtensions } from "./sarEditorExtensions";
 import { format } from "date-fns";
 import { Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -86,16 +85,7 @@ export default function PopupSarEditor({
   const editor = useEditor(
     {
       immediatelyRender: false,
-      extensions: ydoc
-        ? [
-            StarterKit.configure({
-              history: false,
-            }),
-            Collaboration.configure({
-              document: ydoc,
-            }),
-          ]
-        : [],
+      extensions: createSarEditorExtensions(ydoc),
       editorProps: {
         attributes: {
           class:
@@ -125,7 +115,7 @@ export default function PopupSarEditor({
         const update = base64ToUint8Array(draft.YDocSnapshotBase64);
         Y.applyUpdate(doc, update);
       } catch {
-        toast.error("KhÃ´ng thá»ƒ Ä‘á»c dá»¯ liá»‡u báº£n nhÃ¡p SAR hiá»‡n táº¡i");
+        toast.error("Không thé đưỜc dữ liệu bản nháp SAR hiện tại");
       }
     }
 
@@ -202,7 +192,7 @@ export default function PopupSarEditor({
         if (success) {
           setLastSavedAt(new Date());
         } else if (mode === "manual") {
-          toast.error("Lưu báº£n nhÃ¡p SAR khÃ´ng thÃ nh cÃ´ng");
+          toast.error("Lưu bản nháp SAR không thÃ nh công");
         }
 
         return success;
@@ -253,7 +243,7 @@ export default function PopupSarEditor({
                     : "bg-amber-100 text-amber-700"
                 }`}
               >
-                {isCollabConnected ? "ÄÃ£ káº¿t ná»‘i realtime" : "Máº¥t káº¿t ná»‘i realtime"}
+                {isCollabConnected ? "Đã káº¿t nơ‘i realtime" : "Máº¥t káº¿t nơ‘i realtime"}
               </span>
 
               <Button
@@ -263,7 +253,7 @@ export default function PopupSarEditor({
                 disabled={isDraftLoading}
               >
                 <RefreshCw className="w-4 h-4 mr-1" />
-                Táº£i láº¡i
+                Tải lại
               </Button>
 
               <Button
@@ -284,8 +274,8 @@ export default function PopupSarEditor({
           </div>
           <div className="text-xs text-muted-foreground mt-2">
             {lastSavedAt
-              ? `Lưu gáº§n nháº¥t: ${format(lastSavedAt, "dd/MM/yyyy HH:mm:ss")}`
-              : "ChÆ°a cÃ³ láº§n lÆ°u nÃ o"}
+              ? `Lưu gần nhất: ${format(lastSavedAt, "dd/MM/yyyy HH:mm:ss")}`
+              : "Chưa có lần lưu nà o"}
           </div>
         </DialogHeader>
 

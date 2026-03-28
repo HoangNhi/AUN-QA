@@ -10,8 +10,8 @@ import { COUNCIL_ROLES } from "@/constants/catalog.constants";
 import type { StandardOption } from "@/features/catalog/api/standard.api";
 
 // Council role constants â€” matches CouncilRole enum in BE
-const ROLE_HEAD = 1; // Chá»§ tá»‹ch HÄ â€” phá»¥ trÃ¡ch táº¥t cáº£ TC
-const ROLE_SECRETARY = 3; // ThÆ° kÃ½ â€” khÃ´ng cáº§n phÃ¢n cÃ´ng TC
+const ROLE_HEAD = 1; // Chơ§ tổ‹ch HĐ â€” phơ¥ trách tất cả TC
+const ROLE_SECRETARY = 3; // Thư ký â€” không cần phân công TC
 
 // --- Council table column factory ---
 interface CouncilColumnHandlers {
@@ -34,7 +34,7 @@ function getCouncilColumns({
     return [
         {
             id: "UserId",
-            header: "ThÃ nh viÃªn",
+            header: "ThÃ nh viên",
             meta: { className: "w-[220px]" },
             cell: ({ row }) => (
                 <Combobox
@@ -43,14 +43,14 @@ function getCouncilColumns({
                     onValueChange={(v) =>
                         handleChangeCouncil(row.original.Id, "UserId", v)
                     }
-                    placeholder="Chá»n thÃ nh viÃªn"
+                    placeholder="Chơn thÃ nh viên"
                     modal
                 />
             ),
         },
         {
             id: "RoleId",
-            header: "Vai trÃ²",
+            header: "Vai trò",
             meta: { className: "w-[160px]" },
             cell: ({ row }) => (
                 <Combobox
@@ -59,7 +59,7 @@ function getCouncilColumns({
                     onValueChange={(v) =>
                         handleChangeCouncil(row.original.Id, "RoleId", Number(v))
                     }
-                    placeholder="Chá»n vai trÃ²"
+                    placeholder="Chơn vai trò"
                     modal
                 />
             ),
@@ -72,7 +72,7 @@ function getCouncilColumns({
                 if (role === ROLE_HEAD) {
                     return (
                         <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            Táº¥t cáº£ TC
+                            Tất cả TC
                         </span>
                     );
                 }
@@ -104,7 +104,7 @@ function getCouncilColumns({
                                 opts.map((o) => o.value),
                             )
                         }
-                        placeholder="Chá»n tiÃªu chuáº©n..."
+                        placeholder="Chơn tiêu chuẩn..."
                         hidePlaceholderWhenSelected
                     />
                 );
@@ -171,10 +171,10 @@ export function CouncilTab({
 
     return (
         <div className="grid gap-3">
-            {/* Ä15 validation summary bar */}
+            {/* Đ15 validation summary bar */}
             {listCouncil.length > 0 && (
                 <div className="rounded-lg border bg-gray-50 px-3 py-2.5 space-y-1 text-xs">
-                    <p className="font-semibold text-gray-700 mb-1">Kiá»ƒm tra Ä15</p>
+                    <p className="font-semibold text-gray-700 mb-1">Kiơƒm tra Đ15</p>
                     <div className="flex items-center gap-2">
                         <span
                             className={
@@ -186,9 +186,9 @@ export function CouncilTab({
                             {d15.enoughMembers ? "âœ“" : "âœ—"}
                         </span>
                         <span>
-                            Tá»•ng thÃ nh viÃªn: <strong>{d15.totalMembers}</strong>
+                            Tổ•ng thÃ nh viên: <strong>{d15.totalMembers}</strong>
                             {!d15.enoughMembers && (
-                                <span className="text-red-500 ml-1">(cáº§n â‰¥ 9 â€” Ä15.k1)</span>
+                                <span className="text-red-500 ml-1">(cần â‰¥ 9 â€” Đ15.k1)</span>
                             )}
                         </span>
                     </div>
@@ -205,9 +205,9 @@ export function CouncilTab({
                                     {d15.insufficientEval.length === 0 ? "âœ“" : "âš "}
                                 </span>
                                 <span>
-                                    TC cÃ³ &lt; 3 thÃ nh viÃªn ÄG:{" "}
+                                    TC có &lt; 3 thÃ nh viên ĐG:{" "}
                                     {d15.insufficientEval.length === 0 ? (
-                                        <span className="text-green-600">Táº¥t cáº£ Ä‘áº¡t</span>
+                                        <span className="text-green-600">Tất cả Đ‘áº¡t</span>
                                     ) : (
                                         <span className="text-amber-600">
                                             {d15.insufficientEval.map((s) => s.Code).join(", ")}
@@ -226,9 +226,9 @@ export function CouncilTab({
                                     {d15.uncoveredProvider.length === 0 ? "âœ“" : "âš "}
                                 </span>
                                 <span>
-                                    TC chÆ°a cÃ³ ngÆ°á»i cung cáº¥p MC:{" "}
+                                    TC chưa có ngươi cung cáº¥p MC:{" "}
                                     {d15.uncoveredProvider.length === 0 ? (
-                                        <span className="text-green-600">Táº¥t cáº£ Ä‘áº¡t</span>
+                                        <span className="text-green-600">Tất cả Đ‘áº¡t</span>
                                     ) : (
                                         <span className="text-amber-600">
                                             {d15.uncoveredProvider.map((s) => s.Code).join(", ")}
@@ -242,14 +242,14 @@ export function CouncilTab({
             )}
 
             <div className="flex justify-between items-center">
-                <Label>Danh sÃ¡ch há»™i Ä‘á»“ng</Label>
+                <Label>Danh sách hơ™i Đ‘ơ“ng</Label>
                 <Button
                     type="button"
                     size="sm"
                     onClick={onAdd}
                     className="flex gap-2"
                 >
-                    <Plus className="w-4 h-4" /> Thêm thÃ nh viÃªn
+                    <Plus className="w-4 h-4" /> Thêm thÃ nh viên
                 </Button>
             </div>
 
@@ -279,7 +279,7 @@ export function CouncilTab({
             {standards.length > 0 && listCouncil.length > 0 && (
                 <div className="rounded-lg border p-3 bg-white">
                     <p className="text-xs font-semibold text-gray-700 mb-2">
-                        Tá»•ng há»£p NhÃ³m cÃ´ng tÃ¡c
+                        Tổ•ng hơ£p Nhóm công tác
                     </p>
                     <div className="overflow-x-auto">
                         <table className="w-full text-xs border-collapse">
@@ -289,10 +289,10 @@ export function CouncilTab({
                                         Tiêu chuẩn
                                     </th>
                                     <th className="border px-2 py-1 text-center font-medium text-gray-600">
-                                        ThÃ nh viÃªn ÄG
+                                        ThÃ nh viên ĐG
                                     </th>
                                     <th className="border px-2 py-1 text-center font-medium text-gray-600">
-                                        NgÆ°á»i cung cáº¥p MC
+                                        Ngươi cung cáº¥p MC
                                     </th>
                                 </tr>
                             </thead>

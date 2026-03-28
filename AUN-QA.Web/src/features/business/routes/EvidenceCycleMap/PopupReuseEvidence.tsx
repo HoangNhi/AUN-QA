@@ -93,7 +93,7 @@ const PopupReuseEvidence = ({
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>TÃ¡i sá»­ dá»¥ng minh chá»©ng Ä‘Ã£ duyá»‡t</DialogTitle>
+          <DialogTitle>Tái sơ­ dơ¥ng minh chơ©ng Đ‘ã duyơ‡t</DialogTitle>
         </DialogHeader>
 
         {/* Filter Bar */}
@@ -108,7 +108,7 @@ const PopupReuseEvidence = ({
             }}
             value={fileTypeId}
             onValueChange={(val) => setFileTypeId(val || "")}
-            placeholder="Táº¥t cáº£ loáº¡i tÃ i liá»‡u"
+            placeholder="Tất cả loáº¡i tÃ i liơ‡u"
             searchPlaceholder="Tìm kiếm..."
             emptyText="Không tìm thấy."
             modal={true}
@@ -116,7 +116,7 @@ const PopupReuseEvidence = ({
 
           <div className="flex rounded-md shadow-xs">
             <Input
-              placeholder="TÃªn hoáº·c mÃ£ minh chá»©ng..."
+              placeholder="Tên hoáº·c mã minh chơ©ng..."
               value={textSearch}
               onChange={(e) => setTextSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -141,7 +141,7 @@ const PopupReuseEvidence = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            ÄÃ³ng
+            Đóng
           </Button>
         </DialogFooter>
       </DialogContent>

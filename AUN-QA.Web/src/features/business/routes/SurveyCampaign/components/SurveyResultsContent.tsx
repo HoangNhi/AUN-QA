@@ -30,13 +30,19 @@ interface RatingTableProps {
 }
 
 const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
-  const scoreLabels = ["1", "2", "3", "4", "5"];
-  const scoreColors = [
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-yellow-500",
-    "bg-green-500",
-    "bg-emerald-500",
+  const RATING_LABELS = [
+    "1. Hoàn toàn không đồng ý",
+    "2. Không đồng ý",
+    "3. Bình thường",
+    "4. Đồng ý",
+    "5. Hoàn toàn đồng ý",
+  ];
+  const SCORE_STYLES = [
+    "bg-red-50 text-red-700",
+    "bg-orange-50 text-orange-700",
+    "bg-yellow-50 text-yellow-700",
+    "bg-green-50 text-green-700",
+    "bg-emerald-50 text-emerald-700",
   ];
 
   const getScoreCount = (question: AggregatedRatingQuestion, scoreIndex: number): number => {
@@ -70,8 +76,11 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
         <colgroup>
           <col style={{ width: "36px" }} />
           <col style={{ width: "140px" }} />
-          {scoreLabels.map((_, idx) => (
-            <col key={`score-${idx}`} style={{ width: "74px" }} />
+          {[1, 2, 3, 4, 5].map((s) => (
+            <React.Fragment key={s}>
+              <col style={{ width: "32px" }} />
+              <col style={{ width: "42px" }} />
+            </React.Fragment>
           ))}
           <col style={{ width: "60px" }} />
         </colgroup>
@@ -85,7 +94,7 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
             </th>
             <th
               colSpan={10}
-              className="px-2 py-2 text-center font-semibold text-slate-700"
+              className="px-2 py-2 text-center font-semibold bg-blue-100 text-blue-700"
             >
               Ý kiến phản hồi
             </th>
@@ -98,11 +107,11 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
           <tr className="border-b">
             <th className="border-r px-1 py-1 text-xs text-slate-500"></th>
             <th className="border-r px-1 py-1 text-xs text-slate-500"></th>
-            {scoreLabels.map((label, idx) => (
+            {RATING_LABELS.map((label, idx) => (
               <th
                 key={`label-${idx}`}
                 colSpan={2}
-                className={`${scoreColors[idx]} text-white px-1 py-1 text-xs font-semibold`}
+                className={`${SCORE_STYLES[idx]} px-1 py-1 text-xs font-semibold`}
               >
                 {label}
               </th>
@@ -114,8 +123,8 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
           <tr className="border-b bg-slate-50">
             <th className="border-r px-1 py-1 text-xs text-slate-600"></th>
             <th className="border-r px-1 py-1 text-xs text-slate-600"></th>
-            {scoreLabels.map((_, idx) => (
-              <React.Fragment key={`header-${idx}`}>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <React.Fragment key={`header-${s}`}>
                 <th className="px-1 py-1 text-xs font-medium text-slate-600">
                   SL
                 </th>
@@ -142,7 +151,7 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
                 </td>
 
                 {/* Score columns: SL / % interleaved */}
-                {scoreLabels.map((_, scoreIdx) => {
+                {[0, 1, 2, 3, 4].map((scoreIdx) => {
                   const score = getScoreCount(question, scoreIdx);
                   const percentage = calculatePercentage(score, total);
                   const isZero = score === 0;

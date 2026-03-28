@@ -29,6 +29,15 @@ interface RatingTableProps {
   questions: AggregatedRatingQuestion[];
 }
 
+// Column width constants for RatingTable
+const COL_WIDTHS = {
+  ROW_NUM: 36,
+  QUESTION: 140,
+  SCORE_VALUE: 32,
+  PERCENTAGE: 42,
+  TOTAL: 60,
+} as const;
+
 const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
   const RATING_LABELS = [
     "1. Hoàn toàn không đồng ý",
@@ -74,15 +83,15 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
         style={{ tableLayout: "fixed" }}
       >
         <colgroup>
-          <col style={{ width: "36px" }} />
-          <col style={{ width: "140px" }} />
+          <col style={{ width: `${COL_WIDTHS.ROW_NUM}px` }} />
+          <col style={{ width: `${COL_WIDTHS.QUESTION}px` }} />
           {[1, 2, 3, 4, 5].map((s) => (
             <React.Fragment key={s}>
-              <col style={{ width: "32px" }} />
-              <col style={{ width: "42px" }} />
+              <col style={{ width: `${COL_WIDTHS.SCORE_VALUE}px` }} />
+              <col style={{ width: `${COL_WIDTHS.PERCENTAGE}px` }} />
             </React.Fragment>
           ))}
-          <col style={{ width: "60px" }} />
+          <col style={{ width: `${COL_WIDTHS.TOTAL}px` }} />
         </colgroup>
 
         {/* Row 1: "Ý kiến phản hồi" header */}
@@ -193,6 +202,10 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
 // OpenQuestionChart Component
 // ============================================================================
 
+// Chart rendering constants
+const CHART_ROW_HEIGHT = 40;
+const CHART_BASE_HEIGHT = 60;
+
 interface OpenQuestionChartProps {
   question: AggregatedTextQuestion;
 }
@@ -218,7 +231,7 @@ const OpenQuestionChart: React.FC<OpenQuestionChartProps> = ({ question }) => {
   }
 
   return (
-    <ResponsiveContainer width="100%" height={chartData.length * 40 + 60}>
+    <ResponsiveContainer width="100%" height={chartData.length * CHART_ROW_HEIGHT + CHART_BASE_HEIGHT}>
       <BarChart
         data={chartData}
         layout="vertical"
@@ -235,9 +248,9 @@ const OpenQuestionChart: React.FC<OpenQuestionChartProps> = ({ question }) => {
         <Tooltip
           formatter={(value) => [value, "Số lượng"]}
           contentStyle={{
-            backgroundColor: "#fff",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
+            backgroundColor: "#ffffff",
+            border: "1px solid #d1d5db",
+            borderRadius: "0.375rem",
           }}
         />
         <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]}>

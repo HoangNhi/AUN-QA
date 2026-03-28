@@ -1,5 +1,5 @@
-﻿import { Button } from "@/components/ui/button";
-import { Loader2, Edit3, Eye, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Edit3, Eye, ArrowLeft, BarChart3 } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { useState, useEffect } from "react";
 import { SurveyForm } from "./components/SurveyForm";
+import { SurveyResultsContent } from "./components/SurveyResultsContent";
 import { v4 as uuidv4 } from "uuid";
 import type {
   SurveyCampaign,
@@ -40,11 +41,11 @@ import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, "Vui lòng nháº­p tÃªn kháº£o sÃ¡t"),
-  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Ä‘á»‘i tÆ°á»£ng"),
+  name: z.string().min(1, "Vui lòng nhập tên khỏio sát"),
+  stakeholderType: z.string().min(1, "Vui lòng chá»n loáº¡i Đ‘á»‘i tưá»£ng"),
   status: z.string(),
-  cycleId: z.string().min(1, "Vui lòng chá»n chu ká»³ Ä‘Ã¡nh giÃ¡"),
-  templateId: z.string().min(1, "Vui lòng chá»n máº«u kháº£o sÃ¡t"),
+  cycleId: z.string().min(1, "Vui lòng chá»n chu ká»³ Đ‘ánh giá"),
+  templateId: z.string().min(1, "Vui lòng chá»n máº«u khỏio sát"),
 });
 
 const PopupSurveyCampaign = ({
@@ -83,7 +84,7 @@ const PopupSurveyCampaign = ({
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mode, setMode] = useState<"edit" | "preview" | "results">("edit");
 
   const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
     const payload = {
@@ -128,13 +129,16 @@ const PopupSurveyCampaign = ({
     const values = form.getValues();
     return {
       Id: values.id,
-      Name: values.name || "TÃªn kháº£o sÃ¡t (Xem trước)",
+      Name: values.name || "Tên khỏio sát (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType || "1"),
       IsSessionCompleted: false,
       ListTopic:
         listTopic as unknown as import("../../types/survey-campaign.types").SurveyViewTopic[], // Casting for preview compatibility
     };
   };
+
+  const showResultsTab =
+    surveyCampaign?.Status === 1 || surveyCampaign?.Status === 2;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -184,23 +188,28 @@ const PopupSurveyCampaign = ({
                   )}
                   <span>
                     {surveyCampaign?.IsEdit
-                      ? "Cập nhật kháº£o sÃ¡t"
-                      : "Thêm mới kháº£o sÃ¡t"}
+                      ? "Cập nhật khỏio sát"
+                      : "Thêm mới khỏio sát"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Tabs
                     value={mode}
-                    onValueChange={(v) => setMode(v as "edit" | "preview")}
+                    onValueChange={(v) => setMode(v as "edit" | "preview" | "results")}
                   >
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className={`grid w-full ${showResultsTab ? "grid-cols-3" : "grid-cols-2"}`}>
                       <TabsTrigger value="edit">
                         <Edit3 size={16} className="mr-2" /> Soạn thảo
                       </TabsTrigger>
                       <TabsTrigger value="preview">
                         <Eye size={16} className="mr-2" /> Xem trước
                       </TabsTrigger>
+                      {showResultsTab && (
+                        <TabsTrigger value="results">
+                          <BarChart3 size={16} className="mr-2" /> Kết quả
+                        </TabsTrigger>
+                      )}
                     </TabsList>
                   </Tabs>
                 </div>
@@ -218,7 +227,7 @@ const PopupSurveyCampaign = ({
               <div className="bg-white rounded-lg border shadow-sm p-4 mb-6 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-700">ThÃ´ng tin chung</h3>
+                  <h3 className="font-semibold text-gray-700">Thông tin chung</h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -229,12 +238,12 @@ const PopupSurveyCampaign = ({
                     render={({ field }) => (
                       <FormItem className="grid gap-2">
                         <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                          TÃªn kháº£o sÃ¡t
+                          Tên khỏio sát
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Nhập tÃªn kháº£o sÃ¡t"
+                            placeholder="Nhập tên khỏio sát"
                             className="bg-white"
                           />
                         </FormControl>
@@ -251,7 +260,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Chu ká»³ Ä‘Ã¡nh giÃ¡
+                            Chu kỳ Đ‘ánh giá
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -280,7 +289,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Loáº¡i Ä‘á»‘i tÆ°á»£ng
+                            Loáº¡i Đ‘á»‘i tưá»£ng
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -290,9 +299,9 @@ const PopupSurveyCampaign = ({
                                 field.onChange(val);
                                 form.setValue("templateId", "");
                               }}
-                              placeholder="Chá»n Ä‘á»‘i tÆ°á»£ng"
-                              searchPlaceholder="Tìm kiếm Ä‘á»‘i tÆ°á»£ng..."
-                              emptyText="Không tìm thấy Ä‘á»‘i tÆ°á»£ng."
+                              placeholder="Chá»n Đ‘á»‘i tưá»£ng"
+                              searchPlaceholder="Tìm kiếm Đ‘á»‘i tưá»£ng..."
+                              emptyText="Không tìm thấy Đ‘á»‘i tưá»£ng."
                             />
                           </FormControl>
                           <FormMessage />
@@ -309,7 +318,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Máº«u kháº£o sÃ¡t
+                            Máº«u khỏio sát
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -343,9 +352,9 @@ const PopupSurveyCampaign = ({
                                   setListTopic([]);
                                 }
                               }}
-                              placeholder="Chá»n máº«u kháº£o sÃ¡t"
-                              searchPlaceholder="Tìm kiếm máº«u kháº£o sÃ¡t..."
-                              emptyText="Không tìm thấy máº«u kháº£o sÃ¡t."
+                              placeholder="Chá»n máº«u khỏio sát"
+                              searchPlaceholder="Tìm kiếm máº«u khỏio sát..."
+                              emptyText="Không tìm thấy máº«u khỏio sát."
                             />
                           </FormControl>
                           <FormMessage />
@@ -365,8 +374,8 @@ const PopupSurveyCampaign = ({
                                 options={CAMPAIGN_STATUS_OPTIONS}
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                placeholder="Chá»n tráº¡ng thÃ¡i"
-                                searchPlaceholder="Tìm kiếm tráº¡ng thÃ¡i..."
+                                placeholder="Chá»n tráº¡ng thái"
+                                searchPlaceholder="Tìm kiếm tráº¡ng thái..."
                                 readonly={true}
                               />
                             </FormControl>
@@ -384,7 +393,7 @@ const PopupSurveyCampaign = ({
                   isLoadingTemplate ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                      <p>Äang táº£i dá»¯ liá»‡u máº«u kháº£o sÃ¡t...</p>
+                      <p>Đang táº£i dá»¯ liá»‡u máº«u khỏio sát...</p>
                     </div>
                   ) : (
                     <TopicListEditor
@@ -395,7 +404,7 @@ const PopupSurveyCampaign = ({
                   )
                 ) : (
                   <div className="flex items-center justify-center h-48 border rounded-lg bg-gray-50 text-gray-500">
-                    Vui lòng chá»n Máº«u kháº£o sÃ¡t trÆ°á»›c.
+                    Vui lòng chá»n Máº«u khỏio sát trưá»›c.
                   </div>
                 )}
               </div>
@@ -411,8 +420,17 @@ const PopupSurveyCampaign = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("ÄÃ¢y chá»‰ lÃ  báº£n xem trÆ°á»›c!");
+                    toast.success("Đây chá»‰ lÜ  bản xem trưá»›c!");
                   }}
+                />
+              </div>
+            )}
+
+            {mode === "results" && (
+              <div className="flex-1 overflow-y-auto bg-slate-50 p-6 min-h-0">
+                <SurveyResultsContent
+                  campaignId={surveyCampaign!.Id}
+                  enabled={mode === "results" && isOpen}
                 />
               </div>
             )}
@@ -441,7 +459,7 @@ const PopupSurveyCampaign = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu vÃ  thÃªm tiáº¿p
+                    Lưu vÜ  thêm tiáº¿p
                   </Button>
                 )}
               </DialogFooter>

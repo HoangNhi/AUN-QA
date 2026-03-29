@@ -17,6 +17,43 @@ export const EVALUATION_STATUS_CONFIG: Record<
   3: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
 };
 
+export const AUN_SCORE_CONFIG: Record<
+  number,
+  { label: string; bgClass: string; textClass: string }
+> = {
+  1: {
+    label: "Không đáp ứng",
+    bgClass: "bg-red-100",
+    textClass: "text-red-700",
+  },
+  2: {
+    label: "Cần cải tiến nhiều",
+    bgClass: "bg-red-100",
+    textClass: "text-red-700",
+  },
+  3: {
+    label: "Cần cải tiến nhỏ",
+    bgClass: "bg-orange-100",
+    textClass: "text-orange-700",
+  },
+  4: { label: "Đáp ứng", bgClass: "bg-slate-100", textClass: "text-slate-600" },
+  5: {
+    label: "Tốt hơn mong đợi",
+    bgClass: "bg-emerald-100",
+    textClass: "text-emerald-700",
+  },
+  6: {
+    label: "Hình mẫu chất lượng",
+    bgClass: "bg-emerald-100",
+    textClass: "text-emerald-700",
+  },
+  7: {
+    label: "Xuất sắc",
+    bgClass: "bg-emerald-200",
+    textClass: "text-emerald-800",
+  },
+};
+
 export type FrameworkType = "AUN" | "MOET";
 
 export interface CriterionEvaluationSummary {

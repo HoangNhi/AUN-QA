@@ -36,6 +36,7 @@ import type {
   EvaluationSubmissionRequest,
   FrameworkType,
 } from "../../../types/criterionEvaluation.types";
+import { AUN_SCORE_CONFIG } from "../../../types/criterionEvaluation.types";
 import type { SurveyCampaignGetListPaging } from "../../../types/survey-campaign.types";
 
 interface CriterionPopupProps {
@@ -732,9 +733,18 @@ export function CriterionPopup({
                           </div>
                           <div className="flex items-center gap-2.5">
                             {framework === "AUN" && sub.ProposedScore != null && (
-                              <span className="text-xs font-bold bg-emerald-100/80 text-emerald-700 px-2.5 py-1 rounded-lg">
-                                ĐẠT ({sub.ProposedScore})
-                              </span>
+                              (() => {
+                                const config =
+                                  AUN_SCORE_CONFIG[sub.ProposedScore] ||
+                                  AUN_SCORE_CONFIG[4];
+                                return (
+                                  <span
+                                    className={`text-xs font-bold px-2.5 py-1 rounded-lg ${config.bgClass} ${config.textClass}`}
+                                  >
+                                    {config.label} ({sub.ProposedScore})
+                                  </span>
+                                );
+                              })()
                             )}
                             {framework === "MOET" &&
                               sub.ProposedResult != null && (

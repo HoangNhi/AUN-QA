@@ -6,7 +6,10 @@ import type {
   FrameworkType,
   StandardEvaluationGroup,
 } from "../../../types/criterionEvaluation.types";
-import { EVALUATION_STATUS_CONFIG } from "../../../types/criterionEvaluation.types";
+import {
+  EVALUATION_STATUS_CONFIG,
+  AUN_SCORE_CONFIG,
+} from "../../../types/criterionEvaluation.types";
 
 interface CriteriaGridProps {
   groups: StandardEvaluationGroup[];
@@ -35,8 +38,13 @@ function OfficialScoreCell({
   if (item.Status !== 3) return <span className="text-muted-foreground">—</span>;
 
   if (framework === "AUN" && item.OfficialScore != null) {
+    const config = AUN_SCORE_CONFIG[item.OfficialScore] || AUN_SCORE_CONFIG[4];
     return (
-      <span className="font-semibold text-blue-700">{item.OfficialScore}/7</span>
+      <span
+        className={`px-2 py-1 rounded text-xs font-semibold ${config.bgClass} ${config.textClass}`}
+      >
+        {config.label} ({item.OfficialScore}/7)
+      </span>
     );
   }
   if (framework === "MOET") {

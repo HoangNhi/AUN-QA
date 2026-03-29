@@ -82,7 +82,7 @@ function BubbleMenuToolbarButton({ onClick, active, icon: Icon, title }: Toolbar
       )}
       title={title}
     >
-      <Icon size={16} />
+      <Icon className="h-4 w-4" />
     </button>
   );
 }
@@ -92,12 +92,10 @@ export default function PopupSarEditor({
   cycle,
   draft,
   isDraftLoading,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  isSavingDraft,
+  isSavingDraft: _isSavingDraft,
   onOpenChange,
   onSaveDraft,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onRefreshDraft,
+  onRefreshDraft: _onRefreshDraft,
 }: PopupSarEditorProps) {
   const providerRef = useRef<WebsocketProvider | null>(null);
   const ydocRef = useRef<Y.Doc | null>(null);
@@ -350,7 +348,7 @@ export default function PopupSarEditor({
   };
 
   const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => {
+    setIsSidebarOpen((prev: boolean) => {
       const next = !prev;
       localStorage.setItem("sar-editor-sidebar", JSON.stringify(next));
       return next;

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -477,3 +477,4 @@ const PopupEvidenceCycleMap = ({
 };
 
 export default PopupEvidenceCycleMap;
+

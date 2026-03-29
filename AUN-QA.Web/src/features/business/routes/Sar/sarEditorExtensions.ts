@@ -10,6 +10,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
 import TableOfContents from "@tiptap/extension-table-of-contents";
+import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import Image from "@tiptap/extension-image";
 import type * as Y from "yjs";
 import type { WebsocketProvider } from "y-websocket";
@@ -31,7 +32,7 @@ export function createSarEditorExtensions(
 ): AnyExtension[] {
   const extensions: AnyExtension[] = [
     StarterKit.configure({
-      history: !ydoc,
+      history: ydoc ? false : {},
     }),
     Underline,
     TextAlign.configure({
@@ -59,7 +60,18 @@ export function createSarEditorExtensions(
   if (onTocUpdate) {
     extensions.push(
       TableOfContents.configure({
-        onUpdate: onTocUpdate,
+        onUpdate: (data: TableOfContentData) => {
+          onTocUpdate(
+            data.map((item) => ({
+              id: item.id,
+              level: item.level,
+              text: item.textContent,
+              dom: item.dom,
+              isActive: item.isActive,
+              isScrolledOver: item.isScrolledOver,
+            })),
+          );
+        },
       }),
     );
   }

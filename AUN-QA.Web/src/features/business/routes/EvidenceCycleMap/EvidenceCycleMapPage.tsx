@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
@@ -185,3 +185,4 @@ const EvidenceCycleMapPage = () => {
 };
 
 export default EvidenceCycleMapPage;
+

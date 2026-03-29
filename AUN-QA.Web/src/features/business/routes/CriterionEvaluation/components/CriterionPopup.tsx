@@ -27,7 +27,7 @@ import {
   Undo2,
   CheckCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import type {
   ApproveEvaluationRequest,
   CriterionEvidence,
@@ -885,3 +885,4 @@ export function CriterionPopup({
     </div>
   );
 }
+

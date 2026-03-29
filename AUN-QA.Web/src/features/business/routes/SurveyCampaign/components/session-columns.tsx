@@ -1,7 +1,7 @@
 import { type ColumnDef } from "@tanstack/react-table";
 import type { SurveySession } from "../../../types/survey-campaign.types";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -137,3 +137,4 @@ const ActionCell = ({
     </DropdownMenu>
   );
 };
+

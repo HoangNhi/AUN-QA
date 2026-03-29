@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { Plus, Trash } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/datepicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -158,3 +158,4 @@ export function EvaluationScheduleTab({
         </div>
     );
 }
+

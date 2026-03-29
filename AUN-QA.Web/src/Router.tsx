@@ -1,6 +1,6 @@
-﻿import type { FC } from "react";
+import type { FC } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/Home/HomePage";
+import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
@@ -70,4 +70,5 @@ const Router: FC = () => {
 };
 
 export default Router;
+
 

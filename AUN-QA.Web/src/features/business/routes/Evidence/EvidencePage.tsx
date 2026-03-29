@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useEvidence } from "@/features/business/hooks/useEvidence";
 import { getColumns } from "./columns";
 import PopupEvidence from "./PopupEvidence";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
@@ -176,3 +176,4 @@ const EvidencePage = () => {
 };
 
 export default EvidencePage;
+

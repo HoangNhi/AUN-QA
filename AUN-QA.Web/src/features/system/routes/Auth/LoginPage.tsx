@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
-  username: z.string().min(1, "Vui lòng nhập tên Đăng nhập"),
+  username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),
   password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
@@ -71,7 +71,9 @@ const LoginPage = () => {
               >
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">Login to your account</h1>
+                    <h1 className="text-2xl font-bold">
+                      Login to your account
+                    </h1>
                     <p className="text-muted-foreground text-sm text-balance">
                       Enter your email below to login to your account
                     </p>
@@ -82,9 +84,9 @@ const LoginPage = () => {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tên Đăng nhập</FormLabel>
+                        <FormLabel>Tên đăng nhập</FormLabel>
                         <FormControl>
-                          <Input placeholder="Tên Đăng nhập" {...field} />
+                          <Input placeholder="Tên đăng nhập" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -106,7 +108,11 @@ const LoginPage = () => {
                           </a>
                         </div>
                         <FormControl>
-                          <Input type="password" placeholder="Mật khẩu" {...field} />
+                          <Input
+                            type="password"
+                            placeholder="Mật khẩu"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -134,4 +140,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-

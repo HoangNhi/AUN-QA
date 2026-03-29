@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -376,3 +376,4 @@ const PopupDetail = ({
 };
 
 export default PopupDetail;
+

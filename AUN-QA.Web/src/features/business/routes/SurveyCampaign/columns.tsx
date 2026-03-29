@@ -8,7 +8,7 @@ import {
   Trash2,
   MoreHorizontal,
 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -254,3 +254,4 @@ const ActionCell = ({
     </>
   );
 };
+

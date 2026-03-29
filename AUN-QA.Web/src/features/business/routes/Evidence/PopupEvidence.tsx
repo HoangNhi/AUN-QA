@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -383,3 +383,4 @@ const PopupEvidence = ({
 };
 
 export default PopupEvidence;
+

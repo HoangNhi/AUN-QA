@@ -9,7 +9,7 @@ import { CriteriaGrid } from "./components/CriteriaGrid";
 import { CriterionPopup } from "./components/CriterionPopup";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
 import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
 import type { ModelCombobox } from "@/types/base/base.types";
@@ -41,7 +41,7 @@ export function CriterionEvaluationPage() {
     mySubmission,
     isSummaryLoading,
     isListLoading,
-    isMySubmissionLoading,
+    isPopupDataLoading,
     isSubmitting,
     isApproving,
     handleSubmit,
@@ -179,7 +179,7 @@ export function CriterionEvaluationPage() {
           evidences={evidences}
           cycleId={selectedCycleId}
           mySubmission={mySubmission}
-          isMySubmissionLoading={isMySubmissionLoading}
+          isMySubmissionLoading={isPopupDataLoading}
           framework={framework}
           cycleStatus={cycleStatus}
           canSubmit={canSubmit}
@@ -194,3 +194,4 @@ export function CriterionEvaluationPage() {
     </div>
   );
 }
+

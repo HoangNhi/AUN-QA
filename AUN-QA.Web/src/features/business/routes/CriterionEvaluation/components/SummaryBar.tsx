@@ -5,22 +5,6 @@ interface SummaryBarProps {
   framework: FrameworkType;
 }
 
-function getMoetForecast(summary: CriterionEvaluationSummary): {
-  label: string;
-  color: string;
-} {
-  if (summary.FailedStandards === 0 && summary.FailedCriteria === 0) {
-    return { label: "Đạt", color: "bg-green-100 text-green-700 border-green-200" };
-  }
-  if (summary.FailedStandards <= 2 && summary.FailedCriteria <= 16) {
-    return {
-      label: "Đạt có điều kiện",
-      color: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    };
-  }
-  return { label: "Không đạt", color: "bg-red-100 text-red-700 border-red-200" };
-}
-
 export function SummaryBar({ summary, framework }: SummaryBarProps) {
   if (!summary) return null;
 
@@ -31,29 +15,10 @@ export function SummaryBar({ summary, framework }: SummaryBarProps) {
 
   const prerequisiteFailed =
     summary.PrerequisiteTotal - summary.PrerequisitePassed;
-  const forecast = framework === "MOET" ? getMoetForecast(summary) : null;
 
   return (
     <div className="sticky top-0 z-10 bg-background border-b px-6 py-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-4">
-        {/* Forecast */}
-        <div
-          className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium ${
-            forecast
-              ? forecast.color
-              : "bg-blue-50 text-blue-700 border-blue-200"
-          }`}
-        >
-          <span className="text-xs text-muted-foreground font-normal">
-            Dự báo:
-          </span>
-          {framework === "MOET" && forecast ? (
-            <span>{forecast.label}</span>
-          ) : (
-            <span>AUN — đánh giá tổng thể</span>
-          )}
-        </div>
-
         {/* Progress */}
         <div className="flex items-center gap-2 min-w-[200px]">
           <span className="text-xs text-muted-foreground whitespace-nowrap">

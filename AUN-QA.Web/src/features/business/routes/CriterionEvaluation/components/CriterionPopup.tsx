@@ -445,8 +445,8 @@ export function CriterionPopup({
 }: CriterionPopupProps) {
   const [viewingSubmission, setViewingSubmission] =
     useState<EvaluationSubmission | null>(null);
-  const [isEvidenceOpen, setIsEvidenceOpen] = useState(true);
-  const [isSurveyOpen, setIsSurveyOpen] = useState(true);
+  const [isEvidenceOpen, setIsEvidenceOpen] = useState(!canApprove);
+  const [isSurveyOpen, setIsSurveyOpen] = useState(!canApprove);
   const [officialScore, setOfficialScore] = useState<number | null>(
     item.OfficialScore,
   );

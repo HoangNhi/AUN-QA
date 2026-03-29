@@ -17,5 +17,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos
         public DateTime? UpdatedAt { get; set; }
 
         public string? UpdatedBy { get; set; }
+
+        public string? EvaluationPurpose { get; set; }
     }
 }

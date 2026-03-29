@@ -33,6 +33,49 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         #region Chức năng chính
         public async Task<ModelCycle> GetById(GetByIdRequest request)
         {
+            if (request.Id == Guid.Empty)
+            {
+                var latestCycle = await _context.Cycles.AsNoTracking()
+                    .Where(x => !x.IsDeleted)
+                    .OrderByDescending(x => x.UpdatedAt.HasValue ? x.UpdatedAt.Value : x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (latestCycle == null)
+                {
+                    return new ModelCycle();
+                }
+
+                var listCouncilLatest = await _context.Councils.AsNoTracking()
+                    .Where(x => x.CycleId == latestCycle.Id && !x.IsDeleted && x.IsActived)
+                    .OrderBy(x => x.RoleId)
+                    .ToListAsync();
+
+                var listEvaluationScheduleLatest = await _context.EvaluationSchedules.AsNoTracking()
+                    .Where(x => x.CycleId == latestCycle.Id && !x.IsDeleted && x.IsActived)
+                    .ToListAsync();
+
+                var resultListCouncil = _mapper.Map<List<CouncilRequest>>(listCouncilLatest) ?? new List<CouncilRequest>();
+                var resultListEvaluationSchedule = _mapper.Map<List<EvaluationScheduleRequest>>(listEvaluationScheduleLatest) ?? new List<EvaluationScheduleRequest>();
+
+                foreach (var item in resultListCouncil)
+                {
+                    item.Id = Guid.Empty;
+                    item.CycleId = Guid.Empty;
+                }
+
+                foreach (var item in resultListEvaluationSchedule)
+                {
+                    item.Id = Guid.Empty;
+                    item.CycleId = Guid.Empty;
+                }
+
+                return new ModelCycle
+                {
+                    ListCouncil = resultListCouncil,
+                    ListEvaluationSchedule = resultListEvaluationSchedule
+                };
+            }
+
             var data = await _context.Cycles.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {

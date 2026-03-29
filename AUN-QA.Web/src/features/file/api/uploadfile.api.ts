@@ -25,6 +25,24 @@ export const fileService = {
       },
     );
   },
+  uploadFileEmbed: async (
+    request: UploadFileRequest,
+  ): Promise<ApiResponse<Attachment[]>> => {
+    const formData = new FormData();
+    request.files.forEach((file) => {
+      formData.append("files", file);
+    });
+    formData.append("FolderName", request.folderUpload);
+
+    return api.post<Attachment[]>(
+      API_ENDPOINTS.File.UploadFile.EMBED,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 300000,
+      },
+    );
+  },
   downloadFile: (url: string) => {
     return api.downloadFile(API_ENDPOINTS.File.UploadFile.GET + url);
   },

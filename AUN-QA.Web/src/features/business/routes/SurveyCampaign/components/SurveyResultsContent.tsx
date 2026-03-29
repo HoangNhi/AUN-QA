@@ -1,14 +1,12 @@
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import type { ChartConfig } from "@/components/ui/chart";
 import { Loader2, AlertCircle } from "lucide-react";
 import { surveyCampaignService } from "@/features/business/api/survey-campaign.api";
 import type {
@@ -38,7 +36,7 @@ const COL_WIDTHS = {
   TOTAL: 60,
 } as const;
 
-const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
+const RatingTable: React.FC<RatingTableProps> = React.memo(({ questions }) => {
   const RATING_LABELS = [
     "1. Hoàn toàn không đồng ý",
     "2. Không đồng ý",
@@ -47,11 +45,11 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
     "5. Hoàn toàn đồng ý",
   ];
   const SCORE_STYLES = [
-    "bg-red-50 text-red-700",
-    "bg-orange-50 text-orange-700",
-    "bg-yellow-50 text-yellow-700",
-    "bg-green-50 text-green-700",
-    "bg-emerald-50 text-emerald-700",
+    "bg-red-100 text-red-700",
+    "bg-orange-100 text-orange-700",
+    "bg-yellow-100 text-yellow-800",
+    "bg-green-100 text-green-700",
+    "bg-emerald-100 text-emerald-700",
   ];
 
   const getScoreCount = (question: AggregatedRatingQuestion, scoreIndex: number): number => {
@@ -97,52 +95,46 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
         {/* Row 1: "Ý kiến phản hồi" header */}
         <thead>
           <tr className="border-b">
-            <th className="border-r px-2 py-2 text-left font-semibold">STT</th>
-            <th className="border-r px-2 py-2 text-left font-semibold">
+            <th rowSpan={3} className="border border-slate-200 px-2 py-2 text-center font-semibold bg-slate-50">STT</th>
+            <th rowSpan={3} className="border border-slate-200 px-2 py-2 text-center font-semibold bg-slate-50">
               Câu hỏi
             </th>
             <th
               colSpan={10}
-              className="px-2 py-2 text-center font-semibold bg-blue-100 text-blue-700"
+              className="border border-slate-200 bg-blue-700 px-2 py-1.5 text-center text-[11px] font-bold text-white"
             >
               Ý kiến phản hồi
             </th>
-            <th className="border-l px-2 py-2 text-center font-semibold">
+            <th rowSpan={3} className="border border-slate-200 px-2 py-2 text-center font-semibold bg-slate-50">
               Tổng
             </th>
           </tr>
 
           {/* Row 2: Score labels (1-5) with colored backgrounds */}
           <tr className="border-b">
-            <th className="border-r px-1 py-1 text-xs text-slate-500"></th>
-            <th className="border-r px-1 py-1 text-xs text-slate-500"></th>
             {RATING_LABELS.map((label, idx) => (
               <th
                 key={`label-${idx}`}
                 colSpan={2}
-                className={`${SCORE_STYLES[idx]} px-1 py-1 text-xs font-semibold`}
+                className={`border border-slate-200 ${SCORE_STYLES[idx]} px-1 py-1 text-xs font-semibold`}
               >
                 {label}
               </th>
             ))}
-            <th className="border-l px-1 py-1 text-xs text-slate-500"></th>
           </tr>
 
           {/* Row 3: SL / % columns */}
-          <tr className="border-b bg-slate-50">
-            <th className="border-r px-1 py-1 text-xs text-slate-600"></th>
-            <th className="border-r px-1 py-1 text-xs text-slate-600"></th>
+          <tr>
             {[1, 2, 3, 4, 5].map((s) => (
               <React.Fragment key={`header-${s}`}>
-                <th className="px-1 py-1 text-xs font-medium text-slate-600">
+                <th className="border border-slate-200 bg-slate-100 px-0.5 py-1 text-center text-[9px] font-bold text-slate-600">
                   SL
                 </th>
-                <th className="px-1 py-1 text-xs font-medium text-slate-600">
+                <th className="border border-slate-200 bg-slate-100 px-0.5 py-1 text-center text-[9px] font-bold text-slate-600">
                   %
                 </th>
               </React.Fragment>
             ))}
-            <th className="border-l px-1 py-1 text-xs text-slate-600"></th>
           </tr>
         </thead>
 
@@ -151,11 +143,11 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
           {questions.map((question, idx) => {
             const total = question.Total;
             return (
-              <tr key={question.QuestionId} className="border-b hover:bg-slate-50">
-                <td className="border-r px-2 py-2 text-xs font-medium text-slate-700">
+              <tr key={question.QuestionId} className="even:bg-slate-50/60 hover:bg-blue-50 transition-colors duration-100">
+                <td className="border border-slate-200 px-2 py-2 text-xs font-medium text-slate-700 text-center">
                   {idx + 1}
                 </td>
-                <td className="border-r px-2 py-2 text-xs text-slate-700">
+                <td className="border border-slate-200 px-2 py-2 text-xs text-slate-700">
                   {question.Content}
                 </td>
 
@@ -168,15 +160,15 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
                   return (
                     <React.Fragment key={`score-${scoreIdx}`}>
                       <td
-                        className={`px-1 py-2 text-center text-xs font-semibold ${
-                          isZero ? "text-slate-300" : "text-slate-700"
+                        className={`border border-slate-200 px-1 py-2 text-center text-xs font-semibold ${
+                          isZero ? "text-slate-300" : "text-slate-800"
                         }`}
                       >
                         {score}
                       </td>
                       <td
-                        className={`px-1 py-2 text-center text-xs ${
-                          isZero ? "text-slate-300" : "text-slate-600"
+                        className={`border border-slate-200 px-1 py-2 text-center text-[10px] ${
+                          isZero ? "text-slate-300" : "text-slate-500"
                         }`}
                       >
                         {percentage}%
@@ -186,7 +178,7 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
                 })}
 
                 {/* Total column */}
-                <td className="border-l px-2 py-2 text-center text-xs font-semibold text-slate-700">
+                <td className="border border-slate-200 bg-slate-50 px-2 py-2 text-center text-xs font-bold text-blue-700">
                   {total}
                 </td>
               </tr>
@@ -196,7 +188,7 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
       </table>
     </div>
   );
-};
+});
 
 // ============================================================================
 // OpenQuestionChart Component
@@ -206,63 +198,70 @@ const RatingTable: React.FC<RatingTableProps> = ({ questions }) => {
 const CHART_ROW_HEIGHT = 40;
 const CHART_BASE_HEIGHT = 60;
 
+const OPEN_QUESTION_CHART_CONFIG: ChartConfig = {
+  count: {
+    label: "Số phản hồi",
+    color: "#1d4ed8",
+  },
+} satisfies ChartConfig;
+
 interface OpenQuestionChartProps {
   question: AggregatedTextQuestion;
 }
 
 const OpenQuestionChart: React.FC<OpenQuestionChartProps> = ({ question }) => {
   const chartData = useMemo(() => {
-    if (!question.Answers || question.Answers.length === 0) {
-      return [];
-    }
-
+    if (!question.Answers || question.Answers.length === 0) return [];
     return question.Answers.map((answer) => ({
       text: answer.Content,
       count: answer.Frequency,
     }));
-  }, [question.Answers]);
-
-  if (chartData.length === 0) {
-    return (
-      <div className="h-32 flex items-center justify-center text-slate-400">
-        Không có phản hồi
-      </div>
-    );
-  }
+  }, [question]);
 
   return (
-    <ResponsiveContainer width="100%" height={chartData.length * CHART_ROW_HEIGHT + CHART_BASE_HEIGHT}>
-      <BarChart
-        data={chartData}
-        layout="vertical"
-        margin={{ top: 10, right: 20, left: 300, bottom: 10 }}
-      >
-        <XAxis type="number" />
-        <YAxis
-          dataKey="text"
-          type="category"
-          width={290}
-          tick={{ fontSize: 12 }}
-          interval={0}
-        />
-        <Tooltip
-          formatter={(value) => [value, "Số lượng"]}
-          contentStyle={{
-            backgroundColor: "#ffffff",
-            border: "1px solid #d1d5db",
-            borderRadius: "0.375rem",
-          }}
-        />
-        <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]}>
-          {chartData.map((_, index) => (
-            <Cell
-              key={`cell-${index}`}
-              fill={index % 2 === 0 ? "#3b82f6" : "#6366f1"}
-            />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="space-y-2">
+      <p className="text-base font-medium text-gray-800 mb-4">{question.Content}</p>
+
+      <div className="w-full">
+        {chartData.length === 0 ? (
+          <div className="flex h-16 items-center justify-center text-xs text-slate-400">
+            Không có phản hồi
+          </div>
+        ) : (
+          <ChartContainer
+            config={OPEN_QUESTION_CHART_CONFIG}
+            className="w-full"
+            style={{ height: chartData.length * CHART_ROW_HEIGHT + CHART_BASE_HEIGHT }}
+          >
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 16, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid horizontal={true} vertical={false} stroke="#f3f4f6" strokeDasharray="0" />
+              <XAxis
+                type="number"
+                tick={{ fontSize: 11 }}
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                dataKey="text"
+                type="category"
+                width={130}
+                tick={{ fontSize: 11 }}
+                interval={0}
+                axisLine={false}
+                tickLine={false}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} maxBarSize={28} />
+            </BarChart>
+          </ChartContainer>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -313,38 +312,46 @@ export const SurveyResultsContent: React.FC<SurveyResultsContentProps> = ({
   }
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-4 p-4">
       {aggregated.Topics.map((topic) => (
-        <div key={topic.TopicId}>
-          <h3 className="text-lg font-semibold text-slate-800 mb-3">
-            {topic.Title}
-          </h3>
+        <div key={topic.TopicId} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-200 bg-blue-700 px-4 py-2.5">
+            <span className="text-sm font-bold text-white/80">{topic.Sort}.</span>
+            <span className="text-sm font-semibold text-white">{topic.Title}</span>
+          </div>
+          <div className="space-y-4 p-4">
+            {/* Rating Questions grouped by Category */}
+            {topic.Categories && topic.Categories.length > 0 && (
+              <div className="space-y-4">
+                {topic.Categories.map((category) => (
+                  <div key={category.CategoryId} className="space-y-2">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className="h-3.5 w-0.5 shrink-0 rounded-full bg-blue-500" />
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                        {category.Name}
+                      </p>
+                    </div>
+                    <RatingTable questions={category.Questions} />
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {/* Rating Questions grouped by Category */}
-          {topic.Categories && topic.Categories.length > 0 && (
-            <div className="space-y-4">
-              {topic.Categories.map((category) => (
-                <div key={category.CategoryId} className="space-y-2">
-                  <h4 className="text-sm font-medium text-slate-600">
-                    {category.Name}
-                  </h4>
-                  <RatingTable questions={category.Questions} />
+            {/* Open-Ended Questions */}
+            {topic.TextQuestions && topic.TextQuestions.length > 0 && (
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-blue-600 rounded shrink-0" />
+                  <p className="text-sm font-bold text-blue-600 uppercase tracking-wider">
+                    Câu hỏi mở
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Open-Ended Questions */}
-          {topic.TextQuestions && topic.TextQuestions.length > 0 && (
-            <div className="space-y-3">
-              {topic.TextQuestions.map((question) => (
-                <div key={question.TextQuestionId} className="space-y-2">
-                  <p className="text-sm text-slate-700">{question.Content}</p>
-                  <OpenQuestionChart question={question} />
-                </div>
-              ))}
-            </div>
-          )}
+                {topic.TextQuestions.map((question) => (
+                  <OpenQuestionChart key={question.TextQuestionId} question={question} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       ))}
     </div>

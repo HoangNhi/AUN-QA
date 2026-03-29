@@ -115,7 +115,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     Status = report?.Status ?? 1,
                     LastSavedAt = report?.LastSavedAt,
                     UpdatedAt = report?.UpdatedAt,
-                    UpdatedBy = report?.UpdatedBy
+                    UpdatedBy = report?.UpdatedBy,
+                    EvaluationPurpose = cycle.EvaluationPurpose
                 };
             }).ToList();
 

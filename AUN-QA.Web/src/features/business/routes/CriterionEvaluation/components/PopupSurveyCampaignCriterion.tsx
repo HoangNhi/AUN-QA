@@ -87,15 +87,14 @@ export function PopupSurveyCampaignCriterion({
             <Tabs
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as "general" | "results")}
-              className="h-full flex flex-col"
             >
-              <TabsList className="grid w-full grid-cols-2 shrink-0">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="general">Thông tin chung</TabsTrigger>
                 <TabsTrigger value="results">Kết quả khảo sát</TabsTrigger>
               </TabsList>
 
               {/* Tab 1: General Info */}
-              <TabsContent value="general" className="mt-4 flex-1 overflow-y-auto">
+              <TabsContent value="general" className="mt-4">
                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                   {/* Section 1: Thông tin khảo sát */}
                   <div>
@@ -168,7 +167,7 @@ export function PopupSurveyCampaignCriterion({
                           <span className="font-medium text-slate-800 text-sm">
                             {sessions.length}
                           </span>
-                          <div className="flex-1 max-w-[120px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="flex-1 max-w-30 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div className="h-full bg-blue-500 rounded-full" style={{ width: "100%" }} />
                           </div>
                         </div>
@@ -183,7 +182,7 @@ export function PopupSurveyCampaignCriterion({
                           <span className="font-medium text-slate-800 text-sm">
                             {completedSessionCount}
                           </span>
-                          <div className="flex-1 max-w-[120px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="flex-1 max-w-30 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-emerald-500 rounded-full"
                               style={{ width: `${completionPercentage}%` }}
@@ -200,7 +199,7 @@ export function PopupSurveyCampaignCriterion({
               </TabsContent>
 
               {/* Tab 2: Results */}
-              <TabsContent value="results" className="mt-4 flex-1 overflow-y-auto">
+              <TabsContent value="results" className="mt-4">
                 <SurveyResultsContent
                   campaignId={campaign.Id}
                   enabled={activeTab === "results" && open}

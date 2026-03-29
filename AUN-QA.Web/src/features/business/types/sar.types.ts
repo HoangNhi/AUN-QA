@@ -13,6 +13,7 @@ export interface SarGetListItem {
   LastSavedAt?: string | null;
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
+  EvaluationPurpose?: string;
 }
 
 export interface SarDraft {

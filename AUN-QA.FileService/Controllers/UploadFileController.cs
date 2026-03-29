@@ -24,5 +24,14 @@ namespace AUN_QA.FileService.Controllers
             await _service.Insert(files, FolderName);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpPost("embed")]
+        [RequestSizeLimit(52428800)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+        public async Task<IActionResult> Embed(List<IFormFile> files, [FromForm] string FolderName)
+        {
+            var result = await _service.InsertAndReturn(files, FolderName);
+            return Ok(new BaseResponse<List<ModelAttachment>>(true, 200, result));
+        }
     }
 }

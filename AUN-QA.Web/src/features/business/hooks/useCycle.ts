@@ -9,13 +9,58 @@ import { cycleService } from "@/features/business/api/cycle.api";
 import type {
   Cycle,
   CycleGetListPagingRequest,
+  Council,
+  EvaluationSchedule,
 } from "@/features/business/types/cycle.types";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import type { RowSelectionState } from "@tanstack/react-table";
 
+const GUID_EMPTY = "00000000-0000-0000-0000-000000000000";
+
+const mapPrefillCouncil = (c: Council): Council => {
+  return {
+    ...c,
+    Id: uuidv4(),
+    CycleId: "",
+  };
+};
+
+const mapPrefillSchedule = (s: EvaluationSchedule): EvaluationSchedule => {
+  return {
+    ...s,
+    Id: uuidv4(),
+    CycleId: "",
+  };
+};
+
+type PrefillData = Pick<Cycle, "ListCouncil" | "ListEvaluationSchedule">;
+
+const createEmptyCycle = (
+  id: string,
+  isEdit: boolean,
+  prefill: PrefillData = { ListCouncil: [], ListEvaluationSchedule: [] }
+): Cycle => {
+  return {
+    Id: id,
+    Name: "",
+    Year: new Date().getFullYear(),
+    StartDate: new Date().toISOString(),
+    EndDate: new Date().toISOString(),
+    Status: "1",
+    EvaluationPurpose: "",
+    Scope: 1,
+    StandardSetId: "",
+    IsEdit: isEdit,
+    IsActived: true,
+    ListCouncil: prefill.ListCouncil,
+    ListEvaluationSchedule: prefill.ListEvaluationSchedule,
+  };
+};
+
 export const useCycle = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPrefilling, setIsPrefilling] = useState(false);
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [pageRequest, setPageRequest] = useState<CycleGetListPagingRequest>({
     PageIndex: 1,
@@ -114,34 +159,63 @@ export const useCycle = () => {
     refetch();
   }, [refetch]);
 
-  const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
-    if (isEdit) {
-      const response = await cycleService.getById(id);
+  const fetchPrefillData = useCallback(async () => {
+    try {
+      const response = await cycleService.getById(GUID_EMPTY);
+
       if (response?.Success && response?.Data) {
-        setCycle({ ...response.Data, IsEdit: isEdit });
-        setIsOpen(true);
-      } else {
-        toast.error(response?.Message);
+        return {
+          ListCouncil: (response.Data.ListCouncil || []).map(mapPrefillCouncil),
+          ListEvaluationSchedule: (response.Data.ListEvaluationSchedule || []).map(
+            mapPrefillSchedule
+          ),
+        };
       }
-    } else {
-      setCycle({
-        Id: id,
-        Name: "",
-        Year: new Date().getFullYear(),
-        StartDate: new Date().toISOString(),
-        EndDate: new Date().toISOString(),
-        Status: "1",
-        EvaluationPurpose: "",
-        Scope: 1,
-        StandardSetId: "",
-        IsEdit: isEdit,
-        IsActived: true,
-        ListCouncil: [],
-        ListEvaluationSchedule: [],
-      });
-      setIsOpen(true);
+    } catch {
+      // Silent fallback to empty arrays.
     }
+
+    return {
+      ListCouncil: [],
+      ListEvaluationSchedule: [],
+    };
   }, []);
+
+  const showPopupDetail = useCallback(async (id: string, isEdit: boolean) => {
+    try {
+      if (isEdit) {
+        const response = await cycleService.getById(id);
+        if (response?.Success && response?.Data) {
+          setCycle({ ...response.Data, IsEdit: isEdit });
+          setIsOpen(true);
+        } else {
+          toast.error(response?.Message);
+        }
+      } else {
+        setCycle(createEmptyCycle(id, isEdit));
+        setIsOpen(true);
+        setIsPrefilling(true);
+        try {
+          const prefill = await fetchPrefillData();
+          setCycle((current) =>
+            current
+              ? {
+                  ...current,
+                  ListCouncil: prefill.ListCouncil,
+                  ListEvaluationSchedule: prefill.ListEvaluationSchedule,
+                }
+              : current
+          );
+        } finally {
+          setIsPrefilling(false);
+        }
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Lỗi khi tải dữ liệu chu kỳ"
+      );
+    }
+  }, [fetchPrefillData]);
 
   const onOpenChange = useCallback((open: boolean) => {
     setIsOpen(open);
@@ -149,37 +223,41 @@ export const useCycle = () => {
   }, []);
 
   const saveChange = async (saveCycle: Cycle, isAddMore: boolean) => {
-    const result = await saveMutation.mutateAsync(saveCycle);
-    if (result.Success) {
-      if (isAddMore) {
-        setCycle({
-          Id: uuidv4(),
-          Name: "",
-          Year: new Date().getFullYear(),
-          StartDate: new Date().toISOString(),
-          EndDate: new Date().toISOString(),
-          Status: "1",
-          EvaluationPurpose: "",
-          Scope: 1,
-          StandardSetId: "",
-          IsEdit: false,
-          IsActived: true,
-          ListCouncil: [],
-          ListEvaluationSchedule: [],
-        });
-      } else {
-        setIsOpen(false);
-        setCycle(null);
+    try {
+      const result = await saveMutation.mutateAsync(saveCycle);
+      if (result.Success) {
+        if (isAddMore) {
+          setIsPrefilling(true);
+          try {
+            const prefill = await fetchPrefillData();
+            setCycle(createEmptyCycle(uuidv4(), false, prefill));
+          } finally {
+            setIsPrefilling(false);
+          }
+        } else {
+          setIsOpen(false);
+          setCycle(null);
+        }
       }
+    } catch {
+      // onError toast is already handled by react-query mutation config
     }
   };
 
   const deleteList = async (ids: string[]) => {
-    await deleteMutation.mutateAsync(ids);
+    try {
+      await deleteMutation.mutateAsync(ids);
+    } catch {
+      // onError toast is already handled by react-query mutation config
+    }
   };
 
   const changeStatus = async (id: string) => {
-    await changeStatusMutation.mutateAsync(id);
+    try {
+      await changeStatusMutation.mutateAsync(id);
+    } catch {
+      // onError toast is already handled by react-query mutation config
+    }
   };
 
   return {
@@ -196,7 +274,11 @@ export const useCycle = () => {
     saveChange,
     deleteList,
     changeStatus,
-    isLoading: saveMutation.isPending || deleteMutation.isPending || changeStatusMutation.isPending,
+    isLoading:
+      saveMutation.isPending ||
+      deleteMutation.isPending ||
+      changeStatusMutation.isPending ||
+      isPrefilling,
     isFetching,
   };
 };

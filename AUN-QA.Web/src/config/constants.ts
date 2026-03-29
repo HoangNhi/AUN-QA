@@ -184,6 +184,7 @@ export const API_ENDPOINTS = {
     UploadFile: {
       POST: `${FILE_BASE}/api/UploadFile`,
       GET: `${FILE_BASE}/`,
+      EMBED: `${FILE_BASE}/api/UploadFile/embed`,
     },
   },
 };

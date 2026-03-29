@@ -55,6 +55,17 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             }
         }
 
+        public async Task<List<ModelAttachment>> InsertAndReturn(List<IFormFile> files, string folderName)
+        {
+            // Step 1: Upload to temp folder (reuses existing validation + saving logic)
+            await Insert(files, folderName);
+
+            // Step 2: Move from temp to permanent and return file metadata
+            var embedId = Guid.NewGuid();
+            var servicePath = "sar-embeds";
+            return UploadData(embedId, servicePath, "sar-embeds", folderName);
+        }
+
         public List<ModelAttachment> UploadData(object lienKetId, string servicePath, string folderName, string tempFolder)
         {
             if (string.IsNullOrWhiteSpace(tempFolder) || tempFolder.Contains("..") || tempFolder.Contains("/") || tempFolder.Contains("\\"))

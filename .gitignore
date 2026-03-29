@@ -397,3 +397,5 @@ CLAUDE.md
 /AUN-QA.Web/.env.production
 /AGENTS.md
 /Deploy
+.codex
+.superpowers

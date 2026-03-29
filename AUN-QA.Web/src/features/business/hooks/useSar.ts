@@ -3,7 +3,6 @@ import {
   keepPreviousData,
   useMutation,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
@@ -31,8 +30,6 @@ export const useSar = () => {
     PageSize: 10,
     TextSearch: "",
   });
-
-  const queryClient = useQueryClient();
 
   const {
     data: listResponse,
@@ -85,8 +82,6 @@ export const useSar = () => {
         toast.error(response.Message || "Không thể lưu bản nháp SAR");
         return;
       }
-
-      queryClient.invalidateQueries({ queryKey: ["sar", "list"] });
     },
     onError: (error) => {
       toast.error(
@@ -104,8 +99,9 @@ export const useSar = () => {
     setIsOpen(open);
     if (!open) {
       setSelectedSar(null);
+      void refetch();
     }
-  }, []);
+  }, [refetch]);
 
   const getList = useCallback(() => {
     void refetch();

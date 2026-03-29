@@ -1,6 +1,6 @@
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,87 +27,108 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   fileTypeMap?: Record<string, string>,
 ): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-  },
-  {
-    accessorKey: "evidenceCode",
-    header: "Mã MC",
-  },
-  {
-    accessorKey: "evidenceName",
-    header: "Tên minh chứng",
-  },
-  {
-    accessorKey: "cycleName",
-    header: "Kế hoạch",
-  },
-  {
-    accessorKey: "fileTypeId",
-    header: "Loại tài liệu",
-    cell: ({ row }) => {
-      const name = fileTypeMap?.[row.original.fileTypeId ?? ""];
-      return <span>{name ?? "-"}</span>;
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      meta: {
+        className: "w-[50px] text-center",
+        headerClassName: "w-[50px] text-center",
+      },
     },
-  },
-  {
-    accessorKey: "evidenceStatus",
-    header: "Trạng thái minh chứng",
-    cell: ({ row }) => {
-      const status = row.getValue("evidenceStatus") as number;
-      const statusOption = EVIDENCE_STATUS_OPTIONS.find(
-        (opt) => opt.Value === status?.toString(),
-      );
-      const statusText = statusOption?.Text || "N/A";
-
-      const statusColors: Record<number, string> = {
-        1: "bg-gray-100 text-gray-700",
-        2: "bg-yellow-100 text-yellow-700",
-        3: "bg-green-100 text-green-700",
-      };
-
-      const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
-
-      return (
-        <span
-          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
-        >
-          {statusText}
-        </span>
-      );
+    {
+      accessorKey: "evidenceCode",
+      header: "Mã MC",
+      meta: {
+        headerClassName: "text-center",
+      },
     },
-  },
-  {
-    id: "actions",
-    meta: {
-      className: "text-center",
+    {
+      accessorKey: "evidenceName",
+      header: "Tên minh chứng",
+      meta: {
+        headerClassName: "text-center",
+      },
     },
-    cell: ({ row }) => (
-      <ActionCell
-        row={row}
-        showPopupDetail={showPopupDetail}
-        deleteList={deleteList}
-      />
-    ),
-  },
-];
+    {
+      accessorKey: "cycleName",
+      header: "Chu kỳ",
+      meta: {
+        headerClassName: "text-center",
+      },
+    },
+    {
+      accessorKey: "fileTypeId",
+      meta: {
+        headerClassName: "text-center",
+      },
+      header: "Loại tài liệu",
+      cell: ({ row }) => {
+        const name = fileTypeMap?.[row.original.fileTypeId ?? ""];
+        return <span>{name ?? "-"}</span>;
+      },
+    },
+    {
+      accessorKey: "evidenceStatus",
+      header: "Trạng thái minh chứng",
+      meta: {
+        className: "text-center",
+        headerClassName: "text-center",
+      },
+      cell: ({ row }) => {
+        const status = row.getValue("evidenceStatus") as number;
+        const statusOption = EVIDENCE_STATUS_OPTIONS.find(
+          (opt) => opt.Value === status?.toString(),
+        );
+        const statusText = statusOption?.Text || "N/A";
+
+        const statusColors: Record<number, string> = {
+          1: "bg-gray-100 text-gray-700",
+          2: "bg-yellow-100 text-yellow-700",
+          3: "bg-green-100 text-green-700",
+        };
+
+        const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
+
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}
+          >
+            {statusText}
+          </span>
+        );
+      },
+    },
+    {
+      id: "actions",
+      meta: {
+        className: "w-[80px] text-center",
+        headerClassName: "w-[80px] text-center",
+      },
+      cell: ({ row }) => (
+        <ActionCell
+          row={row}
+          showPopupDetail={showPopupDetail}
+          deleteList={deleteList}
+        />
+      ),
+    },
+  ];
 
 const ActionCell = ({
   row,
@@ -170,3 +191,4 @@ const ActionCell = ({
     </>
   );
 };
+

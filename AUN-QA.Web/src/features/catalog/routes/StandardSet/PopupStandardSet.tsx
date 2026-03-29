@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
@@ -9,20 +9,33 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   ACTIVE_STATUS_OPTIONS,
   EVALUATION_MODE_OPTIONS,
 } from "@/constants/catalog.constants";
 import type { StandardSet } from "@/features/catalog/types/standardset.types";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  id: z.string(),
+  code: z.string().min(1, "Mã bộ tiêu chuẩn là bắt buộc"),
+  name: z.string().min(1, "Tên bộ tiêu chuẩn là bắt buộc"),
+  evaluationMode: z.number(),
+  isActived: z.boolean(),
+});
 
 const PopupStandardSet = ({
   standardSet,
@@ -40,75 +53,45 @@ const PopupStandardSet = ({
   ) => void;
   isLoading?: boolean;
 }) => {
-  const [formData, setFormData] = useState({
-    id: standardSet?.Id || uuidv4(),
-    code: standardSet?.Code || "",
-    name: standardSet?.Name || "",
-    evaluationMode: standardSet?.EvaluationMode ?? 1,
-    isActived: standardSet?.IsActived ?? true,
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: standardSet?.Id || uuidv4(),
+      code: standardSet?.Code || "",
+      name: standardSet?.Name || "",
+      evaluationMode: standardSet?.EvaluationMode ?? 1,
+      isActived: standardSet?.IsActived ?? true,
+    },
   });
-
-  const [errors, setErrors] = useState<{
-    code?: string;
-    name?: string;
-  }>({});
-
-  const updateField = <K extends keyof typeof formData>(
-    field: K,
-    value: (typeof formData)[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for this field when user types
-    if (errors[field as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: typeof errors = {};
-
-    // Code validation
-    const trimmedCode = formData.code.trim();
-    if (!trimmedCode) {
-      newErrors.code = "Mã bộ tiêu chuẩn là bắt buộc";
-    }
-
-    // Name validation
-    const trimmedName = formData.name.trim();
-    if (!trimmedName) {
-      newErrors.name = "Tên bộ tiêu chuẩn là bắt buộc";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   // Sync form when standardSet prop changes
   useEffect(() => {
     if (standardSet) {
-      setFormData({
+      form.reset({
         id: standardSet.Id || uuidv4(),
         code: standardSet.Code || "",
         name: standardSet.Name || "",
         evaluationMode: standardSet.EvaluationMode ?? 1,
         isActived: standardSet.IsActived ?? true,
       });
-      // Clear errors when form is populated with new data
-      setErrors({});
+    } else {
+      form.reset({
+        id: uuidv4(),
+        code: "",
+        name: "",
+        evaluationMode: 1,
+        isActived: true,
+      });
     }
-  }, [standardSet]);
+  }, [standardSet, form]);
 
-  const onSubmit = (isAddMore: boolean) => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
     const payload = {
-      Id: formData.id,
-      Code: formData.code.trim(),
-      Name: formData.name.trim(),
-      EvaluationMode: formData.evaluationMode,
-      IsActived: formData.isActived,
+      Id: values.id,
+      Code: values.code.trim(),
+      Name: values.name.trim(),
+      EvaluationMode: values.evaluationMode,
+      IsActived: values.isActived,
       IsEdit: standardSet?.IsEdit || false,
       FolderUpload: "",
       CreatedBy: "",
@@ -125,137 +108,122 @@ const PopupStandardSet = ({
         className="sm:max-w-xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSubmit(false);
-          }}
-          noValidate
-          aria-label={
-            standardSet?.IsEdit
-              ? "Cập nhật Bộ Tiêu Chuẩn"
-              : "Thêm mới Bộ Tiêu Chuẩn"
-          }
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {standardSet?.IsEdit
-                ? "Cập nhật Bộ Tiêu Chuẩn"
-                : "Thêm mới Bộ Tiêu Chuẩn"}
-            </DialogTitle>
-          </DialogHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((data) => onSubmit(data, false))}
+            className="grid gap-4 py-4"
+          >
+            <DialogHeader>
+              <DialogTitle>
+                {standardSet?.IsEdit
+                  ? "Cập nhật Bộ Tiêu Chuẩn"
+                  : "Thêm mới Bộ Tiêu Chuẩn"}
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            {/* Code Field */}
-            <Field>
-              <FieldLabel htmlFor="code">
-                Mã bộ tiêu chuẩn <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) => updateField("code", e.target.value)}
-                  placeholder="Nhập mã bộ tiêu chuẩn"
-                  aria-required="true"
-                  aria-invalid={errors.code ? "true" : "false"}
-                  aria-describedby={
-                    errors.code
-                      ? "code-error code-description"
-                      : "code-description"
-                  }
-                />
-                {errors.code && (
-                  <FieldError id="code-error">{errors.code}</FieldError>
+            <div className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Mã bộ tiêu chuẩn <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nhập mã bộ tiêu chuẩn" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </FieldContent>
-            </Field>
+              />
 
-            {/* Name Field */}
-            <Field>
-              <FieldLabel htmlFor="name">
-                Tên bộ tiêu chuẩn <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="Nhập tên bộ tiêu chuẩn"
-                  aria-required="true"
-                  aria-invalid={errors.name ? "true" : "false"}
-                  aria-describedby={
-                    errors.name
-                      ? "name-error name-description"
-                      : "name-description"
-                  }
-                />
-                {errors.name && (
-                  <FieldError id="name-error">{errors.name}</FieldError>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Tên bộ tiêu chuẩn <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Nhập tên bộ tiêu chuẩn" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </FieldContent>
-            </Field>
+              />
 
-            {/* Evaluation Mode Field */}
-            <Field>
-              <FieldLabel htmlFor="evaluationMode">
-                Chế độ đánh giá <span className="text-red-500">*</span>
-              </FieldLabel>
-              <FieldContent>
-                <Combobox
-                  options={EVALUATION_MODE_OPTIONS}
-                  value={formData.evaluationMode.toString()}
-                  onValueChange={(val) =>
-                    updateField("evaluationMode", Number(val))
-                  }
-                  placeholder="Chọn chế độ đánh giá"
-                  searchPlaceholder="Tìm kiếm chế độ đánh giá..."
-                  emptyText="Không tìm thấy chế độ đánh giá."
-                />
-              </FieldContent>
-            </Field>
+              <FormField
+                control={form.control}
+                name="evaluationMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Chế độ đánh giá <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={EVALUATION_MODE_OPTIONS}
+                        value={field.value.toString()}
+                        onValueChange={(val) => field.onChange(Number(val))}
+                        placeholder="Chọn chế độ đánh giá"
+                        searchPlaceholder="Tìm kiếm chế độ đánh giá..."
+                        emptyText="Không tìm thấy chế độ đánh giá."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Status Field */}
-            <Field>
-              <FieldLabel htmlFor="status">Trạng thái</FieldLabel>
-              <FieldContent>
-                <Combobox
-                  options={ACTIVE_STATUS_OPTIONS}
-                  value={formData.isActived.toString()}
-                  onValueChange={(val) =>
-                    updateField("isActived", val === "true")
-                  }
-                  placeholder="Chọn trạng thái"
-                  searchPlaceholder="Tìm kiếm trạng thái..."
-                  emptyText="Không tìm thấy trạng thái."
-                />
-              </FieldContent>
-            </Field>
-          </div>
+              <FormField
+                control={form.control}
+                name="isActived"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Trạng thái</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={ACTIVE_STATUS_OPTIONS}
+                        value={field.value.toString()}
+                        onValueChange={(val) => field.onChange(val === "true")}
+                        placeholder="Chọn trạng thái"
+                        searchPlaceholder="Tìm kiếm trạng thái..."
+                        emptyText="Không tìm thấy trạng thái."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Hủy</Button>
-            </DialogClose>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu
-            </Button>
-            {!standardSet?.IsEdit && (
-              <Button
-                type="button"
-                onClick={() => onSubmit(true)}
-                disabled={isLoading}
-              >
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button">Hủy</Button>
+              </DialogClose>
+              <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Lưu và thêm tiếp
+                Lưu
               </Button>
-            )}
-          </DialogFooter>
-        </form>
+              {!standardSet?.IsEdit && (
+                <Button
+                  type="button"
+                  onClick={form.handleSubmit((data) => onSubmit(data, true))}
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Lưu và thêm tiếp
+                </Button>
+              )}
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
 };
 
 export default PopupStandardSet;
+

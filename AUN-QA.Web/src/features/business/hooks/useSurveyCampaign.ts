@@ -18,12 +18,13 @@ export const useSurveyCampaign = () => {
     Id: "",
     CycleId: "",
     TemplateId: "",
-    StakeholderType: undefined,
+    StakeholderType: 0,
     Name: "",
     Status: 1,
     ListScore: [],
     ListTextAnswer: [],
     ListTopic: [],
+    ListSession: [],
     IsActived: true,
     IsEdit: false,
     FolderUpload: "",
@@ -69,8 +70,8 @@ export const useSurveyCampaign = () => {
     mutationFn: async (data: SurveyCampaign) => {
       const cleanedRequest = {
         ...data,
-        CycleId: data.CycleId || undefined,
-        TemplateId: data.TemplateId || undefined,
+        CycleId: data.CycleId || "",
+        TemplateId: data.TemplateId || "",
       };
 
       const response = await (data.IsEdit

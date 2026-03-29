@@ -12,15 +12,9 @@ public partial class CatalogContext : DbContext
     {
     }
 
-    public virtual DbSet<Council> Councils { get; set; }
-
     public virtual DbSet<Criterion> Criteria { get; set; }
 
     public virtual DbSet<CriterionRequirement> CriterionRequirements { get; set; }
-
-    public virtual DbSet<Cycle> Cycles { get; set; }
-
-    public virtual DbSet<EvaluationSchedule> EvaluationSchedules { get; set; }
 
     public virtual DbSet<Faculty> Faculties { get; set; }
 
@@ -37,33 +31,6 @@ public partial class CatalogContext : DbContext
         modelBuilder
             .UseCollation("utf8mb4_0900_ai_ci")
             .HasCharSet("utf8mb4");
-
-        modelBuilder.Entity<Council>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
-
-            entity.ToTable("Council");
-
-            entity.Property(e => e.Id)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp");
-            entity.Property(e => e.CreatedBy).HasMaxLength(255);
-            entity.Property(e => e.CycleId)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.DelegatedAt).HasColumnType("datetime");
-            entity.Property(e => e.DelegatedBy).HasMaxLength(255);
-            entity.Property(e => e.DelegatedUntil).HasColumnType("datetime");
-            entity.Property(e => e.DelegationReason).HasColumnType("text");
-            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
-            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
-            entity.Property(e => e.UserId)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-        });
 
         modelBuilder.Entity<Criterion>(entity =>
         {
@@ -100,53 +67,6 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });
 
-        modelBuilder.Entity<Cycle>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
-
-            entity.ToTable("Cycle");
-
-            entity.Property(e => e.Id)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp");
-            entity.Property(e => e.CreatedBy).HasMaxLength(255);
-            entity.Property(e => e.EndDate).HasColumnType("timestamp");
-            entity.Property(e => e.EvaluationPurpose).HasColumnType("text");
-            entity.Property(e => e.Name).HasColumnType("text");
-            entity.Property(e => e.StartDate).HasColumnType("timestamp");
-            entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp");
-            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
-        });
-
-        modelBuilder.Entity<EvaluationSchedule>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PRIMARY");
-
-            entity.ToTable("EvaluationSchedule");
-
-            entity.Property(e => e.Id)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.ActivityName).HasColumnType("text");
-            entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
-            entity.Property(e => e.CreatedBy).HasMaxLength(255);
-            entity.Property(e => e.CycleId)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.EndTime).HasColumnType("timestamp");
-            entity.Property(e => e.LeadId)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
-            entity.Property(e => e.StartTime).HasColumnType("timestamp");
-            entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
-            entity.Property(e => e.UpdatedBy).HasMaxLength(255);
-        });
-
         modelBuilder.Entity<Faculty>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
@@ -157,7 +77,7 @@ public partial class CatalogContext : DbContext
                 .UseCollation("ascii_general_ci")
                 .HasCharSet("ascii");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("utc_timestamp()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.IsActived)
@@ -165,7 +85,7 @@ public partial class CatalogContext : DbContext
                 .HasDefaultValueSql("'1'");
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasDefaultValueSql("utc_timestamp()")
                 .HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
         });

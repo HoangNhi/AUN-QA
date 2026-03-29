@@ -1,9 +1,12 @@
 using AUN_QA.SystemService.Protos;
 using AUN_QA.SystemService.Services.CoreFeature.User;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AUN_QA.SystemService.Services.SystemGrpc
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class SystemGrpcService : SystemProto.SystemProtoBase
     {
         private readonly IUserService _userService;
@@ -15,7 +18,6 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
 
         public override async Task<CheckActionResponse> CheckPermission(CheckPermissionRequest request, ServerCallContext context)
         {
-
             var permission = await _userService.CheckPermission(new DTOs.CoreFeature.User.Requests.CheckPermissionRequest
             {
                 UserId = Guid.Parse(request.UserId),
@@ -27,6 +29,21 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
             {
                 Success = permission.HasPermission
             };
+        }
+
+        public override async Task<GetUsersByIdsResponse> GetUsersByIds(GetUsersByIdsRequest request, ServerCallContext context)
+        {
+            var ids = request.UserIds.Select(Guid.Parse).ToList();
+            var users = await _userService.GetByIds(ids);
+
+            var response = new GetUsersByIdsResponse();
+            response.Users.AddRange(users.Select(u => new UserInfo
+            {
+                Id = u.Id.ToString(),
+                Fullname = u.Fullname,
+                Avatar = u.Avatar ?? string.Empty
+            }));
+            return response;
         }
     }
 }

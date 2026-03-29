@@ -18,7 +18,6 @@ import {
   Zap,
   Filter,
   Layers,
-  User,
 } from "lucide-react";
 import {
   useStandardsWithCriteria,
@@ -45,6 +44,8 @@ import type { ModelCombobox } from "@/types/base/base.types";
 interface StandardCriteriaTableProps {
   /** Existing: fetch by cycleId (used when standards is not provided) */
   cycleId?: string;
+  /** Standard set id for criteria query */
+  standardSetId?: string;
   fileTypeId?: string;
   selectedFileTypeId?: string;
   label?: string;
@@ -234,6 +235,7 @@ const AnimationStyles = () => (
 
 const StandardCriteriaTable = ({
   cycleId,
+  standardSetId,
   fileTypeId,
   selectedFileTypeId,
   emptyMessage = "Vui lòng chọn chu kỳ.",
@@ -248,7 +250,7 @@ const StandardCriteriaTable = ({
 
   // --- Hook-based mode (existing behavior) ---
   const hookResult = useStandardsWithCriteria(
-    isExternalMode ? "" : cycleId || "",
+    isExternalMode ? "" : standardSetId || "",
     isExternalMode ? undefined : fileTypeId,
   );
 
@@ -489,7 +491,7 @@ const StandardCriteriaTable = ({
       );
     }
 
-    if (!cycleId) {
+    if (!standardSetId) {
       return (
         <div className="border border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center gap-2">
           <Layers size={28} className="text-slate-300" />
@@ -790,20 +792,20 @@ const StandardRow = ({
   ).length;
   const projectedSatisfiedInStd = selectedFileTypeId
     ? criteria.filter((c) => {
-        const cReqs = c.CriterionRequirements || [];
-        const totalReq = cReqs.reduce(
-          (sum, r) => sum + (r.MinQuantity || 0),
-          0,
-        );
-        if (totalReq === 0) return false;
-        const projected = cReqs.reduce((sum, r) => {
-          const actual = countMap.get(r.FileTypeId) ?? 0;
-          const simulated =
-            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
-          return sum + Math.min(simulated, r.MinQuantity || 0);
-        }, 0);
-        return projected >= totalReq;
-      }).length
+      const cReqs = c.CriterionRequirements || [];
+      const totalReq = cReqs.reduce(
+        (sum, r) => sum + (r.MinQuantity || 0),
+        0,
+      );
+      if (totalReq === 0) return false;
+      const projected = cReqs.reduce((sum, r) => {
+        const actual = countMap.get(r.FileTypeId) ?? 0;
+        const simulated =
+          r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+        return sum + Math.min(simulated, r.MinQuantity || 0);
+      }, 0);
+      return projected >= totalReq;
+    }).length
     : satisfiedInStd;
   const matchInStd = criteria.filter((c) =>
     matchingCriterionIds.has(c.Id),
@@ -913,11 +915,11 @@ const CriterionRow = ({
   const projectedCount =
     selectedFileTypeId !== undefined
       ? reqs.reduce((sum, r) => {
-          const actual = countMap.get(r.FileTypeId) ?? 0;
-          const simulated =
-            r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
-          return sum + Math.min(simulated, r.MinQuantity || 0);
-        }, 0)
+        const actual = countMap.get(r.FileTypeId) ?? 0;
+        const simulated =
+          r.FileTypeId === selectedFileTypeId ? actual + 1 : actual;
+        return sum + Math.min(simulated, r.MinQuantity || 0);
+      }, 0)
       : currentCount;
 
   const wouldComplete =

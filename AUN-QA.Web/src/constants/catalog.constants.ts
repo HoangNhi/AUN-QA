@@ -23,8 +23,10 @@ export const EVALUATION_MODE_OPTIONS: ModelCombobox[] = [
 // Cycle status options for filtering and form
 export const CYCLE_STATUS_OPTIONS: ModelCombobox[] = [
   { Value: "1", Text: "Lập kế hoạch" },
-  { Value: "2", Text: "Đang diễn ra" },
-  { Value: "3", Text: "Đã kết thúc" },
+  { Value: "2", Text: "Thực hiện" },
+  { Value: "3", Text: "Kiểm tra" },
+  { Value: "4", Text: "Cải tiến" },
+  { Value: "5", Text: "Kết thúc" },
 ];
 
 // Cycle scope options for filtering and form

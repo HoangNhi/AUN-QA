@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -66,7 +66,7 @@ const PopupEditProfile = ({
         >
           <DialogHeader>
             <DialogTitle>
-              {user?.IsEdit ? "Cập nhật Tài khoản" : "Thêm mới Tài khoản"}
+              {user?.IsEdit ? "Cập nhật Tài khoán" : "Thêm mới Tài khoản"}
             </DialogTitle>
           </DialogHeader>
 
@@ -104,3 +104,4 @@ const PopupEditProfile = ({
 };
 
 export default PopupEditProfile;
+

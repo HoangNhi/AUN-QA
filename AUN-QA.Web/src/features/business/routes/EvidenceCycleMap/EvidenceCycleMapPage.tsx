@@ -1,22 +1,15 @@
-import { useMemo, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useEvidenceCycleMap } from "../../hooks/useEvidenceCycleMap";
 import { getColumns } from "./columns";
 import PopupEvidenceCycleMap from "./PopupEvidenceCycleMap";
-import { DataTable } from "@/components/ui/data-table";
-import { Button } from "@/components/ui/Button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { SearchIcon } from "lucide-react";
-import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
 import { Combobox } from "@/components/ui/combobox";
-import { cycleService } from "@/features/catalog/api/cycle.api";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
+import { useListPage } from "@/hooks/useListPage";
 
 const EvidenceCycleMapPage = () => {
   const {
@@ -39,48 +32,35 @@ const EvidenceCycleMapPage = () => {
     isApproving,
   } = useEvidenceCycleMap();
 
-  const { data: fileTypesData } = useQuery({
-    queryKey: ["fileTypesCombobox"],
-    queryFn: () => fileTypeService.getAllCombobox(),
-  });
+  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+  const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+
   const fileTypeMap = useMemo<Record<string, string>>(() => {
     return Object.fromEntries(
-      (fileTypesData?.Data ?? []).map((t) => [t.Value ?? "", t.Text ?? ""]),
+      fileTypeOptions.map((t) => [t.Value ?? "", t.Text ?? ""]),
     );
-  }, [fileTypesData]);
+  }, [fileTypeOptions]);
 
   const columns = useMemo(
     () => getColumns(showPopupDetail, deleteList, fileTypeMap),
     [showPopupDetail, deleteList, fileTypeMap],
   );
 
-  const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || "",
-  );
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-  useEffect(() => {
-    setPageRequest((prev) => {
-      if (prev.TextSearch === debouncedSearchTerm) return prev;
-      return {
-        ...prev,
-        TextSearch: debouncedSearchTerm,
-        PageIndex: 1,
-      };
-    });
-  }, [debouncedSearchTerm, setPageRequest]);
-
-  const handleDelete = () => {
-    const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
-      (item) => item.Id,
-    );
-    deleteList(ids);
-    setShowDeleteConfirm(false);
-    setRowSelection({});
-  };
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+    defaultPageRequest: {
+      CycleId: undefined,
+      FileTypeId: undefined,
+      EvidenceStatus: undefined,
+    },
+  });
 
   const handleSubmitToApprove = () => {
     const ids = data.Data.filter((_, idx) => rowSelection[idx]).map(
@@ -91,46 +71,35 @@ const EvidenceCycleMapPage = () => {
     setRowSelection({});
   };
 
+  const selectedCount = Object.keys(rowSelection).length;
+
   return (
-    <div className="container mx-auto space-y-4">
-      <div className="mb-4 rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest({
-                ...pageRequest,
-                PageIndex: 1,
-                TextSearch: "",
-                CycleId: undefined,
-                FileTypeId: undefined,
-                EvidenceStatus: undefined,
-              });
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      searchInputClassName="col-span-1 bg-background"
+      filterContent={
+        <>
           <Combobox
-            fetchOptions={async () => {
-              const res = await cycleService.getComboboxByUser();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={cycleOptions}
+            loading={isCycleLoading}
             value={pageRequest.CycleId}
             onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
+              setPageRequest((prev) => ({
+                ...prev,
                 CycleId: val ? val : undefined,
                 PageIndex: 1,
-              });
+              }));
             }}
             placeholder="Tất cả chu kỳ"
             searchPlaceholder="Tìm kiếm chu kỳ..."
@@ -138,20 +107,15 @@ const EvidenceCycleMapPage = () => {
           />
 
           <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={fileTypeOptions}
+            loading={isFileTypeLoading}
             value={pageRequest.FileTypeId}
             onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
+              setPageRequest((prev) => ({
+                ...prev,
                 FileTypeId: val ? val : undefined,
                 PageIndex: 1,
-              });
+              }));
             }}
             placeholder="Tất cả loại tài liệu"
             searchPlaceholder="Tìm kiếm loại tài liệu..."
@@ -162,67 +126,37 @@ const EvidenceCycleMapPage = () => {
             options={EVIDENCE_STATUS_OPTIONS}
             value={pageRequest.EvidenceStatus?.toString()}
             onValueChange={(val) => {
-              setPageRequest({
-                ...pageRequest,
+              setPageRequest((prev) => ({
+                ...prev,
                 EvidenceStatus: val ? Number(val) : undefined,
                 PageIndex: 1,
-              });
+              }));
             }}
             placeholder="Tất cả trạng thái minh chứng"
             searchPlaceholder="Tìm kiếm trạng thái minh chứng..."
             emptyText="Không tìm thấy trạng thái."
           />
-
-          <InputGroup className="col-span-1 bg-background">
-            <InputGroupInput
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10!"
-            />
-            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 items-center justify-between">
-        <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowSubmitConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Gửi duyệt
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={Object.keys(rowSelection).length === 0}
-          >
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        onRefresh={() => getList()}
-        isLoading={isFetching}
-      />
-
+        </>
+      }
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={selectedCount === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={selectedCount}
+      isDeleteLoading={isLoading}
+      extraActions={
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowSubmitConfirm(true)}
+          disabled={selectedCount === 0}
+        >
+          Gửi duyệt
+        </Button>
+      }
+    >
       {isOpen && (
         <PopupEvidenceCycleMap
           key={evidenceCycleMap?.Id || "new"}
@@ -237,24 +171,18 @@ const EvidenceCycleMapPage = () => {
       )}
 
       <ConfirmDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={handleDelete}
-        itemCount={Object.keys(rowSelection).length}
-      />
-
-      <ConfirmDeleteDialog
         open={showSubmitConfirm}
         onOpenChange={setShowSubmitConfirm}
         onConfirm={handleSubmitToApprove}
-        itemCount={Object.keys(rowSelection).length}
+        itemCount={selectedCount}
         title="Xác nhận gửi duyệt"
-        description={`Bạn có chắc chắn muốn gửi ${Object.keys(rowSelection).length} mục đã chọn để duyệt không?`}
+        description={`Bạn có chắc chắn muốn gửi ${selectedCount} mục đã chọn để duyệt không?`}
         confirmText="Gửi duyệt"
         confirmVariant="default"
       />
-    </div>
+    </ListPageLayout>
   );
 };
 
 export default EvidenceCycleMapPage;
+

@@ -12,6 +12,8 @@ public partial class SystemContext : DbContext
     {
     }
 
+    public virtual DbSet<AuditLog> AuditLogs { get; set; }
+
     public virtual DbSet<Menu> Menus { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
@@ -26,6 +28,63 @@ public partial class SystemContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("audit_log_pkey");
+
+            entity.ToTable("audit_log");
+
+            entity.HasIndex(e => e.Action, "ix_audit_log_action");
+
+            entity.HasIndex(e => e.CreatedAt, "ix_audit_log_created_at");
+
+            entity.HasIndex(e => e.EntityName, "ix_audit_log_entity_name");
+
+            entity.HasIndex(e => e.IsSuccess, "ix_audit_log_is_success");
+
+            entity.HasIndex(e => e.UserId, "ix_audit_log_user_id");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.Action)
+                .HasMaxLength(100)
+                .HasDefaultValueSql("''::character varying")
+                .HasColumnName("action");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EntityId)
+                .HasMaxLength(255)
+                .HasColumnName("entity_id");
+            entity.Property(e => e.EntityName)
+                .HasMaxLength(255)
+                .HasDefaultValueSql("''::character varying")
+                .HasColumnName("entity_name");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.IpAddress)
+                .HasMaxLength(50)
+                .HasColumnName("ip_address");
+            entity.Property(e => e.IsSuccess)
+                .HasDefaultValue(true)
+                .HasColumnName("is_success");
+            entity.Property(e => e.NewValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("new_values");
+            entity.Property(e => e.OldValues)
+                .HasColumnType("jsonb")
+                .HasColumnName("old_values");
+            entity.Property(e => e.ServiceName)
+                .HasMaxLength(100)
+                .HasColumnName("service_name");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.UserName)
+                .HasMaxLength(255)
+                .HasDefaultValueSql("''::character varying")
+                .HasColumnName("user_name");
+        });
+
         modelBuilder.Entity<Menu>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("menu_pk");
@@ -45,7 +104,7 @@ public partial class SystemContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("controller");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -152,7 +211,7 @@ public partial class SystemContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -183,7 +242,7 @@ public partial class SystemContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)
@@ -217,7 +276,7 @@ public partial class SystemContext : DbContext
                 .HasColumnName("id");
             entity.Property(e => e.Avatar).HasColumnName("avatar");
             entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
+                .HasDefaultValueSql("(now() AT TIME ZONE 'UTC')")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("created_at");
             entity.Property(e => e.CreatedBy)

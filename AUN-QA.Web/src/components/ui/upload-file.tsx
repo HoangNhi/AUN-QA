@@ -1,6 +1,7 @@
 import { fileService } from "@/features/file/api/uploadfile.api";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { getFileUrl } from "@/lib/utils";
+import FileViewerDialog from "@/components/ui/file-viewer-dialog";
 import {
   Paperclip,
   Trash,
@@ -10,6 +11,7 @@ import {
   Eye,
   Download,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import React, {
   useState,
@@ -30,6 +32,7 @@ export interface UploadFileProps {
   folderUpload?: string;
   onSuccess?: () => void;
   hasError?: boolean;
+  viewerMode?: "internal" | "external";
 }
 
 export interface UploadFileRef {
@@ -51,10 +54,12 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       folderUpload = "DefaultFolder",
       onSuccess,
       hasError = false,
+      viewerMode = "internal",
     },
-    ref
+    ref,
   ) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [viewerFile, setViewerFile] = useState<Attachment | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useImperativeHandle(ref, () => ({
@@ -75,18 +80,26 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       Array.from(files).forEach((file) => {
         const fileExt = "." + file.name.split(".").pop()?.toLowerCase();
         if (!fileValidate.includes(fileExt)) {
-          errors.push(`Tệp "${file.name}" không hợp lệ.`);
+          errors.push(
+            `Tệp "${file.name}" không hợp lệ (chỉ chấp nhận: ${fileValidateText}).`,
+          );
           return;
         }
         if (file.size > fileSizeLimit * 1024 * 1024) {
-          errors.push(`Tệp "${file.name}" quá lớn.`);
+          errors.push(
+            `Tệp "${file.name}" quá lớn (tối đa ${fileSizeLimit}MB).`,
+          );
           return;
         }
         validFiles.push(file);
       });
 
+      if (errors.length > 0) {
+        toast.error(errors.join(" "));
+      }
+
       setSelectedFiles((prev) =>
-        multiFile ? [...prev, ...validFiles] : validFiles
+        multiFile ? [...prev, ...validFiles] : validFiles,
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
@@ -117,9 +130,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     const handlePreview = (file: Attachment) => {
-      const url = getFileUrl(file.FileUrl);
-      if (!url) return;
-      window.open(url, "_blank", "noopener,noreferrer");
+      setViewerFile(file);
     };
 
     const handleDownload = async (file: Attachment) => {
@@ -143,58 +154,64 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     };
 
     return (
-      <div className="w-full text-sm">
+      <div className="w-full text-sm overflow-x-hidden">
         {/* Attachment Table */}
         {listAttachment.length > 0 && (
           <div className="mb-3 border rounded-lg bg-white overflow-hidden shadow-sm">
             <div className="bg-gray-50 px-3 py-2 border-b flex items-center gap-2 font-semibold text-gray-700">
-              <Paperclip size={14} className="text-blue-500" /> TỆP ĐÃ TẢI LÊN
+              <Paperclip size={14} className="text-blue-500" /> TỆP ĐàTẢI LÊN
             </div>
-            <table className="w-full">
-              <tbody className="divide-y">
-                {listAttachment.map((file) => (
-                  <tr key={file.Id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-blue-600 truncate">
-                      {file.FullFileName}
-                    </td>
-                    <td className="px-3 py-2 text-right flex items-center justify-end gap-2">
+            <div className="divide-y">
+              {listAttachment.map((file) => (
+                <div
+                  key={file.Id}
+                  className="flex w-full min-w-0 items-center hover:bg-gray-50"
+                >
+                  <span
+                    className="block flex-1 min-w-0 px-3 py-2 text-blue-600 truncate"
+                    title={file.FullFileName}
+                  >
+                    {file.FullFileName}
+                  </span>
+                  <div className="shrink-0 px-3 py-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handlePreview(file)}
+                      className="text-gray-400 hover:text-blue-500"
+                      title="Xem trước"
+                    >
+                      <Eye size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(file)}
+                      className="text-gray-400 hover:text-green-500"
+                      title="Tải xuống"
+                    >
+                      <Download size={16} />
+                    </button>
+                    {!readonly && (
                       <button
                         type="button"
-                        onClick={() => handlePreview(file)}
-                        className="text-gray-400 hover:text-blue-500"
-                        title="Xem trước"
+                        onClick={() => handleDeleteAttachment(file.Id)}
+                        className="text-gray-400 hover:text-red-500"
+                        title="Xóa"
                       >
-                        <Eye size={16} />
+                        <Trash size={16} />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(file)}
-                        className="text-gray-400 hover:text-green-500"
-                        title="Tải xuống"
-                      >
-                        <Download size={16} />
-                      </button>
-                      {!readonly && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAttachment(file.Id)}
-                          className="text-gray-400 hover:text-red-500"
-                          title="Xóa"
-                        >
-                          <Trash size={16} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Dropzone Area */}
         {!noUpload && !readonly && (
-          <div className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasError ? "border-red-400 bg-red-50 hover:border-red-500" : "bg-gray-50 hover:border-blue-400"}`}>
+          <div
+            className={`border-2 border-dashed rounded-lg p-4 transition-colors ${hasError ? "border-red-400 bg-red-50 hover:border-red-500" : "bg-gray-50 hover:border-blue-400"}`}
+          >
             <input
               type="file"
               ref={fileInputRef}
@@ -221,15 +238,20 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                 {selectedFiles.map((f, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between bg-white p-2 border rounded"
+                    className="flex items-center justify-between bg-white p-2 border rounded gap-2"
                   >
-                    <div className="flex items-center gap-2 truncate">
-                      <FileIcon size={14} className="text-orange-400" />
-                      <span className="truncate italic text-xs">{f.name}</span>
+                    <div className="flex flex-1 items-center gap-2 min-w-0">
+                      <FileIcon size={14} className="shrink-0 text-orange-400" />
+                      <span
+                        className="block flex-1 min-w-0 truncate italic text-xs"
+                        title={f.name}
+                      >
+                        {f.name}
+                      </span>
                     </div>
                     <X
                       size={14}
-                      className="cursor-pointer text-gray-400 hover:text-red-500"
+                      className="shrink-0 cursor-pointer text-gray-400 hover:text-red-500"
                       onClick={() =>
                         setSelectedFiles((s) => s.filter((_, idx) => idx !== i))
                       }
@@ -240,9 +262,16 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
             )}
           </div>
         )}
+
+        <FileViewerDialog
+          isOpen={!!viewerFile}
+          onClose={() => setViewerFile(null)}
+          file={viewerFile}
+          mode={viewerMode}
+        />
       </div>
     );
-  }
+  },
 );
 
 export default UploadFile;

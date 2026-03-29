@@ -1,5 +1,7 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.Helpers;
@@ -23,9 +25,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetList(EvidenceGetListPagingRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelEvidenceGetListPaging>> { Data = result, Success = true });
         }
@@ -34,20 +33,22 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.VIEW)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             var result = await _service.GetById(request);
             return Ok(new BaseResponse<ModelEvidence> { Data = result, Success = true });
+        }
+
+        [HttpGet, Route("preview/{attachmentId}")]
+        [AttributePermission(Action = ActionType.VIEW)]
+        public async Task<IActionResult> PreviewAttachment([FromRoute] Guid attachmentId, [FromQuery] string mode = "internal")
+        {
+            var result = await _service.PreviewAttachment(attachmentId, mode);
+            return File(result.FileContent, result.ContentType, result.FileName);
         }
 
         [HttpPost("insert")]
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Insert([FromBody] EvidenceRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Insert(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -56,9 +57,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.UPDATE)]
         public async Task<IActionResult> Update(EvidenceRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Update(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -67,9 +65,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.DELETE)]
         public async Task<IActionResult> DeleteList([FromBody] DeleteListRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.DeleteList(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -86,9 +81,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> SubmitToApprove([FromBody] EvidenceSubmitToApproveRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.SubmitForReview(request);
             return Ok(new BaseResponse(true, 200));
         }
@@ -97,9 +89,6 @@ namespace AUN_QA.BusinessService.Controllers
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Approve([FromBody] EvidenceApproveRequest request)
         {
-            if (!ModelState.IsValid)
-                return Ok(new BaseResponse(false, 400, CommonFunc.GetModelStateAPI(ModelState)));
-
             await _service.Approve(request);
             return Ok(new BaseResponse(true, 200));
         }

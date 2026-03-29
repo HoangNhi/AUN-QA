@@ -1,4 +1,5 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Stakeholder.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -78,7 +79,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
             var data = await _context.Stakeholders.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelStakeholder>(data);
@@ -93,13 +94,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
 
             if (data.Any())
             {
-                throw new Exception("Email đã tồn tại");
+                throw new BusinessException("Email đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Stakeholder>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Stakeholders.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -115,19 +116,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
 
             if (data.Any())
             {
-                throw new Exception("Email đã tồn tại");
+                throw new BusinessException("Email đã tồn tại");
             }
 
             var update = await _context.Stakeholders.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Stakeholders.Update(update);
             await _context.SaveChangesAsync();
@@ -142,11 +143,11 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Stakeholder
                 var delete = await _context.Stakeholders.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name;
 
                 _context.Stakeholders.Update(delete);

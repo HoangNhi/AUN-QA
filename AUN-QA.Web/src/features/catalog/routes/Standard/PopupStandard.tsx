@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -11,17 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Field,
-  FieldContent,
-  FieldLabel,
-  FieldError,
-} from "@/components/ui/field";
-import { Combobox } from "@/components/ui/combobox";
-import { ACTIVE_STATUS_OPTIONS } from "@/constants/catalog.constants";
+import { Form } from "@/components/ui/form";
+import { StandardFormFields } from "./components/StandardFormFields";
+import { CriterionList } from "./components/CriterionList";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
 import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import type {
@@ -39,6 +31,20 @@ interface PopupStandardProps {
   isLoading: boolean;
 }
 
+import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  id: z.string(),
+  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  code: z.string().min(1, "Mã tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  name: z.string().min(1, "Tên tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  description: z.string().optional(),
+  order: z.number().min(0, "Thứ tự phải lạ›n hoặc bằng 0"),
+  isActived: z.boolean(),
+});
+
 const PopupStandard = ({
   standard,
   isOpen,
@@ -46,34 +52,28 @@ const PopupStandard = ({
   saveChange,
   isLoading,
 }: PopupStandardProps) => {
-  // Form state for Standard basic fields
-  const [formData, setFormData] = useState({
-    id: standard?.Id || uuidv4(),
-    standardSetId: standard?.StandardSetId || "",
-    code: standard?.Code || "",
-    name: standard?.Name || "",
-    description: standard?.Description || "",
-    order: standard?.Order || 1,
-    isActived: standard?.IsActived ?? true,
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      id: standard?.Id || uuidv4(),
+      standardSetId: standard?.StandardSetId || "",
+      code: standard?.Code || "",
+      name: standard?.Name || "",
+      description: standard?.Description || "",
+      order: standard?.Order || 1,
+      isActived: standard?.IsActived ?? true,
+    },
   });
 
-  // StandardSet info for read-only display
-  const [standardSetInfo, setStandardSetInfo] = useState<{
-    name: string;
-    description: string;
-  } | null>(null);
+
 
   // Criterions state
   const [criterions, setCriterions] = useState<Criterion[]>(
     standard?.Criterions || [],
   );
 
-  // Errors state
+  // Errors state for complex arrays
   const [errors, setErrors] = useState<{
-    standardSetId?: string;
-    code?: string;
-    name?: string;
-    order?: string;
     criterions?: string;
   }>({});
 
@@ -98,7 +98,7 @@ const PopupStandard = ({
   // Sync form data when standard changes
   useEffect(() => {
     if (standard) {
-      setFormData({
+      form.reset({
         id: standard.Id || uuidv4(),
         standardSetId: standard.StandardSetId || "",
         code: standard.Code || "",
@@ -110,55 +110,17 @@ const PopupStandard = ({
       setCriterions(standard.Criterions || []);
       setErrors({});
 
-      // Fetch StandardSet info if StandardSetId exists
-      if (standard.StandardSetId) {
-        standardSetService.getById(standard.StandardSetId).then((response) => {
-          if (response.Success && response.Data) {
-            setStandardSetInfo({
-              name: response.Data.Name,
-              description: response.Data.Description || "",
-            });
-          }
-        });
-      } else {
-        setStandardSetInfo(null);
-      }
     }
-  }, [standard]);
+  }, [standard, form]);
 
   // Handle StandardSet change
   const handleStandardSetChange = useCallback(
     async (val: string) => {
-      setFormData((prev) => ({ ...prev, standardSetId: val }));
-      if (errors.standardSetId) {
-        setErrors((prev) => ({ ...prev, standardSetId: undefined }));
-      }
+      form.setValue("standardSetId", val, { shouldValidate: true });
 
-      if (val) {
-        const response = await standardSetService.getById(val);
-        if (response.Success && response.Data) {
-          setStandardSetInfo({
-            name: response.Data.Name,
-            description: response.Data.Description || "",
-          });
-        }
-      } else {
-        setStandardSetInfo(null);
-      }
     },
-    [errors.standardSetId],
+    [form],
   );
-
-  // Field update helper
-  const updateField = <K extends keyof typeof formData>(
-    field: K,
-    value: (typeof formData)[K],
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
 
   // Criterion handlers
   const addCriterion = useCallback(() => {
@@ -169,7 +131,7 @@ const PopupStandard = ({
 
     const newCriterion: Criterion = {
       Id: uuidv4(),
-      StandardId: formData.id,
+      StandardId: form.getValues().id,
       Code: "",
       Name: "",
       IsPrerequisite: false,
@@ -210,7 +172,7 @@ const PopupStandard = ({
         });
       }
     }, 100);
-  }, [criterions, formData.id]);
+  }, [criterions, form]);
 
   const updateCriterion = useCallback(
     (id: string, updates: Partial<Criterion>) => {
@@ -298,26 +260,9 @@ const PopupStandard = ({
     [],
   );
 
-  // Validation
-  const validateForm = (): boolean => {
+  // Validation for arrays
+  const validateArrays = (): boolean => {
     const newErrors: typeof errors = {};
-
-    // Standard level validation
-    if (!formData.standardSetId.trim()) {
-      newErrors.standardSetId = "Bộ tiêu chuẩn không được để trống";
-    }
-
-    if (!formData.code.trim()) {
-      newErrors.code = "Mã tiêu chuẩn không được để trống";
-    }
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Tên tiêu chuẩn không được để trống";
-    }
-
-    if (formData.order < 0) {
-      newErrors.order = "Thứ tự phải lớn hơn hoặc bằng 0";
-    }
 
     // Criterions validation
     if (criterions.length === 0) {
@@ -327,8 +272,8 @@ const PopupStandard = ({
       // Validate each criterion
       for (const criterion of criterions) {
         if (!criterion.Code.trim() || !criterion.Name.trim()) {
-          newErrors.criterions = "Tất cả tiêu chí phải có Mã và Tên";
-          toast.error("Tất cả tiêu chí phải có Mã và Tên");
+          newErrors.criterions = "Tất cả tiêu chí phải có Mã vÃ  Tên";
+          toast.error("Tất cả tiêu chí phải có Mã vÃ  Tên");
           break;
         }
 
@@ -338,21 +283,21 @@ const PopupStandard = ({
           criterion.CriterionRequirements.length === 0
         ) {
           newErrors.criterions =
-            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng";
-          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng");
+            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng";
+          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng");
           break;
         }
 
         for (const req of criterion.CriterionRequirements) {
           if (!req.FileTypeId) {
             newErrors.criterions =
-              "Tất cả yêu cầu minh chứng phải chọn Loại tài liệu";
-            toast.error("Tất cả yêu cầu minh chứng phải chọn Loại tài liệu");
+              "Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu";
+            toast.error("Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu");
             break;
           }
           if (req.MinQuantity < 0) {
-            newErrors.criterions = "Số lượng tối thiểu phải >= 0";
-            toast.error("Số lượng tối thiểu phải >= 0");
+            newErrors.criterions = "Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0";
+            toast.error("Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0");
             break;
           }
         }
@@ -364,15 +309,15 @@ const PopupStandard = ({
   };
 
   // Submit
-  const onSubmit = (isAddMore: boolean) => {
-    if (!validateForm()) {
+  const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
+    if (!validateArrays()) {
       return;
     }
 
     // Build payload with nested structure
     const criterionsWithIds = criterions.map((c) => ({
       ...c,
-      StandardId: formData.id,
+      StandardId: values.id,
       CriterionRequirements: c.CriterionRequirements?.map((req) => ({
         ...req,
         CriterionId: c.Id,
@@ -380,15 +325,15 @@ const PopupStandard = ({
     }));
 
     const payload: Standard = {
-      Id: formData.id,
-      StandardSetId: formData.standardSetId,
-      Code: formData.code.trim(),
-      Name: formData.name.trim(),
-      Description: formData.description.trim(),
-      Order: formData.order,
+      Id: values.id,
+      StandardSetId: values.standardSetId,
+      Code: values.code.trim(),
+      Name: values.name.trim(),
+      Description: values.description?.trim() || "",
+      Order: values.order,
       Criterions: criterionsWithIds,
       IsEdit: standard?.IsEdit || false,
-      IsActived: formData.isActived,
+      IsActived: values.isActived,
       FolderUpload: standard?.FolderUpload || "",
       CreatedBy: standard?.CreatedBy || "",
       CreatedAt: standard?.CreatedAt || "",
@@ -412,370 +357,49 @@ const PopupStandard = ({
 
         {/* Scrollable Body */}
         <div className="overflow-y-auto custom-scrollbar flex-1 p-6 bg-slate-50/50 space-y-8">
-          {/* Section A: Standard Basic Info */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-l-4 border-blue-500 pl-3">
-              Thông tin tiêu chuẩn
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="standardSet">
-                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      options={standardSetOptions}
-                      value={formData.standardSetId}
-                      onValueChange={handleStandardSetChange}
-                      placeholder="Chọn bộ tiêu chuẩn"
-                      searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
-                      emptyText="Không tìm thấy bộ tiêu chuẩn."
-                    />
-                    {errors.standardSetId && (
-                      <FieldError>{errors.standardSetId}</FieldError>
-                    )}
-                  </FieldContent>
-                </Field>
-              </div>
-
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="code">
-                    Mã tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="code"
-                      value={formData.code}
-                      onChange={(e) => updateField("code", e.target.value)}
-                      placeholder="VD: AUN-QA-01"
-                    />
-                    {errors.code && <FieldError>{errors.code}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
-
-              <div className="md:col-span-4">
-                <Field>
-                  <FieldLabel htmlFor="name">
-                    Tên tiêu chuẩn <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => updateField("name", e.target.value)}
-                      placeholder="VD: Mục tiêu dự kiến của chương trình đào tạo"
-                    />
-                    {errors.name && <FieldError>{errors.name}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
-
-              <div className="md:col-span-6 md:row-span-2">
-                <Field>
-                  <FieldLabel htmlFor="description">Mô tả</FieldLabel>
-                  <FieldContent>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        updateField("description", e.target.value)
-                      }
-                      rows={4}
-                      className="h-full min-h-30"
-                      placeholder="Nhập mô tả chi tiết về tiêu chuẩn..."
-                    />
-                  </FieldContent>
-                </Field>
-              </div>
-
-              <div className="md:col-span-6">
-                <Field>
-                  <FieldLabel htmlFor="order">
-                    Thứ tự <span className="text-red-500">*</span>
-                  </FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id="order"
-                      type="number"
-                      value={formData.order}
-                      onChange={(e) =>
-                        updateField("order", parseInt(e.target.value) || 0)
-                      }
-                      min={0}
-                    />
-                    {errors.order && <FieldError>{errors.order}</FieldError>}
-                  </FieldContent>
-                </Field>
-              </div>
-
-              <div className="md:col-span-6">
-                <Field>
-                  <FieldLabel htmlFor="status">Trạng thái</FieldLabel>
-                  <FieldContent>
-                    <Combobox
-                      options={ACTIVE_STATUS_OPTIONS}
-                      value={formData.isActived.toString()}
-                      onValueChange={(val) =>
-                        updateField("isActived", val === "true")
-                      }
-                      placeholder="Chọn trạng thái"
-                      searchPlaceholder="Tìm kiếm trạng thái..."
-                      emptyText="Không tìm thấy trạng thái."
-                    />
-                  </FieldContent>
-                </Field>
-              </div>
-            </div>
-          </div>
+          <Form {...form}>
+            <form id="standard-form" onSubmit={form.handleSubmit((data) => onSubmit(data, false))}>
+              {/* Section A: Standard Basic Info */}
+              <StandardFormFields
+                form={form}
+                standardSetOptions={standardSetOptions}
+                handleStandardSetChange={handleStandardSetChange}
+              />
+            </form>
+          </Form>
 
           {/* Section B: Criteria Cards */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-l-4 border-indigo-500 pl-3">
-                Danh sách Tiêu chí & Yêu cầu Minh chứng
-              </h3>
-              <Button
-                type="button"
-                size="sm"
-                onClick={addCriterion}
-                className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm tiêu chí
-              </Button>
-            </div>
-
-            {errors.criterions && (
-              <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-200">
-                {errors.criterions}
-              </div>
-            )}
-
-            {criterions.map((criterion) => (
-              <div
-                key={criterion.Id}
-                className="criterion-card bg-white rounded-xl border border-slate-200 shadow-sm relative group animate-in overflow-hidden"
-              >
-                {/* Remove Button */}
-                <button
-                  type="button"
-                  onClick={() => deleteCriterion(criterion.Id)}
-                  className="absolute top-2 right-2 z-20 text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-all"
-                  title="Xóa tiêu chí"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
-                  {/* Left: Criterion Info */}
-                  <div className="lg:col-span-5 p-5 bg-slate-50/30">
-                    <div className="flex gap-4 mb-4">
-                      <div className="w-20">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Mã
-                        </label>
-                        <Input
-                          value={criterion.Code}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              Code: e.target.value,
-                            })
-                          }
-                          placeholder="1.1"
-                          className="text-center font-bold"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Tên tiêu chí
-                        </label>
-                        <Input
-                          value={criterion.Name}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              Name: e.target.value,
-                            })
-                          }
-                          placeholder="Nhập tên tiêu chí..."
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {/* IsPrerequisite */}
-                      <label className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-100 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors">
-                        <Checkbox
-                          checked={criterion.IsPrerequisite}
-                          onCheckedChange={(checked) =>
-                            updateCriterion(criterion.Id, {
-                              IsPrerequisite: checked === true,
-                            })
-                          }
-                          className="h-4 w-4 rounded border-amber-300 text-amber-600"
-                        />
-                        <div>
-                          <span className="block text-xs font-bold text-amber-800">
-                            Tiêu chí điều kiện
-                          </span>
-                          <span className="block text-[10px] text-amber-600/80">
-                            Nếu trượt tiêu chí này, cả tiêu chuẩn bị trượt
-                          </span>
-                        </div>
-                      </label>
-
-                      {/* DiagnosticQuestions */}
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          Câu hỏi chẩn đoán
-                        </label>
-                        <Textarea
-                          rows={3}
-                          value={criterion.DiagnosticQuestions || ""}
-                          onChange={(e) =>
-                            updateCriterion(criterion.Id, {
-                              DiagnosticQuestions: e.target.value,
-                            })
-                          }
-                          placeholder="- Nhà trường có văn bản nào quy định về...?"
-                          className="resize-none text-xs"
-                        />
-                        <p className="text-[9px] text-slate-400 mt-1 text-right">
-                          Hỗ trợ viết báo cáo tự đánh giá
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: File Requirements */}
-                  <div className="lg:col-span-7 p-5">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="text-xs font-bold text-slate-600 uppercase">
-                        Yêu cầu minh chứng
-                      </h4>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => addFileRequirement(criterion.Id)}
-                        className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 h-auto border border-blue-100"
-                      >
-                        + THÊM LOẠI FILE
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
-                      {criterion.CriterionRequirements?.map((req) => (
-                        <div
-                          key={req.Id}
-                          className="bg-slate-50 border border-slate-100 rounded-lg p-2 flex flex-col gap-2 hover:border-blue-200 transition-all animate-in"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Combobox
-                              options={fileTypeOptions}
-                              value={req.FileTypeId}
-                              onValueChange={(val) =>
-                                updateFileRequirement(criterion.Id, req.Id, {
-                                  FileTypeId: val,
-                                })
-                              }
-                              placeholder="-- Chọn loại tài liệu --"
-                              searchPlaceholder="Tìm kiếm..."
-                              emptyText="Không tìm thấy"
-                              className="flex-1 text-xs h-8"
-                            />
-
-                            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded px-2 py-1">
-                              <span className="text-[10px] text-slate-400 font-bold">
-                                SL:
-                              </span>
-                              <Input
-                                type="number"
-                                value={req.MinQuantity}
-                                onChange={(e) =>
-                                  updateFileRequirement(criterion.Id, req.Id, {
-                                    MinQuantity: parseInt(e.target.value) || 1,
-                                  })
-                                }
-                                min={1}
-                                className="w-12 text-center text-xs font-bold h-6 px-1"
-                              />
-                            </div>
-
-                            <label className="flex items-center gap-1 cursor-pointer select-none">
-                              <Checkbox
-                                checked={req.IsMandatory}
-                                onCheckedChange={(checked) =>
-                                  updateFileRequirement(criterion.Id, req.Id, {
-                                    IsMandatory: checked === true,
-                                  })
-                                }
-                                className="h-3 w-3 rounded border-slate-300 text-blue-600"
-                              />
-                              <span className="text-[10px] font-bold text-slate-500">
-                                Bắt buộc
-                              </span>
-                            </label>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                deleteFileRequirement(criterion.Id, req.Id)
-                              }
-                              className="text-slate-300 hover:text-red-500 transition-colors"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-
-                          {/* Suggestion Input */}
-                          <Input
-                            value={req.Suggestion || ""}
-                            onChange={(e) =>
-                              updateFileRequirement(criterion.Id, req.Id, {
-                                Suggestion: e.target.value,
-                              })
-                            }
-                            placeholder="Gợi ý: 'Quyết định thành lập hội đồng'..."
-                            className="bg-transparent text-[11px] text-slate-600 italic placeholder:text-slate-300 border-b border-dashed border-slate-200 focus:border-blue-300 outline-none rounded-none h-6 px-1"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 text-center">
-                      <p className="text-[10px] text-slate-400 italic">
-                        Hệ thống sẽ đối chiếu danh sách này với file thực tế
-                        user upload để báo cáo thiếu/đủ.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <CriterionList
+            criterions={criterions}
+            fileTypeOptions={fileTypeOptions}
+            error={errors.criterions}
+            onAddCriterion={addCriterion}
+            onUpdateCriterion={updateCriterion}
+            onDeleteCriterion={deleteCriterion}
+            onAddFileRequirement={addFileRequirement}
+            onUpdateFileRequirement={updateFileRequirement}
+            onDeleteFileRequirement={deleteFileRequirement}
+          />
         </div>
 
         <DialogFooter className="px-6">
           <DialogClose asChild>
-            <Button variant="outline" disabled={isLoading}>
+            <Button variant="outline" disabled={isLoading} type="button">
               Hủy
             </Button>
           </DialogClose>
-          <Button onClick={() => onSubmit(false)} disabled={isLoading}>
+          <Button form="standard-form" type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Lưu
           </Button>
           {!standard?.IsEdit && (
             <Button
               type="button"
-              onClick={() => onSubmit(true)}
+              onClick={form.handleSubmit((data) => onSubmit(data, true))}
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu và thêm tiếp
+              Lưu vÃ  thêm tiếp
             </Button>
           )}
         </DialogFooter>
@@ -785,3 +409,4 @@ const PopupStandard = ({
 };
 
 export default PopupStandard;
+

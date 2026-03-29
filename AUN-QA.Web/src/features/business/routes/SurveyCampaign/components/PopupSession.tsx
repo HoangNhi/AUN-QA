@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+﻿import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { getViewStakeholderColumns } from "./session-columns";
 import { PopupChooseStakeholder } from "./PopupChooseStakeholder";
@@ -54,7 +54,7 @@ export const PopupSession = ({
   });
   const [textSearch, setTextSearch] = useState("");
   const [openChooseStakeholder, setOpenChooseStakeholder] = useState(false);
-  const [rowSelection, setRowSelection] = useState({});
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteItem, setDeleteItem] = useState<string[]>([]); // store ids to delete
   const [viewAnswerSession, setViewAnswerSession] =
@@ -111,7 +111,7 @@ export const PopupSession = ({
     async (item: SurveySession) => {
       try {
         await surveyCampaignService.sendSurveyInvitation(item.Id);
-        toast.success("Gửi khảo sát thành công");
+        toast.success("Gửi khảo sát thÃ nh công");
         refetch();
       } catch {
         toast.error("Gửi khảo sát thất bại");
@@ -148,7 +148,7 @@ export const PopupSession = ({
         <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
-              Danh sách người tham gia
+              Danh sách ngươi tham gia
               {campaignName && (
                 <span className="text-muted-foreground font-normal">
                   {" "}
@@ -157,12 +157,12 @@ export const PopupSession = ({
               )}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Danh sách người tham gia khảo sát
+              Danh sách ngươi tham gia khảo sát
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
-            <div className="h-full overflow-y-auto px-6 py-4">
+            <div className="h-full px-6 py-4">
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-3 items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -198,9 +198,9 @@ export const PopupSession = ({
                         PageIndex: 1,
                       });
                     }}
-                    placeholder="Tất cả trạng thái"
-                    searchPlaceholder="Tìm kiếm trạng thái..."
-                    emptyText="Không tìm thấy trạng thái."
+                    placeholder="Tất cả tráº¡ng thái"
+                    searchPlaceholder="Tìm kiếm tráº¡ng thái..."
+                    emptyText="Không tìm thấy tráº¡ng thái."
                   />
 
                   <InputGroup className="bg-white">
@@ -225,7 +225,6 @@ export const PopupSession = ({
                   onRefresh={refetch}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
-                  containerClassName="h-[30vh] overflow-auto w-full relative"
                 />
               </div>
             </div>
@@ -233,7 +232,7 @@ export const PopupSession = ({
 
           <DialogFooter className="p-4 border-t shrink-0 bg-white">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Đóng
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -261,3 +260,4 @@ export const PopupSession = ({
     </>
   );
 };
+

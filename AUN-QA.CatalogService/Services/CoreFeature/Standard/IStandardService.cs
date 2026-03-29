@@ -1,4 +1,4 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Requests;
 using AUN_QA.CatalogService.Protos;
@@ -19,6 +19,14 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         // gRPC Services
         IAsyncEnumerable<CriterionInfo> GetCriterionsForEvidenceStreamAsync(
             GetCriterionsForEvidenceStreamRequest request,
+            CancellationToken cancellationToken = default);
+
+        IAsyncEnumerable<StandardWithCriteriaInfo> GetStandardsWithCriteriaStreamAsync(
+            GetStandardsWithCriteriaStreamRequest request,
+            CancellationToken cancellationToken = default);
+
+        IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(
+            GetFileTypesByCriterionStreamRequest request,
             CancellationToken cancellationToken = default);
     }
 }

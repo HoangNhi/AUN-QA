@@ -1,3 +1,4 @@
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.Base;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using FluentValidation;

@@ -114,7 +114,8 @@ export const useStandard = () => {
                 Description: "",
                 Order: 1,
                 Criterions: [],
-                IsEdit: isEdit
+                IsEdit: isEdit,
+                IsActived: true,
             });
             setIsOpen(true);
         }
@@ -140,6 +141,7 @@ export const useStandard = () => {
                     Order: 1,
                     Criterions: [],
                     IsEdit: false,
+                    IsActived: true,
                 });
             } else {
                 setIsOpen(false);

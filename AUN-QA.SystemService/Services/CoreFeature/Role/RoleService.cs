@@ -1,4 +1,5 @@
-using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
@@ -34,7 +35,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
             var data = await _context.Roles.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             return _mapper.Map<ModelRole>(data);
@@ -49,13 +50,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new BusinessException("Tên gọi đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Role>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             add.IsActived = true;
 
             await _context.Roles.AddAsync(add);
@@ -72,19 +73,19 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
             if (data.Any())
             {
-                throw new Exception("Tên gọi đã tồn tại");
+                throw new BusinessException("Tên gọi đã tồn tại");
             }
 
             var update = await _context.Roles.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.Roles.Update(update);
             await _context.SaveChangesAsync();
 
@@ -98,12 +99,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 var delete = await _context.Roles.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Roles.Update(delete);
             }
@@ -127,13 +128,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.Roles.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
-            var result = data.Select(x => new ModelCombobox
+            var result = await _context.Roles.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived)
+            .Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),
-            }).OrderBy(x => x.Text).ToList();
-
+            })
+            .OrderBy(x => x.Text).ToListAsync();
             return result;
         }
 
@@ -167,7 +168,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 var roleUpdate = await _context.Roles.FindAsync(item.RoleId);
                 if (roleUpdate != null)
                 {
-                    roleUpdate.UpdatedAt = DateTime.Now;
+                    roleUpdate.UpdatedAt = DateTime.UtcNow;
                     roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                     _context.Update(roleUpdate);
                 }

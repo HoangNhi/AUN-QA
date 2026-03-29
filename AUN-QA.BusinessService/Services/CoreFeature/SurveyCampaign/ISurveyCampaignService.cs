@@ -1,4 +1,4 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Session.Dtos;
@@ -19,6 +19,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
         Task ChangeStatus(GetByIdRequest request);
         Task<ModelDoSurvey> GetSurveyByToken(GetSurveyByTokenRequest request);
         Task SubmitSurvey(SurveySubmissionRequest request);
+        Task<AggregatedSurveyResultsDto> GetAggregatedResults(Guid campaignId);
         #endregion
 
         #region Session

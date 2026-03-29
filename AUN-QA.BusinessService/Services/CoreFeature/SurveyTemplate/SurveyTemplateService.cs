@@ -1,4 +1,5 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.SurveyTemplate.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TemplateCategory.Requests;
@@ -32,16 +33,17 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<ModelSurveyTemplate> GetById(GetByIdRequest request)
         {
-            var data = await _context.SurveyTemplates.FindAsync(request.Id);
+            var data = await _context.SurveyTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<ModelSurveyTemplate>(data);
 
             // 1. Get raw data
             var topics = await _context.TemplateTopics
+                .AsNoTracking()
                 .Where(x => x.TemplateId == result.Id && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -49,6 +51,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var topicIds = topics.Select(x => x.Id).ToList();
 
             var categories = await _context.TemplateCategories
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
@@ -56,11 +59,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             var categoryIds = categories.Select(x => x.Id).ToList();
 
             var questions = await _context.TemplateQuestions
+                .AsNoTracking()
                 .Where(x => categoryIds.Contains(x.CategoryId) && !x.IsDeleted)
                 .OrderBy(x => x.Sort)
                 .ToListAsync();
 
             var textQuestions = await _context.TemplateTextQuestions
+                .AsNoTracking()
                 .Where(x => topicIds.Contains(x.TopicId) && !x.IsDeleted)
                 .ToListAsync();
 
@@ -89,6 +94,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<ModelSurveyTemplate> Insert(SurveyTemplateRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             var data = _context.SurveyTemplates.Where(x =>
                 x.Title == request.Title
                 && !x.IsDeleted
@@ -96,19 +104,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Tên mẫu khảo sát đã tồn tại");
+                throw new BusinessException("Tên mẫu khảo sát đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.SurveyTemplate>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
             await _context.SurveyTemplates.AddAsync(add);
 
             #region Chủ đề khảo sát và nhóm câu hỏi
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -117,13 +125,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 addTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
                 addTopic.TemplateId = add.Id;
                 addTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addTopic.CreatedAt = DateTime.Now;
+                addTopic.CreatedAt = DateTime.UtcNow;
                 await _context.TemplateTopics.AddAsync(addTopic);
 
                 #region Nhóm câu hỏi và câu hỏi
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -132,12 +140,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     addcategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
                     addcategory.TopicId = addTopic.Id;
                     addcategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addcategory.CreatedAt = DateTime.Now;
+                    addcategory.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateCategories.AddAsync(addcategory);
 
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var question in catReq.ListQuestion)
@@ -146,7 +154,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         addQuestion.Id = question.Id == Guid.Empty ? Guid.NewGuid() : question.Id;
                         addQuestion.CategoryId = addcategory.Id;
                         addQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        addQuestion.CreatedAt = DateTime.Now;
+                        addQuestion.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateQuestions.AddAsync(addQuestion);
                     }
                 }
@@ -155,7 +163,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Ý kiến khác
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var textQuestion in topicReq.ListTextQuestion)
@@ -164,7 +172,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     addTextQuestion.Id = textQuestion.Id == Guid.Empty ? Guid.NewGuid() : textQuestion.Id;
                     addTextQuestion.TopicId = addTopic.Id;
                     addTextQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addTextQuestion.CreatedAt = DateTime.Now;
+                    addTextQuestion.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateTextQuestions.AddAsync(addTextQuestion);
                 }
                 #endregion
@@ -172,30 +180,41 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             #endregion
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
             return _mapper.Map<ModelSurveyTemplate>(add);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<ModelSurveyTemplate> Update(SurveyTemplateRequest request)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
             var data = _context.SurveyTemplates.Where(x =>
                 x.Title == request.Title
                 && !x.IsDeleted && x.Id != request.Id);
 
             if (await data.AnyAsync())
             {
-                throw new Exception("Tên mẫu khảo sát đã tồn tại");
+                throw new BusinessException("Tên mẫu khảo sát đã tồn tại");
             }
 
             var update = await _context.SurveyTemplates.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.SurveyTemplates.Update(update);
 
@@ -222,7 +241,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             // 2. Process Request Data
             if (!request.ListTopic.Any())
             {
-                throw new Exception("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
+                throw new BusinessException("Mẫu khảo sát phải có ít nhất một chủ đề khảo sát");
             }
 
             foreach (var topicReq in request.ListTopic)
@@ -235,7 +254,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     // Update Topic
                     _mapper.Map(topicReq, existingTopic);
                     existingTopic.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingTopic.UpdatedAt = DateTime.Now;
+                    existingTopic.UpdatedAt = DateTime.UtcNow;
                     _context.TemplateTopics.Update(existingTopic);
                     currentTopic = existingTopic;
 
@@ -249,7 +268,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     newTopic.Id = topicReq.Id == Guid.Empty ? Guid.NewGuid() : topicReq.Id;
                     newTopic.TemplateId = update.Id;
                     newTopic.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    newTopic.CreatedAt = DateTime.Now;
+                    newTopic.CreatedAt = DateTime.UtcNow;
                     await _context.TemplateTopics.AddAsync(newTopic);
                     currentTopic = newTopic;
                 }
@@ -257,7 +276,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Process Categories
                 if (!topicReq.ListCategory.Any())
                 {
-                    throw new Exception($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
+                    throw new BusinessException($"Chủ đề '{topicReq.Title}' phải có ít nhất một nhóm câu hỏi");
                 }
 
                 foreach (var catReq in topicReq.ListCategory)
@@ -271,7 +290,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         _mapper.Map(catReq, existingCategory);
                         existingCategory.TopicId = currentTopic.Id; // Ensure link
                         existingCategory.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        existingCategory.UpdatedAt = DateTime.Now;
+                        existingCategory.UpdatedAt = DateTime.UtcNow;
                         _context.TemplateCategories.Update(existingCategory);
                         currentCategory = existingCategory;
 
@@ -284,7 +303,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         newCategory.Id = catReq.Id == Guid.Empty ? Guid.NewGuid() : catReq.Id;
                         newCategory.TopicId = currentTopic.Id;
                         newCategory.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        newCategory.CreatedAt = DateTime.Now;
+                        newCategory.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateCategories.AddAsync(newCategory);
                         currentCategory = newCategory;
                     }
@@ -292,7 +311,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                     #region Process Questions
                     if (!catReq.ListQuestion.Any())
                     {
-                        throw new Exception($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
+                        throw new BusinessException($"Nhóm câu hỏi '{catReq.Name}' phải có ít nhất một câu hỏi");
                     }
 
                     foreach (var qReq in catReq.ListQuestion)
@@ -305,7 +324,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                             _mapper.Map(qReq, existingQuestion);
                             existingQuestion.CategoryId = currentCategory.Id;
                             existingQuestion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            existingQuestion.UpdatedAt = DateTime.Now;
+                            existingQuestion.UpdatedAt = DateTime.UtcNow;
                             _context.TemplateQuestions.Update(existingQuestion);
 
                             existingQuestions.Remove(existingQuestion);
@@ -317,7 +336,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                             newQuestion.Id = qReq.Id == Guid.Empty ? Guid.NewGuid() : qReq.Id;
                             newQuestion.CategoryId = currentCategory.Id;
                             newQuestion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            newQuestion.CreatedAt = DateTime.Now;
+                            newQuestion.CreatedAt = DateTime.UtcNow;
                             await _context.TemplateQuestions.AddAsync(newQuestion);
                         }
                     }
@@ -328,7 +347,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 #region Process Text Questions
                 if (topicReq.HasTextQuestionPart && !topicReq.ListTextQuestion.Any())
                 {
-                    throw new Exception($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
+                    throw new BusinessException($"Phần ý kiến khác của chủ đề '{topicReq.Title}' phải có ít nhất một câu hỏi");
                 }
 
                 foreach (var txtReq in topicReq.ListTextQuestion)
@@ -341,7 +360,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         _mapper.Map(txtReq, existingTextQ);
                         existingTextQ.TopicId = currentTopic.Id;
                         existingTextQ.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        existingTextQ.UpdatedAt = DateTime.Now;
+                        existingTextQ.UpdatedAt = DateTime.UtcNow;
                         _context.TemplateTextQuestions.Update(existingTextQ);
 
                         existingTextQuestions.Remove(existingTextQ);
@@ -353,7 +372,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                         newTextQ.Id = txtReq.Id == Guid.Empty ? Guid.NewGuid() : txtReq.Id;
                         newTextQ.TopicId = currentTopic.Id;
                         newTextQ.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        newTextQ.CreatedAt = DateTime.Now;
+                        newTextQ.CreatedAt = DateTime.UtcNow;
                         await _context.TemplateTextQuestions.AddAsync(newTextQ);
                     }
                 }
@@ -364,7 +383,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 q.IsDeleted = true;
                 q.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                q.UpdatedAt = DateTime.Now;
+                q.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateQuestions.Update(q);
             }
 
@@ -372,7 +391,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 c.IsDeleted = true;
                 c.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                c.UpdatedAt = DateTime.Now;
+                c.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateCategories.Update(c);
             }
 
@@ -380,7 +399,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 tq.IsDeleted = true;
                 tq.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                tq.UpdatedAt = DateTime.Now;
+                tq.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateTextQuestions.Update(tq);
             }
 
@@ -388,14 +407,21 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
             {
                 t.IsDeleted = true;
                 t.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                t.UpdatedAt = DateTime.Now;
+                t.UpdatedAt = DateTime.UtcNow;
                 _context.TemplateTopics.Update(t);
             }
             #endregion
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return _mapper.Map<ModelSurveyTemplate>(update);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<string> DeleteList(DeleteListRequest request)
@@ -405,7 +431,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
                 var delete = await _context.SurveyTemplates.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
@@ -455,16 +481,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.SurveyTemplate
 
         public async Task<List<ModelCombobox>> GetAllForCombobox(SurveyTemplateGetComboboxRequest request)
         {
-            var data = await _context.SurveyTemplates.Where(
-                x => !x.IsDeleted && x.IsActived == true
-                && (request.StakeholderType == null || x.StakeholderType == request.StakeholderType)
-            ).ToListAsync();
-
-            return data.Select(x => new ModelCombobox
-            {
-                Text = x.Title,
-                Value = x.Id.ToString()
-            }).OrderBy(x => x.Text).ToList();
+            return await _context.SurveyTemplates
+                .AsNoTracking()
+                .Where(
+                    x => !x.IsDeleted && x.IsActived == true
+                    && (request.StakeholderType == null || x.StakeholderType == request.StakeholderType)
+                )
+                .Select(x => new ModelCombobox
+                {
+                    Text = x.Title,
+                    Value = x.Id.ToString()
+                })
+                .OrderBy(x => x.Text)
+                .ToListAsync();
         }
     }
 }

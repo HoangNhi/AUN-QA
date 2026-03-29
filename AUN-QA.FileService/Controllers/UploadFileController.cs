@@ -1,4 +1,5 @@
-﻿using AUN_QA.FileService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.FileService.DTOs.Base;
 using AUN_QA.FileService.Services.CoreFeature.UploadFile;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,12 +17,21 @@ namespace AUN_QA.FileService.Controllers
         }
 
         [HttpPost]
-        [DisableRequestSizeLimit]
-        [RequestFormLimits(ValueLengthLimit = int.MaxValue, MultipartBodyLengthLimit = long.MaxValue)]
+        [RequestSizeLimit(52428800)] // 50MB limit
+        [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
         public async Task<IActionResult> Post(List<IFormFile> files, [FromForm] string FolderName)
         {
             await _service.Insert(files, FolderName);
             return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost("embed")]
+        [RequestSizeLimit(52428800)]
+        [RequestFormLimits(MultipartBodyLengthLimit = 52428800)]
+        public async Task<IActionResult> Embed(List<IFormFile> files, [FromForm] string FolderName)
+        {
+            var result = await _service.InsertAndReturn(files, FolderName);
+            return Ok(new BaseResponse<List<ModelAttachment>>(true, 200, result));
         }
     }
 }

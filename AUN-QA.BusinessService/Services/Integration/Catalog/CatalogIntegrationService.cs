@@ -1,4 +1,5 @@
 ﻿using AUN_QA.BusinessService.DTOs.Integration.Catalog;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Grpc.Core;
@@ -19,126 +20,170 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
         #region Stakeholder Service
         public async IAsyncEnumerable<StakeholderDto> GetStakeholdersStreamAsync(GetStakeholdersStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            // Gọi gRPC
-            using var call = _grpcClient.GetStakeholdersStream(request, cancellationToken: cancellationToken);
-
-            // Đọc stream từ gRPC và convert sang Model của mình
-            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            var lst = new List<StakeholderDto>();
+            try
             {
-                // Mapping: Proto -> DTO
-                yield return new StakeholderDto
+                // Gọi gRPC
+                using var call = _grpcClient.GetStakeholdersStream(request, cancellationToken: cancellationToken);
+
+                // Đọc stream từ gRPC và convert sang Model của mình
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
                 {
-                    Id = Guid.Parse(item.Id),
-                    FullName = item.FullName,
-                    Email = item.Email,
-                    Type = item.Type,
-                    Description = item.Description,
-                };
+                    // Mapping: Proto -> DTO
+                    lst.Add(new StakeholderDto
+                    {
+                        Id = Guid.Parse(item.Id),
+                        FullName = item.FullName,
+                        Email = item.Email,
+                        Type = item.Type,
+                        Description = item.Description,
+                    });
+                }
             }
-        }
-        #endregion
-
-        #region Cycle Service
-        public async IAsyncEnumerable<CycleDto> GetCyclesStreamAsync(GetCyclesStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            // Gọi gRPC
-            using var call = _grpcClient.GetCyclesStream(request, cancellationToken: cancellationToken);
-
-            // Đọc stream từ gRPC và convert sang Model của mình
-            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            catch (RpcException)
             {
-                // Mapping: Proto -> DTO
-                yield return new CycleDto
-                {
-                    Id = Guid.Parse(item.Id),
-                    Name = item.Name,
-                    Year = item.Year,
-                    StartDate = item.StartDate.ToDateTime().ToLocalTime(),
-                    EndDate = item.EndDate.ToDateTime().ToLocalTime(),
-                    Status = item.Status,
-                    EvaluationPurpose = item.EvaluationPurpose,
-                    Scope = item.Scope
-                };
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
-        }
 
-        public async Task<int> GetUserRoleAsync(string cycleId, string userId, CancellationToken cancellationToken = default)
-        {
-            var request = new GetUserRoleRequest
+            foreach (var item in lst)
             {
-                CycleId = cycleId,
-                UserId = userId
-            };
-
-            var response = await _grpcClient.GetUserRoleAsync(request, cancellationToken: cancellationToken);
-            return response.Value;
-        }
-
-        public async Task<bool> IsUserInRoleAsync(string cycleId, string userId, int role, CancellationToken cancellationToken = default)
-        {
-            var request = new IsUserInRoleRequest
-            {
-                CycleId = cycleId,
-                UserId = userId,
-                Role = role
-            };
-
-            var response = await _grpcClient.IsUserInRoleAsync(request, cancellationToken: cancellationToken);
-            return response.Value;
-        }
-
-        public async Task<bool> CanUserDoActionInPdcaAsync(string cycleId, string userId, string? standardId = null, List<int>? allowedRoles = null, CancellationToken cancellationToken = default)
-        {
-            var request = new CanUserDoActionInPdcaRequest
-            {
-                CycleId = cycleId,
-                UserId = userId
-            };
-            if (standardId != null)
-                request.StandardId = standardId;
-            if (allowedRoles != null)
-                request.AllowedRoles.AddRange(allowedRoles);
-
-            var response = await _grpcClient.CanUserDoActionInPdcaAsync(request, cancellationToken: cancellationToken);
-            return response.Value;
+                yield return item;
+            }
         }
         #endregion
 
         #region Standard Service
         public async IAsyncEnumerable<CriterionDto> GetCriterionsForEvidenceStreamAsync(GetCriterionsForEvidenceStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            // Gọi gRPC
-            using var call = _grpcClient.GetCriterionsForEvidenceStream(request, cancellationToken: cancellationToken);
-            // Đọc stream từ gRPC và convert sang Model của mình
-            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            var lst = new List<CriterionDto>();
+            try
             {
-                // Mapping: Proto -> DTO
-                yield return new CriterionDto
+                // Gọi gRPC
+                using var call = _grpcClient.GetCriterionsForEvidenceStream(request, cancellationToken: cancellationToken);
+                // Đọc stream từ gRPC và convert sang Model của mình
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
                 {
-                    Id = Guid.Parse(item.Id),
-                    StandardId = Guid.Parse(item.StandardId),
-                    Code = item.Code,
-                    Name = item.Name,
-                    IsPrerequisite = item.IsPrerequisite,
-                    DiagnosticQuestions = item.DiagnosticQuestions,
-                    Description = item.Description,
-                    Order = item.Order
-                };
+                    // Mapping: Proto -> DTO
+                    lst.Add(new CriterionDto
+                    {
+                        Id = Guid.Parse(item.Id),
+                        StandardId = Guid.Parse(item.StandardId),
+                        Code = item.Code,
+                        Name = item.Name,
+                        IsPrerequisite = item.IsPrerequisite,
+                        DiagnosticQuestions = item.DiagnosticQuestions,
+                        Description = item.Description,
+                        Order = item.Order
+                    });
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
+            }
+        }
+
+        public async IAsyncEnumerable<StandardWithCriteriaDto> GetStandardsWithCriteriaStreamAsync(GetStandardsWithCriteriaStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lst = new List<StandardWithCriteriaDto>();
+            try
+            {
+                using var call = _grpcClient.GetStandardsWithCriteriaStream(request, cancellationToken: cancellationToken);
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    lst.Add(new StandardWithCriteriaDto
+                    {
+                        StandardId = Guid.Parse(item.StandardId),
+                        StandardCode = item.StandardCode,
+                        StandardName = item.StandardName,
+                        StandardOrder = item.StandardOrder,
+                        CriterionId = Guid.Parse(item.CriterionId),
+                        CriterionCode = item.CriterionCode,
+                        CriterionName = item.CriterionName,
+                        IsPrerequisite = item.IsPrerequisite,
+                        CriterionOrder = item.CriterionOrder
+                    });
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
             }
         }
         #endregion
 
         #region FileType Service
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(GetFileTypesByCriterionStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lst = new List<FileTypeInfo>();
+            try
+            {
+                using var call = _grpcClient.GetFileTypesByCriterionStream(request, cancellationToken: cancellationToken);
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    lst.Add(item);
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
+            }
+        }
+
         public async IAsyncEnumerable<FileTypeInfo> GetFileTypesStreamAsync(GetFileTypesStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            // Gọi gRPC
-            using var call = _grpcClient.GetFileTypesStream(request, cancellationToken: cancellationToken);
-
-            // Đọc stream từ gRPC và convert sang Model của mình
-            await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+            var lst = new List<FileTypeInfo>();
+            try
             {
-                // Mapping: Proto -> DTO
+                // Gọi gRPC
+                using var call = _grpcClient.GetFileTypesStream(request, cancellationToken: cancellationToken);
+
+                // Đọc stream từ gRPC và convert sang Model của mình
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    // Mapping: Proto -> DTO
+                    lst.Add(item);
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
                 yield return item;
+            }
+        }
+        #endregion
+
+        #region StandardSet Service
+        public async Task<int> GetStandardSetEvaluationModeAsync(string standardSetId)
+        {
+            try
+            {
+                var request = new GetStandardSetEvaluationModeRequest { StandardSetId = standardSetId };
+                var response = await _grpcClient.GetStandardSetEvaluationModeAsync(request);
+                return response.EvaluationMode;
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
         #endregion

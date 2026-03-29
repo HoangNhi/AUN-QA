@@ -1,4 +1,5 @@
-using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Requests;
 using AUN_QA.SystemService.Helpers;
@@ -31,7 +32,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
             var data = await _context.Menus.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelMenu>(data);
@@ -46,14 +47,14 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             if (data.Any())
             {
-                throw new Exception("Tên menu đã tồn tại trong nhóm này");
+                throw new BusinessException("Tên menu đã tồn tại trong nhóm này");
             }
 
             var add = _mapper.Map<Entities.Menu>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.Controller = add.Controller.ToLower();
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Menus.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -69,20 +70,20 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             if (data.Any())
             {
-                throw new Exception("Tên menu đã tồn tại trong nhóm này");
+                throw new BusinessException("Tên menu đã tồn tại trong nhóm này");
             }
 
             var update = await _context.Menus.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.Controller = update.Controller.ToLower();
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.Menus.Update(update);
             await _context.SaveChangesAsync();
 
@@ -96,12 +97,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
                 var delete = await _context.Menus.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Menus.Update(delete);
             }

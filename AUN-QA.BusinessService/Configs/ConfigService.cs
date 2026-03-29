@@ -1,5 +1,8 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.BusinessService.DTOs.Common;
+using AUN_QA.Shared.Common;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using Grpc.Net.Client.Web;
 using AUN_QA.BusinessService.Services.Background;
 using AUN_QA.BusinessService.Services.Commons.Email;
 using AUN_QA.CatalogService.Protos;
@@ -29,28 +32,31 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            // Audit interceptor + action filter
+            builder.Services.AddScoped<AUN_QA.BusinessService.Infrastructure.Interceptors.AuditInterceptor>();
+            builder.Services.AddScoped<AUN_QA.BusinessService.Infrastructure.Filters.AuditActionFilter>();
+
             //DATABASE
-            builder.Services.AddDbContext<BusinessContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("Business")
-            ));
+            builder.Services.AddDbContext<BusinessContext>((sp, options) =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("Business"))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.BusinessService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            var mappingConfig = new MapperConfiguration(mc =>
+            builder.Services.AddAutoMapper(mc =>
             {
-                mc.AddMaps(AppDomain.CurrentDomain.GetAssemblies());
+                mc.AddMaps(typeof(ConfigService).Assembly);
                 mc.CreateMap<DateOnly?, DateTime?>().ConvertUsing(new DateTimeTypeConverter());
                 mc.CreateMap<DateTime?, DateOnly?>().ConvertUsing(new DateOnlyTypeConverter());
-            }, loggerFactory);
-            IMapper mapper = mappingConfig.CreateMapper();
-            builder.Services.AddSingleton(mapper);
+            });
 
             //FLUENT
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
-                options.SuppressModelStateInvalidFilter = true;
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errorMsg = CommonFunc.GetModelStateAPI(context.ModelState);
+                    return new OkObjectResult(new BaseResponse(false, 400, errorMsg));
+                };
             });
             builder.Services.AddMvc()
                 .AddFluentValidation(config =>
@@ -59,7 +65,12 @@ namespace AUN_QA.BusinessService.Configs
                     config.DisableDataAnnotationsValidation = true;
                     config.RegisterValidatorsFromAssemblyContaining<GetByIdDeleteRequestValidator>();
                 })
-                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    options.JsonSerializerOptions.Converters.Add(new VietnamDateTimeConverter());
+                    options.JsonSerializerOptions.Converters.Add(new VietnamNullableDateTimeConverter());
+                });
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();
@@ -84,20 +95,59 @@ namespace AUN_QA.BusinessService.Configs
             });
 
             //GRPC CLIENT
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
-            });
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
+            builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
+            {
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
+            const int grpcMaxMessageSize = 128 * 1024 * 1024; // 128 MB
 
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
-                o.Address = new Uri("http://FileService");
-            });
+                o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.MaxReceiveMessageSize = grpcMaxMessageSize;
+                o.MaxSendMessageSize = grpcMaxMessageSize;
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
 
             builder.Services.AddGrpcClient<CatalogProto.CatalogProtoClient>(o =>
             {
-                o.Address = new Uri("http://CatalogService");
-            });
+                o.Address = new Uri(builder.Configuration["GrpcClients:CatalogService"] ?? "http://CatalogService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
 
         public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>

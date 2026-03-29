@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, ListChecks, Loader2 } from "lucide-react";
 import type {
   SurveyView,
@@ -247,3 +247,4 @@ export const DoSurveyPage = () => {
     </div>
   );
 };
+

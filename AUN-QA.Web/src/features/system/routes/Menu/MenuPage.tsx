@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { getColumns } from "./columns";
-import { DataTable } from "./data-table";
 import PopupDetail from "./PopupDetail";
 import { useMenu } from "@/features/system/hooks/useMenu";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
 
 const MenuPage = () => {
   const {
@@ -26,21 +27,37 @@ const MenuPage = () => {
     [deleteList, showPopupDetail],
   );
 
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+  });
+
   return (
-    <div className="container mx-auto ">
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        showPopupDetail={showPopupDetail}
-        deleteList={deleteList}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        getList={getList}
-        isLoading={isFetching}
-      />
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={Object.keys(rowSelection).length === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={Object.keys(rowSelection).length}
+    >
       {isOpen && (
         <PopupDetail
           key={selectedItem?.Id || "new"}
@@ -50,7 +67,7 @@ const MenuPage = () => {
           saveChange={saveChange}
         />
       )}
-    </div>
+    </ListPageLayout>
   );
 };
 

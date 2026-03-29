@@ -1,7 +1,7 @@
-import { type ColumnDef, type Row } from "@tanstack/react-table";
+﻿import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +39,7 @@ export const getColumns = (
   },
   {
     accessorKey: "FullName",
-    header: "Họ và tên",
+    header: "Hơ vÃ  tên",
   },
   {
     accessorKey: "Email",
@@ -47,7 +47,7 @@ export const getColumns = (
   },
   {
     accessorKey: "TypeName",
-    header: "Loại đối tượng",
+    header: "Loại Đ‘ơ‘i tươ£ng",
   },
   {
     accessorKey: "Description",
@@ -89,7 +89,7 @@ const ActionCell = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+          <DropdownMenuLabel>Chơ©c nĐƒng</DropdownMenuLabel>
           <DropdownMenuItem
             onClick={() => showPopupDetail(row.original.Id, true)}
           >
@@ -109,3 +109,4 @@ const ActionCell = ({
     </>
   );
 };
+

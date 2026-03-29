@@ -13,6 +13,8 @@
     <PackageReference Include="AutoMapper" Version="16.0.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
+    <PackageReference Include="Grpc.AspNetCore.Web" Version="2.76.0" />
+    <PackageReference Include="Grpc.Net.Client.Web" Version="2.76.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.22">
       <PrivateAssets>all</PrivateAssets>
@@ -27,10 +29,12 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\system.proto" GrpcServices="Server" />
+    <Protobuf Include="Protos\audit.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\AUN-QA.ServiceDefaults\AUN-QA.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\AUN-QA.Shared\AUN-QA.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

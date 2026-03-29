@@ -1,7 +1,7 @@
 import { type ColumnDef, type Row } from "@tanstack/react-table";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,3 +154,4 @@ const ActionCell = ({
     </>
   );
 };
+

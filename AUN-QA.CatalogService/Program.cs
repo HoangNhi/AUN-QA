@@ -2,17 +2,33 @@ using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
 using AUN_QA.CatalogService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using Grpc.AspNetCore.Web;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+}
 
 builder.AddServiceDefaults();
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.AddService<AUN_QA.CatalogService.Infrastructure.Filters.AuditActionFilter>();
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ConfigureEndpointDefaults(lo => lo.Protocols = HttpProtocols.Http1AndHttp2);
+});
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();
@@ -30,13 +46,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapControllers();
 app.MapGrpcService<CatalogGrpcService>();
 

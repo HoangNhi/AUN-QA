@@ -1,4 +1,8 @@
-﻿using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.CatalogService.DTOs.Common;
+using AUN_QA.Shared.Common;
+using Grpc.Net.Client.Web;
+using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
@@ -18,38 +22,38 @@ namespace AUN_QA.CatalogService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            // Audit interceptor + action filter
+            builder.Services.AddScoped<AUN_QA.CatalogService.Infrastructure.Interceptors.AuditInterceptor>();
+            builder.Services.AddScoped<AUN_QA.CatalogService.Infrastructure.Filters.AuditActionFilter>();
 
             //DATABASE
-            builder.Services.AddDbContext<CatalogContext>(options =>
+            builder.Services.AddDbContext<CatalogContext>((sp, options) =>
                 options.UseMySql(builder.Configuration.GetConnectionString("Catalog"),
-                ServerVersion.AutoDetect(
-                    builder.Configuration.GetConnectionString("Catalog")
-                )
-            ));
+                ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Catalog")))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.CatalogService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            var mappingConfig = new MapperConfiguration(mc =>
+            builder.Services.AddAutoMapper(mc =>
             {
-                mc.AddMaps(AppDomain.CurrentDomain.GetAssemblies());
+                mc.AddMaps(typeof(ConfigService).Assembly);
                 mc.CreateMap<DateOnly?, DateTime?>().ConvertUsing(new DateTimeTypeConverter());
                 mc.CreateMap<DateTime?, DateOnly?>().ConvertUsing(new DateOnlyTypeConverter());
-            }, loggerFactory);
-            IMapper mapper = mappingConfig.CreateMapper();
-            builder.Services.AddSingleton(mapper);
+            });
 
             //FLUENT
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
-                options.SuppressModelStateInvalidFilter = true;
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errorMsg = CommonFunc.GetModelStateAPI(context.ModelState);
+                    return new OkObjectResult(new BaseResponse(false, 400, errorMsg));
+                };
             });
             builder.Services.AddMvc()
                 .AddFluentValidation(config =>
@@ -58,7 +62,12 @@ namespace AUN_QA.CatalogService.Configs
                     config.DisableDataAnnotationsValidation = true;
                     config.RegisterValidatorsFromAssemblyContaining<FacultyRequestValidator>();
                 })
-                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    options.JsonSerializerOptions.Converters.Add(new VietnamDateTimeConverter());
+                    options.JsonSerializerOptions.Converters.Add(new VietnamNullableDateTimeConverter());
+                });
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();
@@ -81,10 +90,30 @@ namespace AUN_QA.CatalogService.Configs
 
             // gRPC
             builder.Services.AddGrpc();
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<SystemProto.SystemProtoClient>(o =>
             {
-                o.Address = new Uri("http://SystemService");
-            });
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+
+            builder.Services.AddGrpcClient<AuditProto.AuditProtoClient>(o =>
+            {
+                o.Address = new Uri(builder.Configuration["GrpcClients:SystemService"] ?? "http://SystemService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }
     public class DateTimeTypeConverter : ITypeConverter<DateOnly?, DateTime?>

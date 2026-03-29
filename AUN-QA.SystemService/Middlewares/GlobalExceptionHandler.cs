@@ -1,4 +1,5 @@
-﻿using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -8,11 +9,13 @@ namespace AUN_QA.SystemService.Middlewares
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<GlobalExceptionHandler> _logger;
+        private readonly IWebHostEnvironment _env;
 
-        public GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptionHandler> logger)
+        public GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptionHandler> logger, IWebHostEnvironment env)
         {
             _next = next;
             _logger = logger;
+            _env = env;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -29,16 +32,29 @@ namespace AUN_QA.SystemService.Middlewares
 
         private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
-
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.OK;
+
+            string message;
+            int statusCode;
+
+            if (exception is BusinessException busEx)
+            {
+                message = busEx.Message;
+                statusCode = busEx.StatusCode;
+            }
+            else
+            {
+                _logger.LogError(exception, "Lỗi hệ thống: {Message}", exception.Message);
+                message = _env.IsDevelopment() ? exception.Message : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.";
+                statusCode = 500;
+            }
 
             var response = new BaseResponse<string>
             {
                 Success = false,
-                StatusCode = context.Response.StatusCode,
-                Message = exception.Message // In production, you might want to hide the actual exception message
+                StatusCode = statusCode,
+                Message = message
             };
 
             var json = JsonSerializer.Serialize(response);

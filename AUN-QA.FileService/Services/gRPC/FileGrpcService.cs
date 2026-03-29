@@ -1,9 +1,12 @@
 using AUN_QA.FileService.Protos;
 using AUN_QA.FileService.Services.CoreFeature.UploadFile;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AUN_QA.FileService.Services.Grpc
 {
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class FileGrpcService : FileProto.FileProtoBase
     {
         private readonly IUploadFileService _uploadFileService;
@@ -67,6 +70,21 @@ namespace AUN_QA.FileService.Services.Grpc
             var response = new UploadAvatarResponse
             {
                 NewImage = result
+            };
+
+            return Task.FromResult(response);
+        }
+
+        public override Task<PreviewFileResponse> PreviewFile(PreviewFileRequest request, ServerCallContext context)
+        {
+            var result = _uploadFileService.PreviewFile(request.FileUrl);
+
+            var response = new PreviewFileResponse
+            {
+                FileContent = Google.Protobuf.ByteString.CopyFrom(result.FileContent),
+                ContentType = result.ContentType,
+                FileName = result.FileName,
+                HasWatermark = result.HasWatermark
             };
 
             return Task.FromResult(response);

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+﻿import { useCallback, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { DataTable } from "@/components/ui/data-table";
@@ -93,7 +93,7 @@ const PopupReuseEvidence = ({
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Tái sử dụng minh chứng đã duyệt</DialogTitle>
+          <DialogTitle>Tái sơ­ dơ¥ng minh chơ©ng Đ‘ã duyơ‡t</DialogTitle>
         </DialogHeader>
 
         {/* Filter Bar */}
@@ -108,7 +108,7 @@ const PopupReuseEvidence = ({
             }}
             value={fileTypeId}
             onValueChange={(val) => setFileTypeId(val || "")}
-            placeholder="Tất cả loại tài liệu"
+            placeholder="Tất cả loáº¡i tÃ i liơ‡u"
             searchPlaceholder="Tìm kiếm..."
             emptyText="Không tìm thấy."
             modal={true}
@@ -116,7 +116,7 @@ const PopupReuseEvidence = ({
 
           <div className="flex rounded-md shadow-xs">
             <Input
-              placeholder="Tên hoặc mã minh chứng..."
+              placeholder="Tên hoáº·c mã minh chơ©ng..."
               value={textSearch}
               onChange={(e) => setTextSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -141,7 +141,7 @@ const PopupReuseEvidence = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Đóng
+            Đóng
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -150,3 +150,4 @@ const PopupReuseEvidence = ({
 };
 
 export default PopupReuseEvidence;
+

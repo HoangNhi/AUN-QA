@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using AUN_QA.Shared.Common;
 
 namespace AUN_QA.BusinessService.Helpers
 {
@@ -26,7 +27,7 @@ namespace AUN_QA.BusinessService.Helpers
             body = body.Replace("{{StakeholderName}}", stakeholderName)
                        .Replace("{{CampaignName}}", campaignName)
                        .Replace("{{SurveyLink}}", surveyLink)
-                       .Replace("{{CurrentYear}}", DateTime.Now.Year.ToString());
+                       .Replace("{{CurrentYear}}", DateTimeHelper.VietnamNow.Year.ToString());
 
             return body;
         }

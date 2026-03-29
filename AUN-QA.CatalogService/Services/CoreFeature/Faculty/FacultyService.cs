@@ -1,4 +1,5 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Dtos;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Faculty.Requests;
 using AUN_QA.CatalogService.Infrastructure.Data;
@@ -30,7 +31,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
             var data = await _context.Faculties.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelFaculty>(data);
@@ -45,13 +46,13 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
 
             if (data.Any())
             {
-                throw new Exception("Tên khoa đã tồn tại");
+                throw new BusinessException("Tên khoa đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Faculty>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.Faculties.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -67,19 +68,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
 
             if (data.Any())
             {
-                throw new Exception("Tên khoa đã tồn tại");
+                throw new BusinessException("Tên khoa đã tồn tại");
             }
 
             var update = await _context.Faculties.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             _context.Faculties.Update(update);
             await _context.SaveChangesAsync();
@@ -94,7 +95,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Faculty
                 var delete = await _context.Faculties.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;

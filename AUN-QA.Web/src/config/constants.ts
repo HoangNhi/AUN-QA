@@ -47,7 +47,14 @@ export const API_ENDPOINTS = {
     },
     Auth: {
       LOGIN: `${SYSTEM_BASE}/Auth/login`,
+      LOGOUT: `${SYSTEM_BASE}/Auth/logout`,
       REFRESH_TOKEN: `${SYSTEM_BASE}/Auth/refresh-token`,
+    },
+    AuditLog: {
+      GET_LIST: `${SYSTEM_BASE}/AuditLog/get-list`,
+      GET_BY_ID: `${SYSTEM_BASE}/AuditLog/get-by-id`,
+      GET_ENTITY_NAMES: `${SYSTEM_BASE}/AuditLog/get-entity-names`,
+      GET_ACTIONS: `${SYSTEM_BASE}/AuditLog/get-actions`,
     },
   },
   Catalog: {
@@ -58,15 +65,6 @@ export const API_ENDPOINTS = {
       UPDATE: `${CATALOG_BASE}/Faculty/update`,
       DELETE_LIST: `${CATALOG_BASE}/Faculty/delete-list`,
       GET_ALL_COMBOBOX: `${CATALOG_BASE}/Faculty/get-all-combobox`,
-    },
-    Cycle: {
-      GET_LIST: `${CATALOG_BASE}/Cycle/get-list`,
-      GET_BY_ID: `${CATALOG_BASE}/Cycle/get-by-id`,
-      INSERT: `${CATALOG_BASE}/Cycle/insert`,
-      UPDATE: `${CATALOG_BASE}/Cycle/update`,
-      DELETE_LIST: `${CATALOG_BASE}/Cycle/delete-list`,
-      GET_COMBBOX_BY_USER: `${CATALOG_BASE}/Cycle/get-combobox-by-user`,
-      CHANGE_STATUS: `${CATALOG_BASE}/Cycle/change-status`,
     },
     Stakeholder: {
       GET_LIST: `${CATALOG_BASE}/Stakeholder/get-list`,
@@ -104,6 +102,15 @@ export const API_ENDPOINTS = {
     },
   },
   Business: {
+    Cycle: {
+      GET_LIST: `${BUSINESS_BASE}/Cycle/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/Cycle/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/Cycle/insert`,
+      UPDATE: `${BUSINESS_BASE}/Cycle/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/Cycle/delete-list`,
+      GET_COMBBOX_BY_USER: `${BUSINESS_BASE}/Cycle/get-combobox-by-user`,
+      CHANGE_STATUS: `${BUSINESS_BASE}/Cycle/change-status`,
+    },
     Evidence: {
       GET_LIST: `${BUSINESS_BASE}/Evidence/get-list`,
       GET_BY_ID: `${BUSINESS_BASE}/Evidence/get-by-id`,
@@ -113,6 +120,10 @@ export const API_ENDPOINTS = {
       GET_ALL_COMBOBOX: `${BUSINESS_BASE}/Evidence/get-all-combobox`,
       SUBMIT_TO_APPROVE: `${BUSINESS_BASE}/Evidence/submit-to-approve`,
       APPROVE: `${BUSINESS_BASE}/Evidence/approve`,
+      PREVIEW: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) => `${BUSINESS_BASE}/Evidence/preview/${attachmentId}?mode=${mode}`,
     },
     EvidenceCycleMap: {
       GET_LIST: `${BUSINESS_BASE}/EvidenceCycleMap/get-list`,
@@ -150,12 +161,30 @@ export const API_ENDPOINTS = {
       SEND_SURVEY_INVITATION: `${BUSINESS_BASE}/SurveyCampaign/send-survey-invitation`,
       GET_SURVEY_BY_TOKEN: `${BUSINESS_BASE}/SurveyCampaign/get-survey-by-token`,
       SUBMIT_SURVEY: `${BUSINESS_BASE}/SurveyCampaign/submit-survey`,
+      GET_AGGREGATED_RESULTS: `${BUSINESS_BASE}/SurveyCampaign/get-aggregated-results`,
+    },
+    CriterionEvaluation: {
+      GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,
+      GET_LIST: `${BUSINESS_BASE}/CriterionEvaluation/get-list`,
+      GET_SUBMISSIONS: `${BUSINESS_BASE}/CriterionEvaluation/get-submissions`,
+      GET_MY_SUBMISSION: `${BUSINESS_BASE}/CriterionEvaluation/get-my-submission`,
+      SUBMIT: `${BUSINESS_BASE}/CriterionEvaluation/submit`,
+      APPROVE: `${BUSINESS_BASE}/CriterionEvaluation/approve`,
+      INITIALIZE: `${BUSINESS_BASE}/CriterionEvaluation/initialize`,
+      GET_EVIDENCES: `${BUSINESS_BASE}/CriterionEvaluation/get-evidences`,
+      GET_POPUP_DATA: `${BUSINESS_BASE}/CriterionEvaluation/get-popup-data`,
+    },
+    Sar: {
+      GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
+      GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
+      SAVE_DRAFT: `${BUSINESS_BASE}/Sar/save-draft`,
     },
   },
   File: {
     UploadFile: {
       POST: `${FILE_BASE}/api/UploadFile`,
       GET: `${FILE_BASE}/`,
+      EMBED: `${FILE_BASE}/api/UploadFile/embed`,
     },
   },
 };

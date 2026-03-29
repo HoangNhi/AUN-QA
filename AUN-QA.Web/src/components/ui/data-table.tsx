@@ -1,4 +1,4 @@
-import {
+﻿import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -6,7 +6,7 @@ import {
   type RowSelectionState,
   type OnChangeFn,
 } from "@tanstack/react-table";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -72,93 +72,104 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("space-y-4 w-full", className)}>
-      {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
+      {/* Khung bao ngoÃ i cùng: Bo góc, có viơn, nơn trắng */}
       <div className="relative w-full overflow-clip rounded-md border flex flex-col bg-white">
-        {/* Loading Overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        )}
 
-        {/* 👇 KHUNG CUỘN CHÍNH (Nơi chứa thanh cuộn) */}
-        <div className={cn(containerClassName)}>
-          <table className="w-full caption-bottom text-sm text-left">
-            {/* Header */}
-            <thead className="bg-background">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr
-                  key={headerGroup.id}
-                  className="border-b transition-colors data-[state=selected]:bg-muted"
-                >
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      // 👇 STICKY CHUẨN:
-                      // - sticky top-0: Dính lên trên cùng.
-                      // - z-10: Nổi lên trên nội dung.
-                      // - bg-white: Nền trắng đặc để che chữ chạy bên dưới.
-                      // - shadow: Tạo đường kẻ mỏng bên dưới (thay cho border để không bị dày).
-                      className="h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-white shadow-[0_1px_0_0_#e5e7eb]"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+        {/* Wrapper cho khung cuơ™n Đ‘ơƒ neo Overlay Loading Đ‘úng pháº§n Body */}
+        <div className="relative w-full">
+          {/* Loading Overlay */}
+          {isLoading && (
+            <div className="absolute top-[48px] inset-x-0 bottom-0 z-50 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+
+          {/* ðŸ‘‡ KHUNG CUơ˜N CHÃNH (NÆ¡i chứa thanh cuơ™n) */}
+          <div className={cn(
+            containerClassName,
+            // Custom scrollbar Đ‘ơƒ margin-top hoáº¡t Đ‘ơ™ng (báº¯t buơ™c phải có width/height thì track/thumb mới Đ‘ươ£c render custom)
+            "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
+            "[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:mt-[48px]",
+            "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
+          )}>
+            <table className="w-full caption-bottom text-sm text-left">
+              {/* Header */}
+              <thead className="bg-background">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr
+                    key={headerGroup.id}
+                    className="border-b transition-colors data-[state=selected]:bg-muted"
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        // Dùng pseudo-element về border 1px ở dưới mÃ ng sticky, káº¿t hơ£p shadow
+                        className={cn(
+                          "h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-white",
+                          "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-border",
+                          "shadow-[0_4px_4px_-2px_rgba(0,0,0,0.05)]",
+                          (header.column.columnDef.meta as { headerClassName?: string })?.headerClassName
+                        )}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
                             header.column.columnDef.header,
                             header.getContext(),
                           )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-
-            {/* Body */}
-            <tbody className="[&_tr:last-child]:border-0">
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={
-                      rowSelection && row.getIsSelected() && "selected"
-                    }
-                    className={cn(
-                      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-                      getRowClassName?.(row.original),
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          "p-4 align-middle",
-                          (cell.column.columnDef.meta as { className?: string })
-                            ?.className,
-                        )}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
+                      </th>
                     ))}
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="h-24 text-center align-middle"
-                  >
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+              </thead>
+
+              {/* Body */}
+              <tbody className="[&_tr:last-child]:border-0">
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={
+                        rowSelection && row.getIsSelected() && "selected"
+                      }
+                      className={cn(
+                        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                        getRowClassName?.(row.original),
+                      )}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            "p-4 align-middle",
+                            (cell.column.columnDef.meta as { className?: string })
+                              ?.className,
+                          )}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="h-24 text-center align-middle"
+                    >
+                      Không có dữ liệu
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* 👇 PAGINATION: Nằm trong khung border, ngăn cách bằng border-t */}
+        {/* ðŸ‘‡ PAGINATION: Náº±m trong khung border, ngĐƒn cách bằng border-t */}
         {pageRequest && totalRow !== undefined && (
           <div className="shrink-0 border-t bg-white">
             <DataTablePagination
@@ -305,7 +316,7 @@ function DataTablePagination({
                 variant="outline"
                 className="h-8 w-8 p-0 ml-2"
                 onClick={onRefresh}
-                title="Làm mới"
+                title="LÃ m mới"
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
@@ -316,3 +327,4 @@ function DataTablePagination({
     </div>
   );
 }
+

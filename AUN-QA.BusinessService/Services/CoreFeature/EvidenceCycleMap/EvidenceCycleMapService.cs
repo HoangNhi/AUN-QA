@@ -1,16 +1,17 @@
-﻿using AUN_QA.BusinessService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Responses;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
-using AUN_QA.BusinessService.Services.Integration.Catalog;
+using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using System.Net.WebSockets;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 {
@@ -35,29 +36,29 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IUploadFileService _uploadFileService;
-        private readonly ICatalogIntegrationService _catalogService;
+        private readonly ICycleService _cycleService;
 
         public EvidenceCycleMapService(
             BusinessContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
             IUploadFileService uploadFileService,
-            ICatalogIntegrationService catalogService)
+            ICycleService cycleService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _uploadFileService = uploadFileService;
-            _catalogService = catalogService;
+            _cycleService = cycleService;
         }
 
         #region PDCA - DO: EvidenceCycleMap
         public async Task<EvidenceCycleMapRequest> GetById(GetByIdRequest request)
         {
-            var data = await _context.EvidenceCycleMaps.FindAsync(request.Id);
+            var data = await _context.EvidenceCycleMaps.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
@@ -65,7 +66,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             var result = _mapper.Map<EvidenceCycleMapRequest>(data);
 
             // Load Evidence details
-            var evidence = await _context.Evidences.FindAsync(data.EvidenceId);
+            var evidence = await _context.Evidences.AsNoTracking().FirstOrDefaultAsync(x => x.Id == data.EvidenceId);
             if (evidence != null)
             {
                 result.Evidence = _mapper.Map<EvidenceRequest>(evidence);
@@ -82,7 +83,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
-                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckCycleStageAsync(request.CycleId.ToString());
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 // Validate duplicate name or code
                 var data = _context.Evidences.Where(x =>
@@ -92,7 +94,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 if (await data.AnyAsync())
                 {
-                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                    throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
                 }
 
                 var add = _mapper.Map<Entities.Evidence>(request.Evidence);
@@ -104,7 +106,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 add.Status = request.Evidence.Status == ((int)EvidenceStatus.Pending) ? ((int)EvidenceStatus.Pending) : ((int)EvidenceStatus.Draft);
 
                 add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                add.CreatedAt = DateTime.Now;
+                add.CreatedAt = DateTime.UtcNow;
                 await _context.Evidences.AddAsync(add);
 
                 #region Thêm tài liệu đính kèm
@@ -114,7 +116,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
                     addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -130,7 +132,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                     CycleId = request.CycleId,
                     ReviewStatus = ((int)EvidenceCycleMapReviewStatus.NotStarted),
                     CreatedBy = add.CreatedBy,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     IsActived = true,
                     IsDeleted = false
                 };
@@ -161,18 +163,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             try
             {
-                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckCycleStageAsync(request.CycleId.ToString());
+                await CheckPdcaPermissionAsync(request.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 #region Evidence
                 var update = await _context.Evidences.FindAsync(request.Evidence.Id);
                 if (update == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 if (update.Status == ((int)EvidenceStatus.Pending) || update.Status == ((int)EvidenceStatus.Verified))
                 {
-                    throw new Exception("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
+                    throw new BusinessException("Không được cập nhật minh chứng đang chờ duyệt hoặc đã duyệt");
                 }
 
                 // Validate duplicate name or code
@@ -182,7 +185,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
                 if (await data.AnyAsync())
                 {
-                    throw new Exception("Tên hoặc mã minh chứng đã tồn tại");
+                    throw new BusinessException("Tên hoặc mã minh chứng đã tồn tại");
                 }
 
                 _mapper.Map(request.Evidence, update);
@@ -190,32 +193,34 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 // Always reset to Draft after update to require re-approval
                 update.Status = (int)EvidenceStatus.Draft;
                 update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                update.UpdatedAt = DateTime.Now;
+                update.UpdatedAt = DateTime.UtcNow;
 
                 _context.Evidences.Update(update);
 
                 #region Thêm tài liệu đính kèm
-                var ListDinhKemCanXoa = _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
-                                    && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToList();
+                var ListDinhKemCanXoa = await _context.EvidenceAttachments.Where(x => x.RelatedId == update.Id
+                                    && !x.IsDeleted
+                                    && !request.Evidence.AttachmentIds.Any(y => y == x.Id)).ToListAsync();
 
                 // Xóa các file không còn trong danh sách
                 await _uploadFileService.DeleteDataAsync(ListDinhKemCanXoa.Select(x => x.FileUrl).ToList());
                 foreach (var attachment in ListDinhKemCanXoa)
                 {
-                    attachment.UpdatedAt = DateTime.Now;
+                    attachment.UpdatedAt = DateTime.UtcNow;
                     attachment.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
                     attachment.IsDeleted = true;
 
                     _context.EvidenceAttachments.Update(attachment);
                 }
                 // Thêm mới các file trong danh sách
-                lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence", request.FolderUpload);
+                lstAttachment = await _uploadFileService.UploadDataAsync(update.Id.ToString(), "Evidence" +
+                    "", request.FolderUpload);
                 foreach (var attachment in lstAttachment)
                 {
                     Entities.EvidenceAttachment addAttachment = _mapper.Map<Entities.EvidenceAttachment>(attachment);
                     addAttachment.Id = Guid.NewGuid(); // Server-side ID generation only
                     addAttachment.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                    addAttachment.CreatedAt = DateTime.Now;
+                    addAttachment.CreatedAt = DateTime.UtcNow;
                     addAttachment.IsActived = true;
                     addAttachment.IsDeleted = false;
 
@@ -228,12 +233,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 var cycleMapUpdate = await _context.EvidenceCycleMaps.FindAsync(request.Id);
                 if (cycleMapUpdate == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 cycleMapUpdate.CycleId = request.CycleId;
                 cycleMapUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                cycleMapUpdate.UpdatedAt = DateTime.Now;
+                cycleMapUpdate.UpdatedAt = DateTime.UtcNow;
                 _context.EvidenceCycleMaps.Update(cycleMapUpdate);
                 #endregion
 
@@ -261,10 +266,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 var delete = await _context.EvidenceCycleMaps.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
-                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                await CheckCycleStageAsync(delete.CycleId.ToString());
+                await CheckPdcaPermissionAsync(delete.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
@@ -277,14 +283,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task<GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>> GetList(EvidenceCycleMapGetListPagingRequest request)
         {
-            if (request.CycleId.HasValue)
-                await CheckPdcaPermissionAsync(request.CycleId.Value.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
-
-            var cycle = await _catalogService.GetCyclesStreamAsync(new CatalogService.Protos.GetCyclesStreamRequest()).ToListAsync();
+            var cycles = await _context.Cycles
+                .Where(x => x.IsActived && !x.IsDeleted)
+                .Select(x => new { x.Id, x.Name })
+                .ToListAsync();
+            var activeCycleIds = cycles.Select(c => c.Id).ToList();
 
             var query = from ecm in _context.EvidenceCycleMaps.AsQueryable()
                         join e in _context.Evidences on ecm.EvidenceId equals e.Id
-                        where !ecm.IsDeleted
+                        where !ecm.IsDeleted && activeCycleIds.Contains(ecm.CycleId)
                         select new ModelEvidenceCycleMapGetListPaging
                         {
                             Id = ecm.Id,
@@ -331,6 +338,32 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 query = query.Where(x => x.Evidence_FileTypeId == request.FileTypeId.Value);
             }
 
+            // === Role-based visibility filter ===
+            var username = _contextAccessor.HttpContext.User.Identity.Name;
+            bool isAdmin = string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAdmin)
+            {
+                var userIdString = _contextAccessor.HttpContext.User.Claims
+                    .FirstOrDefault(x => x.Type == "name")?.Value;
+                if (!string.IsNullOrEmpty(userIdString) && Guid.TryParse(userIdString, out var userId))
+                {
+                    var userCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId);
+                    query = query.Where(x => userCycleIds.Contains(x.CycleId));
+                }
+                else
+                {
+                    return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>
+                    {
+                        PageIndex = request.PageIndex,
+                        PageSize = request.PageSize,
+                        TotalRow = 0,
+                        Data = new List<ModelEvidenceCycleMapGetListPaging>()
+                    };
+                }
+            }
+            // === END: Role-based visibility filter ===
+
             var totalRow = await query.CountAsync();
 
             var data = await query
@@ -339,10 +372,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 .Take(request.PageSize)
                 .ToListAsync();
 
-            // Populate CycleName from in-memory cycle list
             foreach (var item in data)
             {
-                item.CycleName = cycle.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
+                item.CycleName = cycles.FirstOrDefault(x => x.Id == item.CycleId)?.Name;
             }
 
             return new GetListPagingResponse<ModelEvidenceCycleMapGetListPaging>
@@ -375,18 +407,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             {
                 foreach (var item in request.Ids)
                 {
-                    var evidenceCycleMap = _context.EvidenceCycleMaps.Find(item);
+                    var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(item);
                     if (evidenceCycleMap is not null)
                     {
-                        await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+                        await CheckCycleStageAsync(evidenceCycleMap.CycleId.ToString());
+                        await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
-                        var evidence = _context.Evidences.Find(evidenceCycleMap.EvidenceId);
+                        var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
                         if (evidence is not null)
                         {
                             if (evidence.Status == ((int)EvidenceStatus.Draft))
                             {
                                 evidence.Status = ((int)EvidenceStatus.Pending);
-                                evidence.UpdatedAt = DateTime.Now;
+                                evidence.UpdatedAt = DateTime.UtcNow;
                                 evidence.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
                                 _context.Evidences.Update(evidence);
@@ -400,23 +433,24 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task Approve(EvidenceCycleMapApproveRequest request)
         {
-            var evidenceCycleMap = _context.EvidenceCycleMaps.Find(request.Id);
+            var evidenceCycleMap = await _context.EvidenceCycleMaps.FindAsync(request.Id);
             if (evidenceCycleMap is null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
-            await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.Secretary));
+            await CheckCycleStageAsync(evidenceCycleMap.CycleId.ToString());
+            await CheckPdcaPermissionAsync(evidenceCycleMap.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary));
 
-            var evidence = _context.Evidences.Find(evidenceCycleMap.EvidenceId);
+            var evidence = await _context.Evidences.FindAsync(evidenceCycleMap.EvidenceId);
             if (evidence is null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             evidence.Status = request.EvidenceStatus;
             evidence.RejectionReason = request.RejectionReason;
-            evidence.ApprovedAt = DateTime.Now;
+            evidence.ApprovedAt = DateTime.UtcNow;
             evidence.ApprovedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
 
             _context.Evidences.Update(evidence);
@@ -477,6 +511,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
             return result;
         }
+        
         public async Task<GetListPagingResponse<ModelVerifiedEvidenceForReuse>> GetVerifiedForReuseAsync(VerifiedEvidenceForReuseRequest request)
         {
             var query = _context.Evidences
@@ -546,18 +581,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
 
         public async Task ReuseVerifiedEvidenceAsync(ReuseVerifiedEvidenceRequest request)
         {
-            await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.Secretary, CouncilRole.EvidenceProvider));
+            await CheckCycleStageAsync(request.TargetCycleId.ToString());
+            await CheckPdcaPermissionAsync(request.TargetCycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.EvidenceProvider));
 
             var evidence = await _context.Evidences.FindAsync(request.EvidenceId);
             if (evidence == null || evidence.Status != (int)EvidenceStatus.Verified)
-                throw new Exception("Chỉ có thể tái sử dụng minh chứng đã được duyệt");
+                throw new BusinessException("Chỉ có thể tái sử dụng minh chứng đã được duyệt");
 
             var existing = await _context.EvidenceCycleMaps
                 .FirstOrDefaultAsync(x => x.EvidenceId == request.EvidenceId
                                           && x.CycleId == request.TargetCycleId
                                           && !x.IsDeleted);
             if (existing != null)
-                throw new Exception("Minh chứng này đã được liên kết với chu kỳ hiện tại");
+                throw new BusinessException("Minh chứng này đã được liên kết với chu kỳ hiện tại");
 
             var cycleMap = new Entities.EvidenceCycleMap
             {
@@ -566,7 +602,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 CycleId      = request.TargetCycleId,
                 ReviewStatus = (int)EvidenceCycleMapReviewStatus.NotStarted,
                 CreatedBy    = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System",
-                CreatedAt    = DateTime.Now,
+                CreatedAt    = DateTime.UtcNow,
                 IsActived    = true,
                 IsDeleted    = false
             };
@@ -584,18 +620,61 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         {
             var userId = _contextAccessor.HttpContext!.User.Claims
                 .FirstOrDefault(x => x.Type == "name")!.Value;
-            var allowed = await _catalogService.CanUserDoActionInPdcaAsync(cycleId, userId, null, allowedRoles);
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = Guid.Parse(cycleId),
+                UserId = Guid.Parse(userId),
+                AllowedRoles = allowedRoles
+            });
             if (!allowed)
-                throw new Exception("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+        }
+
+        /// <summary>
+        /// Kiểm tra chu kỳ có đang ở giai đoạn Thực hiện (Do) không.
+        /// Nếu không, chỉ Admin / Chủ tịch / PCT HĐ mới được tiếp tục.
+        /// </summary>
+        private async Task CheckCycleStageAsync(string cycleId)
+        {
+            var (found, status) = await _cycleService.GetCycleStatusAsync(Guid.Parse(cycleId));
+
+            if (!found)
+                throw new BusinessException("Chu kỳ không tồn tại");
+
+            // CycleStatus.Do == 2 (Thực hiện)
+            const int CycleStatusDo = 2;
+            if (status == CycleStatusDo)
+                return;
+
+            var username = _contextAccessor.HttpContext!.User.Identity?.Name;
+            if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var userId = _contextAccessor.HttpContext!.User.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
+
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = Guid.Parse(cycleId),
+                UserId = Guid.Parse(userId),
+                AllowedRoles = Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman)
+            });
+
+            if (!allowed)
+                throw new BusinessException("Chu kỳ chưa ở giai đoạn Thực hiện, bạn không có quyền thực hiện thao tác này");
         }
 
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
-            var result = await _context.EvidenceAttachments
+            var attachments = await _context.EvidenceAttachments
+                .AsNoTracking()
                 .Where(x => x.RelatedId == Id && x.IsActived && !x.IsDeleted)
-                .Select(x => _mapper.Map<ModelAttachment>(x))
                 .ToListAsync();
-            return result;
+
+            return attachments.Select(x => _mapper.Map<ModelAttachment>(x)).ToList();
         }
         #endregion
     }

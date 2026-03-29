@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,7 +18,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Loader2, Edit3, Eye, ArrowLeft } from "lucide-react";
@@ -30,6 +36,16 @@ import { useSurveyTopics } from "../../hooks/useSurveyTopics";
 import type { SurveyTemplate } from "../../types/survey-template.types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  title: z.string().min(1, "Vui lòng nhập tiêu đề"),
+  stakeholderType: z.string().min(1, "Vui lòng chơn loại Đ‘ơ‘i tương"),
+  description: z.string().optional(),
+  isActived: z.boolean(),
+});
 
 const PopupSurveyTemplate = ({
   surveyTemplate,
@@ -48,30 +64,32 @@ const PopupSurveyTemplate = ({
   isLoading?: boolean;
 }) => {
   const [id, setId] = useState<string>(surveyTemplate?.Id || uuidv4());
-  const [title, setTitle] = useState(surveyTemplate?.Title || "");
-  const [stakeholderType, setStakeholderType] = useState(
-    surveyTemplate?.StakeholderType?.toString() || "1",
-  );
-  const [description, setDescription] = useState(
-    surveyTemplate?.Description || "",
-  );
-  const [isActived, setIsActived] = useState(surveyTemplate?.IsActived ?? true);
 
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyTemplate?.ListTopic || []);
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
-  const handleSave = (isAddMore: boolean) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: surveyTemplate?.Title || "",
+      stakeholderType: surveyTemplate?.StakeholderType?.toString() || "1",
+      description: surveyTemplate?.Description || "",
+      isActived: surveyTemplate?.IsActived ?? true,
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
     const payload = {
       Id: id,
-      Title: title,
-      StakeholderType: parseInt(stakeholderType),
-      Description: description,
-      IsActived: isActived,
+      Title: values.title,
+      StakeholderType: parseInt(values.stakeholderType),
+      Description: values.description || "",
+      IsActived: values.isActived,
       ListTopic: listTopic,
-      IsEdit: (surveyTemplate as any)?.IsEdit || false,
-    };
+      IsEdit: surveyTemplate?.IsEdit || false,
+    } as SurveyTemplate & { IsEdit: boolean };
 
     saveChange(payload, isAddMore);
   };
@@ -83,19 +101,22 @@ const PopupSurveyTemplate = ({
   useEffect(() => {
     if (surveyTemplate) {
       setId(surveyTemplate.Id || uuidv4());
-      setTitle(surveyTemplate.Title || "");
-      setStakeholderType(surveyTemplate.StakeholderType?.toString() || "1");
-      setDescription(surveyTemplate.Description || "");
-      setIsActived(surveyTemplate.IsActived ?? true);
+      form.reset({
+        title: surveyTemplate.Title || "",
+        stakeholderType: surveyTemplate.StakeholderType?.toString() || "1",
+        description: surveyTemplate.Description || "",
+        isActived: surveyTemplate.IsActived ?? true,
+      });
       setListTopic(surveyTemplate.ListTopic || []);
     }
-  }, [surveyTemplate, setListTopic]);
+  }, [surveyTemplate, setListTopic, form]);
 
   const getPreviewData = (): SurveyView => {
+    const values = form.getValues();
     return {
       Id: id,
-      Name: title || "Tiêu đề mẫu (Xem trước)",
-      StakeholderType: parseInt(stakeholderType),
+      Name: values.title || "Tiêu đề mẫu (Xem trước)",
+      StakeholderType: parseInt(values.stakeholderType),
       IsSessionCompleted: false,
       ListTopic:
         listTopic as unknown as import("../../types/survey-campaign.types").SurveyViewTopic[],
@@ -115,202 +136,231 @@ const PopupSurveyTemplate = ({
         style={
           mode === "preview"
             ? {
-                maxWidth: "100vw",
-                width: "100vw",
-                height: "100vh",
-              }
+              maxWidth: "100vw",
+              width: "100vw",
+              height: "100vh",
+            }
             : undefined
         }
       >
-        <form
-          className="flex flex-col w-full min-h-0 h-full"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSave(false);
-          }}
-        >
-          <DialogHeader
-            className={cn(
-              "p-6 pb-4 border-b shrink-0 bg-white z-10 transition-all",
-              mode === "preview" ? "py-4 shadow-sm" : "",
-            )}
+        <Form {...form}>
+          <form
+            className="flex flex-col w-full min-h-0 h-full"
+            onSubmit={form.handleSubmit((values) => onSubmit(values, false))}
           >
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {mode === "preview" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setMode("edit")}
-                    className="mr-2"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </Button>
-                )}
-                <span>
-                  {(surveyTemplate as any)?.IsEdit
-                    ? "Cập nhật mẫu khảo sát"
-                    : "Thêm mới mẫu khảo sát"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Tabs
-                  value={mode}
-                  onValueChange={(v) =>
-                    handleModeChange(v as "edit" | "preview")
-                  }
-                >
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="edit">
-                      <Edit3 size={16} className="mr-2" /> Soạn thảo
-                    </TabsTrigger>
-                    <TabsTrigger value="preview">
-                      <Eye size={16} className="mr-2" /> Xem trước
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Edit Mode Content - Keep mounted but hide when in preview */}
-          <div
-            className={cn(
-              "flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0",
-              mode === "preview" && "hidden",
-            )}
-          >
-            <div className="pb-6">
-              <div className="grid gap-4 pb-6 grid-cols-2">
-                <div className="grid gap-2 col-span-2">
-                  <Label
-                    htmlFor="title"
-                    className="after:content-['*'] after:ml-0.5 after:text-red-500"
-                  >
-                    Tiêu đề
-                  </Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    maxLength={255}
-                    placeholder="Nhập tiêu đề"
-                    className="bg-white"
-                  />
+            <DialogHeader
+              className={cn(
+                "p-6 pb-4 border-b shrink-0 bg-white z-10 transition-all",
+                mode === "preview" ? "py-4 shadow-sm" : "",
+              )}
+            >
+              <DialogTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {mode === "preview" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setMode("edit")}
+                      className="mr-2"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                  )}
+                  <span>
+                    {surveyTemplate?.IsEdit
+                      ? "Cập nhật mẫu khảo sát"
+                      : "Thêm mới mẫu khảo sát"}
+                  </span>
                 </div>
 
-                <div className="col-span-2 grid gap-2 grid-cols-2 items-start">
-                  <div className="grid gap-2">
-                    <Label htmlFor="description">Mô tả</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Nhập mô tả"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="min-h-[120px] bg-white resize-y"
+                <div className="flex items-center gap-3">
+                  <Tabs
+                    value={mode}
+                    onValueChange={(v) =>
+                      handleModeChange(v as "edit" | "preview")
+                    }
+                  >
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="edit">
+                        <Edit3 size={16} className="mr-2" /> Soạn thảo
+                      </TabsTrigger>
+                      <TabsTrigger value="preview">
+                        <Eye size={16} className="mr-2" /> Xem trước
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Edit Mode Content - Keep mounted but hide when in preview */}
+            <div
+              className={cn(
+                "flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0",
+                mode === "preview" && "hidden",
+              )}
+            >
+              <div className="pb-6">
+                <div className="grid gap-4 pb-6 grid-cols-2">
+                  <div className="grid gap-2 col-span-2">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                            Tiêu đề
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              required
+                              maxLength={255}
+                              placeholder="Nhập tiêu Đ‘ơ"
+                              className="bg-white"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <div className="grid gap-2">
-                      <Label
-                        htmlFor="stakeholderType"
-                        className="after:content-['*'] after:ml-0.5 after:text-red-500"
-                      >
-                        Loại đối tượng
-                      </Label>
-                      <Select
-                        value={stakeholderType}
-                        onValueChange={setStakeholderType}
-                      >
-                        <SelectTrigger
-                          id="stakeholderType"
-                          className="w-full bg-white"
-                        >
-                          <SelectValue placeholder="Chọn loại đối tượng" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">Sinh viên</SelectItem>
-                          <SelectItem value="2">Cựu sinh viên</SelectItem>
-                          <SelectItem value="4">Giảng viên</SelectItem>
-                          <SelectItem value="3">Nhà tuyển dụng</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
 
-                    <div className="grid gap-3">
-                      <Label>Trạng thái</Label>
-                      <Select
-                        value={isActived ? "true" : "false"}
-                        onValueChange={(value) =>
-                          setIsActived(value === "true" ? true : false)
-                        }
-                      >
-                        <SelectTrigger className="w-full bg-white">
-                          <SelectValue placeholder="Chọn trạng thái" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="true">Hoạt động</SelectItem>
-                            <SelectItem value="false">
-                              Không hoạt động
-                            </SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
+                  <div className="col-span-2 grid gap-2 grid-cols-2 items-start">
+                    <div className="grid gap-2">
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mô tả</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Nhập mô tả"
+                                className="min-h-[120px] bg-white resize-y"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="grid gap-2">
+                        <FormField
+                          control={form.control}
+                          name="stakeholderType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
+                                Loại Đ‘ơ‘i tương
+                              </FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full bg-white">
+                                    <SelectValue placeholder="Chơn loại Đ‘ơ‘i tương" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="1">Sinh viên</SelectItem>
+                                  <SelectItem value="2">Cựu sinh viên</SelectItem>
+                                  <SelectItem value="4">Giảng viên</SelectItem>
+                                  <SelectItem value="3">NhÃ  tuyơƒn dơ¥ng</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid gap-3">
+                        <FormField
+                          control={form.control}
+                          name="isActived"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Trạng thái</FormLabel>
+                              <Select
+                                onValueChange={(val) => field.onChange(val === "true")}
+                                defaultValue={field.value ? "true" : "false"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full bg-white">
+                                    <SelectValue placeholder="Chơn tráº¡ng thái" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectItem value="true">Hoạt động</SelectItem>
+                                    <SelectItem value="false">
+                                      Không hoạt động
+                                    </SelectItem>
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
+                <TopicListEditor
+                  listTopic={listTopic}
+                  collapsedTopics={collapsedTopics}
+                  handlers={handlers}
+                />
               </div>
-              <TopicListEditor
-                listTopic={listTopic}
-                collapsedTopics={collapsedTopics}
-                handlers={handlers}
-              />
             </div>
-          </div>
 
-          {mode === "preview" && (
-            <div className="flex-1 overflow-y-auto bg-gray-50/50 min-h-0">
-              <SurveyForm
-                campaign={getPreviewData()}
-                isPreview={true}
-                onSubmit={() => {
-                  toast.success("Đây chỉ là bản xem trước!");
-                }}
-              />
-            </div>
-          )}
+            {mode === "preview" && (
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 min-h-0">
+                <SurveyForm
+                  campaign={getPreviewData()}
+                  isPreview={true}
+                  onSubmit={() => {
+                    toast.success("Đây chơ‰ lÃ  bản xem trươ›c!");
+                  }}
+                />
+              </div>
+            )}
 
-          {mode === "edit" && (
-            <DialogFooter className="p-6 pt-4 border-t shrink-0 bg-white z-10">
-              <DialogClose asChild>
-                <Button variant="outline">Hủy</Button>
-              </DialogClose>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Lưu
-              </Button>
-              {!(surveyTemplate as any)?.IsEdit && (
-                <Button
-                  type="button"
-                  onClick={() => handleSave(true)}
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Lưu và thêm tiếp
+            {mode === "edit" && (
+              <DialogFooter className="p-6 pt-4 border-t shrink-0 bg-white z-10">
+                <DialogClose asChild>
+                  <Button variant="outline">Hủy</Button>
+                </DialogClose>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Lưu
                 </Button>
-              )}
-            </DialogFooter>
-          )}
-        </form>
+                {!surveyTemplate?.IsEdit && (
+                  <Button
+                    type="button"
+                    onClick={form.handleSubmit((values) => onSubmit(values, true))}
+                    disabled={isLoading}
+                  >
+                    {isLoading && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Lưu vÃ  thêm tiếp
+                  </Button>
+                )}
+              </DialogFooter>
+            )}
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
 };
 
 export default PopupSurveyTemplate;
+

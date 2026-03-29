@@ -12,11 +12,23 @@ public partial class BusinessContext : DbContext
     {
     }
 
+    public virtual DbSet<Council> Councils { get; set; }
+
+    public virtual DbSet<CriterionEvaluation> CriterionEvaluations { get; set; }
+
+    public virtual DbSet<Cycle> Cycles { get; set; }
+
+    public virtual DbSet<EvaluationSchedule> EvaluationSchedules { get; set; }
+
+    public virtual DbSet<EvaluationSubmission> EvaluationSubmissions { get; set; }
+
     public virtual DbSet<Evidence> Evidences { get; set; }
 
     public virtual DbSet<EvidenceAttachment> EvidenceAttachments { get; set; }
 
     public virtual DbSet<EvidenceCycleMap> EvidenceCycleMaps { get; set; }
+
+    public virtual DbSet<SarReport> SarReports { get; set; }
 
     public virtual DbSet<SurveyCampaign> SurveyCampaigns { get; set; }
 
@@ -38,6 +50,101 @@ public partial class BusinessContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Council>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Council_pk");
+
+            entity.ToTable("Council");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.DelegatedAt).HasColumnType("datetime");
+            entity.Property(e => e.DelegatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.DelegatedUntil).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<CriterionEvaluation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("CriterionEvaluation_pk");
+
+            entity.ToTable("CriterionEvaluation");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Cycle>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Cycle_pk");
+
+            entity.ToTable("Cycle");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.EndDate).HasColumnType("datetime");
+            entity.Property(e => e.StartDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<EvaluationSchedule>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("EvaluationSchedule_pk");
+
+            entity.ToTable("EvaluationSchedule");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.EndTime).HasColumnType("datetime");
+            entity.Property(e => e.StartTime).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<EvaluationSubmission>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Evaluati__3214EC07AD6C4851");
+
+            entity.ToTable("EvaluationSubmission");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(450);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(450);
+        });
+
         modelBuilder.Entity<Evidence>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Evidence_pk");
@@ -98,6 +205,27 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+        });
+
+        modelBuilder.Entity<SarReport>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SarRepor__3214EC0728CE31E1");
+
+            entity.ToTable("SarReport");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.LastSavedAt).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.YdocSnapshot).HasColumnName("YDocSnapshot");
         });
 
         modelBuilder.Entity<SurveyCampaign>(entity =>

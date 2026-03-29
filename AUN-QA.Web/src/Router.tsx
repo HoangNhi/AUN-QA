@@ -4,7 +4,7 @@ import HomePage from "./pages/home/HomePage";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
-import CyclePage from "./features/catalog/routes/Cycle/CyclePage";
+import CyclePage from "./features/business/routes/Cycle/CyclePage";
 import FileTypePage from "./features/catalog/routes/FileType/FileTypePage";
 import EvidencePage from "./features/business/routes/Evidence/EvidencePage";
 import EvidenceCycleMapPage from "./features/business/routes/EvidenceCycleMap/EvidenceCycleMapPage";
@@ -19,6 +19,9 @@ import SurveyTemplatePage from "./features/business/routes/SurveyTemplate/Survey
 import SurveyCampaignPage from "./features/business/routes/SurveyCampaign/SurveyCampaignPage";
 import StandardPage from "./features/catalog/routes/Standard/StandardPage";
 import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPage";
+import AuditLogPage from "./features/system/routes/AuditLog/AuditLogPage";
+import { CriterionEvaluationPage } from "./features/business/routes/CriterionEvaluation/CriterionEvaluationPage";
+import SarPage from "./features/business/routes/Sar/SarPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -53,6 +56,9 @@ const Router: FC = () => {
           <Route path="/surveycampaign" element={<SurveyCampaignPage />} />
           <Route path="/standard" element={<StandardPage />} />
           <Route path="/standardset" element={<StandardSetPage />} />
+          <Route path="/auditlog" element={<AuditLogPage />} />
+          <Route path="/criterionevaluation" element={<CriterionEvaluationPage />} />
+          <Route path="/sar" element={<SarPage />} />
         </Route>
 
         <Route element={<MainLayout />}>
@@ -64,3 +70,5 @@ const Router: FC = () => {
 };
 
 export default Router;
+
+

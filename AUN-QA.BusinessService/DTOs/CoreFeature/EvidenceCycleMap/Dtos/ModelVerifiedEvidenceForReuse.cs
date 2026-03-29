@@ -1,3 +1,5 @@
+using AUN_QA.Shared.DTOs.Base;
+
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos
 {
     public class ModelVerifiedEvidenceForReuse
@@ -13,6 +15,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Dtos
         public DateTime? ExpiryDate { get; set; }
         public string? IssuingAuthority { get; set; }
         public Guid? FolderUpload { get; set; }
-        public List<Base.ModelAttachment> ListAttachment { get; set; } = new List<Base.ModelAttachment>();
+        public List<ModelAttachment> ListAttachment { get; set; } = new List<ModelAttachment>();
     }
 }

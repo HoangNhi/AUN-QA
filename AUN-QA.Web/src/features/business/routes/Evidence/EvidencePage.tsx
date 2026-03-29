@@ -1,20 +1,13 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useEvidence } from "@/features/business/hooks/useEvidence";
 import { getColumns } from "./columns";
-import { DataTable } from "@/components/ui/data-table";
 import PopupEvidence from "./PopupEvidence";
-import { Button } from "@/components/ui/Button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import { SearchIcon } from "lucide-react";
-import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
-import { fileTypeService } from "@/features/catalog/api/filetype.api";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
-import { ConfirmDeleteDialog } from "@/components/ui/confirm-delete-dialog";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
+import { useListPage } from "@/hooks/useListPage";
 import {
   Dialog,
   DialogClose,
@@ -47,23 +40,7 @@ const EvidencePage = () => {
     isFetching,
   } = useEvidence();
 
-  const [searchTerm, setSearchTerm] = useState<string>(
-    pageRequest.TextSearch || "",
-  );
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
-
-  useEffect(() => {
-    setPageRequest((prev) => {
-      if (prev.TextSearch === debouncedSearchTerm) return prev;
-      return {
-        ...prev,
-        TextSearch: debouncedSearchTerm,
-        PageIndex: 1,
-      };
-    });
-  }, [debouncedSearchTerm, setPageRequest]);
 
   const selectedIds = data.Data.filter((_, idx) => rowSelection[idx]).map(
     (item) => item.Id,
@@ -74,38 +51,38 @@ const EvidencePage = () => {
     [showPopupDetail, deleteList],
   );
 
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList,
+    setRowSelection,
+    defaultPageRequest: { FileTypeId: undefined, Status: undefined },
+  });
+
+  const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+
   return (
-    <div className="container mx-auto space-y-4">
-      <div className="rounded-lg border bg-muted/40 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium">Lọc danh sách</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-xs"
-            onClick={() => {
-              setPageRequest((prev) => ({
-                ...prev,
-                PageIndex: 1,
-                TextSearch: "",
-                FileTypeId: undefined,
-                Status: undefined,
-              }));
-              setSearchTerm("");
-            }}
-          >
-            Đặt lại bộ lọc
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={getList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      searchInputClassName="col-span-1 bg-background md:col-span-2"
+      filterContent={
+        <>
           <Combobox
-            fetchOptions={async () => {
-              const res = await fileTypeService.getAllCombobox();
-              return (res.Data || []).map((t) => ({
-                Value: t.Value ?? "",
-                Text: t.Text ?? "",
-              }));
-            }}
+            options={fileTypeOptions}
+            loading={isFileTypeLoading}
             value={pageRequest.FileTypeId}
             onValueChange={(val) => {
               setPageRequest((prev) => ({
@@ -129,61 +106,31 @@ const EvidencePage = () => {
                 PageIndex: 1,
               }));
             }}
-            placeholder="Tất cả trạng thái minh chứng"
+            placeholder="Tất cả trạng thái"
             searchPlaceholder="Tìm kiếm trạng thái..."
             emptyText="Không tìm thấy trạng thái."
           />
-
-          <InputGroup className="col-span-1 bg-background md:col-span-2">
-            <InputGroupInput
-              placeholder="Tìm kiếm..."
-              value={searchTerm || ""}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10!"
-            />
-            <InputGroupAddon className="absolute left-0 top-0 h-full px-3 py-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 items-center justify-between">
-        <div className="col-span-2 flex items-center gap-2">
-          <Button size="sm" onClick={() => showPopupDetail("", false)}>
-            Thêm
-          </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowSubmitConfirm(true)}
-            disabled={selectedIds.length === 0 || isSubmitting}
-          >
-            Gửi duyệt
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={selectedIds.length === 0}
-          >
-            Xóa
-          </Button>
-        </div>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data.Data}
-        totalRow={data.TotalRow}
-        rowSelection={rowSelection}
-        setRowSelection={setRowSelection}
-        pageRequest={pageRequest}
-        setPageRequest={setPageRequest}
-        onRefresh={() => getList()}
-        isLoading={isFetching}
-      />
-
+        </>
+      }
+      onAddClick={() => showPopupDetail("", false)}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={selectedIds.length === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={selectedIds.length}
+      isDeleteLoading={isLoading}
+      extraActions={
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setShowSubmitConfirm(true)}
+          disabled={selectedIds.length === 0 || isSubmitting}
+        >
+          Gửi duyệt
+        </Button>
+      }
+    >
       {isOpen && (
         <PopupEvidence
           key={evidence?.Id || "new"}
@@ -196,17 +143,6 @@ const EvidencePage = () => {
           isApproving={isApproving}
         />
       )}
-
-      <ConfirmDeleteDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        onConfirm={() => {
-          deleteList(selectedIds);
-          setRowSelection({});
-        }}
-        itemCount={selectedIds.length}
-        isLoading={isLoading}
-      />
 
       <Dialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
         <DialogContent>
@@ -235,8 +171,9 @@ const EvidencePage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </ListPageLayout>
   );
 };
 
 export default EvidencePage;
+

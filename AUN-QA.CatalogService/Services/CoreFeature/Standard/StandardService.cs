@@ -1,4 +1,5 @@
-using AUN_QA.CatalogService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Criterion.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.CriterionRequirement.Requests;
 using AUN_QA.CatalogService.DTOs.CoreFeature.Standard.Dtos;
@@ -31,26 +32,30 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<StandardRequest> GetById(GetByIdRequest request)
         {
-            var data = await _context.Standards.FindAsync(request.Id);
+            var data = await _context.Standards.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             var result = _mapper.Map<StandardRequest>(data);
             var criteria = await _context.Criteria
+                .AsNoTracking()
                 .Where(x => x.StandardId == data.Id && !x.IsDeleted)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
 
             result.Criterions = _mapper.Map<List<CriterionRequest>>(criteria);
 
+            var criterionIds = criteria.Select(c => c.Id).ToList();
+            var allOptions = await _context.CriterionRequirements
+                .AsNoTracking()
+                .Where(x => criterionIds.Contains(x.CriterionId) && !x.IsDeleted)
+                .ToListAsync();
+
             foreach (var criterion in result.Criterions)
             {
-                var options = await _context.CriterionRequirements
-                    .Where(x => x.CriterionId == criterion.Id && !x.IsDeleted)
-                    .ToListAsync();
-
+                var options = allOptions.Where(x => x.CriterionId == criterion.Id).ToList();
                 criterion.CriterionRequirements = _mapper.Map<List<CriterionRequirementRequest>>(options);
             }
 
@@ -67,18 +72,18 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new BusinessException("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.Standard>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             #region Criterions
             if (!request.Criterions.Any())
             {
-                throw new Exception("Tiêu chí không được để trống");
+                throw new BusinessException("Tiêu chí không được để trống");
             }
 
             foreach (var criterion in request.Criterions)
@@ -87,7 +92,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
                 addCriterion.StandardId = add.Id;
                 addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                addCriterion.CreatedAt = DateTime.Now;
+                addCriterion.CreatedAt = DateTime.UtcNow;
                 await _context.Criteria.AddAsync(addCriterion);
 
                 // Criterion Requirements
@@ -97,7 +102,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     addOption.Id = option.Id == Guid.Empty ? Guid.NewGuid() : option.Id;
                     addOption.CriterionId = addCriterion.Id;
                     addOption.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addOption.CreatedAt = DateTime.Now;
+                    addOption.CreatedAt = DateTime.UtcNow;
                     await _context.CriterionRequirements.AddAsync(addOption);
                 }
             }
@@ -116,19 +121,19 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
             if (data.Any())
             {
-                throw new Exception("Mã hoặc tên tiêu chuẩn đã tồn tại");
+                throw new BusinessException("Mã hoặc tên tiêu chuẩn đã tồn tại");
             }
 
             var update = await _context.Standards.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
 
             #region Criterions
             var existingCriterions = _context.Criteria
@@ -141,7 +146,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 {
                     existing.IsDeleted = true;
                     existing.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existing.UpdatedAt = DateTime.Now;
+                    existing.UpdatedAt = DateTime.UtcNow;
                     _context.Criteria.Update(existing);
                 }
             }
@@ -155,7 +160,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     // Update existing
                     _mapper.Map(criterion, existingCriterion);
                     existingCriterion.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    existingCriterion.UpdatedAt = DateTime.Now;
+                    existingCriterion.UpdatedAt = DateTime.UtcNow;
                     _context.Criteria.Update(existingCriterion);
 
                     #region CriterionRequirements for existing Criterion
@@ -173,7 +178,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     {
                         removed.IsDeleted = true;
                         removed.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        removed.UpdatedAt = DateTime.Now;
+                        removed.UpdatedAt = DateTime.UtcNow;
                         _context.CriterionRequirements.Update(removed);
                     }
 
@@ -188,7 +193,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                             // Update existing CriterionRequirement
                             _mapper.Map(requirementRequest, existingRequirement);
                             existingRequirement.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            existingRequirement.UpdatedAt = DateTime.Now;
+                            existingRequirement.UpdatedAt = DateTime.UtcNow;
                             _context.CriterionRequirements.Update(existingRequirement);
                         }
                         else
@@ -198,7 +203,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                             addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
                             addRequirement.CriterionId = existingCriterion.Id;
                             addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                            addRequirement.CreatedAt = DateTime.Now;
+                            addRequirement.CreatedAt = DateTime.UtcNow;
                             await _context.CriterionRequirements.AddAsync(addRequirement);
                         }
                     }
@@ -211,7 +216,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     addCriterion.Id = criterion.Id == Guid.Empty ? Guid.NewGuid() : criterion.Id;
                     addCriterion.StandardId = update.Id;
                     addCriterion.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                    addCriterion.CreatedAt = DateTime.Now;
+                    addCriterion.CreatedAt = DateTime.UtcNow;
                     await _context.Criteria.AddAsync(addCriterion);
 
                     #region CriterionRequirements for new Criterion
@@ -222,7 +227,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                         addRequirement.Id = requirementRequest.Id == Guid.Empty ? Guid.NewGuid() : requirementRequest.Id;
                         addRequirement.CriterionId = addCriterion.Id;
                         addRequirement.CreatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                        addRequirement.CreatedAt = DateTime.Now;
+                        addRequirement.CreatedAt = DateTime.UtcNow;
                         await _context.CriterionRequirements.AddAsync(addRequirement);
                     }
                     #endregion
@@ -241,12 +246,12 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 var delete = await _context.Standards.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext.User.Identity.Name;
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.Standards.Update(delete);
             }
@@ -313,30 +318,23 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
 
         public async Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request)
         {
-            Guid targetStandardSetId;
+            if (!request.StandardSetId.HasValue || request.StandardSetId.Value == Guid.Empty)
+            {
+                throw new BusinessException("Bộ tiêu chuẩn không được để trống");
+            }
 
-            if (request.StandardSetId.HasValue && request.StandardSetId.Value != Guid.Empty)
+            var standardSet = await _context.StandardSets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
+            if (standardSet == null)
             {
-                var standardSet = await _context.StandardSets
-                    .FirstOrDefaultAsync(x => x.Id == request.StandardSetId.Value && !x.IsDeleted && x.IsActived);
-                if (standardSet == null)
-                {
-                    throw new Exception("Bộ tiêu chuẩn không tồn tại");
-                }
-                targetStandardSetId = standardSet.Id;
+                throw new BusinessException("Bộ tiêu chuẩn không tồn tại");
             }
-            else
-            {
-                var cycle = await _context.Cycles
-                    .FirstOrDefaultAsync(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived);
-                if (cycle == null)
-                {
-                    throw new Exception("Chu kỳ không tồn tại");
-                }
-                targetStandardSetId = cycle.StandardSetId;
-            }
+
+            Guid targetStandardSetId = standardSet.Id;
 
             var standards = await _context.Standards
+                .AsNoTracking()
                 .Where(x => x.StandardSetId == targetStandardSetId && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
@@ -349,6 +347,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var standardIds = standards.Select(x => x.Id).ToList();
 
             var criteria = await _context.Criteria
+                .AsNoTracking()
                 .Where(x => standardIds.Contains(x.StandardId) && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.Order)
                 .ToListAsync();
@@ -363,6 +362,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var hasFileTypeFilter = request.FileTypeId.HasValue && request.FileTypeId.Value != Guid.Empty;
 
             var requirementsQuery = _context.CriterionRequirements
+                .AsNoTracking()
                 .Where(x => criterionIds.Contains(x.CriterionId) && !x.IsDeleted && x.IsActived);
 
             if (hasFileTypeFilter)
@@ -417,23 +417,20 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             // Parse GUIDs from request
-            if (!Guid.TryParse(request.CycleId, out var cycleId))
+            if (!Guid.TryParse(request.StandardSetId, out var standardSetId))
                 yield break;
 
             if (!Guid.TryParse(request.FileTypeId, out var fileTypeId))
                 yield break;
 
-            // Query with joins: Cycle → StandardSet → Standard → Criterion → CriterionRequirement
+            // Query with joins: StandardSet → Standard → Criterion → CriterionRequirement
             var query = from criterion in _context.Criteria
                         join standard in _context.Standards on criterion.StandardId equals standard.Id
-                        join standardSet in _context.StandardSets on standard.StandardSetId equals standardSet.Id
-                        join cycle in _context.Cycles on standardSet.Id equals cycle.StandardSetId
                         join requirement in _context.CriterionRequirements on criterion.Id equals requirement.CriterionId
-                        where cycle.Id == cycleId
+                        where standard.StandardSetId == standardSetId
                           && requirement.FileTypeId == fileTypeId
                           && !criterion.IsDeleted && criterion.IsActived
                           && !standard.IsDeleted && standard.IsActived
-                          && !cycle.IsDeleted && cycle.IsActived
                           && !requirement.IsDeleted && requirement.IsActived
                         select criterion;
 
@@ -456,6 +453,59 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                     Description = criterion.Description ?? string.Empty,
                     Order = criterion.Order
                 };
+            }
+        }
+
+        public async IAsyncEnumerable<StandardWithCriteriaInfo> GetStandardsWithCriteriaStreamAsync(
+            GetStandardsWithCriteriaStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (!Guid.TryParse(request.StandardSetId, out var standardSetId))
+                yield break;
+
+            // Query: Standard → Criterion, filtered by StandardSetId
+            var query = from standard in _context.Standards
+                        join criterion in _context.Criteria on standard.Id equals criterion.StandardId
+                        where standard.StandardSetId == standardSetId
+                          && !standard.IsDeleted && standard.IsActived
+                          && !criterion.IsDeleted && criterion.IsActived
+                        orderby standard.Order, criterion.Order
+                        select new { standard, criterion };
+
+            var dataStream = query.AsAsyncEnumerable();
+
+            await foreach (var item in dataStream.WithCancellation(cancellationToken))
+            {
+                yield return new StandardWithCriteriaInfo
+                {
+                    StandardId = item.standard.Id.ToString(),
+                    StandardCode = item.standard.Code,
+                    StandardName = item.standard.Name,
+                    StandardOrder = item.standard.Order,
+                    CriterionId = item.criterion.Id.ToString(),
+                    CriterionCode = item.criterion.Code,
+                    CriterionName = item.criterion.Name,
+                    IsPrerequisite = item.criterion.IsPrerequisite,
+                    CriterionOrder = item.criterion.Order
+                };
+            }
+        }
+
+        public async IAsyncEnumerable<FileTypeInfo> GetFileTypesByCriterionStreamAsync(
+            GetFileTypesByCriterionStreamRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            if (!Guid.TryParse(request.CriterionId, out var criterionId))
+                yield break;
+
+            var requirements = await _context.CriterionRequirements
+                .AsNoTracking()
+                .Where(x => x.CriterionId == criterionId && !x.IsDeleted && x.IsActived)
+                .ToListAsync(cancellationToken);
+
+            foreach (var req in requirements)
+            {
+                yield return new FileTypeInfo { Id = req.FileTypeId.ToString() };
             }
         }
         #endregion

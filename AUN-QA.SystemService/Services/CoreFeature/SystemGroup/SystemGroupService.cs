@@ -1,4 +1,5 @@
-using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Requests;
 using AUN_QA.SystemService.Helpers;
@@ -32,7 +33,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
             var data = await _context.SystemGroups.FindAsync(request.Id);
             if (data == null)
             {
-                throw new Exception("Không tìm thấy dữ liệu");
+                throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
             return _mapper.Map<ModelSystemGroup>(data);
@@ -47,13 +48,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("Tên nhóm đã tồn tại");
+                throw new BusinessException("Tên nhóm đã tồn tại");
             }
 
             var add = _mapper.Map<Entities.SystemGroup>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            add.CreatedAt = DateTime.Now;
+            add.CreatedAt = DateTime.UtcNow;
 
             await _context.SystemGroups.AddAsync(add);
             await _context.SaveChangesAsync();
@@ -69,19 +70,19 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             if (data.Any())
             {
-                throw new Exception("Tên nhóm đã tồn tại");
+                throw new BusinessException("Tên nhóm đã tồn tại");
             }
 
             var update = await _context.SystemGroups.FindAsync(request.Id);
             if (update == null)
             {
-                throw new Exception("Dữ liệu không tồn tại");
+                throw new BusinessException("Dữ liệu không tồn tại");
             }
 
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-            update.UpdatedAt = DateTime.Now;
+            update.UpdatedAt = DateTime.UtcNow;
             _context.SystemGroups.Update(update);
             await _context.SaveChangesAsync();
 
@@ -95,12 +96,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
                 var delete = await _context.SystemGroups.FindAsync(id);
                 if (delete == null)
                 {
-                    throw new Exception("Dữ liệu không tồn tại");
+                    throw new BusinessException("Dữ liệu không tồn tại");
                 }
 
                 delete.IsDeleted = true;
                 delete.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                delete.UpdatedAt = DateTime.Now;
+                delete.UpdatedAt = DateTime.UtcNow;
 
                 _context.SystemGroups.Update(delete);
             }
@@ -124,34 +125,34 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
         public async Task<List<ModelSystemGroup>> GetAll()
         {
-            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
+            var data = await _context.SystemGroups.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
             var result = _mapper.Map<List<ModelSystemGroup>>(data).OrderBy(x => x.Sort).ToList();
             return result;
         }
 
         public async Task<List<ModelCombobox>> GetAllForCombobox()
         {
-            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
+            var data = await _context.SystemGroups.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived).ToListAsync();
             var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),
                 Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
-            }).OrderBy(x => x.Sort).ToList();
-
+            })
+            .OrderBy(x => x.Sort).ToList();
             return result;
         }
 
         public async Task<List<ModelCombobox>> GetAllNotParentForCombobox()
         {
-            var data = await _context.SystemGroups.Where(x => !x.IsDeleted && x.IsActived && !x.ParentId.HasValue).ToListAsync();
+            var data = await _context.SystemGroups.AsNoTracking().Where(x => !x.IsDeleted && x.IsActived && !x.ParentId.HasValue).ToListAsync();
             var result = data.Select(x => new ModelCombobox
             {
                 Text = x.Name,
                 Value = x.Id.ToString(),
                 Parent = x.ParentId.HasValue ? data.FirstOrDefault(y => y.Id == x.ParentId)?.Name : ""
-            }).OrderBy(x => x.Sort).ToList();
-
+            })
+            .OrderBy(x => x.Sort).ToList();
             return result;
         }
     }

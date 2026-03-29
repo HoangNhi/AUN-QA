@@ -1,4 +1,7 @@
 using AUN_QA.FileService.Protos;
+using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Common;
+using Grpc.Net.Client.Web;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AutoDependencyRegistration;
@@ -18,34 +21,38 @@ namespace AUN_QA.SystemService.Configs
             {
                 options.ConfigureEndpointDefaults(defaults =>
                 {
-                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+                    defaults.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
                 });
             });
             builder.Services.AddSingleton(builder.Configuration);
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            // Audit context and interceptors
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Services.IAuditLogWriter, AUN_QA.SystemService.Infrastructure.Services.AuditLogWriter>();
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Filters.AuditActionFilter>();
+            builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>();
 
             //DATABASE
-            builder.Services.AddDbContext<SystemContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("System")));
+            builder.Services.AddDbContext<SystemContext>((sp, options) =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("System"))
+                       .AddInterceptors(sp.GetRequiredService<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>()));
 
             //MAPPER
-            using var serviceProvider = builder.Services.BuildServiceProvider();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-            var mappingConfig = new MapperConfiguration(mc =>
+            builder.Services.AddAutoMapper(mc =>
             {
-                mc.AddMaps(AppDomain.CurrentDomain.GetAssemblies());
+                mc.AddMaps(typeof(ConfigService).Assembly);
                 mc.CreateMap<DateOnly?, DateTime?>().ConvertUsing(new DateTimeTypeConverter());
                 mc.CreateMap<DateTime?, DateOnly?>().ConvertUsing(new DateOnlyTypeConverter());
-            }, loggerFactory);
-            IMapper mapper = mappingConfig.CreateMapper();
-            builder.Services.AddSingleton(mapper);
+            });
 
             //FLUENT
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
-                options.SuppressModelStateInvalidFilter = true;
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errorMsg = CommonFunc.GetModelStateAPI(context.ModelState);
+                    return new OkObjectResult(new BaseResponse(false, 400, errorMsg));
+                };
             });
             builder.Services.AddMvc()
                 .AddFluentValidation(config =>
@@ -54,7 +61,12 @@ namespace AUN_QA.SystemService.Configs
                     config.DisableDataAnnotationsValidation = true;
                     config.RegisterValidatorsFromAssemblyContaining<UserRequestValidator>();
                 })
-                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = null;
+                    options.JsonSerializerOptions.Converters.Add(new VietnamDateTimeConverter());
+                    options.JsonSerializerOptions.Converters.Add(new VietnamNullableDateTimeConverter());
+                });
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();
@@ -77,10 +89,18 @@ namespace AUN_QA.SystemService.Configs
 
             //GRPC
             builder.Services.AddGrpc();
+            builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
-                o.Address = new Uri("http://FileService");
-            });
+                o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()))
+            .AddInterceptor<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
         }
     }
 

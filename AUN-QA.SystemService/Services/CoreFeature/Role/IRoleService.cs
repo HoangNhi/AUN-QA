@@ -1,4 +1,4 @@
-using AUN_QA.SystemService.DTOs.Base;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Permission.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;

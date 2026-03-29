@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import { ChevronsUpDown, Check } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "./Button";
+import { Button } from "./button";
 import type { ModelCombobox } from "@/types/base/base.types";
 
 // Type for API fetcher function
@@ -25,6 +25,7 @@ type DataFetcher = () => Promise<ModelCombobox[]>;
 interface ComboboxProps {
   // Option 1: Pass options directly (for static data or parent-managed)
   options?: ModelCombobox[];
+  loading?: boolean;
 
   // Option 2: Pass a fetcher function (component manages loading)
   fetchOptions?: DataFetcher;
@@ -55,7 +56,8 @@ export function Combobox({
   placeholder = "Select option...",
   searchPlaceholder = "Search...",
   emptyText = "No results found.",
-  loadingText = "Đang tải...",
+  loadingText = "Đang táº£i...",
+  loading = false,
   className,
   disabled = false,
   readonly = false,
@@ -108,7 +110,11 @@ export function Combobox({
     }
   }, [eagerLoading, open, loadData, hasLoaded, externalOptions]);
 
-  const selectedOption = options.find((option) => option.Value === value);
+  const normalizeValue = (val?: string) => (val || "").trim().toLowerCase();
+  const isSelectedValue = (optionValue?: string) =>
+    normalizeValue(optionValue) === normalizeValue(value);
+
+  const selectedOption = options.find((option) => isSelectedValue(option.Value));
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
@@ -137,7 +143,7 @@ export function Combobox({
         <Command>
           {showSearch && <CommandInput placeholder={searchPlaceholder} />}
           <CommandList>
-            {isLoading ? (
+            {isLoading || loading ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 <div className="flex items-center justify-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
@@ -155,11 +161,12 @@ export function Combobox({
                       className={cn(
                         "cursor-pointer",
                         "flex w-full items-center gap-2",
-                        value === option.Value && "font-semibold text-primary",
+                        isSelectedValue(option.Value) && "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
-                        const newValue = option.Value === value ? "" : option.Value;
-                        const newText = option.Value === value ? "" : (option.Text || "");
+                        const currentlySelected = isSelectedValue(option.Value);
+                        const newValue = currentlySelected ? "" : (option.Value || "");
+                        const newText = currentlySelected ? "" : (option.Text || "");
                         onValueChange(newValue, newText);
                         setOpen(false);
                       }}
@@ -167,7 +174,7 @@ export function Combobox({
                       <div
                         className={cn(
                           "flex h-4 w-4 items-center justify-center shrink-0",
-                          value === option.Value ? "opacity-100" : "opacity-0",
+                          isSelectedValue(option.Value) ? "opacity-100" : "opacity-0",
                         )}
                       >
                         <Check className="h-4 w-4" />
@@ -186,3 +193,4 @@ export function Combobox({
     </Popover>
   );
 }
+

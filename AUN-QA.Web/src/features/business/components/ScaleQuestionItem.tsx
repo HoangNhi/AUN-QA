@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+﻿import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import type { TemplateQuestion } from "../types/survey-template.types";
@@ -28,7 +28,7 @@ export const ScaleQuestionItem = ({
         value={question.Content}
         onChange={(e) => onUpdate(question.Id, e.target.value)}
         className="flex-1 text-sm min-h-[40px] resize-none focus-visible:ring-blue-400"
-        placeholder="Nội dung câu hỏi đánh giá..."
+        placeholder="Nội dung câu hơi Đ‘ánh giá..."
       />
       <Button
         type="button"
@@ -42,3 +42,4 @@ export const ScaleQuestionItem = ({
     </div>
   );
 };
+

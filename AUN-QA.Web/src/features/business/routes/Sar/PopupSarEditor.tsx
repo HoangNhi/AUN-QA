@@ -159,7 +159,7 @@ export default function PopupSarEditor({
         const update = base64ToUint8Array(draft.YDocSnapshotBase64);
         Y.applyUpdate(doc, update);
       } catch {
-        toast.error("Không thé đưỜc dữ liệu bản nháp SAR hiện tại");
+        toast.error("Không thể đọc được dữ liệu bản nháp SAR hiện tại");
       }
     }
 
@@ -262,7 +262,7 @@ export default function PopupSarEditor({
         if (success) {
           setLastSavedAt(new Date());
         } else if (mode === "manual") {
-          toast.error("Lưu bản nháp SAR không thÃ nh công");
+          toast.error("Lưu bản nháp SAR không thành công");
         }
 
         return success;

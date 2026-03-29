@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -41,8 +41,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
-  title: z.string().min(1, "Vui lòng nhập tiêu đề"),
-  stakeholderType: z.string().min(1, "Vui lòng chơn loại Đ‘ơ‘i tương"),
+  title: z.string().min(1, "Vui lòng nhập tiêu đề"),
+  stakeholderType: z.string().min(1, "Vui lòng chọn loại đối tượng"),
   description: z.string().optional(),
   isActived: z.boolean(),
 });
@@ -115,7 +115,7 @@ const PopupSurveyTemplate = ({
     const values = form.getValues();
     return {
       Id: id,
-      Name: values.title || "Tiêu đề mẫu (Xem trước)",
+      Name: values.title || "Tiêu đề mẫu (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType),
       IsSessionCompleted: false,
       ListTopic:
@@ -210,14 +210,14 @@ const PopupSurveyTemplate = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Tiêu đề
+                            Tiêu đề
                           </FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               required
                               maxLength={255}
-                              placeholder="Nhập tiêu Đ‘ơ"
+                              placeholder="Nhập tiêu đề"
                               className="bg-white"
                             />
                           </FormControl>
@@ -255,7 +255,7 @@ const PopupSurveyTemplate = ({
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                                Loại Đ‘ơ‘i tương
+                                Loại đối tượng
                               </FormLabel>
                               <Select
                                 onValueChange={field.onChange}
@@ -263,14 +263,14 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chơn loại Đ‘ơ‘i tương" />
+                                    <SelectValue placeholder="Chọn loại đối tượng" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="1">Sinh viên</SelectItem>
                                   <SelectItem value="2">Cựu sinh viên</SelectItem>
                                   <SelectItem value="4">Giảng viên</SelectItem>
-                                  <SelectItem value="3">NhÃ  tuyơƒn dơ¥ng</SelectItem>
+                                  <SelectItem value="3">Nhà tuyên dương</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -292,7 +292,7 @@ const PopupSurveyTemplate = ({
                               >
                                 <FormControl>
                                   <SelectTrigger className="w-full bg-white">
-                                    <SelectValue placeholder="Chơn tráº¡ng thái" />
+                                    <SelectValue placeholder="Chọn trạng thái" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -326,7 +326,7 @@ const PopupSurveyTemplate = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("Đây chơ‰ lÃ  bản xem trươ›c!");
+                    toast.success("Đây chỉ là bản xem trước!");
                   }}
                 />
               </div>
@@ -350,7 +350,7 @@ const PopupSurveyTemplate = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu vÃ  thêm tiếp
+                    Lưu và thêm tiếp
                   </Button>
                 )}
               </DialogFooter>
@@ -363,4 +363,3 @@ const PopupSurveyTemplate = ({
 };
 
 export default PopupSurveyTemplate;
-

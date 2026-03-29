@@ -198,9 +198,9 @@ export const PopupSession = ({
                         PageIndex: 1,
                       });
                     }}
-                    placeholder="Tất cả tráº¡ng thái"
-                    searchPlaceholder="Tìm kiếm tráº¡ng thái..."
-                    emptyText="Không tìm thấy tráº¡ng thái."
+                    placeholder="Tất cả trạng thái"
+                    searchPlaceholder="Tìm kiếm trạng thái..."
+                    emptyText="Không tìm thấy trạng thái."
                   />
 
                   <InputGroup className="bg-white">

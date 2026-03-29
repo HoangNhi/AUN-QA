@@ -1,4 +1,4 @@
-﻿import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import {
   Dialog,
@@ -29,8 +29,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  code: z.string().min(1, "Mã loại file lÃ  báº¯t buơ™c"),
-  name: z.string().min(2, "Tên phải tổ« 2-200 kÃ½ tổ±").max(200, "Tên phải tổ« 2-200 kÃ½ tổ±"),
+  code: z.string().min(1, "Mã loại file là bắt buộc"),
+  name: z.string().min(2, "Tên phải từ 2-200 ký tự").max(200, "Tên phải từ 2-200 ký tự"),
   description: z.string().optional(),
   isActived: z.boolean(),
 });
@@ -155,7 +155,7 @@ const PopupFileType = ({
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Nhập mô táº£ loại file"
+                        placeholder="Nhập mô tả loại file"
                         rows={3}
                       />
                     </FormControl>
@@ -175,9 +175,9 @@ const PopupFileType = ({
                         options={ACTIVE_STATUS_OPTIONS}
                         value={field.value.toString()}
                         onValueChange={(val) => field.onChange(val === "true")}
-                        placeholder="Chơn tráº¡ng thái"
-                        searchPlaceholder="Tìm kiếm tráº¡ng thái..."
-                        emptyText="Không tìm thấy tráº¡ng thái."
+                        placeholder="Chọn trạng thái"
+                        searchPlaceholder="Tìm kiếm trạng thái..."
+                        emptyText="Không tìm thấy trạng thái."
                       />
                     </FormControl>
                     <FormMessage />
@@ -201,7 +201,7 @@ const PopupFileType = ({
                   disabled={isLoading}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Lưu vÃ  thêm tiếp
+                  Lưu và thêm tiếp
                 </Button>
               )}
             </DialogFooter>
@@ -213,4 +213,3 @@ const PopupFileType = ({
 };
 
 export default PopupFileType;
-

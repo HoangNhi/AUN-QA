@@ -37,7 +37,7 @@ const PopupPermission = ({
 }) => {
   const { permissions, handlePermissionChange, onSubmit } = usePermissionForm(
     data,
-    saveChange
+    saveChange,
   );
 
   return (
@@ -54,7 +54,7 @@ const PopupPermission = ({
           }}
         >
           <DialogHeader>
-            <DialogTitle>Cập nhật phân quyơn</DialogTitle>
+            <DialogTitle>Cập nhật phân quyền</DialogTitle>
           </DialogHeader>
 
           <div className="flex w-full flex-col gap-6">
@@ -79,24 +79,36 @@ const PopupPermission = ({
                 </ScrollArea>
                 <div className="flex-1 min-w-0">
                   {permissions.map((item) => (
-                    <TabsContent key={item.SystemGroup} value={item.SystemGroup} className="mt-0">
+                    <TabsContent
+                      key={item.SystemGroup}
+                      value={item.SystemGroup}
+                      className="mt-0"
+                    >
                       <div className="grid gap-4 py-4">
                         <div className="rounded-md border">
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="w-[300px]">Menu</TableHead>
-                                <TableHead className="text-center">Xem</TableHead>
+                                <TableHead className="w-[300px]">
+                                  Menu
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  Xem
+                                </TableHead>
                                 <TableHead className="text-center">
                                   Thêm
                                 </TableHead>
-                                <TableHead className="text-center">Sơ­a</TableHead>
-                                <TableHead className="text-center">Xóa</TableHead>
+                                <TableHead className="text-center">
+                                  Sửa
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  Xóa
+                                </TableHead>
                                 <TableHead className="text-center">
                                   Duyệt
                                 </TableHead>
                                 <TableHead className="text-center">
-                                  Thơ‘ng kê
+                                  Thống kê
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
@@ -115,7 +127,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsViewed",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -129,7 +141,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsAdded",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -143,7 +155,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsUpdated",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -157,7 +169,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsDeleted",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -171,7 +183,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsApproved",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -185,7 +197,7 @@ const PopupPermission = ({
                                           item.SystemGroup,
                                           menu.MenuId,
                                           "IsAnalyzed",
-                                          checked as boolean
+                                          checked as boolean,
                                         )
                                       }
                                     />
@@ -211,9 +223,8 @@ const PopupPermission = ({
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog >
+    </Dialog>
   );
 };
 
 export default PopupPermission;
-

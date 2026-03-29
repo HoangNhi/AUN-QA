@@ -1,4 +1,4 @@
-﻿import {
+import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -72,10 +72,10 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className={cn("space-y-4 w-full", className)}>
-      {/* Khung bao ngoÃ i cùng: Bo góc, có viơn, nơn trắng */}
+      {/* Khung bao ngoài cùng: Bo góc, có viền, nền trắng */}
       <div className="relative w-full overflow-clip rounded-md border flex flex-col bg-white">
 
-        {/* Wrapper cho khung cuơ™n Đ‘ơƒ neo Overlay Loading Đ‘úng pháº§n Body */}
+        {/* Wrapper cho khung cuộn để neo Overlay Loading đúng phần Body */}
         <div className="relative w-full">
           {/* Loading Overlay */}
           {isLoading && (
@@ -84,10 +84,10 @@ export function DataTable<TData, TValue>({
             </div>
           )}
 
-          {/* ðŸ‘‡ KHUNG CUơ˜N CHÃNH (NÆ¡i chứa thanh cuơ™n) */}
+          {/* 👇 KHUNG CUỘN CHÍNH (Nơi chứa thanh cuộn) */}
           <div className={cn(
             containerClassName,
-            // Custom scrollbar Đ‘ơƒ margin-top hoáº¡t Đ‘ơ™ng (báº¯t buơ™c phải có width/height thì track/thumb mới Đ‘ươ£c render custom)
+            // Custom scrollbar để margin-top hoạt động (bắt buộc phải có width/height thì track/thumb mới được render custom)
             "[&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2",
             "[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:mt-[48px]",
             "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
@@ -103,7 +103,7 @@ export function DataTable<TData, TValue>({
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        // Dùng pseudo-element về border 1px ở dưới mÃ ng sticky, káº¿t hơ£p shadow
+                        // Dùng pseudo-element về border 1px ở dưới màng sticky, kết hợp shadow
                         className={cn(
                           "h-12 px-4 text-left align-middle font-medium text-muted-foreground whitespace-nowrap sticky top-0 z-20 bg-white",
                           "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-border",
@@ -169,7 +169,7 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
 
-        {/* ðŸ‘‡ PAGINATION: Náº±m trong khung border, ngĐƒn cách bằng border-t */}
+        {/* 👇 PAGINATION: Nằm trong khung border, ngăn cách bằng border-t */}
         {pageRequest && totalRow !== undefined && (
           <div className="shrink-0 border-t bg-white">
             <DataTablePagination
@@ -316,7 +316,7 @@ function DataTablePagination({
                 variant="outline"
                 className="h-8 w-8 p-0 ml-2"
                 onClick={onRefresh}
-                title="LÃ m mới"
+                title="Làm mới"
               >
                 <RotateCw className="h-4 w-4" />
               </Button>
@@ -327,4 +327,3 @@ function DataTablePagination({
     </div>
   );
 }
-

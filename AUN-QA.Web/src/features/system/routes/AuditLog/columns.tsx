@@ -1,4 +1,4 @@
-﻿import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import type { AuditLog } from "@/types/auditlog.types";
 import { Button } from "@/components/ui/button";
 import { Eye, CheckCircle2, XCircle } from "lucide-react";
@@ -15,7 +15,7 @@ export const getColumns = (
 ): ColumnDef<AuditLog>[] => [
         {
             accessorKey: "CreatedAt",
-            header: "Thơi gian",
+            header: "Thời gian",
             cell: ({ row }) => (
                 <span className="whitespace-nowrap text-muted-foreground text-xs">
                     {formatDate(row.original.CreatedAt)}
@@ -25,14 +25,14 @@ export const getColumns = (
         },
         {
             accessorKey: "UserName",
-            header: "Tài khoán",
+            header: "Tài khoản",
             cell: ({ row }) => (
                 <span className="font-medium">{row.original.UserName}</span>
             ),
         },
         {
             accessorKey: "Action",
-            header: "HÃ nh Đ‘ơ™ng",
+            header: "Hành động",
             cell: ({ row }) => (
                 <Badge variant="outline">{row.original.Action}</Badge>
             ),
@@ -40,7 +40,7 @@ export const getColumns = (
         },
         {
             accessorKey: "EntityName",
-            header: "TÃ i nguyên",
+            header: "Tài nguyên",
             cell: ({ row }) => (
                 <span className="text-muted-foreground">{row.original.EntityName}</span>
             ),
@@ -48,18 +48,18 @@ export const getColumns = (
         },
         {
             accessorKey: "IsSuccess",
-            header: "Káº¿t quáº£",
+            header: "Kết quả",
             cell: ({ row }) =>
                 row.original.IsSuccess ? (
                     <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> ThÃ nh công
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Thành công
                     </span>
                 ) : (
                     <span
                         className="inline-flex items-center gap-1 text-xs text-red-600"
                         title={row.original.ErrorMessage || ""}
                     >
-                        <XCircle className="h-3.5 w-3.5" /> Tháº¥t báº¡i
+                        <XCircle className="h-3.5 w-3.5" /> Thất bại
                     </span>
                 ),
             size: 110,
@@ -76,7 +76,7 @@ export const getColumns = (
         },
         {
             accessorKey: "ServiceName",
-            header: "Hơ‡ thơ‘ng",
+            header: "Hệ thống",
             cell: ({ row }) => (
                 <Badge variant="secondary" className="text-xs font-normal">
                     {row.original.ServiceName?.replace("Service", "")}
@@ -91,7 +91,7 @@ export const getColumns = (
                     <Button
                         variant="ghost"
                         size="icon"
-                        title="Xem chi tiáº¿t"
+                        title="Xem chi tiết"
                         onClick={() => onViewDetail(row.original)}
                         className="h-8 w-8 hover:bg-muted"
                     >
@@ -102,4 +102,3 @@ export const getColumns = (
             size: 60,
         },
     ];
-

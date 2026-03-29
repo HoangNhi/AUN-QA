@@ -1,4 +1,4 @@
-﻿import { Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/ui/combobox";
@@ -37,7 +37,7 @@ export function CriterionList({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide border-l-4 border-indigo-500 pl-3">
-                    Danh sách Tiêu chí & Yêu cầu Minh chơ©ng
+                    Danh sách Tiêu chí & Yêu cầu Minh chứng
                 </h3>
                 <Button
                     type="button"
@@ -120,10 +120,10 @@ export function CriterionList({
                                     />
                                     <div>
                                         <span className="block text-xs font-bold text-amber-800">
-                                            Tiêu chí Đ‘iơu kiơ‡n
+                                            Tiêu chí Điều kiện
                                         </span>
                                         <span className="block text-[10px] text-amber-600/80">
-                                            Náº¿u trươ£t tiêu chí nà y, cả tiêu chuẩn bơ‹ trươ£t
+                                            Nếu trượt tiêu chí này, cả tiêu chuẩn bị trượt
                                         </span>
                                     </div>
                                 </label>
@@ -131,7 +131,7 @@ export function CriterionList({
                                 {/* DiagnosticQuestions */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
-                                        Câu hơi cháº©n Đ‘oán
+                                        Câu hỏi chẩn đoán
                                     </label>
                                     <Textarea
                                         rows={3}
@@ -141,11 +141,11 @@ export function CriterionList({
                                                 DiagnosticQuestions: e.target.value,
                                             })
                                         }
-                                        placeholder="- NhÃ  trương có vĐƒn bản nà o quy Đ‘ơ‹nh vơ...?"
+                                        placeholder="- Nhà trường có văn bản nào quy định về...?"
                                         className="resize-none text-xs"
                                     />
                                     <p className="text-[9px] text-slate-400 mt-1 text-right">
-                                        Hơ— trơ£ viáº¿t báo cáo tổ± Đ‘ánh giá
+                                        Hỗ trợ viết báo cáo tổng đánh giá
                                     </p>
                                 </div>
                             </div>
@@ -163,7 +163,7 @@ export function CriterionList({
                                     onClick={() => onAddFileRequirement(criterion.Id)}
                                     className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 h-auto border border-blue-100"
                                 >
-                                    + THÃŠM LOáº I FILE
+                                    + THÊM LOẠI FILE
                                 </Button>
                             </div>
 
@@ -182,7 +182,7 @@ export function CriterionList({
                                                         FileTypeId: val,
                                                     })
                                                 }
-                                                placeholder="-- Chơn loại tÃ i liệu --"
+                                                placeholder="-- Chọn loại tài liệu --"
                                                 searchPlaceholder="Tìm kiếm..."
                                                 emptyText="Không tìm thấy"
                                                 className="flex-1 text-xs h-8"
@@ -239,7 +239,7 @@ export function CriterionList({
                                                     Suggestion: e.target.value,
                                                 })
                                             }
-                                            placeholder="Gửi£i Ã½: 'Quyáº¿t Đ‘ơ‹nh thÃ nh láº­p hơ™i Đ‘ơ“ng'..."
+                                            placeholder="Gợi ý: 'Quyết định thành lập hội đồng'..."
                                             className="bg-transparent text-[11px] text-slate-600 italic placeholder:text-slate-300 border-b border-dashed border-slate-200 focus:border-blue-300 outline-none rounded-none h-6 px-1"
                                         />
                                     </div>
@@ -248,8 +248,8 @@ export function CriterionList({
 
                             <div className="mt-4 pt-3 border-t border-slate-100 text-center">
                                 <p className="text-[10px] text-slate-400 italic">
-                                    Hơ‡ thơ‘ng sáº½ Đ‘ơ‘i chiáº¿u danh sách nà y vơ›i file thơ±c táº¿
-                                    user upload Đ‘ơƒ báo cáo thiếu/Đ‘ơ§.
+                                    Hệ thống sẽ đối chiếu danh sách này với file thực tế
+                                    user upload để báo cáo thiếu/dư.
                                 </p>
                             </div>
                         </div>
@@ -259,4 +259,3 @@ export function CriterionList({
         </div>
     );
 }
-

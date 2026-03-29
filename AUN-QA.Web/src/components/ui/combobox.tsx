@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
 import { ChevronsUpDown, Check } from "lucide-react";
@@ -56,7 +56,7 @@ export function Combobox({
   placeholder = "Select option...",
   searchPlaceholder = "Search...",
   emptyText = "No results found.",
-  loadingText = "Đang táº£i...",
+  loadingText = "Đang tải...",
   loading = false,
   className,
   disabled = false,
@@ -193,4 +193,3 @@ export function Combobox({
     </Popover>
   );
 }
-

@@ -1,4 +1,4 @@
-﻿import type { UseFormReturn } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Combobox } from "@/components/ui/combobox";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
@@ -71,7 +71,7 @@ export function CriteriaMappingPanel({
                                     field.onChange(val || "");
                                     cycleId_Change(val || "");
                                 }}
-                                placeholder="Chơn chu kỳ"
+                                placeholder="Chọn chu kỳ"
                                 searchPlaceholder="Tìm kiếm chu kỳ..."
                                 emptyText="Không tìm thấy chu kỳ."
                                 readonly={!!readOnly}
@@ -85,16 +85,16 @@ export function CriteriaMappingPanel({
             {/* Standard Set */}
             <div className="space-y-2">
                 <FormLabel>
-                    Bộ tiêu chuáº©n <span className="text-red-500">*</span>
+                    Bộ tiêu chuẩn <span className="text-red-500">*</span>
                 </FormLabel>
                 <Combobox
                     options={standardSetOptions}
                     loading={isStandardSetLoading}
                     value={standardSetId}
                     onValueChange={(val) => setStandardSetId(val || "")}
-                    placeholder="Chơn bộ tiêu chuáº©n"
-                    searchPlaceholder="Tìm kiếm bộ tiêu chuáº©n..."
-                    emptyText="Không tìm thấy bộ tiêu chuáº©n."
+                    placeholder="Chọn bộ tiêu chuẩn"
+                    searchPlaceholder="Tìm kiếm bộ tiêu chuẩn..."
+                    emptyText="Không tìm thấy bộ tiêu chuẩn."
                     readonly={true}
                 />
             </div>
@@ -108,10 +108,9 @@ export function CriteriaMappingPanel({
             />
             {cycleIdForm && (
                 <p className="text-[11px] text-slate-400 px-1 pt-1 leading-relaxed">
-                    Tiêu chí lạc theo loáº¡i tÃ i liơ‡u Đ‘ã chơn. Tiáº¿n Đ‘ơ™ cập nhật sau khi minh chơ©ng Đ‘ươ£c phê duyơ‡t.
+                    Tiêu chí lạc theo loại tài liệu đã chọn. Tiến độ cập nhật sau khi minh chứng được phê duyệt.
                 </p>
             )}
         </div>
     );
 }
-

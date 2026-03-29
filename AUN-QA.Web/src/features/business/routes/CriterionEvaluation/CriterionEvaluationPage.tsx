@@ -103,36 +103,38 @@ export function CriterionEvaluationPage() {
           Đang tải dữ liệu tổng hợp...
         </div>
       ) : (
-        <SummaryBar summary={summary} />
-      )}
-
-      {/* Toolbar */}
-      {selectedCycleId && (
-        <div className="flex items-center gap-3 px-6 py-3 border-b flex-shrink-0">
-          <div className="relative flex-1 max-w-[320px]">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Tìm kiếm tiêu chí..."
-              value={filters.TextSearch ?? ""}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, TextSearch: e.target.value }))
-              }
-              className="pl-8 h-8 text-sm"
-            />
-          </div>
-          <Combobox
-            options={STATUS_FILTER_OPTIONS}
-            value={filters.Status?.toString() ?? ""}
-            onValueChange={(val) =>
-              setFilters((f) => ({
-                ...f,
-                Status: val ? (Number(val) as EvaluationStatus) : undefined,
-              }))
-            }
-            placeholder="Trạng thái"
-            className="w-[180px]"
-          />
-        </div>
+        <SummaryBar
+          summary={summary}
+          filterSlot={
+            selectedCycleId ? (
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm kiếm tiêu chí..."
+                    value={filters.TextSearch ?? ""}
+                    onChange={(e) =>
+                      setFilters((f) => ({ ...f, TextSearch: e.target.value }))
+                    }
+                    className="pl-8 h-8 text-sm w-[280px]"
+                  />
+                </div>
+                <Combobox
+                  options={STATUS_FILTER_OPTIONS}
+                  value={filters.Status?.toString() ?? ""}
+                  onValueChange={(val) =>
+                    setFilters((f) => ({
+                      ...f,
+                      Status: val ? (Number(val) as EvaluationStatus) : undefined,
+                    }))
+                  }
+                  placeholder="Trạng thái"
+                  className="w-[180px]"
+                />
+              </div>
+            ) : undefined
+          }
+        />
       )}
 
       {/* Content */}

@@ -364,7 +364,7 @@ function EvaluationForm({
                 <SelectContent>
                   {SCORE_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s.toString()}>
-                      {s}
+                      {s} — {AUN_SCORE_CONFIG[s].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -813,7 +813,7 @@ export function CriterionPopup({
                               <option value="">-- Chọn điểm chốt --</option>
                               {SCORE_OPTIONS.map((s) => (
                                 <option key={s} value={s}>
-                                  {s}
+                                  {s} — {AUN_SCORE_CONFIG[s].label}
                                 </option>
                               ))}
                             </select>

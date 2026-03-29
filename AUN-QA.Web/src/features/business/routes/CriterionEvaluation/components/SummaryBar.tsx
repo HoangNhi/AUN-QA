@@ -2,9 +2,10 @@ import type { CriterionEvaluationSummary } from "../../../types/criterionEvaluat
 
 interface SummaryBarProps {
   summary: CriterionEvaluationSummary | null;
+  filterSlot?: React.ReactNode;
 }
 
-export function SummaryBar({ summary }: SummaryBarProps) {
+export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
   if (!summary) return null;
 
   const progressPercent =
@@ -72,6 +73,14 @@ export function SummaryBar({ summary }: SummaryBarProps) {
               </span>
             </span>
           </div>
+        )}
+
+        {/* Spacer + filter slot */}
+        {filterSlot && (
+          <>
+            <div className="flex-1" />
+            {filterSlot}
+          </>
         )}
       </div>
     </div>

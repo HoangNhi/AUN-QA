@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { useCriterionEvaluation } from "../../hooks/useCriterionEvaluation";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
@@ -9,7 +9,6 @@ import { CriteriaGrid } from "./components/CriteriaGrid";
 import { CriterionPopup } from "./components/CriterionPopup";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
 import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
 import type { ModelCombobox } from "@/types/base/base.types";
@@ -46,7 +45,6 @@ export function CriterionEvaluationPage() {
     isApproving,
     handleSubmit,
     handleApprove,
-    handleInitialize,
   } = useCriterionEvaluation();
 
   const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
@@ -76,9 +74,6 @@ export function CriterionEvaluationPage() {
       ? groups.flatMap((g) => g.Items).find((item) => item.Id === activeItemId) ?? null
       : null;
 
-  const isOngoing = cycleStatus === 2;
-  const hasNoGroups = !isListLoading && groups.length === 0;
-
   return (
     <div className="flex flex-col h-full">
       {/* Page header */}
@@ -98,18 +93,6 @@ export function CriterionEvaluationPage() {
             placeholder={isCycleLoading ? "Đang tải..." : "Chọn chu kỳ..."}
             className="w-[260px]"
           />
-
-          {isOngoing && hasNoGroups && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleInitialize}
-              className="gap-1.5"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Khởi tạo đánh giá
-            </Button>
-          )}
         </div>
       </div>
 
@@ -120,7 +103,7 @@ export function CriterionEvaluationPage() {
           Đang tải dữ liệu tổng hợp...
         </div>
       ) : (
-        <SummaryBar summary={summary} framework={framework} />
+        <SummaryBar summary={summary} />
       )}
 
       {/* Toolbar */}

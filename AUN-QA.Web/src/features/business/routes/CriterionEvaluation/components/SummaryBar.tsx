@@ -1,11 +1,10 @@
-import type { CriterionEvaluationSummary, FrameworkType } from "../../../types/criterionEvaluation.types";
+import type { CriterionEvaluationSummary } from "../../../types/criterionEvaluation.types";
 
 interface SummaryBarProps {
   summary: CriterionEvaluationSummary | null;
-  framework: FrameworkType;
 }
 
-export function SummaryBar({ summary, framework }: SummaryBarProps) {
+export function SummaryBar({ summary }: SummaryBarProps) {
   if (!summary) return null;
 
   const progressPercent =

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { criterionEvaluationService } from "../api/criterionEvaluation.api";
@@ -18,6 +18,7 @@ export const useCriterionEvaluation = () => {
   const [filters, setFilters] = useState<
     Pick<CriterionEvaluationGetListRequest, "TextSearch" | "Status">
   >({ TextSearch: "", Status: undefined });
+  const autoInitializedCycleIdRef = useRef<string | null>(null);
 
   // Fetch full cycle data to get StandardSetId
   const { data: cycleData } = useQuery({
@@ -158,6 +159,29 @@ export const useCriterionEvaluation = () => {
       );
     },
   });
+
+  // Auto-initialize criteria when cycle is Ongoing and list is empty
+  useEffect(() => {
+    // Only run after initial list load completes
+    if (isListLoading) return;
+
+    // Get cycle status from cycleData
+    const cycleStatus = Number(cycleData?.Status ?? 0);
+
+    // Check if we should auto-init
+    if (
+      groups.length === 0 &&
+      cycleStatus === 2 && // Ongoing
+      standardSetId &&
+      selectedCycleId &&
+      autoInitializedCycleIdRef.current !== selectedCycleId // Haven't already tried for this cycle
+    ) {
+      // Mark this cycle as being auto-initialized
+      autoInitializedCycleIdRef.current = selectedCycleId;
+      // Trigger initialization
+      initializeMutation.mutate();
+    }
+  }, [groups, cycleData?.Status, standardSetId, selectedCycleId, isListLoading]);
 
   return {
     // State

@@ -20,6 +20,15 @@ export const useCriterionEvaluation = () => {
   >({ TextSearch: "", Status: undefined });
   const autoInitializedCycleIdRef = useRef<string | null>(null);
 
+  // Reset filters when cycle changes
+  useEffect(() => {
+    if (selectedCycleId) {
+      queueMicrotask(() => {
+        setFilters({ TextSearch: "", Status: undefined });
+      });
+    }
+  }, [selectedCycleId]);
+
   // Fetch full cycle data to get StandardSetId
   const { data: cycleData } = useQuery({
     queryKey: ["cycle-detail", selectedCycleId],
@@ -174,14 +183,16 @@ export const useCriterionEvaluation = () => {
       cycleStatus === 2 && // Ongoing
       standardSetId &&
       selectedCycleId &&
-      autoInitializedCycleIdRef.current !== selectedCycleId // Haven't already tried for this cycle
+      autoInitializedCycleIdRef.current !== selectedCycleId && // Haven't already tried for this cycle
+      !filters.TextSearch && // Only auto-init when no text search is active
+      filters.Status === undefined // Only auto-init when no status filter is active
     ) {
       // Mark this cycle as being auto-initialized
       autoInitializedCycleIdRef.current = selectedCycleId;
       // Trigger initialization
       initializeMutation.mutate();
     }
-  }, [groups, cycleData?.Status, standardSetId, selectedCycleId, isListLoading]);
+  }, [groups, cycleData?.Status, standardSetId, selectedCycleId, isListLoading, filters]);
 
   return {
     // State

@@ -40,7 +40,7 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
             response.Users.AddRange(users.Select(u => new UserInfo
             {
                 Id = u.Id.ToString(),
-                Fullname = u.Fullname,
+                Fullname = u.Fullname ?? string.Empty,
                 Avatar = u.Avatar ?? string.Empty
             }));
             return response;

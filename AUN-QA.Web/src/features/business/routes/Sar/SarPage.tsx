@@ -3,6 +3,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
 import { useSar } from "@/features/business/hooks/useSar";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { getColumns } from "./columns";
 import PopupSarEditor from "./PopupSarEditor";
 
@@ -32,6 +33,7 @@ export default function SarPage() {
     isSavingDraft,
   } = useSar();
 
+  const cycleOptions = useCycleOptions();
   const columns = useMemo(() => getColumns(showPopupDetail), [showPopupDetail]);
 
   const listPage = useListPage({
@@ -45,6 +47,7 @@ export default function SarPage() {
     setRowSelection,
     defaultPageRequest: {
       Status: undefined,
+      CycleId: undefined,
     },
   });
 
@@ -63,23 +66,39 @@ export default function SarPage() {
       onSearchTermChange={listPage.setSearchTerm}
       onResetFilters={listPage.handleResetFilters}
       hideAdd
-      searchInputClassName="col-span-1 lg:col-span-3 bg-background"
+      searchInputClassName="col-span-1 bg-background"
       filterGridCols="md:grid-cols-3"
       filterContent={
-        <Combobox
-          options={SAR_STATUS_OPTIONS}
-          value={pageRequest.Status ? String(pageRequest.Status) : undefined}
-          onValueChange={(val) => {
-            setPageRequest((prev) => ({
-              ...prev,
-              Status: val ? Number(val) : undefined,
-              PageIndex: 1,
-            }));
-          }}
-          placeholder="Tất cả trạng thái SAR"
-          searchPlaceholder="Tìm trạng thái..."
-          emptyText="Không tìm thấy trạng thái."
-        />
+        <>
+          <Combobox
+            options={SAR_STATUS_OPTIONS}
+            value={pageRequest.Status ? String(pageRequest.Status) : undefined}
+            onValueChange={(val) => {
+              setPageRequest((prev) => ({
+                ...prev,
+                Status: val ? Number(val) : undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả trạng thái SAR"
+            searchPlaceholder="Tìm trạng thái..."
+            emptyText="Không tìm thấy trạng thái."
+          />
+          <Combobox
+            options={cycleOptions.data ?? []}
+            value={pageRequest.CycleId ?? undefined}
+            onValueChange={(val) => {
+              setPageRequest((prev) => ({
+                ...prev,
+                CycleId: val || undefined,
+                PageIndex: 1,
+              }));
+            }}
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
+          />
+        </>
       }
     >
       {isOpen && selectedSar && (

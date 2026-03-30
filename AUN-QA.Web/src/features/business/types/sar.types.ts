@@ -2,6 +2,7 @@ import type { GetListPagingRequest } from "@/types/base/base.types";
 
 export interface SarGetListPagingRequest extends GetListPagingRequest {
   Status?: number;
+  CycleId?: string;
 }
 
 export interface SarGetListItem {

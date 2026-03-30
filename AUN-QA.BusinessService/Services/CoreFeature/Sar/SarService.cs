@@ -6,6 +6,7 @@ using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Exceptions;
+using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,15 +18,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICycleService _cycleService;
+        private readonly SystemProto.SystemProtoClient _systemClient;
 
         public SarService(
             BusinessContext context,
             IHttpContextAccessor contextAccessor,
-            ICycleService cycleService)
+            ICycleService cycleService,
+            SystemProto.SystemProtoClient systemClient)
         {
             _context = context;
             _contextAccessor = contextAccessor;
             _cycleService = cycleService;
+            _systemClient = systemClient;
         }
 
         public async Task<GetListPagingResponse<SarGetListItemDto>> GetList(SarGetListPagingRequest request)
@@ -78,6 +82,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     !sr.IsDeleted &&
                     sr.IsActived &&
                     sr.Status == status));
+            }
+
+            if (request.CycleId.HasValue)
+            {
+                cycleQuery = cycleQuery.Where(x => x.Id == request.CycleId.Value);
             }
 
             var totalRow = await cycleQuery.CountAsync();
@@ -159,7 +168,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             report.RenderedHtml = request.RenderedHtml;
             report.LastSavedAt = DateTime.UtcNow;
             report.UpdatedAt = DateTime.UtcNow;
-            report.UpdatedBy = CurrentUsername();
+            report.UpdatedBy = await GetDisplayNameAsync();
 
             _context.SarReports.Update(report);
             await _context.SaveChangesAsync();
@@ -199,6 +208,34 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             await _context.SaveChangesAsync();
 
             return report;
+        }
+
+        private async Task<string> GetDisplayNameAsync()
+        {
+            var userId = GetCurrentUserIdOrNull();
+            var username = CurrentUsername();
+
+            if (userId.HasValue)
+            {
+                try
+                {
+                    var grpcRequest = new GetUsersByIdsRequest();
+                    grpcRequest.UserIds.Add(userId.Value.ToString());
+                    var grpcResponse = await _systemClient.GetUsersByIdsAsync(grpcRequest);
+                    var userInfo = grpcResponse.Users.FirstOrDefault();
+
+                    if (userInfo?.Fullname != null && !string.IsNullOrWhiteSpace(userInfo.Fullname))
+                    {
+                        return userInfo.Fullname;
+                    }
+                }
+                catch
+                {
+                    // Fallback to username if gRPC fails
+                }
+            }
+
+            return username;
         }
 
         private static SarDraftDto ToDto(Entities.SarReport report)
@@ -245,7 +282,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
         private string CurrentUsername()
         {
-            return _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            return _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "unique_name")?.Value ?? "System";
         }
 
         private Guid? GetCurrentUserIdOrNull()

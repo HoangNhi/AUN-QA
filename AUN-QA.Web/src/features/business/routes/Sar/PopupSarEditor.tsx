@@ -550,7 +550,7 @@ export default function PopupSarEditor({
                 {/* Editor Content */}
                 <EditorContent
                   editor={editor}
-                  className="prose prose-sm prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none focus:outline-none"
+                  className="prose prose-sm prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none focus:outline-none [&_img]:cursor-pointer [&_img.ProseMirror-selectednode]:outline [&_img.ProseMirror-selectednode]:outline-2 [&_img.ProseMirror-selectednode]:outline-blue-500 [&_img.ProseMirror-selectednode]:rounded-sm"
                 />
               </div>
             )}

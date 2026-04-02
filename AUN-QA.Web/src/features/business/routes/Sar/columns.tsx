@@ -1,30 +1,38 @@
-﻿import { type ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import type { SarGetListItem } from "@/features/business/types/sar.types";
+import type { SarGetListItem, SarStatus } from "@/features/business/types/sar.types";
 
-const SAR_STATUS_META: Record<number, { label: string; className: string }> = {
+const DEFAULT_STATUS_META = {
+  label: "Unknown",
+  className: "bg-gray-100 text-gray-500 border border-gray-300",
+};
+
+const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> = {
   1: {
-    label: "Nhập",
+    label: "Nhap",
     className: "bg-slate-100 text-slate-600 border border-slate-300",
   },
   2: {
-    label: "Đang xử lý",
+    label: "Da nop",
     className: "bg-blue-100 text-blue-600 border border-blue-300",
   },
   3: {
-    label: "Hoàn tất",
-    className: "bg-green-100 text-green-600 border border-green-300",
+    label: "Yeu cau chinh sua",
+    className: "bg-amber-100 text-amber-700 border border-amber-300",
+  },
+  4: {
+    label: "Da phe duyet",
+    className: "bg-emerald-100 text-emerald-700 border border-emerald-300",
   },
 };
 
-function getStatusMeta(status: number) {
-  return (
-    SAR_STATUS_META[status] ?? {
-      label: "Không xác định",
-      className: "bg-gray-100 text-gray-500 border border-gray-300",
-    }
-  );
+function getStatusMeta(status: SarStatus | null | undefined) {
+  if (!status) {
+    return DEFAULT_STATUS_META;
+  }
+
+  return SAR_STATUS_META[status] ?? DEFAULT_STATUS_META;
 }
 
 export const getColumns = (
@@ -32,7 +40,7 @@ export const getColumns = (
 ): ColumnDef<SarGetListItem>[] => [
   {
     accessorKey: "CycleName",
-    header: "Chu kỳ",
+    header: "Chu ky",
     cell: ({ row }) => (
       <button
         type="button"
@@ -45,19 +53,19 @@ export const getColumns = (
   },
   {
     accessorKey: "Year",
-    header: () => <div className="text-center">Năm</div>,
+    header: () => <div className="text-center">Nam</div>,
     meta: {
       className: "text-center",
     },
   },
   {
     accessorKey: "Status",
-    header: () => <div className="text-center">Trạng thái SAR</div>,
+    header: () => <div className="text-center">Trang thai SAR</div>,
     meta: {
       className: "text-center",
     },
     cell: ({ row }) => {
-      const meta = getStatusMeta(Number(row.original.Status));
+      const meta = getStatusMeta(row.original.Status);
       return (
         <div className="flex justify-center">
           <span
@@ -71,7 +79,7 @@ export const getColumns = (
   },
   {
     accessorKey: "LastSavedAt",
-    header: () => <div className="text-center">Lưu lần cuối</div>,
+    header: () => <div className="text-center">Luu lan cuoi</div>,
     meta: {
       className: "text-center",
     },
@@ -88,20 +96,19 @@ export const getColumns = (
   },
   {
     accessorKey: "UpdatedBy",
-    header: "Người cập nhật",
+    header: "Nguoi cap nhat",
     cell: ({ row }) => row.original.UpdatedBy || "--",
   },
   {
     id: "actions",
-    header: () => <div className="text-center">Thao tác</div>,
+    header: () => <div className="text-center">Thao tac</div>,
     meta: {
       className: "text-center",
     },
     cell: ({ row }) => (
       <Button size="sm" onClick={() => openEditor(row.original)}>
-        Mở
+        Mo
       </Button>
     ),
   },
 ];
-

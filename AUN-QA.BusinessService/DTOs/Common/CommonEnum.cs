@@ -14,6 +14,14 @@ namespace AUN_QA.BusinessService.DTOs.Common
         Completed = 3
     }
 
+    public enum SarStatus
+    {
+        Draft = 1,
+        Submitted = 2,
+        RevisionRequested = 3,
+        Approved = 4
+    }
+
     public enum CouncilRole
     {
         HeadOfCouncil    = 1,  // CTH — Chủ tịch HĐ

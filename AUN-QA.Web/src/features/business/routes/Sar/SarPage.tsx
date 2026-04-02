@@ -4,14 +4,35 @@ import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
 import { useSar } from "@/features/business/hooks/useSar";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import type { SarStatus } from "@/features/business/types/sar.types";
 import { getColumns } from "./columns";
 import PopupSarEditor from "./PopupSarEditor";
 
 const SAR_STATUS_OPTIONS = [
-  { Text: "Nháp", Value: "1" },
-  { Text: "Đang xử lý", Value: "2" },
-  { Text: "Hoàn tất", Value: "3" },
+  { Text: "Nhap", Value: "1" },
+  { Text: "Da nop", Value: "2" },
+  { Text: "Yeu cau chinh sua", Value: "3" },
+  { Text: "Da phe duyet", Value: "4" },
 ];
+
+function parseSarStatus(value?: string): SarStatus | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  switch (value) {
+    case "1":
+      return 1;
+    case "2":
+      return 2;
+    case "3":
+      return 3;
+    case "4":
+      return 4;
+    default:
+      return undefined;
+  }
+}
 
 export default function SarPage() {
   const {
@@ -76,13 +97,13 @@ export default function SarPage() {
             onValueChange={(val) => {
               setPageRequest((prev) => ({
                 ...prev,
-                Status: val ? Number(val) : undefined,
+                Status: parseSarStatus(val),
                 PageIndex: 1,
               }));
             }}
-            placeholder="Tất cả trạng thái SAR"
-            searchPlaceholder="Tìm trạng thái..."
-            emptyText="Không tìm thấy trạng thái."
+            placeholder="Tat ca trang thai SAR"
+            searchPlaceholder="Tim trang thai..."
+            emptyText="Khong tim thay trang thai."
           />
           <Combobox
             options={cycleOptions.options ?? []}
@@ -94,9 +115,9 @@ export default function SarPage() {
                 PageIndex: 1,
               }));
             }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
+            placeholder="Tat ca chu ky"
+            searchPlaceholder="Tim chu ky..."
+            emptyText="Khong tim thay chu ky."
           />
         </>
       }

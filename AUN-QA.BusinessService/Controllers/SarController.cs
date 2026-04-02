@@ -51,5 +51,45 @@ namespace AUN_QA.BusinessService.Controllers
             await _service.SaveDraft(request);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpPost, Route("submit")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Submit([FromBody] SubmitSarRequest request)
+        {
+            await _service.Submit(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("request-revision")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> RequestRevision([FromBody] RequestSarRevisionRequest request)
+        {
+            await _service.RequestRevision(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Approve([FromBody] ApproveSarRequest request)
+        {
+            await _service.Approve(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("get-feedbacks")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetFeedbacks([FromBody] GetSarFeedbackRequest request)
+        {
+            var result = await _service.GetFeedbacks(request);
+            return Ok(new BaseResponse<List<SarFeedbackDto>> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("add-feedback")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> AddFeedback([FromBody] AddSarFeedbackRequest request)
+        {
+            await _service.AddFeedback(request);
+            return Ok(new BaseResponse(true, 200));
+        }
     }
 }

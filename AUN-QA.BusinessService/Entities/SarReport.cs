@@ -28,4 +28,20 @@ public partial class SarReport
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public DateTime? SubmittedAt { get; set; }
+
+    public string? SubmittedBy { get; set; }
+
+    public DateTime? ApprovedAt { get; set; }
+
+    public string? ApprovedBy { get; set; }
+
+    public DateTime? RevisionRequestedAt { get; set; }
+
+    public string? RevisionRequestedBy { get; set; }
+
+    public string? RevisionReason { get; set; }
+
+    public virtual ICollection<SarReviewComment> SarReviewComments { get; set; } = new List<SarReviewComment>();
 }

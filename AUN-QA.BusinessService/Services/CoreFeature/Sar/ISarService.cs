@@ -11,5 +11,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         Task<SarDraftDto?> GetByCycle(GetSarByCycleRequest request);
 
         Task SaveDraft(SaveSarDraftRequest request);
+
+        Task Submit(SubmitSarRequest request);
+
+        Task RequestRevision(RequestSarRevisionRequest request);
+
+        Task Approve(ApproveSarRequest request);
+
+        Task<List<SarFeedbackDto>> GetFeedbacks(GetSarFeedbackRequest request);
+
+        Task AddFeedback(AddSarFeedbackRequest request);
     }
 }

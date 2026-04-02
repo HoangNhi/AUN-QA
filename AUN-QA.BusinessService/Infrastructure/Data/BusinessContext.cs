@@ -30,6 +30,8 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<SarReport> SarReports { get; set; }
 
+    public virtual DbSet<SarReviewComment> SarReviewComments { get; set; }
+
     public virtual DbSet<SurveyCampaign> SurveyCampaigns { get; set; }
 
     public virtual DbSet<SurveyScore> SurveyScores { get; set; }
@@ -214,18 +216,67 @@ public partial class BusinessContext : DbContext
             entity.ToTable("SarReport");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.LastSavedAt).HasColumnType("datetime");
+            entity.Property(e => e.RevisionReason).HasMaxLength(1000);
+            entity.Property(e => e.RevisionRequestedAt).HasColumnType("datetime");
+            entity.Property(e => e.RevisionRequestedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
             entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.SubmittedAt).HasColumnType("datetime");
+            entity.Property(e => e.SubmittedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.YdocSnapshot).HasColumnName("YDocSnapshot");
+        });
+
+        modelBuilder.Entity<SarReviewComment>(entity =>
+        {
+            entity.ToTable("SarReviewComment");
+
+            entity.HasIndex(e => e.CriterionCode, "IX_SarReviewComment_CriterionCode");
+
+            entity.HasIndex(e => e.SarReportId, "IX_SarReviewComment_SarReportId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CommentText).HasMaxLength(2000);
+            entity.Property(e => e.CommentType).HasDefaultValue(1);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CriterionCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
+            entity.Property(e => e.ResolvedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.SarReport).WithMany(p => p.SarReviewComments)
+                .HasForeignKey(d => d.SarReportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SarReviewComment_SarReport");
         });
 
         modelBuilder.Entity<SurveyCampaign>(entity =>

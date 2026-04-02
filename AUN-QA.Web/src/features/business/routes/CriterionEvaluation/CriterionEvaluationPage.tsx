@@ -16,7 +16,6 @@ import type { ModelCombobox } from "@/types/base/base.types";
 const STATUS_FILTER_OPTIONS: ModelCombobox[] = [
   { Value: "", Text: "Tất cả trạng thái" },
   { Value: "0", Text: EVALUATION_STATUS_CONFIG[0].label },
-  { Value: "1", Text: EVALUATION_STATUS_CONFIG[1].label },
   { Value: "2", Text: EVALUATION_STATUS_CONFIG[2].label },
   { Value: "3", Text: EVALUATION_STATUS_CONFIG[3].label },
 ];
@@ -68,7 +67,8 @@ export function CriterionEvaluationPage() {
 
   const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
   const userRole = userCouncil?.RoleId ?? 0;
-  const canSubmit = userRole === 4; // TVH
+  const userAssignedStandardIds = new Set(userCouncil?.AssignedStandardIds ?? []);
+  const canSubmit = userRole === 4 && (userAssignedStandardIds.size === 0 || userAssignedStandardIds.has(activeItem?.StandardId ?? "")); // TVH
   const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
 
   const cycleStatus = Number(cycleData?.Status ?? 0);
@@ -109,6 +109,7 @@ export function CriterionEvaluationPage() {
       ) : (
         <SummaryBar
           summary={summary}
+          framework={framework}
           filterSlot={
             selectedCycleId ? (
               <div className="flex items-center gap-3">
@@ -155,6 +156,7 @@ export function CriterionEvaluationPage() {
           <CriteriaGrid
             groups={groups}
             framework={framework}
+            assignedStandardIds={userAssignedStandardIds}
             onRowClick={(item) => setActiveItemId(item.Id)}
           />
         )}

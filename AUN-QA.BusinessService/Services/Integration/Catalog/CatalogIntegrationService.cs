@@ -186,6 +186,31 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
                 throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
             }
         }
+
+        public async IAsyncEnumerable<CriterionRequirementRow> GetRequirementsByStandardSetStreamAsync(GetRequirementsByStandardSetStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var lst = new List<CriterionRequirementRow>();
+            try
+            {
+                // Gọi gRPC
+                using var call = _grpcClient.GetRequirementsByStandardSetStream(request, cancellationToken: cancellationToken);
+
+                // Đọc stream từ gRPC
+                await foreach (var item in call.ResponseStream.ReadAllAsync(cancellationToken))
+                {
+                    lst.Add(item);
+                }
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+
+            foreach (var item in lst)
+            {
+                yield return item;
+            }
+        }
         #endregion
     }
 }

@@ -1,8 +1,9 @@
-import type { CriterionEvaluationSummary } from "../../../types/criterionEvaluation.types";
+import type { CriterionEvaluationSummary, FrameworkType } from "../../../types/criterionEvaluation.types";
 
 interface SummaryBarProps {
   summary: CriterionEvaluationSummary | null;
   filterSlot?: React.ReactNode;
+  framework?: FrameworkType;
 }
 
 export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
@@ -16,9 +17,24 @@ export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
   const prerequisiteFailed =
     summary.PrerequisiteTotal - summary.PrerequisitePassed;
 
+  const getVerdictColor = (verdict: string | null | undefined) => {
+    if (!verdict) return "bg-gray-100 text-gray-600";
+    if (verdict === "Đạt") return "bg-emerald-100 text-emerald-700";
+    if (verdict === "Đạt có điều kiện") return "bg-amber-100 text-amber-700";
+    if (verdict === "Không đạt") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-600";
+  };
+
   return (
     <div className="sticky top-0 z-10 bg-background border-b px-6 py-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-4">
+        {/* MOET Program Verdict */}
+        {framework === "MOET" && (
+          <div className={`text-sm font-medium px-2.5 py-1 rounded-full ${getVerdictColor(summary.MoetProgramVerdict)}`}>
+            {summary.MoetProgramVerdict || "Chưa có kết quả"}
+          </div>
+        )}
+
         {/* Progress */}
         <div className="flex items-center gap-2 min-w-[200px]">
           <span className="text-xs text-muted-foreground whitespace-nowrap">

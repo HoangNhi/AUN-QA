@@ -8,5 +8,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Dtos
         public int PrerequisitePassed { get; set; }
         public int FailedStandards { get; set; }
         public int FailedCriteria { get; set; }
+        public string? MoetProgramVerdict { get; set; }
     }
 }

@@ -14,6 +14,7 @@ import {
 interface CriteriaGridProps {
   groups: StandardEvaluationGroup[];
   framework: FrameworkType;
+  assignedStandardIds?: Set<string>;
   onRowClick: (item: CriterionEvaluationItem) => void;
 }
 
@@ -24,6 +25,45 @@ function StatusBadge({ status }: { status: EvaluationStatus }) {
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.color}`}
     >
       {config.label}
+    </span>
+  );
+}
+
+function EvidenceCell({
+  evidenceCount,
+  missingCount,
+}: {
+  evidenceCount: number;
+  missingCount: number;
+}) {
+  if (evidenceCount === 0) {
+    return <span className="text-muted-foreground text-sm">—</span>;
+  }
+  if (missingCount === 0) {
+    return <span className="text-emerald-600 text-sm font-medium">{evidenceCount} MC</span>;
+  }
+  return (
+    <span className="text-red-600 text-sm font-medium">
+      {evidenceCount} MC · thiếu {missingCount}
+    </span>
+  );
+}
+
+function SubmissionProgressCell({
+  submissionCount,
+  totalEvaluators,
+}: {
+  submissionCount: number | undefined;
+  totalEvaluators: number;
+}) {
+  const count = submissionCount ?? 0;
+  if (totalEvaluators === 0) {
+    return <span className="text-muted-foreground text-sm">—</span>;
+  }
+  const isComplete = count >= totalEvaluators;
+  return (
+    <span className={`text-sm font-medium ${isComplete ? "text-emerald-600" : "text-slate-600"}`}>
+      {count}/{totalEvaluators} TVH
     </span>
   );
 }
@@ -65,22 +105,27 @@ function OfficialScoreCell({
 function StandardGroupRow({
   group,
   framework,
+  assignedStandardIds,
   onRowClick,
 }: {
   group: StandardEvaluationGroup;
   framework: FrameworkType;
+  assignedStandardIds?: Set<string>;
   onRowClick: (item: CriterionEvaluationItem) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const isAssigned = assignedStandardIds?.has(group.StandardId) ?? false;
 
   return (
     <>
       {/* Standard group header */}
       <tr
-        className="bg-muted/60 cursor-pointer hover:bg-muted select-none"
+        className={`cursor-pointer hover:bg-muted select-none ${
+          isAssigned ? "bg-muted/60 border-l-4 border-l-blue-500" : "bg-muted/40"
+        }`}
         onClick={() => setCollapsed((c) => !c)}
       >
-        <td colSpan={4} className="px-4 py-2">
+        <td colSpan={6} className="px-4 py-2">
           <div className="flex items-center gap-2">
             {collapsed ? (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -90,6 +135,11 @@ function StandardGroupRow({
             <span className="font-semibold text-sm">
               {group.StandardCode} — {group.StandardName}
             </span>
+            {isAssigned && (
+              <span className="text-xs font-medium bg-blue-100 text-blue-700 rounded px-2 py-0.5 ml-2">
+                Phụ trách
+              </span>
+            )}
             <span className="text-xs text-muted-foreground ml-2">
               {group.ApprovedCount}/{group.TotalCount} duyệt
             </span>
@@ -133,6 +183,12 @@ function StandardGroupRow({
               <StatusBadge status={item.Status} />
             </td>
             <td className="px-4 py-2.5 text-sm">
+              <EvidenceCell evidenceCount={item.EvidenceCount} missingCount={item.MissingEvidenceCount} />
+            </td>
+            <td className="px-4 py-2.5 text-sm">
+              <SubmissionProgressCell submissionCount={item.SubmissionCount} totalEvaluators={item.TotalEvaluators} />
+            </td>
+            <td className="px-4 py-2.5 text-sm">
               <OfficialScoreCell item={item} framework={framework} />
             </td>
           </tr>
@@ -141,7 +197,7 @@ function StandardGroupRow({
   );
 }
 
-export function CriteriaGrid({ groups, framework, onRowClick }: CriteriaGridProps) {
+export function CriteriaGrid({ groups, framework, assignedStandardIds, onRowClick }: CriteriaGridProps) {
   if (groups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -167,6 +223,12 @@ export function CriteriaGrid({ groups, framework, onRowClick }: CriteriaGridProp
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[140px]">
               Trạng thái
             </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[130px]">
+              Minh chứng
+            </th>
+            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[110px]">
+              Tiến độ phiếu
+            </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[100px]">
               {"K\u1ebft qu\u1ea3"}
             </th>
@@ -178,6 +240,7 @@ export function CriteriaGrid({ groups, framework, onRowClick }: CriteriaGridProp
               key={group.StandardId}
               group={group}
               framework={framework}
+              assignedStandardIds={assignedStandardIds}
               onRowClick={onRowClick}
             />
           ))}

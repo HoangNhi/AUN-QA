@@ -66,6 +66,17 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .GroupBy(x => x.StandardId)
                 .Count(g => g.Count() > 2);
 
+            string? moetProgramVerdict = null;
+            if (approved.Any())
+            {
+                if (failedStandards == 0)
+                    moetProgramVerdict = "Đạt";
+                else if (failedStandards <= 2 && failedCriteria <= 16)
+                    moetProgramVerdict = "Đạt có điều kiện";
+                else
+                    moetProgramVerdict = "Không đạt";
+            }
+
             return new ModelCriterionEvaluationSummary
             {
                 TotalCriteria = evaluations.Count,
@@ -73,7 +84,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 PrerequisiteTotal = prerequisiteEvals.Count,
                 PrerequisitePassed = prerequisitePassed,
                 FailedStandards = failedStandards,
-                FailedCriteria = failedCriteria
+                FailedCriteria = failedCriteria,
+                MoetProgramVerdict = moetProgramVerdict
             };
         }
         #endregion
@@ -95,6 +107,35 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
 
             var metaLookup = await FetchCriterionMetaAsync(request.StandardSetId);
 
+            // Fetch CriterionRequirements for evidence counting
+            var requirementRows = new List<CriterionRequirementRow>();
+            await foreach (var row in _catalogService.GetRequirementsByStandardSetStreamAsync(
+                new GetRequirementsByStandardSetStreamRequest { StandardSetId = request.StandardSetId.ToString() }))
+            {
+                requirementRows.Add(row);
+            }
+
+            var requirementsByCriterion = requirementRows
+                .GroupBy(r => Guid.Parse(r.CriterionId))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var allFileTypeIds = requirementRows
+                .Select(r => Guid.Parse(r.FileTypeId))
+                .Distinct().ToList();
+
+            // Query evidence counts by FileTypeId
+            var evidenceCountByFileType = await (
+                from ecm in _context.EvidenceCycleMaps
+                join ev in _context.Evidences on ecm.EvidenceId equals ev.Id
+                where ecm.CycleId == request.CycleId
+                   && !ecm.IsDeleted && ecm.IsActived
+                   && ev.Status == (int)EvidenceStatus.Verified
+                   && allFileTypeIds.Contains(ev.FileTypeId)
+                   && !ev.IsDeleted && ev.IsActived
+                group ev by ev.FileTypeId into g
+                select new { FileTypeId = g.Key, Count = g.Count() }
+            ).ToDictionaryAsync(x => x.FileTypeId, x => x.Count);
+
             if (!string.IsNullOrWhiteSpace(request.TextSearch))
             {
                 var search = request.TextSearch.ToLower();
@@ -111,6 +152,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .GroupBy(x => x.CriterionEvaluationId)
                 .Select(g => new { Id = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Id, x => x.Count);
+
+            // Count evaluators (TVH with RoleId=4) per standard
+            var evaluatorCouncils = await _context.Councils
+                .AsNoTracking()
+                .Where(c => c.CycleId == request.CycleId && c.RoleId == 4 && !c.IsDeleted && c.IsActived)
+                .ToListAsync();
+
+            var evaluatorCountByStandard = new Dictionary<Guid, int>();
+            foreach (var standardId in evaluations.Select(e => e.StandardId).Distinct())
+            {
+                evaluatorCountByStandard[standardId] = evaluatorCouncils
+                    .Count(c => IsInScope(c.AssignedStandards, standardId));
+            }
 
             // Build standard order lookup
             var standardOrder = metaLookup.Values
@@ -130,6 +184,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                         {
                             metaLookup.TryGetValue(x.CriterionId, out var meta);
                             submissionCounts.TryGetValue(x.Id, out var subCount);
+
+                            // Calculate evidence count and missing count
+                            var evidenceCount = 0;
+                            var missingCount = 0;
+                            if (requirementsByCriterion.TryGetValue(x.CriterionId, out var reqs))
+                            {
+                                evidenceCount = reqs
+                                    .Sum(r => evidenceCountByFileType.TryGetValue(Guid.Parse(r.FileTypeId), out var c) ? c : 0);
+                                missingCount = reqs
+                                    .Where(r => r.IsMandatory)
+                                    .Sum(r =>
+                                    {
+                                        evidenceCountByFileType.TryGetValue(Guid.Parse(r.FileTypeId), out var c);
+                                        return Math.Max(0, r.MinQuantity - c);
+                                    });
+                            }
+
                             return new ModelCriterionEvaluationItem
                             {
                                 Id = x.Id,
@@ -140,10 +211,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                                 Status = x.Status,
                                 OfficialScore = x.OfficialScore,
                                 OfficialResult = x.OfficialResult,
-                                EvidenceCount = 0,
-                                MissingEvidenceCount = 0,
+                                EvidenceCount = evidenceCount,
+                                MissingEvidenceCount = missingCount,
                                 SubmissionCount = subCount,
-                                TotalEvaluators = 0
+                                TotalEvaluators = evaluatorCountByStandard.TryGetValue(g.Key, out var tc) ? tc : 0
                             };
                         }).ToList();
 
@@ -541,6 +612,21 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 result.TryAdd(row.CriterionId, row);
             }
             return result;
+        }
+
+        private static bool IsInScope(string? json, Guid standardId)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return false;
+            try
+            {
+                var ids = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(json);
+                return ids?.Contains(standardId) == true;
+            }
+            catch
+            {
+                return false;
+            }
         }
         #endregion
     }

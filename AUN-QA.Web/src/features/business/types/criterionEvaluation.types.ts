@@ -1,8 +1,7 @@
-export type EvaluationStatus = 0 | 1 | 2 | 3;
+export type EvaluationStatus = 0 | 2 | 3;
 
 export const EVALUATION_STATUS = {
   EMPTY: 0,
-  DRAFT: 1,
   WAITING: 2,
   APPROVED: 3,
 } as const;
@@ -12,7 +11,6 @@ export const EVALUATION_STATUS_CONFIG: Record<
   { label: string; color: string }
 > = {
   0: { label: "Trống", color: "bg-gray-100 text-gray-500" },
-  1: { label: "Nháp", color: "bg-yellow-100 text-yellow-700" },
   2: { label: "Chờ duyệt", color: "bg-orange-100 text-orange-700" },
   3: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
 };
@@ -63,6 +61,7 @@ export interface CriterionEvaluationSummary {
   PrerequisitePassed: number;
   FailedStandards: number;
   FailedCriteria: number;
+  MoetProgramVerdict?: string | null;
 }
 
 export interface CriterionEvaluationItem {

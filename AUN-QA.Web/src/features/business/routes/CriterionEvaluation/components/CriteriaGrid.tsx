@@ -143,6 +143,17 @@ function StandardGroupRow({
             <span className="text-xs text-muted-foreground ml-2">
               {group.ApprovedCount}/{group.TotalCount} duyệt
             </span>
+            {framework === "AUN" && group.StandardScore != null && (
+              <span
+                className={`ml-auto text-xs font-medium rounded px-2 py-0.5 ${
+                  (AUN_SCORE_CONFIG[group.StandardScore] ?? AUN_SCORE_CONFIG[4]).bgClass
+                } ${
+                  (AUN_SCORE_CONFIG[group.StandardScore] ?? AUN_SCORE_CONFIG[4]).textClass
+                }`}
+              >
+                {group.StandardScore}/7
+              </span>
+            )}
             {framework === "MOET" && group.ApprovedCount > 0 && (
               <span
                 className={`ml-auto text-xs font-medium rounded px-2 py-0.5 ${

@@ -61,7 +61,18 @@ export interface CriterionEvaluationSummary {
   PrerequisitePassed: number;
   FailedStandards: number;
   FailedCriteria: number;
+  AunProgramVerdict?: number | null;
   MoetProgramVerdict?: string | null;
+
+  // Comparison with previous cycle (null = no previous cycle)
+  PreviousCycleId?: string | null;
+  PreviousCycleName?: string | null;
+  PreviousApprovedCriteria?: number | null;
+  PreviousFailedCriteria?: number | null;
+  PreviousFailedStandards?: number | null;
+  PreviousMoetProgramVerdict?: string | null;
+  ImprovedCriteria?: number | null;
+  RegressedCriteria?: number | null;
 }
 
 export interface CriterionEvaluationItem {

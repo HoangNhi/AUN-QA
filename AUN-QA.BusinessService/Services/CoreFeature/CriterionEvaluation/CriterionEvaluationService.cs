@@ -1,4 +1,4 @@
-using AUN_QA.BusinessService.DTOs.Common;
+﻿using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Requests;
 using AUN_QA.BusinessService.DTOs.Integration.Catalog;
@@ -50,6 +50,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 return new ModelCriterionEvaluationSummary();
 
             var metaLookup = await FetchCriterionMetaAsync(request.StandardSetId);
+            var evaluationMode = await _catalogService.GetStandardSetEvaluationModeAsync(request.StandardSetId.ToString());
+            var isAunMode = evaluationMode == CriterionEvaluationPolicy.EvaluationModeAun;
 
             var approved = evaluations.Where(x => x.Status == (int)CriterionEvaluationStatus.Approved).ToList();
             var prerequisiteIds = metaLookup.Where(kv => kv.Value.IsPrerequisite).Select(kv => kv.Key).ToHashSet();
@@ -59,22 +61,77 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 x.Status == (int)CriterionEvaluationStatus.Approved &&
                 (x.OfficialResult == true || (x.OfficialScore.HasValue && x.OfficialScore >= 4)));
 
-            var failedCriteria = approved.Count(x => x.OfficialResult == false);
+            var failedCriteria = isAunMode ? 0 : approved.Count(x => x.OfficialResult == false);
+            var failedStandards = isAunMode
+                ? 0
+                : approved
+                    .Where(x => x.OfficialResult == false)
+                    .GroupBy(x => x.StandardId)
+                    .Count(g => g.Count() > 2);
 
-            var failedStandards = approved
-                .Where(x => x.OfficialResult == false)
-                .GroupBy(x => x.StandardId)
-                .Count(g => g.Count() > 2);
+            var aunProgramVerdict = isAunMode
+                ? CriterionEvaluationPolicy.CalculateRoundedAunScore(approved.Select(x => x.OfficialScore))
+                : null;
+            var moetProgramVerdict = isAunMode
+                ? null
+                : CalculateMoetProgramVerdict(failedStandards, failedCriteria, approved.Any());
 
-            string? moetProgramVerdict = null;
-            if (approved.Any())
+            var previousCycle = await FindPreviousCycleAsync(request.CycleId, request.StandardSetId);
+
+            Guid? previousCycleId = null;
+            string? previousCycleName = null;
+            int? previousApprovedCriteria = null;
+            int? previousFailedCriteria = null;
+            int? previousFailedStandards = null;
+            string? previousMoetProgramVerdict = null;
+            int? improvedCriteria = null;
+            int? regressedCriteria = null;
+
+            if (previousCycle != null)
             {
-                if (failedStandards == 0)
-                    moetProgramVerdict = "Đạt";
-                else if (failedStandards <= 2 && failedCriteria <= 16)
-                    moetProgramVerdict = "Đạt có điều kiện";
-                else
-                    moetProgramVerdict = "Không đạt";
+                previousCycleId = previousCycle.Id;
+                previousCycleName = previousCycle.Name;
+
+                var prevEvaluations = await _context.CriterionEvaluations
+                    .AsNoTracking()
+                    .Where(x => x.CycleId == previousCycle.Id && !x.IsDeleted && x.IsActived)
+                    .ToListAsync();
+
+                var prevApproved = prevEvaluations.Where(x => x.Status == (int)CriterionEvaluationStatus.Approved).ToList();
+                previousApprovedCriteria = prevApproved.Count;
+
+                if (!isAunMode)
+                {
+                    previousFailedCriteria = prevApproved.Count(x => x.OfficialResult == false);
+                    previousFailedStandards = prevApproved
+                        .Where(x => x.OfficialResult == false)
+                        .GroupBy(x => x.StandardId)
+                        .Count(g => g.Count() > 2);
+                    previousMoetProgramVerdict = CalculateMoetProgramVerdict(
+                        previousFailedStandards.Value,
+                        previousFailedCriteria.Value,
+                        prevApproved.Any());
+                }
+
+                var prevLookup = prevApproved.ToDictionary(x => x.CriterionId);
+                int improved = 0, regressed = 0;
+                foreach (var curr in approved)
+                {
+                    if (!prevLookup.TryGetValue(curr.CriterionId, out var prev)) continue;
+
+                    if (curr.OfficialScore.HasValue && prev.OfficialScore.HasValue)
+                    {
+                        if (curr.OfficialScore > prev.OfficialScore) improved++;
+                        else if (curr.OfficialScore < prev.OfficialScore) regressed++;
+                    }
+                    else if (curr.OfficialResult.HasValue && prev.OfficialResult.HasValue)
+                    {
+                        if (curr.OfficialResult == true && prev.OfficialResult == false) improved++;
+                        else if (curr.OfficialResult == false && prev.OfficialResult == true) regressed++;
+                    }
+                }
+                improvedCriteria = improved;
+                regressedCriteria = regressed;
             }
 
             return new ModelCriterionEvaluationSummary
@@ -85,10 +142,51 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 PrerequisitePassed = prerequisitePassed,
                 FailedStandards = failedStandards,
                 FailedCriteria = failedCriteria,
-                MoetProgramVerdict = moetProgramVerdict
+                AunProgramVerdict = aunProgramVerdict,
+                MoetProgramVerdict = moetProgramVerdict,
+                PreviousCycleId = previousCycleId,
+                PreviousCycleName = previousCycleName,
+                PreviousApprovedCriteria = previousApprovedCriteria,
+                PreviousFailedCriteria = previousFailedCriteria,
+                PreviousFailedStandards = previousFailedStandards,
+                PreviousMoetProgramVerdict = previousMoetProgramVerdict,
+                ImprovedCriteria = improvedCriteria,
+                RegressedCriteria = regressedCriteria,
             };
         }
         #endregion
+
+        private async Task<Entities.Cycle?> FindPreviousCycleAsync(Guid currentCycleId, Guid standardSetId)
+        {
+            var currentCycle = await _context.Cycles
+                .AsNoTracking()
+                .Where(x => x.Id == currentCycleId && !x.IsDeleted && x.IsActived)
+                .FirstOrDefaultAsync();
+
+            if (currentCycle == null) return null;
+
+            // Find most recent cycle with same StandardSetId, earlier StartDate
+            var candidates = await _context.Cycles
+                .AsNoTracking()
+                .Where(x => x.StandardSetId == standardSetId
+                    && x.Id != currentCycleId
+                    && x.StartDate < currentCycle.StartDate
+                    && !x.IsDeleted && x.IsActived)
+                .OrderByDescending(x => x.StartDate)
+                .ToListAsync();
+
+            // Pick the first one that has at least 1 approved evaluation
+            foreach (var candidate in candidates)
+            {
+                var hasApproved = await _context.CriterionEvaluations
+                    .AsNoTracking()
+                    .AnyAsync(x => x.CycleId == candidate.Id
+                        && x.Status == (int)CriterionEvaluationStatus.Approved
+                        && !x.IsDeleted && x.IsActived);
+                if (hasApproved) return candidate;
+            }
+            return null;
+        }
 
         #region List
         public async Task<List<ModelStandardEvaluationGroup>> GetList(CriterionEvaluationGetListRequest request)
@@ -106,8 +204,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 return new List<ModelStandardEvaluationGroup>();
 
             var metaLookup = await FetchCriterionMetaAsync(request.StandardSetId);
+            var evaluationMode = await _catalogService.GetStandardSetEvaluationModeAsync(request.StandardSetId.ToString());
+            var isAunMode = evaluationMode == CriterionEvaluationPolicy.EvaluationModeAun;
 
-            // Fetch CriterionRequirements for evidence counting
             var requirementRows = new List<CriterionRequirementRow>();
             await foreach (var row in _catalogService.GetRequirementsByStandardSetStreamAsync(
                 new GetRequirementsByStandardSetStreamRequest { StandardSetId = request.StandardSetId.ToString() }))
@@ -123,7 +222,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .Select(r => Guid.Parse(r.FileTypeId))
                 .Distinct().ToList();
 
-            // Query evidence counts by FileTypeId
             var evidenceCountByFileType = await (
                 from ecm in _context.EvidenceCycleMaps
                 join ev in _context.Evidences on ecm.EvidenceId equals ev.Id
@@ -153,20 +251,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .Select(g => new { Id = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Id, x => x.Count);
 
-            // Count evaluators (TVH with RoleId=4) per standard
             var evaluatorCouncils = await _context.Councils
                 .AsNoTracking()
-                .Where(c => c.CycleId == request.CycleId && c.RoleId == 4 && !c.IsDeleted && c.IsActived)
+                .Where(c => c.CycleId == request.CycleId && c.RoleId == (int)CouncilRole.Evaluator && !c.IsDeleted && c.IsActived)
                 .ToListAsync();
 
             var evaluatorCountByStandard = new Dictionary<Guid, int>();
             foreach (var standardId in evaluations.Select(e => e.StandardId).Distinct())
             {
                 evaluatorCountByStandard[standardId] = evaluatorCouncils
-                    .Count(c => IsInScope(c.AssignedStandards, standardId));
+                    .Count(c => CriterionEvaluationPolicy.AssignedStandardsContains(c.AssignedStandards, standardId));
             }
 
-            // Build standard order lookup
             var standardOrder = metaLookup.Values
                 .GroupBy(m => m.StandardId)
                 .ToDictionary(g => g.Key, g => g.First().StandardOrder);
@@ -176,8 +272,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 .OrderBy(g => standardOrder.TryGetValue(g.Key, out var o) ? o : 0)
                 .Select(g =>
                 {
-                    metaLookup.TryGetValue(g.First().CriterionId, out var firstMeta);
-
                     var items = g
                         .OrderBy(x => metaLookup.TryGetValue(x.CriterionId, out var m) ? m.CriterionOrder : 0)
                         .Select(x =>
@@ -185,7 +279,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                             metaLookup.TryGetValue(x.CriterionId, out var meta);
                             submissionCounts.TryGetValue(x.Id, out var subCount);
 
-                            // Calculate evidence count and missing count
                             var evidenceCount = 0;
                             var missingCount = 0;
                             if (requirementsByCriterion.TryGetValue(x.CriterionId, out var reqs))
@@ -219,11 +312,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                         }).ToList();
 
                     var approvedItems = items.Where(i => i.Status == (int)CriterionEvaluationStatus.Approved).ToList();
-                    var failedCount = approvedItems.Count(i => i.OfficialResult == false);
-                    var prerequisiteFailed = approvedItems.Any(i => i.IsPrerequisite && i.OfficialResult == false);
-                    var isPassed = !prerequisiteFailed && failedCount <= 2;
+                    var isPassed = !isAunMode && CalculateMoetStandardPassed(approvedItems);
+                    var standardScore = isAunMode
+                        ? CriterionEvaluationPolicy.CalculateRoundedAunScore(approvedItems.Select(i => i.OfficialScore))
+                        : null;
 
-                    // Get standard metadata from any criterion in this group
                     StandardWithCriteriaDto? standardMeta = null;
                     foreach (var item in g)
                     {
@@ -240,7 +333,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                         StandardCode = standardMeta?.StandardCode ?? "",
                         StandardName = standardMeta?.StandardName ?? "",
                         IsPassed = isPassed,
-                        StandardScore = null,
+                        StandardScore = standardScore,
                         ApprovedCount = approvedItems.Count,
                         TotalCount = items.Count,
                         Items = items
@@ -326,7 +419,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             if (evaluation.Status == (int)CriterionEvaluationStatus.Approved)
                 throw new BusinessException("Tiêu chí đã được duyệt, không thể chỉnh sửa phiếu đánh giá");
 
-            // Required-field validation is enforced by FluentValidation on EvaluationSubmissionRequest.
             var currentState = request.CurrentState!.Trim();
             var strengths = request.Strengths!.Trim();
             var weaknesses = request.Weaknesses!.Trim();
@@ -334,6 +426,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
 
             var userId = GetCurrentUserId();
             var userName = GetCurrentUserName();
+            var councils = await _context.Councils
+                .AsNoTracking()
+                .Where(x => x.CycleId == evaluation.CycleId && x.UserId == userId && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+
+            if (!CriterionEvaluationPolicy.CanTvhSubmit(evaluation.CycleId, userId, evaluation.StandardId, councils))
+                throw new BusinessException("Bạn không có quyền gửi phiếu đánh giá cho tiêu chuẩn này", 403);
 
             var existing = await _context.EvaluationSubmissions
                 .FirstOrDefaultAsync(x =>
@@ -614,21 +713,28 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             return result;
         }
 
-        private static bool IsInScope(string? json, Guid standardId)
+        private static string? CalculateMoetProgramVerdict(int failedStandards, int failedCriteria, bool hasApproved)
         {
-            if (string.IsNullOrWhiteSpace(json))
-                return false;
-            try
-            {
-                var ids = System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(json);
-                return ids?.Contains(standardId) == true;
-            }
-            catch
-            {
-                return false;
-            }
+            if (!hasApproved)
+                return null;
+
+            if (failedStandards == 0)
+                return "Đạt";
+
+            return failedStandards <= 2 && failedCriteria <= 16
+                ? "Đạt có điều kiện"
+                : "Không đạt";
+        }
+
+        private static bool CalculateMoetStandardPassed(IEnumerable<ModelCriterionEvaluationItem> approvedItems)
+        {
+            var approvedItemList = approvedItems.ToList();
+            var failedCount = approvedItemList.Count(i => i.OfficialResult == false);
+            var prerequisiteFailed = approvedItemList.Any(i => i.IsPrerequisite && i.OfficialResult == false);
+            return !prerequisiteFailed && failedCount <= 2;
         }
         #endregion
     }
 }
+
 

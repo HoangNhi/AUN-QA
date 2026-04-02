@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
 import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
 import type { ModelCombobox } from "@/types/base/base.types";
+import { canEvaluatorSubmit } from "./utils/permissions";
 
 const STATUS_FILTER_OPTIONS: ModelCombobox[] = [
   { Value: "", Text: "Tất cả trạng thái" },
@@ -68,15 +69,23 @@ export function CriterionEvaluationPage() {
   const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
   const userRole = userCouncil?.RoleId ?? 0;
   const userAssignedStandardIds = new Set(userCouncil?.AssignedStandardIds ?? []);
-  const canSubmit = userRole === 4 && (userAssignedStandardIds.size === 0 || userAssignedStandardIds.has(activeItem?.StandardId ?? "")); // TVH
-  const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
-
-  const cycleStatus = Number(cycleData?.Status ?? 0);
-
   const activeItem =
     activeItemId != null
       ? groups.flatMap((g) => g.Items).find((item) => item.Id === activeItemId) ?? null
       : null;
+  const activeStandardId =
+    activeItemId != null
+      ? groups.find((group) => group.Items.some((item) => item.Id === activeItemId))
+          ?.StandardId ?? null
+      : null;
+  const canSubmit = canEvaluatorSubmit(
+    userRole,
+    userCouncil?.AssignedStandardIds,
+    activeStandardId,
+  ); // TVH
+  const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
+
+  const cycleStatus = Number(cycleData?.Status ?? 0);
 
   return (
     <div className="flex flex-col h-full">

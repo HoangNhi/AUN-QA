@@ -1,4 +1,8 @@
-import type { CriterionEvaluationSummary, FrameworkType } from "../../../types/criterionEvaluation.types";
+import {
+  AUN_SCORE_CONFIG,
+  type CriterionEvaluationSummary,
+  type FrameworkType,
+} from "../../../types/criterionEvaluation.types";
 
 interface SummaryBarProps {
   summary: CriterionEvaluationSummary | null;
@@ -6,7 +10,7 @@ interface SummaryBarProps {
   framework?: FrameworkType;
 }
 
-export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
+export function SummaryBar({ summary, filterSlot, framework }: SummaryBarProps) {
   if (!summary) return null;
 
   const progressPercent =
@@ -25,9 +29,26 @@ export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
     return "bg-gray-100 text-gray-600";
   };
 
+  const getAunVerdictColor = (verdict: number | null | undefined) => {
+    if (verdict == null) return "bg-gray-100 text-gray-600";
+    const config = AUN_SCORE_CONFIG[verdict] ?? AUN_SCORE_CONFIG[4];
+    return `${config.bgClass} ${config.textClass}`;
+  };
+
   return (
     <div className="sticky top-0 z-10 bg-background border-b px-6 py-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-4">
+        {/* AUN Program Verdict */}
+        {framework === "AUN" && (
+          <div
+            className={`text-sm font-medium px-2.5 py-1 rounded-full ${getAunVerdictColor(summary.AunProgramVerdict)}`}
+          >
+            {summary.AunProgramVerdict == null
+              ? "Chưa có kết quả"
+              : `${summary.AunProgramVerdict}/7`}
+          </div>
+        )}
+
         {/* MOET Program Verdict */}
         {framework === "MOET" && (
           <div className={`text-sm font-medium px-2.5 py-1 rounded-full ${getVerdictColor(summary.MoetProgramVerdict)}`}>
@@ -99,6 +120,39 @@ export function SummaryBar({ summary, filterSlot }: SummaryBarProps) {
           </>
         )}
       </div>
+
+      {/* Previous Cycle Comparison */}
+      {summary.PreviousCycleId && (
+        <div className="flex flex-wrap items-center gap-3 px-6 py-2 border-t border-muted text-xs text-muted-foreground">
+          <span className="font-medium">vs {summary.PreviousCycleName}:</span>
+
+          {/* Previous verdict (MOET only) */}
+          {framework === "MOET" && summary.PreviousMoetProgramVerdict && (
+            <span className={`px-2 py-0.5 rounded-full font-medium ${getVerdictColor(summary.PreviousMoetProgramVerdict)}`}>
+              {summary.PreviousMoetProgramVerdict}
+            </span>
+          )}
+
+          {/* Improvement count */}
+          {(summary.ImprovedCriteria ?? 0) > 0 && (
+            <span className="text-emerald-600 font-medium">
+              ↑ {summary.ImprovedCriteria} cải thiện
+            </span>
+          )}
+
+          {/* Regression count */}
+          {(summary.RegressedCriteria ?? 0) > 0 && (
+            <span className="text-red-600 font-medium">
+              ↓ {summary.RegressedCriteria} giảm
+            </span>
+          )}
+
+          {/* No change */}
+          {(summary.ImprovedCriteria ?? 0) === 0 && (summary.RegressedCriteria ?? 0) === 0 && (
+            <span className="text-muted-foreground">→ Không thay đổi</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+﻿import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type {
   CriterionEvaluationItem,
@@ -29,14 +29,18 @@ function buildItem(
 function buildGroups(
   framework: FrameworkType,
   item: CriterionEvaluationItem,
+  options?: {
+    standardScore?: number | null;
+    isPassed?: boolean;
+  },
 ): StandardEvaluationGroup[] {
   return [
     {
       StandardId: "std-1",
-      StandardCode: "Tiêu chuẩn 1",
-      StandardName: "Kết quả học tập mong đợi",
-      IsPassed: framework === "AUN" ? true : !!item.OfficialResult,
-      StandardScore: framework === "AUN" ? 4 : null,
+      StandardCode: "Standard 1",
+      StandardName: "Expected Learning Outcomes",
+      IsPassed: options?.isPassed ?? (framework === "AUN" ? true : !!item.OfficialResult),
+      StandardScore: options?.standardScore ?? (framework === "AUN" ? 4 : null),
       ApprovedCount: 1,
       TotalCount: 1,
       Items: [item],
@@ -45,7 +49,7 @@ function buildGroups(
 }
 
 describe("CriteriaGrid result column", () => {
-  it("always shows 'Kết quả' as last column header", () => {
+  it("always shows result as last column header", () => {
     const groups = buildGroups(
       "AUN",
       buildItem({ Status: 3, OfficialScore: 4, OfficialResult: null }),
@@ -53,11 +57,11 @@ describe("CriteriaGrid result column", () => {
 
     render(<CriteriaGrid groups={groups} framework="AUN" onRowClick={vi.fn()} />);
 
-    expect(screen.getByText("Kết quả")).toBeInTheDocument();
-    expect(screen.queryByText("Điểm")).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: /kết quả/i })).toBeInTheDocument();
+    expect(screen.queryByText(/điểm/i)).not.toBeInTheDocument();
   });
 
-  it("shows MOET final result as ĐẠT when approved", () => {
+  it("shows MOET final result as PASS when approved", () => {
     const groups = buildGroups(
       "MOET",
       buildItem({ Status: 3, OfficialScore: null, OfficialResult: true }),
@@ -66,6 +70,18 @@ describe("CriteriaGrid result column", () => {
     render(<CriteriaGrid groups={groups} framework="MOET" onRowClick={vi.fn()} />);
 
     expect(screen.getByText("ĐẠT")).toBeInTheDocument();
+  });
+
+  it("shows AUN standard score in the standard header", () => {
+    const groups = buildGroups(
+      "AUN",
+      buildItem({ Status: 0, OfficialScore: null, OfficialResult: null }),
+      { standardScore: 5 },
+    );
+
+    render(<CriteriaGrid groups={groups} framework="AUN" onRowClick={vi.fn()} />);
+
+    expect(screen.getByText("5/7")).toBeInTheDocument();
   });
 
   it("shows AUN score text when approved", () => {

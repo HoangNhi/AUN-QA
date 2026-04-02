@@ -39,9 +39,10 @@ export function createSarEditorExtensions(
       types: ["heading", "paragraph"],
     }),
     Link.configure({
-      openOnClick: false,
+      openOnClick: true,
       HTMLAttributes: {
         rel: "noopener noreferrer",
+        target: "_blank",
       },
     }),
     Table.configure({

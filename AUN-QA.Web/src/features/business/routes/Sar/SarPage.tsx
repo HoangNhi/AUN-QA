@@ -85,7 +85,7 @@ export default function SarPage() {
             emptyText="Không tìm thấy trạng thái."
           />
           <Combobox
-            options={cycleOptions.data ?? []}
+            options={cycleOptions.options ?? []}
             value={pageRequest.CycleId ?? undefined}
             onValueChange={(val) => {
               setPageRequest((prev) => ({

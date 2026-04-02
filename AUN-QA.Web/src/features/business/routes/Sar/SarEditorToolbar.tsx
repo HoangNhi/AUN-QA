@@ -384,14 +384,20 @@ export function SarEditorToolbar({ editor }: { editor: Editor | null }) {
       </Popover>
       <ToolbarSeparator />
 
-      {/* Group 8: Clear Formatting */}
+      {/* Group 8: Clear Formatting / Delete Table */}
       <ToolbarButton
         onClick={() => {
-          editor.commands.clearNodes();
-          editor.commands.unsetAllMarks();
+          if (editor.isActive('table')) {
+            if (confirm('Xóa bảng này? Hành động này không thể hoàn tác.')) {
+              editor.commands.deleteTable();
+            }
+          } else {
+            editor.commands.clearNodes();
+            editor.commands.unsetAllMarks();
+          }
         }}
         icon={Trash2}
-        title="Xóa định dạng"
+        title="Xóa định dạng / Xóa bảng"
       />
     </div>
   );

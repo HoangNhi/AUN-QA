@@ -4,6 +4,7 @@ import { evidenceCycleMapService } from "../../../api/evidenceCycleMap.api";
 import { surveyCampaignService } from "../../../api/survey-campaign.api";
 import PopupEvidenceCycleMap from "../../EvidenceCycleMap/PopupEvidenceCycleMap";
 import { PopupSurveyCampaignCriterion } from "./PopupSurveyCampaignCriterion";
+import { ApprovalPanelCard } from "./ApprovalPanelCard";
 import { getCompletedCampaignsForCycle } from "../../../utils/criterionEvaluationSurvey";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,11 +24,8 @@ import {
   ThumbsUp,
   AlertCircle,
   Lightbulb,
-  Check,
   Undo2,
-  CheckCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type {
   ApproveEvaluationRequest,
   CriterionEvidence,
@@ -52,6 +50,7 @@ interface CriterionPopupProps {
   canApprove: boolean;
   isSubmitting: boolean;
   isApproving: boolean;
+  isSubmissionsFetching: boolean;
   onClose: () => void;
   onSubmit: (request: EvaluationSubmissionRequest) => Promise<void>;
   onApprove: (request: ApproveEvaluationRequest) => Promise<void>;
@@ -439,6 +438,7 @@ export function CriterionPopup({
   canApprove,
   isSubmitting,
   isApproving,
+  isSubmissionsFetching,
   onClose,
   onSubmit,
   onApprove,
@@ -691,6 +691,9 @@ export function CriterionPopup({
                       <h3 className="font-bold text-slate-800 text-base">
                         Hội đồng đã nộp
                       </h3>
+                      {isSubmissionsFetching && (
+                        <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin" />
+                      )}
                     </div>
                     <span className="text-[11px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
                       {submissions.length} Phiếu
@@ -781,90 +784,17 @@ export function CriterionPopup({
                 </div>
 
                 {/* 3. Approval panel */}
-                {canApprove && (
-                  <div className="bg-slate-800 p-6 rounded-[20px] shadow-xl border border-slate-700/80 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full pointer-events-none" />
-                    <div className="relative z-10">
-                      <h3 className="font-bold text-white mb-1 flex items-center gap-2 text-base">
-                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                        Chốt & Phê duyệt
-                      </h3>
-                      <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-                        Dành cho Chủ tịch HĐ. Xem xét ý kiến để chốt điểm cuối.
-                      </p>
-
-                      {isApproved ? (
-                        <p className="text-sm text-emerald-400 font-semibold text-center py-2">
-                          ✓ Đã duyệt
-                        </p>
-                      ) : (
-                        <div className="flex flex-col sm:flex-row items-center gap-3">
-                          {framework === "AUN" ? (
-                            <select
-                              value={officialScore ?? ""}
-                              onChange={(e) =>
-                                setOfficialScore(
-                                  e.target.value ? Number(e.target.value) : null,
-                                )
-                              }
-                              disabled={isApproving}
-                              className="w-full sm:flex-1 text-sm p-3 border border-slate-600 bg-slate-700 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold shadow-inner cursor-pointer disabled:opacity-50"
-                            >
-                              <option value="">-- Chọn điểm chốt --</option>
-                              {SCORE_OPTIONS.map((s) => (
-                                <option key={s} value={s}>
-                                  {s} — {AUN_SCORE_CONFIG[s].label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <select
-                              value={
-                                officialResult === true
-                                  ? "PASS"
-                                  : officialResult === false
-                                    ? "FAIL"
-                                    : ""
-                              }
-                              onChange={(e) =>
-                                setOfficialResult(
-                                  e.target.value === "PASS"
-                                    ? true
-                                    : e.target.value === "FAIL"
-                                      ? false
-                                      : null,
-                                )
-                              }
-                              disabled={isApproving}
-                              className="w-full sm:flex-1 text-sm p-3 border border-slate-600 bg-slate-700 text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold shadow-inner cursor-pointer disabled:opacity-50"
-                            >
-                              <option value="">-- Chọn kết quả --</option>
-                              <option value="PASS">ĐẠT YÊU CẦU</option>
-                              <option value="FAIL">KHÔNG ĐẠT</option>
-                            </select>
-                          )}
-                          <Button
-                            onClick={handleApprove}
-                            disabled={
-                              isApproving ||
-                              (framework === "AUN"
-                                ? !officialScore
-                                : officialResult == null)
-                            }
-                            className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-                          >
-                            {isApproving ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Check className="w-4 h-4" />
-                            )}
-                            Duyệt
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <ApprovalPanelCard
+                  framework={framework}
+                  isApproved={isApproved}
+                  canApprove={canApprove}
+                  officialScore={officialScore}
+                  officialResult={officialResult}
+                  isApproving={isApproving}
+                  onOfficialScoreChange={setOfficialScore}
+                  onOfficialResultChange={setOfficialResult}
+                  onApprove={handleApprove}
+                />
               </div>
             </div>
           </div>
@@ -895,4 +825,3 @@ export function CriterionPopup({
     </div>
   );
 }
-

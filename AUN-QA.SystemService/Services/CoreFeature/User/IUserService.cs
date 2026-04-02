@@ -8,6 +8,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
     {
         Task<ModelUser> GetById(GetByIdRequest request);
         Task<List<ModelUser>> GetByIds(List<Guid> ids);
+        Task<List<ModelUser>> GetByUsernames(List<string> usernames);
         Task<ModelUser> Insert(UserRequest request);
         Task<ModelUser> Update(UserRequest request);
         Task<string> DeleteList(DeleteListRequest request);

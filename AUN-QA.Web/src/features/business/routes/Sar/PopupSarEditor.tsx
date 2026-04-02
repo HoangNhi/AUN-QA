@@ -5,7 +5,7 @@ import * as Y from "yjs";
 import { createSarEditorExtensions } from "./sarEditorExtensions";
 import { SarEditorToolbar } from "./SarEditorToolbar";
 import { format } from "date-fns";
-import { Loader2, Bold, Italic, Underline, Link2, Trash2 } from "lucide-react";
+import { Loader2, Bold, Italic, Underline, Link2, Trash2, PanelTop, PanelBottom, PanelLeft, PanelRight, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useAuth } from "@/hooks/useAuth";
@@ -507,6 +507,7 @@ export default function PopupSarEditor({
                   <BubbleMenu
                     editor={editor}
                     tippyOptions={{ duration: 100 }}
+                    shouldShow={({ editor }) => !editor.isActive('table')}
                   >
                     <div className="flex items-center gap-1 bg-white border border-slate-200 shadow-lg rounded-lg p-1">
                       {/* B I U | Link | Clear */}
@@ -542,6 +543,66 @@ export default function PopupSarEditor({
                         onClick={() => editor.commands.unsetAllMarks()}
                         icon={Trash2}
                         title="Xóa định dạng"
+                      />
+                    </div>
+                  </BubbleMenu>
+                )}
+
+                {/* Table Operations BubbleMenu */}
+                {editor && (
+                  <BubbleMenu
+                    editor={editor}
+                    tippyOptions={{ duration: 100 }}
+                    shouldShow={({ editor }) => editor.isActive('table')}
+                  >
+                    <div className="flex items-center gap-1 bg-white border border-slate-200 shadow-lg rounded-lg p-1">
+                      {/* Row operations */}
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.addRowBefore()}
+                        icon={PanelTop}
+                        title="Thêm hàng phía trên"
+                      />
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.addRowAfter()}
+                        icon={PanelBottom}
+                        title="Thêm hàng phía dưới"
+                      />
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.deleteRow()}
+                        icon={Minus}
+                        title="Xóa hàng"
+                      />
+
+                      <div className="w-px h-4 bg-slate-200 mx-0.5" />
+
+                      {/* Column operations */}
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.addColumnBefore()}
+                        icon={PanelLeft}
+                        title="Thêm cột phía trái"
+                      />
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.addColumnAfter()}
+                        icon={PanelRight}
+                        title="Thêm cột phía phải"
+                      />
+                      <BubbleMenuToolbarButton
+                        onClick={() => editor.commands.deleteColumn()}
+                        icon={Minus}
+                        title="Xóa cột"
+                      />
+
+                      <div className="w-px h-4 bg-slate-200 mx-0.5" />
+
+                      {/* Delete table */}
+                      <BubbleMenuToolbarButton
+                        onClick={() => {
+                          if (confirm('Xóa bảng này? Hành động này không thể hoàn tác.')) {
+                            editor.commands.deleteTable();
+                          }
+                        }}
+                        icon={Trash2}
+                        title="Xóa bảng"
                       />
                     </div>
                   </BubbleMenu>

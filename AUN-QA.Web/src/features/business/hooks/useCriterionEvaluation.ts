@@ -75,7 +75,7 @@ export const useCriterionEvaluation = () => {
   const groups = listResponse?.Data ?? [];
 
   // Combined popup data query (submissions, evidences, mySubmission, survey campaigns, evaluation mode)
-  const { data: popupDataResponse, isLoading: isPopupDataLoading } = useQuery({
+  const { data: popupDataResponse, isLoading: isPopupDataLoading, isFetching: isPopupDataFetching } = useQuery({
     queryKey: ["criterionEvaluation", "popupData", activeItemId, selectedCycleId],
     queryFn: () =>
       criterionEvaluationService.getPopupData({
@@ -218,6 +218,7 @@ export const useCriterionEvaluation = () => {
     isSummaryLoading,
     isListLoading,
     isPopupDataLoading,
+    isPopupDataFetching,
     isSubmitting: submitMutation.isPending,
     isApproving: approveMutation.isPending,
     // Actions

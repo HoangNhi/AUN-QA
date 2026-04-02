@@ -38,9 +38,11 @@ export function CriterionEvaluationPage() {
     submissions,
     evidences,
     mySubmission,
+    evaluationMode,
     isSummaryLoading,
     isListLoading,
     isPopupDataLoading,
+    isPopupDataFetching,
     isSubmitting,
     isApproving,
     handleSubmit,
@@ -58,9 +60,11 @@ export function CriterionEvaluationPage() {
     enabled: !!standardSetId,
   });
 
-
-  const framework: FrameworkType =
-    standardSetData?.EvaluationMode === 2 ? "MOET" : "AUN";
+  // Prefer popup evaluation mode while popup is open; fallback to standard set mode for page/grid.
+  const effectiveEvaluationMode = activeItemId
+    ? evaluationMode
+    : (standardSetData?.EvaluationMode ?? evaluationMode);
+  const framework: FrameworkType = effectiveEvaluationMode === 2 ? "MOET" : "AUN";
 
   const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
   const userRole = userCouncil?.RoleId ?? 0;
@@ -165,6 +169,7 @@ export function CriterionEvaluationPage() {
           cycleId={selectedCycleId}
           mySubmission={mySubmission}
           isMySubmissionLoading={isPopupDataLoading}
+          isSubmissionsFetching={isPopupDataFetching}
           framework={framework}
           cycleStatus={cycleStatus}
           canSubmit={canSubmit}

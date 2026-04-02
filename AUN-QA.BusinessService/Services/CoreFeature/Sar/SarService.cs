@@ -129,6 +129,35 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 };
             }).ToList();
 
+            var usernames = items
+                .Where(x => !string.IsNullOrEmpty(x.UpdatedBy))
+                .Select(x => x.UpdatedBy!)
+                .Distinct()
+                .ToList();
+
+            if (usernames.Count > 0)
+            {
+                try
+                {
+                    var grpcRequest = new GetUsersByUsernamesRequest();
+                    grpcRequest.Usernames.AddRange(usernames);
+                    var grpcResponse = await _systemClient.GetUsersByUsernamesAsync(grpcRequest);
+                    var usernameToFullname = grpcResponse.Users
+                        .ToDictionary(u => u.Username, u => u.Fullname);
+
+                    foreach (var item in items)
+                    {
+                        if (!string.IsNullOrEmpty(item.UpdatedBy)
+                            && usernameToFullname.TryGetValue(item.UpdatedBy, out var fullname)
+                            && !string.IsNullOrWhiteSpace(fullname))
+                        {
+                            item.UpdatedBy = fullname;
+                        }
+                    }
+                }
+                catch { /* Fallback: keep username as-is */ }
+            }
+
             return new GetListPagingResponse<SarGetListItemDto>
             {
                 PageIndex = request.PageIndex,
@@ -168,7 +197,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             report.RenderedHtml = request.RenderedHtml;
             report.LastSavedAt = DateTime.UtcNow;
             report.UpdatedAt = DateTime.UtcNow;
-            report.UpdatedBy = await GetDisplayNameAsync();
+            report.UpdatedBy = GetDisplayName();
 
             _context.SarReports.Update(report);
             await _context.SaveChangesAsync();
@@ -210,33 +239,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             return report;
         }
 
-        private async Task<string> GetDisplayNameAsync()
-        {
-            var userId = GetCurrentUserIdOrNull();
-            var username = CurrentUsername();
-
-            if (userId.HasValue)
-            {
-                try
-                {
-                    var grpcRequest = new GetUsersByIdsRequest();
-                    grpcRequest.UserIds.Add(userId.Value.ToString());
-                    var grpcResponse = await _systemClient.GetUsersByIdsAsync(grpcRequest);
-                    var userInfo = grpcResponse.Users.FirstOrDefault();
-
-                    if (userInfo?.Fullname != null && !string.IsNullOrWhiteSpace(userInfo.Fullname))
-                    {
-                        return userInfo.Fullname;
-                    }
-                }
-                catch
-                {
-                    // Fallback to username if gRPC fails
-                }
-            }
-
-            return username;
-        }
+        private string GetDisplayName() => CurrentUsername();
 
         private static SarDraftDto ToDto(Entities.SarReport report)
         {

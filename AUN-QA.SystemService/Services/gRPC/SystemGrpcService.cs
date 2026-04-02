@@ -45,5 +45,20 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
             }));
             return response;
         }
+
+        public override async Task<GetUsersByUsernamesResponse> GetUsersByUsernames(GetUsersByUsernamesRequest request, ServerCallContext context)
+        {
+            var users = await _userService.GetByUsernames(request.Usernames.ToList());
+
+            var response = new GetUsersByUsernamesResponse();
+            response.Users.AddRange(users.Select(u => new UserInfo
+            {
+                Id = u.Id.ToString(),
+                Fullname = u.Fullname ?? string.Empty,
+                Avatar = u.Avatar ?? string.Empty,
+                Username = u.Username ?? string.Empty,
+            }));
+            return response;
+        }
     }
 }

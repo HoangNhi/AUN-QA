@@ -41,21 +41,21 @@ function OfficialScoreCell({
     const config = AUN_SCORE_CONFIG[item.OfficialScore] || AUN_SCORE_CONFIG[4];
     return (
       <span
-        className={`px-2 py-1 rounded text-xs font-semibold ${config.bgClass} ${config.textClass}`}
+        className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${config.bgClass} ${config.textClass}`}
       >
-        {config.label} ({item.OfficialScore}/7)
+        {item.OfficialScore}/7
       </span>
     );
   }
   if (framework === "MOET") {
     if (item.OfficialResult === true) {
       return (
-        <span className="text-green-600 font-medium">Đạt</span>
+        <span className="text-green-600 font-medium">{"\u0110\u1ea0T"}</span>
       );
     }
     if (item.OfficialResult === false) {
       return (
-        <span className="text-red-600 font-medium">Không đạt</span>
+        <span className="text-red-600 font-medium">{"KH\u00d4NG \u0110\u1ea0T"}</span>
       );
     }
   }
@@ -80,7 +80,7 @@ function StandardGroupRow({
         className="bg-muted/60 cursor-pointer hover:bg-muted select-none"
         onClick={() => setCollapsed((c) => !c)}
       >
-        <td colSpan={5} className="px-4 py-2">
+        <td colSpan={4} className="px-4 py-2">
           <div className="flex items-center gap-2">
             {collapsed ? (
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -93,7 +93,7 @@ function StandardGroupRow({
             <span className="text-xs text-muted-foreground ml-2">
               {group.ApprovedCount}/{group.TotalCount} duyệt
             </span>
-            {framework === "MOET" && (
+            {framework === "MOET" && group.ApprovedCount > 0 && (
               <span
                 className={`ml-auto text-xs font-medium rounded px-2 py-0.5 ${
                   group.IsPassed
@@ -131,21 +131,9 @@ function StandardGroupRow({
             </td>
             <td className="px-4 py-2.5">
               <StatusBadge status={item.Status} />
-              {item.SubmissionCount > 0 && (
-                <span className="ml-1.5 text-xs text-muted-foreground">
-                  ({item.SubmissionCount})
-                </span>
-              )}
             </td>
             <td className="px-4 py-2.5 text-sm">
               <OfficialScoreCell item={item} framework={framework} />
-            </td>
-            <td className="px-4 py-2.5 text-sm text-muted-foreground">
-              {item.EvidenceCount > 0 ? (
-                <span>{item.EvidenceCount}</span>
-              ) : (
-                <span>—</span>
-              )}
             </td>
           </tr>
         ))}
@@ -180,10 +168,7 @@ export function CriteriaGrid({ groups, framework, onRowClick }: CriteriaGridProp
               Trạng thái
             </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[100px]">
-              {framework === "AUN" ? "Điểm" : "Kết quả"}
-            </th>
-            <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground w-[80px]">
-              Minh chứng
+              {"K\u1ebft qu\u1ea3"}
             </th>
           </tr>
         </thead>

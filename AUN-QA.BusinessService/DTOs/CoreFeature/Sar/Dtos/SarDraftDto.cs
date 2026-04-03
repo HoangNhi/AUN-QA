@@ -8,9 +8,15 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos
 
         public int Status { get; set; }
 
+        public int? CurrentUserCouncilRoleId { get; set; }
+
+        public bool CanSubmitByRole { get; set; }
+
         public string? YDocSnapshotBase64 { get; set; }
 
         public string? RenderedHtml { get; set; }
+
+        public string? RevisionReason { get; set; }
 
         public DateTime? LastSavedAt { get; set; }
 

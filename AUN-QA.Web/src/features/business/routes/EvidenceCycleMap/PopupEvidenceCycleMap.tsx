@@ -118,7 +118,7 @@ const PopupEvidenceCycleMap = ({
   );
 
   const status = form.watch("status");
-  const isPending = status === "2" || status === "3";
+  const isPending = !!readOnly || status === "2" || status === "3";
   const cycleIdForm = form.watch("cycleId");
   const fileTypeIdForm = form.watch("fileTypeId");
 

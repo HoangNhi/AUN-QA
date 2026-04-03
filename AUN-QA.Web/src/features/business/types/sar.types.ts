@@ -23,8 +23,11 @@ export interface SarDraft {
   SarReportId: string;
   CycleId: string;
   Status: SarStatus;
+  CurrentUserCouncilRoleId?: number | null;
+  CanSubmitByRole?: boolean;
   YDocSnapshotBase64?: string | null;
   RenderedHtml?: string | null;
+  RevisionReason?: string | null;
   LastSavedAt?: string | null;
   CreatedAt: string;
   CreatedBy: string;
@@ -40,4 +43,47 @@ export interface SaveSarDraftRequest {
   CycleId: string;
   YDocSnapshotBase64?: string | null;
   RenderedHtml?: string | null;
+}
+
+export interface SubmitSarRequest {
+  CycleId: string;
+}
+
+export interface RequestSarRevisionRequest {
+  CycleId: string;
+  RevisionReason: string;
+}
+
+export interface ApproveSarRequest {
+  CycleId: string;
+}
+
+export interface GetSarFeedbackRequest {
+  CycleId: string;
+  CriterionCode?: string | null;
+  CommentType?: number | null;
+}
+
+export interface AddSarFeedbackRequest {
+  CycleId: string;
+  CriterionCode?: string | null;
+  CommentText: string;
+  CommentType?: number;
+}
+
+export interface SarFeedback {
+  Id: string;
+  SarReportId: string;
+  CycleId: string;
+  CriterionCode?: string | null;
+  CommentText: string;
+  CommentType: number;
+  RoleId?: number | null;
+  IsResolved: boolean;
+  ResolvedAt?: string | null;
+  ResolvedBy?: string | null;
+  CreatedAt: string;
+  CreatedBy: string;
+  UpdatedAt?: string | null;
+  UpdatedBy?: string | null;
 }

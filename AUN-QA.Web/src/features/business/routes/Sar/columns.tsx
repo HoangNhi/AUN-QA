@@ -10,19 +10,19 @@ const DEFAULT_STATUS_META = {
 
 const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> = {
   1: {
-    label: "Nhap",
+    label: "Nháp",
     className: "bg-slate-100 text-slate-600 border border-slate-300",
   },
   2: {
-    label: "Da nop",
+    label: "Đang chờ duyệt",
     className: "bg-blue-100 text-blue-600 border border-blue-300",
   },
   3: {
-    label: "Yeu cau chinh sua",
+    label: "Yêu cầu chỉnh sửa",
     className: "bg-amber-100 text-amber-700 border border-amber-300",
   },
   4: {
-    label: "Da phe duyet",
+    label: "Đã phê duyệt",
     className: "bg-emerald-100 text-emerald-700 border border-emerald-300",
   },
 };
@@ -40,7 +40,7 @@ export const getColumns = (
 ): ColumnDef<SarGetListItem>[] => [
   {
     accessorKey: "CycleName",
-    header: "Chu ky",
+    header: "Chu kỳ",
     cell: ({ row }) => (
       <button
         type="button"
@@ -53,14 +53,14 @@ export const getColumns = (
   },
   {
     accessorKey: "Year",
-    header: () => <div className="text-center">Nam</div>,
+    header: () => <div className="text-center">Năm</div>,
     meta: {
       className: "text-center",
     },
   },
   {
     accessorKey: "Status",
-    header: () => <div className="text-center">Trang thai SAR</div>,
+    header: () => <div className="text-center">Trạng thái SAR</div>,
     meta: {
       className: "text-center",
     },
@@ -79,7 +79,7 @@ export const getColumns = (
   },
   {
     accessorKey: "LastSavedAt",
-    header: () => <div className="text-center">Luu lan cuoi</div>,
+    header: () => <div className="text-center">Lưu lần cuối</div>,
     meta: {
       className: "text-center",
     },
@@ -96,18 +96,18 @@ export const getColumns = (
   },
   {
     accessorKey: "UpdatedBy",
-    header: "Nguoi cap nhat",
+    header: "Người cập nhật",
     cell: ({ row }) => row.original.UpdatedBy || "--",
   },
   {
     id: "actions",
-    header: () => <div className="text-center">Thao tac</div>,
+    header: () => <div className="text-center">Thao tác</div>,
     meta: {
       className: "text-center",
     },
     cell: ({ row }) => (
       <Button size="sm" onClick={() => openEditor(row.original)}>
-        Mo
+        Mở
       </Button>
     ),
   },

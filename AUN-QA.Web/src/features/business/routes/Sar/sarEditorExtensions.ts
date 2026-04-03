@@ -14,6 +14,7 @@ import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import Image from "@tiptap/extension-image";
 import type * as Y from "yjs";
 import type { WebsocketProvider } from "y-websocket";
+import { EvidenceTag } from "./extensions/EvidenceTag";
 
 export interface TocItem {
   id: string;
@@ -56,6 +57,7 @@ export function createSarEditorExtensions(
         style: "max-width: 100%; height: auto; display: block;",
       },
     }),
+    EvidenceTag,
   ];
 
   if (onTocUpdate) {

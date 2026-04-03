@@ -173,16 +173,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
         public async Task<SarDraftDto?> GetByCycle(GetSarByCycleRequest request)
         {
-            await CheckPdcaPermissionAsync(request.CycleId, Roles(
+            var allowedRoles = Roles(
                 CouncilRole.HeadOfCouncil,
                 CouncilRole.ViceChairman,
                 CouncilRole.Secretary,
-                CouncilRole.Evaluator));
+                CouncilRole.Evaluator);
+
+            await CheckPdcaPermissionAsync(request.CycleId, allowedRoles);
 
             await CheckCycleStageAsync(request.CycleId);
+            var council = await RequireCouncilRoleAsync(request.CycleId, allowedRoles);
+            var canSubmitByRole = IsAdmin() || council?.RoleId == (int)CouncilRole.Secretary;
 
             var report = await EnsureSarReportAsync(request.CycleId);
-            return ToDto(report);
+            return ToDto(report, council?.RoleId, canSubmitByRole);
         }
 
         public async Task SaveDraft(SaveSarDraftRequest request)
@@ -228,10 +232,21 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 throw new BusinessException("SAR is not in a valid state for submit");
             }
 
+            var now = DateTime.UtcNow;
+            SarAuditTrail.SetTransitionPayload(
+                _contextAccessor.HttpContext,
+                SarAuditTrail.CreateTransitionPayload(
+                    report.Status,
+                    (int)SarStatus.Submitted,
+                    "submit",
+                    reason: null,
+                    changedBy: GetDisplayName(),
+                    changedAt: now));
+
             report.Status = (int)SarStatus.Submitted;
-            report.SubmittedAt = DateTime.UtcNow;
+            report.SubmittedAt = now;
             report.SubmittedBy = GetDisplayName();
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = now;
             report.UpdatedBy = GetDisplayName();
 
             _context.SarReports.Update(report);
@@ -257,11 +272,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 throw new BusinessException("You do not have permission to request SAR revision");
             }
 
+            var now = DateTime.UtcNow;
+            SarAuditTrail.SetTransitionPayload(
+                _contextAccessor.HttpContext,
+                SarAuditTrail.CreateTransitionPayload(
+                    report.Status,
+                    (int)SarStatus.RevisionRequested,
+                    "request-revision",
+                    request.RevisionReason.Trim(),
+                    changedBy: GetDisplayName(),
+                    changedAt: now));
+
             report.Status = (int)SarStatus.RevisionRequested;
-            report.RevisionRequestedAt = DateTime.UtcNow;
+            report.RevisionRequestedAt = now;
             report.RevisionRequestedBy = GetDisplayName();
             report.RevisionReason = request.RevisionReason.Trim();
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = now;
             report.UpdatedBy = GetDisplayName();
 
             _context.SarReports.Update(report);
@@ -291,10 +317,21 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 throw new BusinessException("Vice chairman requires active delegation to approve SAR");
             }
 
+            var now = DateTime.UtcNow;
+            SarAuditTrail.SetTransitionPayload(
+                _contextAccessor.HttpContext,
+                SarAuditTrail.CreateTransitionPayload(
+                    report.Status,
+                    (int)SarStatus.Approved,
+                    "approve",
+                    reason: null,
+                    changedBy: GetDisplayName(),
+                    changedAt: now));
+
             report.Status = (int)SarStatus.Approved;
-            report.ApprovedAt = DateTime.UtcNow;
+            report.ApprovedAt = now;
             report.ApprovedBy = GetDisplayName();
-            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedAt = now;
             report.UpdatedBy = GetDisplayName();
 
             _context.SarReports.Update(report);
@@ -472,17 +509,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             return council;
         }
 
-        private static SarDraftDto ToDto(SarReport report)
+        private static SarDraftDto ToDto(
+            SarReport report,
+            int? currentUserCouncilRoleId,
+            bool canSubmitByRole)
         {
             return new SarDraftDto
             {
                 SarReportId = report.Id,
                 CycleId = report.CycleId,
                 Status = report.Status,
+                CurrentUserCouncilRoleId = currentUserCouncilRoleId,
+                CanSubmitByRole = canSubmitByRole,
                 YDocSnapshotBase64 = report.YdocSnapshot != null
                     ? Convert.ToBase64String(report.YdocSnapshot)
                     : null,
                 RenderedHtml = report.RenderedHtml,
+                RevisionReason = report.RevisionReason,
                 LastSavedAt = report.LastSavedAt,
                 CreatedAt = report.CreatedAt,
                 CreatedBy = report.CreatedBy,

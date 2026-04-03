@@ -52,7 +52,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <GalleryVerticalEnd className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium">AUN-QA</span>
+                  <span className="font-medium">PDCA</span>
                   <span className="">v1.0.0</span>
                 </div>
               </Link>
@@ -146,7 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 to={item.Controller}
                                 className={cn(
                                   isPathActive(item.Controller) &&
-                                  "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
+                                    "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                 )}
                               >
                                 <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
@@ -205,7 +205,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             to={item.Controller}
                                             className={cn(
                                               isPathActive(item.Controller) &&
-                                              "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
+                                                "bg-primary/10 text-primary font-bold block w-full rounded-md p-2",
                                             )}
                                           >
                                             <span className="min-w-0 flex-1 whitespace-normal wrap-break-word">
@@ -230,9 +230,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        {user && <NavUser user={user} />}
-      </SidebarFooter>
+      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

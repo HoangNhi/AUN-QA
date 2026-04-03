@@ -9,10 +9,10 @@ import { getColumns } from "./columns";
 import PopupSarEditor from "./PopupSarEditor";
 
 const SAR_STATUS_OPTIONS = [
-  { Text: "Nhap", Value: "1" },
-  { Text: "Da nop", Value: "2" },
-  { Text: "Yeu cau chinh sua", Value: "3" },
-  { Text: "Da phe duyet", Value: "4" },
+  { Text: "Nháp", Value: "1" },
+  { Text: "Đang chờ duyệt", Value: "2" },
+  { Text: "Yêu cầu chỉnh sửa", Value: "3" },
+  { Text: "Đã phê duyệt", Value: "4" },
 ];
 
 function parseSarStatus(value?: string): SarStatus | undefined {
@@ -52,6 +52,8 @@ export default function SarPage() {
     refetchDraft,
     saveDraft,
     isSavingDraft,
+    submitSar,
+    isSubmitting,
   } = useSar();
 
   const cycleOptions = useCycleOptions();
@@ -101,9 +103,9 @@ export default function SarPage() {
                 PageIndex: 1,
               }));
             }}
-            placeholder="Tat ca trang thai SAR"
-            searchPlaceholder="Tim trang thai..."
-            emptyText="Khong tim thay trang thai."
+            placeholder="Tất cả trạng thái SAR"
+            searchPlaceholder="Tìm trạng thái..."
+            emptyText="Không tìm thấy trạng thái."
           />
           <Combobox
             options={cycleOptions.options ?? []}
@@ -115,9 +117,9 @@ export default function SarPage() {
                 PageIndex: 1,
               }));
             }}
-            placeholder="Tat ca chu ky"
-            searchPlaceholder="Tim chu ky..."
-            emptyText="Khong tim thay chu ky."
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
           />
         </>
       }
@@ -134,6 +136,9 @@ export default function SarPage() {
             void refetchDraft();
           }}
           onSaveDraft={saveDraft}
+          onSubmitSar={submitSar}
+          isSubmitting={isSubmitting}
+          canSubmitByRole={draft?.CanSubmitByRole ?? false}
         />
       )}
     </ListPageLayout>

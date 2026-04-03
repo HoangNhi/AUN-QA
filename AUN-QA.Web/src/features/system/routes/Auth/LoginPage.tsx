@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import loginImage from "@/assets/login.png";
 
 const formSchema = z.object({
   username: z.string().min(1, "Vui lòng nhập tên đăng nhập"),
@@ -59,7 +60,7 @@ const LoginPage = () => {
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
               <GalleryVerticalEnd className="size-4" />
             </div>
-            AUN-QA
+            PDCA
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -130,7 +131,7 @@ const LoginPage = () => {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/placeholder.svg"
+          src={loginImage}
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

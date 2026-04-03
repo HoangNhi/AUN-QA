@@ -12,6 +12,7 @@ import type {
   SarGetListItem,
   SarGetListPagingRequest,
   SaveSarDraftRequest,
+  SubmitSarRequest,
 } from "../types/sar.types";
 
 const EMPTY_LIST = {
@@ -90,6 +91,20 @@ export const useSar = () => {
     },
   });
 
+  const submitMutation = useMutation({
+    mutationFn: (request: SubmitSarRequest) => sarService.submit(request),
+    onSuccess: (response) => {
+      if (!response.Success) {
+        toast.error(response.Message || "Không thể gửi SAR phê duyệt");
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể gửi SAR phê duyệt",
+      );
+    },
+  });
+
   const showPopupDetail = useCallback((item: SarGetListItem) => {
     setSelectedSar(item);
     setIsOpen(true);
@@ -115,6 +130,14 @@ export const useSar = () => {
     [saveDraftMutation],
   );
 
+  const submitSar = useCallback(
+    async (cycleId: string) => {
+      const response = await submitMutation.mutateAsync({ CycleId: cycleId });
+      return response.Success;
+    },
+    [submitMutation],
+  );
+
   return {
     data,
     rowSelection,
@@ -132,5 +155,7 @@ export const useSar = () => {
     refetchDraft,
     saveDraft,
     isSavingDraft: saveDraftMutation.isPending,
+    submitSar,
+    isSubmitting: submitMutation.isPending,
   };
 };

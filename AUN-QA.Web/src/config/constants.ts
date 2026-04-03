@@ -178,6 +178,11 @@ export const API_ENDPOINTS = {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
       GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
       SAVE_DRAFT: `${BUSINESS_BASE}/Sar/save-draft`,
+      SUBMIT: `${BUSINESS_BASE}/Sar/submit`,
+      REQUEST_REVISION: `${BUSINESS_BASE}/Sar/request-revision`,
+      APPROVE: `${BUSINESS_BASE}/Sar/approve`,
+      GET_FEEDBACKS: `${BUSINESS_BASE}/Sar/get-feedbacks`,
+      ADD_FEEDBACK: `${BUSINESS_BASE}/Sar/add-feedback`,
     },
   },
   File: {

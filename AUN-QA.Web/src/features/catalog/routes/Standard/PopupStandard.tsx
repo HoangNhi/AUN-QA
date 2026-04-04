@@ -272,8 +272,8 @@ const PopupStandard = ({
       // Validate each criterion
       for (const criterion of criterions) {
         if (!criterion.Code.trim() || !criterion.Name.trim()) {
-          newErrors.criterions = "Tất cả tiêu chí phải có Mã vÃ  Tên";
-          toast.error("Tất cả tiêu chí phải có Mã vÃ  Tên");
+          newErrors.criterions = "Tất cả tiêu chí phải có Mã và Tên";
+          toast.error("Tất cả tiêu chí phải có Mã và Tên");
           break;
         }
 
@@ -399,7 +399,7 @@ const PopupStandard = ({
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu vÃ  thêm tiếp
+              Lưu và thêm tiếp
             </Button>
           )}
         </DialogFooter>
@@ -409,4 +409,3 @@ const PopupStandard = ({
 };
 
 export default PopupStandard;
-

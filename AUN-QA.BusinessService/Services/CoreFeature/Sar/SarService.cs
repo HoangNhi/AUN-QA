@@ -1,15 +1,23 @@
+﻿using System.Text;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
+using AUN_QA.CatalogService.Protos;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 {
@@ -19,17 +27,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICycleService _cycleService;
+        private readonly ICatalogIntegrationService _catalogService;
         private readonly SystemProto.SystemProtoClient _systemClient;
 
         public SarService(
             BusinessContext context,
             IHttpContextAccessor contextAccessor,
             ICycleService cycleService,
+            ICatalogIntegrationService catalogService,
             SystemProto.SystemProtoClient systemClient)
         {
             _context = context;
             _contextAccessor = contextAccessor;
             _cycleService = cycleService;
+            _catalogService = catalogService;
             _systemClient = systemClient;
         }
 
@@ -660,9 +671,420 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             throw new BusinessException("Workflow action requires cycle in Check stage");
         }
 
+        public async Task<SarAutofillPayloadDto> GetAutofillPayload(GetSarAutofillPayloadRequest request)
+        {
+            await CheckCycleStageAsync(request.CycleId);
+
+            var cycle = await _context.Cycles
+                .AsNoTracking()
+                .Where(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived)
+                .Select(x => new { x.Id, x.StandardSetId })
+                .FirstOrDefaultAsync();
+
+            if (cycle == null)
+            {
+                throw new BusinessException("Cycle does not exist");
+            }
+
+            var evaluations = await _context.CriterionEvaluations
+                .AsNoTracking()
+                .Where(x => x.CycleId == request.CycleId && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+
+            if (!evaluations.Any())
+            {
+                return new SarAutofillPayloadDto
+                {
+                    CycleId = request.CycleId,
+                    Payload = "<h3>Gợi ý điền dữ liệu từ Phiếu Đánh Giá</h3><p>Chưa có dữ liệu đánh giá tiêu chí.</p>"
+                };
+            }
+
+            var evalIds = evaluations.Select(x => x.Id).ToList();
+            var submissions = await _context.EvaluationSubmissions
+                .AsNoTracking()
+                .Where(x => evalIds.Contains(x.CriterionEvaluationId) && !x.IsDeleted && x.IsActived)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync();
+
+            var evaluatorNames = await FetchEvaluatorNamesAsync(submissions);
+            var approverNames = await FetchFullNamesByUsernamesAsync(
+                evaluations.Select(x => x.ApprovedBy));
+            var criterionMeta = await FetchCriterionMetaAsync(cycle.StandardSetId);
+            var payload = BuildAutofillPayloadHtml(
+                evaluations,
+                submissions,
+                criterionMeta,
+                evaluatorNames,
+                approverNames);
+
+            return new SarAutofillPayloadDto
+            {
+                CycleId = request.CycleId,
+                Payload = payload
+            };
+        }
+
+        public async Task<byte[]> ExportDocx(ExportSarDocxRequest request)
+        {
+            var report = await GetSarReportOrThrowAsync(request.CycleId);
+            if (report.Status != (int)SarStatus.Submitted && report.Status != (int)SarStatus.Approved)
+            {
+                throw new BusinessException("SAR must be in Submitted or Approved status to export");
+            }
+
+            using var mem = new MemoryStream();
+            using (var wordDocument = WordprocessingDocument.Create(mem, WordprocessingDocumentType.Document, true))
+            {
+                var mainPart = wordDocument.AddMainDocumentPart();
+                mainPart.Document = new Document(new Body());
+                var body = mainPart.Document.Body!;
+
+                if (!string.IsNullOrWhiteSpace(report.RenderedHtml))
+                {
+                    // Use AltChunk HTML import so Word can render rich content (paragraphs, lists, tables, etc.)
+                    var partId = "SarHtmlPart";
+                    var htmlPart = mainPart.AddAlternativeFormatImportPart(
+                        AlternativeFormatImportPartType.Html,
+                        partId);
+
+                    await using (var stream = htmlPart.GetStream(FileMode.Create, FileAccess.Write))
+                    await using (var writer = new StreamWriter(stream, Encoding.UTF8))
+                    {
+                        await writer.WriteAsync(HtmlWordExportHelper.BuildExportHtmlDocument(
+                            report.RenderedHtml));
+                    }
+
+                    body.AppendChild(new AltChunk { Id = partId });
+                }
+                else
+                {
+                    body.AppendChild(new Paragraph(
+                        new Run(new Text("No RenderedHtml content found for this SAR report."))
+                    ));
+                }
+
+                wordDocument.Save();
+            }
+
+            return mem.ToArray();
+        }
+
+        private async Task<Dictionary<Guid, string>> FetchEvaluatorNamesAsync(IEnumerable<EvaluationSubmission> submissions)
+        {
+            var userIds = submissions
+                .Select(x => x.EvaluatorId)
+                .Distinct()
+                .ToList();
+
+            if (userIds.Count == 0)
+            {
+                return new Dictionary<Guid, string>();
+            }
+
+            try
+            {
+                var grpcRequest = new GetUsersByIdsRequest();
+                grpcRequest.UserIds.AddRange(userIds.Select(x => x.ToString()));
+                var grpcResponse = await _systemClient.GetUsersByIdsAsync(grpcRequest);
+
+                return grpcResponse.Users
+                    .Select(user =>
+                    {
+                        var parsed = Guid.TryParse(user.Id, out var userId);
+                        var fullname = DecodeHtmlAndNormalize(user.Fullname);
+                        return new { parsed, userId, fullname };
+                    })
+                    .Where(x => x.parsed && !string.IsNullOrWhiteSpace(x.fullname))
+                    .ToDictionary(x => x.userId, x => x.fullname);
+            }
+            catch
+            {
+                return new Dictionary<Guid, string>();
+            }
+        }
+
+        private async Task<Dictionary<string, string>> FetchFullNamesByUsernamesAsync(IEnumerable<string?> usernames)
+        {
+            var distinctUsernames = usernames
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (distinctUsernames.Count == 0)
+            {
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            try
+            {
+                var grpcRequest = new GetUsersByUsernamesRequest();
+                grpcRequest.Usernames.AddRange(distinctUsernames);
+                var grpcResponse = await _systemClient.GetUsersByUsernamesAsync(grpcRequest);
+
+                return grpcResponse.Users
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Username) && !string.IsNullOrWhiteSpace(x.Fullname))
+                    .ToDictionary(
+                        x => x.Username.Trim(),
+                        x => DecodeHtmlAndNormalize(x.Fullname),
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        private async Task<Dictionary<Guid, StandardWithCriteriaDto>> FetchCriterionMetaAsync(Guid standardSetId)
+        {
+            var grpcRequest = new GetStandardsWithCriteriaStreamRequest
+            {
+                StandardSetId = standardSetId.ToString()
+            };
+
+            var result = new Dictionary<Guid, StandardWithCriteriaDto>();
+            await foreach (var row in _catalogService.GetStandardsWithCriteriaStreamAsync(grpcRequest))
+            {
+                result.TryAdd(row.CriterionId, row);
+            }
+
+            return result;
+        }
+
+        private static string BuildAutofillPayloadHtml(
+            IEnumerable<Entities.CriterionEvaluation> evaluations,
+            IEnumerable<EvaluationSubmission> submissions,
+            IReadOnlyDictionary<Guid, StandardWithCriteriaDto> criterionMeta,
+            IReadOnlyDictionary<Guid, string> evaluatorNames,
+            IReadOnlyDictionary<string, string> approverNames)
+        {
+            var submissionLookup = submissions
+                .GroupBy(x => x.CriterionEvaluationId)
+                .ToDictionary(g => g.Key, g => g.OrderBy(s => s.CreatedAt).ToList());
+
+            var orderedEvaluations = evaluations
+                .OrderBy(x => criterionMeta.TryGetValue(x.CriterionId, out var meta) ? meta.StandardOrder : int.MaxValue)
+                .ThenBy(x => criterionMeta.TryGetValue(x.CriterionId, out var meta) ? meta.CriterionOrder : int.MaxValue)
+                .ThenBy(x => x.CreatedAt)
+                .ToList();
+
+            var sb = new StringBuilder();
+            sb.AppendLine("<h3>Gợi ý điền dữ liệu từ Phiếu Đánh Giá</h3>");
+
+            var sectionCount = 0;
+            foreach (var eval in orderedEvaluations)
+            {
+                submissionLookup.TryGetValue(eval.Id, out var evalSubmissions);
+                evalSubmissions ??= new List<EvaluationSubmission>();
+
+                var hasSubmissionData = evalSubmissions.Any(HasMeaningfulSubmissionData);
+                var hasFinalResult = eval.OfficialScore.HasValue || eval.OfficialResult.HasValue;
+                if (!hasSubmissionData && !hasFinalResult)
+                {
+                    continue;
+                }
+
+                var criterionCode = criterionMeta.TryGetValue(eval.CriterionId, out var criterion)
+                    ? criterion.CriterionCode
+                    : "N/A";
+                var criterionName = criterionMeta.TryGetValue(eval.CriterionId, out criterion)
+                    ? criterion.CriterionName
+                    : "Không xác định";
+
+                sectionCount += 1;
+                sb.AppendLine($"<h4>{Encode(criterionCode)}. {Encode(criterionName)}</h4>");
+
+                var labelsBySubmission = new Dictionary<Guid, string>();
+                for (var i = 0; i < evalSubmissions.Count; i += 1)
+                {
+                    labelsBySubmission[evalSubmissions[i].Id] = $"TVH {ToAlphabetIndex(i)}";
+                }
+
+                AppendSubmissionSection(
+                    sb,
+                    "Mô tả:",
+                    evalSubmissions,
+                    labelsBySubmission,
+                    evaluatorNames,
+                    x => x.CurrentState);
+
+                AppendSubmissionSection(
+                    sb,
+                    "Điểm mạnh:",
+                    evalSubmissions,
+                    labelsBySubmission,
+                    evaluatorNames,
+                    x => x.Strengths);
+
+                AppendSubmissionSection(
+                    sb,
+                    "Điểm cần cải tiến:",
+                    evalSubmissions,
+                    labelsBySubmission,
+                    evaluatorNames,
+                    x => x.Weaknesses);
+
+                AppendSubmissionSection(
+                    sb,
+                    "Kế hoạch hành động:",
+                    evalSubmissions,
+                    labelsBySubmission,
+                    evaluatorNames,
+                    x => x.ActionPlan);
+
+                var proposed = evalSubmissions
+                    .Where(x => x.ProposedScore.HasValue)
+                    .Select(x =>
+                    {
+                        var label = labelsBySubmission.GetValueOrDefault(x.Id, "TVH");
+                        var displayName = evaluatorNames.TryGetValue(x.EvaluatorId, out var evaluatorName)
+                            && !string.IsNullOrWhiteSpace(evaluatorName)
+                            ? evaluatorName
+                            : label;
+
+                        return $"{Encode(displayName)} ({x.ProposedScore!.Value}/7)";
+                    })
+                    .ToList();
+
+                if (proposed.Count > 0)
+                {
+                    sb.AppendLine($"<p><strong>Mức tự đánh giá:</strong> Điểm đề xuất: {string.Join(", ", proposed)}</p>");
+                }
+
+                if (eval.OfficialScore.HasValue)
+                {
+                    var approverDisplayName = ResolveApproverDisplayName(eval.ApprovedBy, approverNames);
+                    var approvedBySuffix = string.IsNullOrWhiteSpace(eval.ApprovedBy)
+                        ? string.Empty
+                        : $" (Bởi {Encode(approverDisplayName)})";
+                    sb.AppendLine($"<p><strong>Điểm chốt:</strong> {eval.OfficialScore.Value}/7{approvedBySuffix}</p>");
+                }
+                else if (eval.OfficialResult.HasValue)
+                {
+                    var finalResultText = eval.OfficialResult.Value ? "Đạt" : "Không đạt";
+                    var approverDisplayName = ResolveApproverDisplayName(eval.ApprovedBy, approverNames);
+                    var approvedBySuffix = string.IsNullOrWhiteSpace(eval.ApprovedBy)
+                        ? string.Empty
+                        : $" (Bởi {Encode(approverDisplayName)})";
+                    sb.AppendLine($"<p><strong>Điểm chốt:</strong> {finalResultText}{approvedBySuffix}</p>");
+                }
+
+                sb.AppendLine("<hr />");
+            }
+
+            if (sectionCount == 0)
+            {
+                sb.AppendLine("<p>Chưa có dữ liệu đánh giá đủ điều kiện để đổ tự động.</p>");
+            }
+
+            return sb.ToString();
+        }
+
+        private static void AppendSubmissionSection(
+            StringBuilder sb,
+            string sectionTitle,
+            IReadOnlyCollection<EvaluationSubmission> submissions,
+            IReadOnlyDictionary<Guid, string> labelsBySubmission,
+            IReadOnlyDictionary<Guid, string> evaluatorNames,
+            Func<EvaluationSubmission, string?> selector)
+        {
+            var rows = submissions
+                .Select(submission =>
+                {
+                    var value = NormalizeText(selector(submission));
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        return null;
+                    }
+
+                    var label = labelsBySubmission.GetValueOrDefault(submission.Id, "TVH");
+                    var displayName = evaluatorNames.TryGetValue(submission.EvaluatorId, out var evaluatorName)
+                        && !string.IsNullOrWhiteSpace(evaluatorName)
+                        ? evaluatorName
+                        : label;
+                    return $"<li><strong>{Encode(displayName)}:</strong> \"{Encode(value)}\"</li>";
+                })
+                .Where(row => row != null)
+                .Cast<string>()
+                .ToList();
+
+            if (rows.Count == 0)
+            {
+                return;
+            }
+
+            sb.AppendLine($"<p><strong>{Encode(sectionTitle)}</strong></p>");
+            sb.AppendLine("<ul>");
+            foreach (var row in rows)
+            {
+                sb.AppendLine(row);
+            }
+            sb.AppendLine("</ul>");
+        }
+
+        private static bool HasMeaningfulSubmissionData(EvaluationSubmission submission)
+        {
+            return !string.IsNullOrWhiteSpace(submission.CurrentState)
+                || !string.IsNullOrWhiteSpace(submission.Strengths)
+                || !string.IsNullOrWhiteSpace(submission.Weaknesses)
+                || !string.IsNullOrWhiteSpace(submission.ActionPlan)
+                || submission.ProposedScore.HasValue
+                || submission.ProposedResult.HasValue;
+        }
+
+        private static string ToAlphabetIndex(int index)
+        {
+            var normalized = Math.Max(0, index);
+            var result = string.Empty;
+
+            do
+            {
+                result = (char)('A' + (normalized % 26)) + result;
+                normalized = (normalized / 26) - 1;
+            } while (normalized >= 0);
+
+            return result;
+        }
+
+        private static string NormalizeText(string? value)
+        {
+            return value?.Trim() ?? string.Empty;
+        }
+
+        private static string ResolveApproverDisplayName(
+            string? approvedBy,
+            IReadOnlyDictionary<string, string> approverNames)
+        {
+            var normalized = DecodeHtmlAndNormalize(approvedBy);
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return string.Empty;
+            }
+
+            return approverNames.TryGetValue(normalized, out var fullName)
+                && !string.IsNullOrWhiteSpace(fullName)
+                ? fullName
+                : normalized;
+        }
+
+        private static string DecodeHtmlAndNormalize(string? value)
+        {
+            return WebUtility.HtmlDecode(value ?? string.Empty).Trim();
+        }
+
+        private static string Encode(string value)
+        {
+            return WebUtility
+                .HtmlEncode(value)
+                .Replace("\r\n", "<br/>", StringComparison.Ordinal)
+                .Replace("\n", "<br/>", StringComparison.Ordinal);
+        }
+
         private static List<int> Roles(params CouncilRole[] roles)
         {
             return roles.Select(x => (int)x).ToList();
         }
     }
 }
+

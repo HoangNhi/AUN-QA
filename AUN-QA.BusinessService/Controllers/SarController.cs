@@ -91,5 +91,21 @@ namespace AUN_QA.BusinessService.Controllers
             await _service.AddFeedback(request);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpPost, Route("get-autofill-payload")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAutofillPayload([FromBody] GetSarAutofillPayloadRequest request)
+        {
+            var result = await _service.GetAutofillPayload(request);
+            return Ok(new BaseResponse<SarAutofillPayloadDto> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("export-docx")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ExportDocx([FromBody] ExportSarDocxRequest request)
+        {
+            var docxBytes = await _service.ExportDocx(request);
+            return File(docxBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "SAR_Export.docx");
+        }
     }
 }

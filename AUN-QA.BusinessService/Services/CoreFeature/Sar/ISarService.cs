@@ -21,5 +21,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         Task<List<SarFeedbackDto>> GetFeedbacks(GetSarFeedbackRequest request);
 
         Task AddFeedback(AddSarFeedbackRequest request);
+
+        Task<SarAutofillPayloadDto> GetAutofillPayload(GetSarAutofillPayloadRequest request);
+
+        Task<byte[]> ExportDocx(ExportSarDocxRequest request);
     }
 }

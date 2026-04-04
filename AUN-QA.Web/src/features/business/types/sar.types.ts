@@ -87,3 +87,16 @@ export interface SarFeedback {
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
 }
+
+export interface GetSarAutofillPayloadRequest {
+  CycleId: string;
+}
+
+export interface SarAutofillPayloadDto {
+  CycleId: string;
+  Payload: string;
+}
+
+export interface ExportSarDocxRequest {
+  CycleId: string;
+}

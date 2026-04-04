@@ -51,7 +51,6 @@ export default function SarPage() {
     isDraftFetching,
     refetchDraft,
     saveDraft,
-    isSavingDraft,
     submitSar,
     isSubmitting,
   } = useSar();
@@ -131,7 +130,6 @@ export default function SarPage() {
           cycle={selectedSar}
           draft={draft}
           isDraftLoading={isDraftFetching}
-          isSavingDraft={isSavingDraft}
           onRefreshDraft={() => {
             void refetchDraft();
           }}

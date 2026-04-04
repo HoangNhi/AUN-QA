@@ -183,6 +183,8 @@ export const API_ENDPOINTS = {
       APPROVE: `${BUSINESS_BASE}/Sar/approve`,
       GET_FEEDBACKS: `${BUSINESS_BASE}/Sar/get-feedbacks`,
       ADD_FEEDBACK: `${BUSINESS_BASE}/Sar/add-feedback`,
+      GET_AUTOFILL_PAYLOAD: `${BUSINESS_BASE}/Sar/get-autofill-payload`,
+      EXPORT_DOCX: `${BUSINESS_BASE}/Sar/export-docx`,
     },
   },
   File: {

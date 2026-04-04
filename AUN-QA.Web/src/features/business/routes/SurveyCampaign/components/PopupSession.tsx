@@ -111,7 +111,7 @@ export const PopupSession = ({
     async (item: SurveySession) => {
       try {
         await surveyCampaignService.sendSurveyInvitation(item.Id);
-        toast.success("Gửi khảo sát thÃ nh công");
+        toast.success("Gửi khảo sát thành công");
         refetch();
       } catch {
         toast.error("Gửi khảo sát thất bại");
@@ -260,4 +260,3 @@ export const PopupSession = ({
     </>
   );
 };
-

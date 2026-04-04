@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-} from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { sarService } from "../api/sar.api";
+import { sarService, toVietnameseSarMessage } from "../api/sar.api";
 import type {
   SarDraft,
   SarGetListItem,
@@ -22,6 +18,11 @@ const EMPTY_LIST = {
   PageSize: 10,
 };
 
+const READ_ONLY_STATUS_HINTS = [
+  /SAR is not in a valid state for save draft/i,
+  /SAR is approved and read-only/i,
+];
+
 export const useSar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedSar, setSelectedSar] = useState<SarGetListItem | null>(null);
@@ -32,11 +33,7 @@ export const useSar = () => {
     TextSearch: "",
   });
 
-  const {
-    data: listResponse,
-    isFetching,
-    refetch,
-  } = useQuery({
+  const { data: listResponse, isFetching, refetch } = useQuery({
     queryKey: ["sar", "list", pageRequest],
     queryFn: () => sarService.getList(pageRequest),
     placeholderData: keepPreviousData,
@@ -44,7 +41,7 @@ export const useSar = () => {
 
   useEffect(() => {
     if (listResponse && !listResponse.Success) {
-      toast.error(listResponse.Message || "Không thể tải danh sách SAR");
+      toast.error(toVietnameseSarMessage(listResponse.Message, "Không thể tải danh sách SAR."));
     }
   }, [listResponse]);
 
@@ -52,42 +49,73 @@ export const useSar = () => {
 
   const {
     data: draftResponse,
-    isFetching: isDraftFetching,
+    isLoading: isDraftFetching,
     refetch: refetchDraft,
   } = useQuery({
     queryKey: ["sar", "draft", selectedSar?.CycleId],
     queryFn: () => {
       if (!selectedSar) {
-        throw new Error("Không có cycle để tải bản nháp SAR");
+        throw new Error("Không có chu kỳ để tải bản nháp SAR.");
       }
-
       return sarService.getByCycle({ CycleId: selectedSar.CycleId });
     },
     enabled: isOpen && !!selectedSar?.CycleId,
+    refetchInterval: isOpen && !!selectedSar?.CycleId ? 2000 : false,
+    refetchIntervalInBackground: true,
   });
 
   useEffect(() => {
     if (draftResponse && !draftResponse.Success) {
-      toast.error(draftResponse.Message || "Không thể tải nội dung SAR");
+      toast.error(toVietnameseSarMessage(draftResponse.Message, "Không thể tải nội dung SAR."));
     }
   }, [draftResponse]);
 
-  const draft = useMemo<SarDraft | null>(() => {
-    return draftResponse?.Data ?? null;
-  }, [draftResponse]);
+  const draft = useMemo<SarDraft | null>(() => draftResponse?.Data ?? null, [draftResponse]);
+  const forceReadOnlyLocalState = useCallback(() => {
+    setSelectedSar((prev) => {
+      if (!prev || prev.Status === 2 || prev.Status === 4) {
+        return prev;
+      }
+
+      return { ...prev, Status: 2 };
+    });
+  }, []);
+
+  const shouldForceReadOnly = useCallback((message?: string | null) => {
+    if (!message) {
+      return false;
+    }
+
+    return READ_ONLY_STATUS_HINTS.some((pattern) => pattern.test(message));
+  }, []);
 
   const saveDraftMutation = useMutation({
     mutationFn: (request: SaveSarDraftRequest) => sarService.saveDraft(request),
-    onSuccess: (response) => {
-      if (!response.Success) {
-        toast.error(response.Message || "Không thể lưu bản nháp SAR");
-        return;
+    onSuccess: async (response) => {
+      if (response.Success) return;
+
+      if (shouldForceReadOnly(response.Message)) {
+        forceReadOnlyLocalState();
       }
-    },
-    onError: (error) => {
+
       toast.error(
-        error instanceof Error ? error.message : "Không thể lưu bản nháp SAR",
+        toVietnameseSarMessage(response.Message, "Không thể lưu bản nháp SAR."),
       );
+      await refetchDraft();
+    },
+    onError: async (error) => {
+      const message = error instanceof Error ? error.message : undefined;
+      if (shouldForceReadOnly(message)) {
+        forceReadOnlyLocalState();
+      }
+
+      toast.error(
+        toVietnameseSarMessage(
+          message,
+          "Không thể lưu bản nháp SAR.",
+        ),
+      );
+      await refetchDraft();
     },
   });
 
@@ -95,12 +123,20 @@ export const useSar = () => {
     mutationFn: (request: SubmitSarRequest) => sarService.submit(request),
     onSuccess: (response) => {
       if (!response.Success) {
-        toast.error(response.Message || "Không thể gửi SAR phê duyệt");
+        toast.error(
+          toVietnameseSarMessage(response.Message, "Không thể gửi SAR phê duyệt."),
+        );
+        return;
       }
+
+      forceReadOnlyLocalState();
     },
     onError: (error) => {
       toast.error(
-        error instanceof Error ? error.message : "Không thể gửi SAR phê duyệt",
+        toVietnameseSarMessage(
+          error instanceof Error ? error.message : undefined,
+          "Không thể gửi SAR phê duyệt.",
+        ),
       );
     },
   });
@@ -110,13 +146,16 @@ export const useSar = () => {
     setIsOpen(true);
   }, []);
 
-  const onOpenChange = useCallback((open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
-      setSelectedSar(null);
-      void refetch();
-    }
-  }, [refetch]);
+  const onOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (!open) {
+        setSelectedSar(null);
+        void refetch();
+      }
+    },
+    [refetch],
+  );
 
   const getList = useCallback(() => {
     void refetch();
@@ -124,18 +163,29 @@ export const useSar = () => {
 
   const saveDraft = useCallback(
     async (request: SaveSarDraftRequest) => {
-      const response = await saveDraftMutation.mutateAsync(request);
-      return response.Success;
+      try {
+        const response = await saveDraftMutation.mutateAsync(request);
+        if (!response.Success) {
+          await refetchDraft();
+        }
+        return response.Success;
+      } catch {
+        await refetchDraft();
+        return false;
+      }
     },
-    [saveDraftMutation],
+    [refetchDraft, saveDraftMutation],
   );
 
   const submitSar = useCallback(
     async (cycleId: string) => {
       const response = await submitMutation.mutateAsync({ CycleId: cycleId });
+      if (response.Success) {
+        await refetchDraft();
+      }
       return response.Success;
     },
-    [submitMutation],
+    [refetchDraft, submitMutation],
   );
 
   return {
@@ -154,7 +204,6 @@ export const useSar = () => {
     isDraftFetching,
     refetchDraft,
     saveDraft,
-    isSavingDraft: saveDraftMutation.isPending,
     submitSar,
     isSubmitting: submitMutation.isPending,
   };

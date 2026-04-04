@@ -70,7 +70,7 @@ const PopupSurveyCampaign = ({
       id: surveyCampaign?.Id || uuidv4(),
       name: surveyCampaign?.Name || "",
       stakeholderType: surveyCampaign?.StakeholderType?.toString() || "1",
-      status: surveyCampaign?.Status?.toString() || "0",
+      status: surveyCampaign?.Status?.toString() || "1",
       cycleId: surveyCampaign?.CycleId || "",
       templateId: surveyCampaign?.TemplateId || "",
     },
@@ -106,7 +106,7 @@ const PopupSurveyCampaign = ({
         id: surveyCampaign.Id || uuidv4(),
         name: surveyCampaign.Name || "",
         stakeholderType: surveyCampaign.StakeholderType?.toString() || "1",
-        status: surveyCampaign.Status?.toString() || "0",
+        status: surveyCampaign.Status?.toString() || "1",
         cycleId: surveyCampaign.CycleId || "",
         templateId: surveyCampaign.TemplateId || "",
       });
@@ -116,7 +116,7 @@ const PopupSurveyCampaign = ({
         id: uuidv4(),
         name: "",
         stakeholderType: "1",
-        status: "0",
+        status: "1",
         cycleId: "",
         templateId: "",
       });
@@ -138,7 +138,7 @@ const PopupSurveyCampaign = ({
   };
 
   const showResultsTab =
-    surveyCampaign?.Status === 1 || surveyCampaign?.Status === 2;
+    surveyCampaign?.Status === 2 || surveyCampaign?.Status === 3;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>

@@ -148,7 +148,7 @@ export const PopupSession = ({
         <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
-              Danh sách ngươi tham gia
+              Danh sách người tham gia
               {campaignName && (
                 <span className="text-muted-foreground font-normal">
                   {" "}
@@ -157,7 +157,7 @@ export const PopupSession = ({
               )}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Danh sách ngươi tham gia khảo sát
+              Danh sách người tham gia khảo sát
             </DialogDescription>
           </DialogHeader>
 

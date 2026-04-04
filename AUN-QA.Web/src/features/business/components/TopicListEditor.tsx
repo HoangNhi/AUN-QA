@@ -73,9 +73,8 @@ export const TopicListEditor = ({
         variant="outline"
         className="w-full py-6 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 font-semibold"
       >
-        <Plus size={20} className="mr-2" /> Thêm chơ§ Đ‘ơ mới
+        <Plus size={20} className="mr-2" /> Thêm chủ đề mới
       </Button>
     </div>
   );
 };
-

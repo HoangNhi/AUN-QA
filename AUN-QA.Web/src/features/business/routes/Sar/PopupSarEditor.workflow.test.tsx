@@ -17,6 +17,24 @@ describe("PopupSarEditor workflow helpers", () => {
   });
 
   it.each([
+    [1, true, false],
+    [1, false, true],
+    [2, true, true],
+    [2, false, true],
+    [3, true, false],
+    [3, false, true],
+    [4, true, true],
+    [4, false, true],
+  ] as const)(
+    "combines status %s with canEditByRole=%s into isReadOnly=%s",
+    (status, canEditByRole, expected) => {
+      const isReadOnly =
+        isSarEditorReadOnly(status) || !canEditByRole;
+      expect(isReadOnly).toBe(expected);
+    },
+  );
+
+  it.each([
     [1, true, true],
     [1, false, false],
     [2, true, false],

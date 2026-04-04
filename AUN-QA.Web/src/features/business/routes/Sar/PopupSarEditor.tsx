@@ -73,6 +73,7 @@ interface PopupSarEditorProps {
   isDraftLoading: boolean;
   isSubmitting: boolean;
   canSubmitByRole?: boolean;
+  canEditByRole?: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveDraft: (request: SaveSarDraftRequest) => Promise<boolean>;
   onSubmitSar: (cycleId: string) => Promise<boolean>;
@@ -212,6 +213,7 @@ export default function PopupSarEditor({
   isDraftLoading,
   isSubmitting,
   canSubmitByRole = false,
+  canEditByRole = false,
   onOpenChange,
   onSaveDraft,
   onSubmitSar,
@@ -326,7 +328,7 @@ export default function PopupSarEditor({
   const currentStatus = (draft?.Status ??
     cycle?.Status ??
     DEFAULT_SAR_STATUS) as SarStatus;
-  const isReadOnly = isSarEditorReadOnly(currentStatus);
+  const isReadOnly = isSarEditorReadOnly(currentStatus) || !canEditByRole;
   const isEditable = !!ydoc && !isReadOnly;
   const statusMeta =
     SAR_STATUS_META[currentStatus] ?? SAR_STATUS_META[DEFAULT_SAR_STATUS];

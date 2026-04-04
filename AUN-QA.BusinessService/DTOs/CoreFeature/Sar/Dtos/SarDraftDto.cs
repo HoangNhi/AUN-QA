@@ -12,6 +12,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos
 
         public bool CanSubmitByRole { get; set; }
 
+        public bool CanEditByRole { get; set; }
+
         public string? YDocSnapshotBase64 { get; set; }
 
         public string? RenderedHtml { get; set; }

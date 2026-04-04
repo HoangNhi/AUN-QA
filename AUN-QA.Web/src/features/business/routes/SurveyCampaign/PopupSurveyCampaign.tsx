@@ -220,7 +220,7 @@ const PopupSurveyCampaign = ({
             <div
               className={cn(
                 "flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0",
-                mode === "preview" && "hidden",
+                (mode === "preview" || mode === "results") && "hidden",
               )}
             >
               {/* General Info Section */}
@@ -427,12 +427,42 @@ const PopupSurveyCampaign = ({
             )}
 
             {mode === "results" && (
-              <div className="flex-1 overflow-y-auto bg-slate-50 p-6 min-h-0">
-                <SurveyResultsContent
-                  campaignId={surveyCampaign!.Id}
-                  enabled={mode === "results" && isOpen}
-                />
-              </div>
+              <>
+                <div className="px-6 py-2.5 bg-blue-50 border-b border-blue-100 flex items-center gap-3 flex-wrap shrink-0">
+                  <span className="font-semibold text-blue-900 text-sm">
+                    {surveyCampaign?.Name}
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-500 text-sm">
+                    {
+                      STAKEHOLDER_TYPES.find(
+                        (s) => s.Value === surveyCampaign?.StakeholderType?.toString(),
+                      )?.Text
+                    }
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium",
+                      surveyCampaign?.Status === 3
+                        ? "bg-slate-100 text-slate-600"
+                        : "bg-green-100 text-green-700",
+                    )}
+                  >
+                    {
+                      CAMPAIGN_STATUS_OPTIONS.find(
+                        (s) => s.Value === surveyCampaign?.Status?.toString(),
+                      )?.Text
+                    }
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-6 min-h-0">
+                  <SurveyResultsContent
+                    campaignId={surveyCampaign!.Id}
+                    enabled={mode === "results" && isOpen}
+                  />
+                </div>
+              </>
             )}
 
             {mode === "edit" && (

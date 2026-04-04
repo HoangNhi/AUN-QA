@@ -74,7 +74,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     CouncilRole.HeadOfCouncil,
                     CouncilRole.ViceChairman,
                     CouncilRole.Secretary,
-                    CouncilRole.Evaluator);
+                    CouncilRole.Evaluator,
+                    CouncilRole.EvidenceProvider);
 
                 var cycleIdsByPermission = _context.Councils
                     .Where(x => x.UserId == userId.Value
@@ -188,16 +189,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 CouncilRole.HeadOfCouncil,
                 CouncilRole.ViceChairman,
                 CouncilRole.Secretary,
-                CouncilRole.Evaluator);
+                CouncilRole.Evaluator,
+                CouncilRole.EvidenceProvider);
 
             await CheckPdcaPermissionAsync(request.CycleId, allowedRoles);
 
             await CheckCycleStageAsync(request.CycleId);
             var council = await RequireCouncilRoleAsync(request.CycleId, allowedRoles);
             var canSubmitByRole = IsAdmin() || council?.RoleId == (int)CouncilRole.Secretary;
+            var canEditByRole = IsAdmin() || (council != null && council.RoleId != (int)CouncilRole.EvidenceProvider);
 
             var report = await EnsureSarReportAsync(request.CycleId);
-            return ToDto(report, council?.RoleId, canSubmitByRole);
+            return ToDto(report, council?.RoleId, canSubmitByRole, canEditByRole);
         }
 
         public async Task SaveDraft(SaveSarDraftRequest request)
@@ -356,7 +359,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 CouncilRole.HeadOfCouncil,
                 CouncilRole.ViceChairman,
                 CouncilRole.Secretary,
-                CouncilRole.Evaluator));
+                CouncilRole.Evaluator,
+                CouncilRole.EvidenceProvider));
 
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             var query = _context.SarReviewComments
@@ -523,7 +527,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         private static SarDraftDto ToDto(
             SarReport report,
             int? currentUserCouncilRoleId,
-            bool canSubmitByRole)
+            bool canSubmitByRole,
+            bool canEditByRole)
         {
             return new SarDraftDto
             {
@@ -532,6 +537,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 Status = report.Status,
                 CurrentUserCouncilRoleId = currentUserCouncilRoleId,
                 CanSubmitByRole = canSubmitByRole,
+                CanEditByRole = canEditByRole,
                 YDocSnapshotBase64 = report.YdocSnapshot != null
                     ? Convert.ToBase64String(report.YdocSnapshot)
                     : null,

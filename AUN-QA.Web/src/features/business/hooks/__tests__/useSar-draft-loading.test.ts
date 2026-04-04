@@ -4,6 +4,7 @@ import { createElement, type ReactNode } from "react";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { useSar } from "../useSar";
 import { sarService } from "@/features/business/api/sar.api";
+import type { SarDraft } from "@/features/business/types/sar.types";
 
 vi.mock("sonner", () => ({
   toast: {
@@ -56,6 +57,20 @@ function createWrapper() {
 }
 
 describe("useSar draft loading", () => {
+  type DraftMockResponse = {
+    Success: boolean;
+    StatusCode: number;
+    Data: SarDraft;
+  };
+
+  const createMockDraft = (sarReportId: string): SarDraft => ({
+    SarReportId: sarReportId,
+    CycleId: "cycle-123",
+    Status: 1,
+    CreatedAt: "2026-01-01T00:00:00.000Z",
+    CreatedBy: "unit-test",
+  });
+
   beforeEach(() => {
     vi.mocked(sarService.getList).mockResolvedValue({
       Success: true,
@@ -73,14 +88,8 @@ describe("useSar draft loading", () => {
   });
 
   it("keeps the draft loading flag false during background refetches after the first load", async () => {
-    const firstDraft = createDeferred<{
-      Success: boolean;
-      Data: { SarReportId: string };
-    }>();
-    const secondDraft = createDeferred<{
-      Success: boolean;
-      Data: { SarReportId: string };
-    }>();
+    const firstDraft = createDeferred<DraftMockResponse>();
+    const secondDraft = createDeferred<DraftMockResponse>();
 
     vi.mocked(sarService.getByCycle)
       .mockReturnValueOnce(firstDraft.promise)
@@ -110,14 +119,15 @@ describe("useSar draft loading", () => {
     await act(async () => {
       firstDraft.resolve({
         Success: true,
-        Data: { SarReportId: "draft-1" },
+        StatusCode: 200,
+        Data: createMockDraft("draft-1"),
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
       expect(result.current.isDraftFetching).toBe(false);
-      expect(result.current.draft).toEqual({ SarReportId: "draft-1" });
+      expect(result.current.draft).toMatchObject({ SarReportId: "draft-1" });
     });
 
     act(() => {
@@ -128,18 +138,19 @@ describe("useSar draft loading", () => {
       expect(vi.mocked(sarService.getByCycle).mock.calls.length).toBeGreaterThanOrEqual(2);
     });
     expect(result.current.isDraftFetching).toBe(false);
-    expect(result.current.draft).toEqual({ SarReportId: "draft-1" });
+    expect(result.current.draft).toMatchObject({ SarReportId: "draft-1" });
 
     await act(async () => {
       secondDraft.resolve({
         Success: true,
-        Data: { SarReportId: "draft-2" },
+        StatusCode: 200,
+        Data: createMockDraft("draft-2"),
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(result.current.draft).toEqual({ SarReportId: "draft-2" });
+      expect(result.current.draft).toMatchObject({ SarReportId: "draft-2" });
     });
 
     unmount();

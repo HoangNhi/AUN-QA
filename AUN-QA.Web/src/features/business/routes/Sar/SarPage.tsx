@@ -137,6 +137,7 @@ export default function SarPage() {
           onSubmitSar={submitSar}
           isSubmitting={isSubmitting}
           canSubmitByRole={draft?.CanSubmitByRole ?? false}
+          canEditByRole={draft?.CanEditByRole ?? false}
         />
       )}
     </ListPageLayout>

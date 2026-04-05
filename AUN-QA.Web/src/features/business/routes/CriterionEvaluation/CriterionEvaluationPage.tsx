@@ -9,7 +9,11 @@ import { CriteriaGrid } from "./components/CriteriaGrid";
 import { CriterionPopup } from "./components/CriterionPopup";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
-import type { EvaluationStatus, FrameworkType } from "../../types/criterionEvaluation.types";
+import type {
+  EvaluationStatus,
+  FrameworkType,
+  StandardEvaluationGroup,
+} from "../../types/criterionEvaluation.types";
 import { EVALUATION_STATUS_CONFIG } from "../../types/criterionEvaluation.types";
 import type { ModelCombobox } from "@/types/base/base.types";
 import { canEvaluatorSubmit } from "./utils/permissions";
@@ -21,6 +25,20 @@ const STATUS_FILTER_OPTIONS: ModelCombobox[] = [
   { Value: "3", Text: EVALUATION_STATUS_CONFIG[3].label },
 ];
 
+function modeToFramework(mode?: number | null): FrameworkType | null {
+  if (mode === 1) return "AUN";
+  if (mode === 2) return "MOET";
+  return null;
+}
+
+function inferFrameworkFromGroups(groups: StandardEvaluationGroup[]): FrameworkType | null {
+  const items = groups.flatMap((group) => group.Items);
+
+  if (items.some((item) => item.OfficialResult != null)) return "MOET";
+  if (items.some((item) => item.OfficialScore != null)) return "AUN";
+
+  return null;
+}
 export function CriterionEvaluationPage() {
   const { user } = useAuth();
 
@@ -39,6 +57,7 @@ export function CriterionEvaluationPage() {
     evidences,
     mySubmission,
     evaluationMode,
+    officialFields,
     isSummaryLoading,
     isListLoading,
     isPopupDataLoading,
@@ -55,16 +74,19 @@ export function CriterionEvaluationPage() {
     queryKey: ["standardSet-detail", standardSetId],
     queryFn: async () => {
       const res = await standardSetService.getById(standardSetId);
-      return res.Data;
+      return res.Data ?? null;
     },
     enabled: !!standardSetId,
   });
 
-  // Prefer popup evaluation mode while popup is open; fallback to standard set mode for page/grid.
-  const effectiveEvaluationMode = activeItemId
-    ? evaluationMode
-    : (standardSetData?.EvaluationMode ?? evaluationMode);
-  const framework: FrameworkType = effectiveEvaluationMode === 2 ? "MOET" : "AUN";
+  const popupFramework = modeToFramework(evaluationMode);
+  const standardSetFramework = modeToFramework(standardSetData?.EvaluationMode);
+  const inferredFramework = inferFrameworkFromGroups(groups);
+
+  // Prefer popup mode while popup is open, then standard set mode, then infer from list data.
+  const framework: FrameworkType = activeItemId
+    ? (popupFramework ?? standardSetFramework ?? inferredFramework ?? "AUN")
+    : (standardSetFramework ?? inferredFramework ?? popupFramework ?? "AUN");
 
   const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
   const userRole = userCouncil?.RoleId ?? 0;
@@ -181,6 +203,7 @@ export function CriterionEvaluationPage() {
           mySubmission={mySubmission}
           isMySubmissionLoading={isPopupDataLoading}
           isSubmissionsFetching={isPopupDataFetching}
+          officialFields={officialFields}
           framework={framework}
           cycleStatus={cycleStatus}
           canSubmit={canSubmit}

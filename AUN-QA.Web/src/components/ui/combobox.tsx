@@ -53,9 +53,9 @@ export function Combobox({
   transformData,
   value,
   onValueChange,
-  placeholder = "Select option...",
-  searchPlaceholder = "Search...",
-  emptyText = "No results found.",
+  placeholder = "Lựa chọn...",
+  searchPlaceholder = "Tìm kiếm...",
+  emptyText = "Không tìm thấy kết quả.",
   loadingText = "Đang tải...",
   loading = false,
   className,
@@ -114,7 +114,9 @@ export function Combobox({
   const isSelectedValue = (optionValue?: string) =>
     normalizeValue(optionValue) === normalizeValue(value);
 
-  const selectedOption = options.find((option) => isSelectedValue(option.Value));
+  const selectedOption = options.find((option) =>
+    isSelectedValue(option.Value),
+  );
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
@@ -161,12 +163,17 @@ export function Combobox({
                       className={cn(
                         "cursor-pointer",
                         "flex w-full items-center gap-2",
-                        isSelectedValue(option.Value) && "font-semibold text-primary",
+                        isSelectedValue(option.Value) &&
+                          "font-semibold text-primary",
                       )}
                       onSelect={(_) => {
                         const currentlySelected = isSelectedValue(option.Value);
-                        const newValue = currentlySelected ? "" : (option.Value || "");
-                        const newText = currentlySelected ? "" : (option.Text || "");
+                        const newValue = currentlySelected
+                          ? ""
+                          : option.Value || "";
+                        const newText = currentlySelected
+                          ? ""
+                          : option.Text || "";
                         onValueChange(newValue, newText);
                         setOpen(false);
                       }}
@@ -174,7 +181,9 @@ export function Combobox({
                       <div
                         className={cn(
                           "flex h-4 w-4 items-center justify-center shrink-0",
-                          isSelectedValue(option.Value) ? "opacity-100" : "opacity-0",
+                          isSelectedValue(option.Value)
+                            ? "opacity-100"
+                            : "opacity-0",
                         )}
                       >
                         <Check className="h-4 w-4" />

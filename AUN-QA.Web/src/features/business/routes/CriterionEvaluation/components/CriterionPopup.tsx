@@ -5,6 +5,8 @@ import { surveyCampaignService } from "../../../api/survey-campaign.api";
 import PopupEvidenceCycleMap from "../../EvidenceCycleMap/PopupEvidenceCycleMap";
 import { PopupSurveyCampaignCriterion } from "./PopupSurveyCampaignCriterion";
 import { ApprovalPanelCard } from "./ApprovalPanelCard";
+import { SubmissionsComparisonView } from "./SubmissionsComparisonView";
+import { ApprovedContentView } from "./ApprovedContentView";
 import { getCompletedCampaignsForCycle } from "../../../utils/criterionEvaluationSurvey";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,6 +35,7 @@ import type {
   EvaluationSubmission,
   EvaluationSubmissionRequest,
   FrameworkType,
+  OfficialDescriptiveFields,
 } from "../../../types/criterionEvaluation.types";
 import { AUN_SCORE_CONFIG } from "../../../types/criterionEvaluation.types";
 import type { SurveyCampaignGetListPaging } from "../../../types/survey-campaign.types";
@@ -51,6 +54,7 @@ interface CriterionPopupProps {
   isSubmitting: boolean;
   isApproving: boolean;
   isSubmissionsFetching: boolean;
+  officialFields?: OfficialDescriptiveFields | null;
   onClose: () => void;
   onSubmit: (request: EvaluationSubmissionRequest) => Promise<void>;
   onApprove: (request: ApproveEvaluationRequest) => Promise<void>;
@@ -439,6 +443,7 @@ export function CriterionPopup({
   isSubmitting,
   isApproving,
   isSubmissionsFetching,
+  officialFields,
   onClose,
   onSubmit,
   onApprove,
@@ -453,6 +458,10 @@ export function CriterionPopup({
   const [officialResult, setOfficialResult] = useState<boolean | null>(
     item.OfficialResult,
   );
+  const [officialCurrentState, setOfficialCurrentState] = useState("");
+  const [officialStrengths, setOfficialStrengths] = useState("");
+  const [officialWeaknesses, setOfficialWeaknesses] = useState("");
+  const [officialActionPlan, setOfficialActionPlan] = useState("");
   const [viewingEcmId, setViewingEcmId] = useState<string | null>(null);
   const [viewingSurveyCampaign, setViewingSurveyCampaign] =
     useState<SurveyCampaignGetListPaging | null>(null);
@@ -491,6 +500,10 @@ export function CriterionPopup({
       CriterionEvaluationId: item.Id,
       OfficialScore: framework === "AUN" ? officialScore : undefined,
       OfficialResult: framework === "MOET" ? officialResult : undefined,
+      OfficialCurrentState: officialCurrentState,
+      OfficialStrengths: officialStrengths,
+      OfficialWeaknesses: officialWeaknesses,
+      OfficialActionPlan: officialActionPlan,
     });
   };
 
@@ -539,9 +552,29 @@ export function CriterionPopup({
         <div className="flex flex-1 overflow-hidden min-h-0 bg-slate-100/50">
           <div className="flex-1 overflow-y-auto p-5 lg:p-8">
             <div className="flex flex-col lg:flex-row items-start gap-6">
-              {/* Left: Evaluation Form */}
+              {/* Left: panel switches based on role + approval state */}
               <div className="flex-1 w-full min-w-0">
-                {isMySubmissionLoading ? (
+                {isApproved && officialFields ? (
+                  <ApprovedContentView
+                    officialFields={officialFields}
+                    framework={framework}
+                    officialScore={item.OfficialScore}
+                    officialResult={item.OfficialResult}
+                  />
+                ) : canApprove ? (
+                  <SubmissionsComparisonView
+                    submissions={submissions}
+                    framework={framework}
+                    canApprove={canApprove}
+                    isApproved={isApproved}
+                    onUseDraft={(sub) => {
+                      setOfficialCurrentState(sub.CurrentState ?? "");
+                      setOfficialStrengths(sub.Strengths ?? "");
+                      setOfficialWeaknesses(sub.Weaknesses ?? "");
+                      setOfficialActionPlan(sub.ActionPlan ?? "");
+                    }}
+                  />
+                ) : isMySubmissionLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
@@ -761,21 +794,23 @@ export function CriterionPopup({
                                   {sub.ProposedResult ? "ĐẠT" : "KHÔNG ĐẠT"}
                                 </span>
                               )}
-                            <button
-                              onClick={() =>
-                                setViewingSubmission(
-                                  viewingSubmission?.Id === sub.Id ? null : sub,
-                                )
-                              }
-                              className={`p-1.5 rounded-lg transition-colors ${
-                                viewingSubmission?.Id === sub.Id
-                                  ? "text-blue-700 bg-blue-100"
-                                  : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                              }`}
-                              title="Xem phiếu"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
+                            {!canApprove && (
+                              <button
+                                onClick={() =>
+                                  setViewingSubmission(
+                                    viewingSubmission?.Id === sub.Id ? null : sub,
+                                  )
+                                }
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  viewingSubmission?.Id === sub.Id
+                                    ? "text-blue-700 bg-blue-100"
+                                    : "text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                }`}
+                                title="Xem phiếu"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -783,18 +818,28 @@ export function CriterionPopup({
                   )}
                 </div>
 
-                {/* 3. Approval panel */}
-                <ApprovalPanelCard
-                  framework={framework}
-                  isApproved={isApproved}
-                  canApprove={canApprove}
-                  officialScore={officialScore}
-                  officialResult={officialResult}
-                  isApproving={isApproving}
-                  onOfficialScoreChange={setOfficialScore}
-                  onOfficialResultChange={setOfficialResult}
-                  onApprove={handleApprove}
-                />
+                {/* 3. Approval panel (only for approvers, and hidden after approved) */}
+                {!isApproved && canApprove && (
+                  <ApprovalPanelCard
+                    framework={framework}
+                    isApproved={isApproved}
+                    canApprove={canApprove}
+                    officialScore={officialScore}
+                    officialResult={officialResult}
+                    isApproving={isApproving}
+                    officialCurrentState={officialCurrentState}
+                    officialStrengths={officialStrengths}
+                    officialWeaknesses={officialWeaknesses}
+                    officialActionPlan={officialActionPlan}
+                    onOfficialCurrentStateChange={setOfficialCurrentState}
+                    onOfficialStrengthsChange={setOfficialStrengths}
+                    onOfficialWeaknessesChange={setOfficialWeaknesses}
+                    onOfficialActionPlanChange={setOfficialActionPlan}
+                    onOfficialScoreChange={setOfficialScore}
+                    onOfficialResultChange={setOfficialResult}
+                    onApprove={handleApprove}
+                  />
+                )}
               </div>
             </div>
           </div>

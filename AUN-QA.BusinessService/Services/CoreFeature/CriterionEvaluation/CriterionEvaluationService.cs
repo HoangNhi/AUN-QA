@@ -502,10 +502,26 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             if (request.OfficialScore.HasValue && (request.OfficialScore < 1 || request.OfficialScore > 7))
                 throw new BusinessException("Điểm AUN phải từ 1 đến 7");
 
+            if (string.IsNullOrWhiteSpace(request.OfficialCurrentState))
+                throw new BusinessException("Vui lòng nhập mô tả thực trạng chốt");
+
+            if (string.IsNullOrWhiteSpace(request.OfficialStrengths))
+                throw new BusinessException("Vui lòng nhập điểm mạnh chốt");
+
+            if (string.IsNullOrWhiteSpace(request.OfficialWeaknesses))
+                throw new BusinessException("Vui lòng nhập điểm tồn tại chốt");
+
+            if (string.IsNullOrWhiteSpace(request.OfficialActionPlan))
+                throw new BusinessException("Vui lòng nhập kế hoạch cải tiến chốt");
+
             var userName = GetCurrentUserName();
 
             evaluation.OfficialScore = request.OfficialScore;
             evaluation.OfficialResult = request.OfficialResult;
+            evaluation.OfficialCurrentState = request.OfficialCurrentState?.Trim();
+            evaluation.OfficialStrengths = request.OfficialStrengths?.Trim();
+            evaluation.OfficialWeaknesses = request.OfficialWeaknesses?.Trim();
+            evaluation.OfficialActionPlan = request.OfficialActionPlan?.Trim();
             evaluation.Status = (int)CriterionEvaluationStatus.Approved;
             evaluation.ApprovedBy = userName;
             evaluation.ApprovedAt = DateTime.UtcNow;
@@ -566,6 +582,16 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
         #region Popup Data
         public async Task<ModelCriterionPopupData> GetPopupData(GetPopupDataRequest request)
         {
+            var evaluation = await _context.CriterionEvaluations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.CriterionEvaluationId && !x.IsDeleted && x.IsActived);
+
+            if (evaluation == null)
+                throw new BusinessException("Không tìm thấy tiêu chí đánh giá");
+
+            if (evaluation.CycleId != request.CycleId)
+                throw new BusinessException("Dữ liệu tiêu chí không thuộc chu kỳ được yêu cầu");
+
             var submissions = await GetSubmissions(request.CriterionEvaluationId);
             var mySubmission = await GetMySubmission(request.CriterionEvaluationId);
             var evidences = await GetEvidencesForCriterion(request.CriterionEvaluationId, request.CycleId);
@@ -594,6 +620,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 })
                 .ToListAsync();
 
+            OfficialDescriptiveFields? officialFields = null;
+            if (evaluation.Status == (int)CriterionEvaluationStatus.Approved)
+            {
+                officialFields = new OfficialDescriptiveFields
+                {
+                    CurrentState = evaluation.OfficialCurrentState,
+                    Strengths = evaluation.OfficialStrengths,
+                    Weaknesses = evaluation.OfficialWeaknesses,
+                    ActionPlan = evaluation.OfficialActionPlan
+                };
+            }
+
             return new ModelCriterionPopupData
             {
                 Submissions = submissions,
@@ -606,7 +644,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                     EvidenceCycleMapId = e.EvidenceCycleMapId
                 }).ToList(),
                 SurveyCampaigns = surveyCampaigns,
-                EvaluationMode = evaluationMode
+                EvaluationMode = evaluationMode,
+                OfficialFields = officialFields
             };
         }
         #endregion

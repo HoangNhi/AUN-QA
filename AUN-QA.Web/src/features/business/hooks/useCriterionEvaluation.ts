@@ -90,6 +90,7 @@ export const useCriterionEvaluation = () => {
   const mySubmission = popupDataResponse?.Data?.MySubmission ?? null;
   const surveyCampaigns = popupDataResponse?.Data?.SurveyCampaigns ?? [];
   const evaluationMode = popupDataResponse?.Data?.EvaluationMode ?? 1;
+  const officialFields = popupDataResponse?.Data?.OfficialFields ?? null;
 
   // Submit mutation
   const submitMutation = useMutation({
@@ -214,6 +215,7 @@ export const useCriterionEvaluation = () => {
     mySubmission,
     surveyCampaigns,
     evaluationMode,
+    officialFields,
     // Loading
     isSummaryLoading,
     isListLoading,

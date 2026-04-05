@@ -131,6 +131,17 @@ export interface ApproveEvaluationRequest {
   CriterionEvaluationId: string;
   OfficialScore?: number | null;
   OfficialResult?: boolean | null;
+  OfficialCurrentState?: string;
+  OfficialStrengths?: string;
+  OfficialWeaknesses?: string;
+  OfficialActionPlan?: string;
+}
+
+export interface OfficialDescriptiveFields {
+  CurrentState?: string | null;
+  Strengths?: string | null;
+  Weaknesses?: string | null;
+  ActionPlan?: string | null;
 }
 
 export interface CriterionEvaluationGetListRequest {
@@ -172,6 +183,7 @@ export interface CriterionPopupData {
   Evidences: CriterionEvidence[];
   SurveyCampaigns: SurveyCampaignItem[];
   EvaluationMode: number; // 1: AUN, 2: MOET
+  OfficialFields?: OfficialDescriptiveFields | null;
 }
 
 export interface GetPopupDataRequest {

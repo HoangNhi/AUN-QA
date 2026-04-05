@@ -34,4 +34,12 @@ public partial class CriterionEvaluation
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public string? OfficialStrengths { get; set; }
+
+    public string? OfficialWeaknesses { get; set; }
+
+    public string? OfficialActionPlan { get; set; }
+
+    public string? OfficialCurrentState { get; set; }
 }

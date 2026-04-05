@@ -179,11 +179,16 @@ export const useSar = () => {
 
   const submitSar = useCallback(
     async (cycleId: string) => {
-      const response = await submitMutation.mutateAsync({ CycleId: cycleId });
-      if (response.Success) {
+      try {
+        const response = await submitMutation.mutateAsync({ CycleId: cycleId });
+        if (response.Success) {
+          await refetchDraft();
+        }
+        return response.Success;
+      } catch {
         await refetchDraft();
+        return false;
       }
-      return response.Success;
     },
     [refetchDraft, submitMutation],
   );

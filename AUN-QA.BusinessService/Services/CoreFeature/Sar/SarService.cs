@@ -194,26 +194,37 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             await CheckPdcaPermissionAsync(request.CycleId, allowedRoles);
 
-            await CheckCycleStageAsync(request.CycleId);
+            await CheckCycleDoOrCheckStageAsync(request.CycleId);
             var council = await RequireCouncilRoleAsync(request.CycleId, allowedRoles);
             var canSubmitByRole = IsAdmin() || council?.RoleId == (int)CouncilRole.Secretary;
             var canEditByRole = IsAdmin() || (council != null && council.RoleId != (int)CouncilRole.EvidenceProvider);
+            var canApproveByRole = IsAdmin() || (
+                council != null && (
+                    council.RoleId == (int)CouncilRole.HeadOfCouncil
+                    || (council.RoleId == (int)CouncilRole.ViceChairman && SarWorkflowPolicy.IsDelegationActive(council))));
 
             var report = await EnsureSarReportAsync(request.CycleId);
-            return ToDto(report, council?.RoleId, canSubmitByRole, canEditByRole);
+            return ToDto(
+                report,
+                council?.RoleId,
+                canSubmitByRole,
+                canEditByRole,
+                canApproveByRole);
         }
 
         public async Task SaveDraft(SaveSarDraftRequest request)
         {
-            await CheckCycleStageAsync(request.CycleId);
+            var report = await FindSarReportAsync(request.CycleId);
+            var currentStatus = report?.Status ?? (int)SarStatus.Draft;
+
+            await CheckCycleStageForDraftOrRevisionAsync(request.CycleId, currentStatus);
+
             var council = await RequireCouncilRoleAsync(request.CycleId, Roles(
                 CouncilRole.HeadOfCouncil,
                 CouncilRole.ViceChairman,
                 CouncilRole.Secretary,
                 CouncilRole.Evaluator));
-
-            var report = await EnsureSarReportAsync(request.CycleId);
-            if (!SarWorkflowPolicy.CanSaveDraft(report.Status))
+            if (!SarWorkflowPolicy.CanSaveDraft(currentStatus))
             {
                 throw new BusinessException("SAR is not in a valid state for save draft");
             }
@@ -225,6 +236,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 throw new BusinessException("Evaluator does not have a valid assigned standards scope");
             }
 
+            report ??= await EnsureSarReportAsync(request.CycleId);
             report.YdocSnapshot = DecodeBase64(request.YDocSnapshotBase64);
             report.RenderedHtml = request.RenderedHtml;
             report.LastSavedAt = DateTime.UtcNow;
@@ -237,7 +249,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
         public async Task Submit(SubmitSarRequest request)
         {
-            await CheckCycleStageAsync(request.CycleId);
             await RequireCouncilRoleAsync(request.CycleId, Roles(CouncilRole.Secretary));
 
             var report = await GetSarReportOrThrowAsync(request.CycleId);
@@ -245,6 +256,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             {
                 throw new BusinessException("SAR is not in a valid state for submit");
             }
+
+            await CheckCycleStageForDraftOrRevisionAsync(request.CycleId, report.Status);
 
             var now = DateTime.UtcNow;
             SarAuditTrail.SetTransitionPayload(
@@ -272,8 +285,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             await CheckCycleCheckStageAsync(request.CycleId);
             var council = await RequireCouncilRoleAsync(request.CycleId, Roles(
                 CouncilRole.HeadOfCouncil,
-                CouncilRole.ViceChairman,
-                CouncilRole.Evaluator));
+                CouncilRole.ViceChairman));
 
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             if (!SarWorkflowPolicy.CanRequestRevision(report.Status))
@@ -477,6 +489,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             return report;
         }
 
+        private async Task<SarReport?> FindSarReportAsync(Guid cycleId)
+        {
+            return await _context.SarReports
+                .FirstOrDefaultAsync(x => x.CycleId == cycleId && !x.IsDeleted && x.IsActived);
+        }
+
         private async Task<SarReport> GetSarReportOrThrowAsync(Guid cycleId)
         {
             var report = await _context.SarReports
@@ -488,6 +506,17 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             }
 
             return report;
+        }
+
+        private async Task CheckCycleStageForDraftOrRevisionAsync(Guid cycleId, int currentStatus)
+        {
+            if (currentStatus == (int)SarStatus.RevisionRequested)
+            {
+                await CheckCycleCheckStageAsync(cycleId);
+                return;
+            }
+
+            await CheckCycleStageAsync(cycleId);
         }
 
         private string GetDisplayName() => CurrentUsername();
@@ -528,7 +557,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             SarReport report,
             int? currentUserCouncilRoleId,
             bool canSubmitByRole,
-            bool canEditByRole)
+            bool canEditByRole,
+            bool canApproveByRole)
         {
             return new SarDraftDto
             {
@@ -538,6 +568,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 CurrentUserCouncilRoleId = currentUserCouncilRoleId,
                 CanSubmitByRole = canSubmitByRole,
                 CanEditByRole = canEditByRole,
+                CanApproveByRole = canApproveByRole,
                 YDocSnapshotBase64 = report.YdocSnapshot != null
                     ? Convert.ToBase64String(report.YdocSnapshot)
                     : null,
@@ -653,6 +684,43 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             if (!allowed)
             {
                 throw new BusinessException("Cycle is not in Do stage and user cannot perform this action");
+            }
+        }
+
+        private async Task CheckCycleDoOrCheckStageAsync(Guid cycleId)
+        {
+            var (found, status) = await _cycleService.GetCycleStatusAsync(cycleId);
+            if (!found)
+            {
+                throw new BusinessException("Cycle does not exist");
+            }
+
+            if (status == (int)CycleStatus.Do || status == (int)CycleStatus.Check)
+            {
+                return;
+            }
+
+            if (IsAdmin())
+            {
+                return;
+            }
+
+            var userId = GetCurrentUserIdOrNull();
+            if (userId == null)
+            {
+                throw new BusinessException("Cycle is not in Do/Check stage and user cannot perform this action");
+            }
+
+            var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
+            {
+                CycleId = cycleId,
+                UserId = userId.Value,
+                AllowedRoles = Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman)
+            });
+
+            if (!allowed)
+            {
+                throw new BusinessException("Cycle is not in Do/Check stage and user cannot perform this action");
             }
         }
 

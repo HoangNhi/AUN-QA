@@ -31,7 +31,7 @@ const SAR_ERROR_TRANSLATIONS: Array<{ match: RegExp; vi: string }> = [
   { match: /SAR is not in a valid state for request revision/i, vi: "Không thể yêu cầu chỉnh sửa vì báo cáo SAR không ở trạng thái hợp lệ." },
   { match: /SAR is not in a valid state for approve/i, vi: "Không thể phê duyệt vì báo cáo SAR không ở trạng thái hợp lệ." },
   { match: /SAR is approved and read-only/i, vi: "Báo cáo SAR đã được phê duyệt và chỉ cho phép xem." },
-  { match: /SAR must be in Submitted or Approved status to export/i, vi: "Chỉ có thể xuất file khi SAR ở trạng thái Đang chờ duyệt hoặc Đã phê duyệt." },
+  { match: /SAR must not be in Draft status to export/i, vi: "Chỉ có thể xuất file khi SAR đã được nộp." },
   { match: /Cycle does not exist/i, vi: "Chu kỳ không tồn tại." },
   { match: /You do not have permission to perform this action in this PDCA cycle/i, vi: "Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA hiện tại." },
   { match: /You do not have permission to request SAR revision/i, vi: "Bạn không có quyền yêu cầu chỉnh sửa SAR." },

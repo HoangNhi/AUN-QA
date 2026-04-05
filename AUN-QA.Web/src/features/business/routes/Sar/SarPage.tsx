@@ -10,8 +10,8 @@ import PopupSarEditor from "./PopupSarEditor";
 
 const SAR_STATUS_OPTIONS = [
   { Text: "Nháp", Value: "1" },
-  { Text: "Đang chờ duyệt", Value: "2" },
-  { Text: "Yêu cầu chỉnh sửa", Value: "3" },
+  { Text: "Đã nộp", Value: "2" },
+  { Text: "Đang hoàn thiện", Value: "3" },
   { Text: "Đã phê duyệt", Value: "4" },
 ];
 

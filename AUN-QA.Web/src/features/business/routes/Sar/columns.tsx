@@ -14,11 +14,11 @@ const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> =
     className: "bg-slate-100 text-slate-600 border border-slate-300",
   },
   2: {
-    label: "Đang chờ duyệt",
+    label: "Đã nộp",
     className: "bg-blue-100 text-blue-600 border border-blue-300",
   },
   3: {
-    label: "Yêu cầu chỉnh sửa",
+    label: "Đang hoàn thiện",
     className: "bg-amber-100 text-amber-700 border border-amber-300",
   },
   4: {

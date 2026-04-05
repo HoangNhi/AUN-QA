@@ -94,11 +94,11 @@ const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> =
       className: "bg-slate-100 text-slate-700 border border-slate-300",
     },
     2: {
-      label: "Đang chờ duyệt",
+      label: "Đã nộp",
       className: "bg-blue-100 text-blue-700 border border-blue-300",
     },
     3: {
-      label: "Yêu cầu chỉnh sửa",
+      label: "Đang hoàn thiện",
       className: "bg-amber-100 text-amber-800 border border-amber-300",
     },
     4: {
@@ -118,11 +118,25 @@ export function canSubmitSar(
   return canSubmitByRole && (status === 1 || status === 3);
 }
 
+
+
 export function shouldShowSarRevisionReasonBanner(
   status: SarStatus,
   revisionReason?: string | null,
 ): boolean {
   return status === 3 && !!revisionReason?.trim();
+}
+
+export function getSarPdcaPhaseLabel(status: SarStatus): string | null {
+  if (status === 1) {
+    return "Pha DO — Soạn thảo báo cáo";
+  }
+
+  if (status === 3) {
+    return "Pha CHECK \u2014 Ho\u00e0n thi\u1ec7n theo nh\u1eadn x\u00e9t";
+  }
+
+  return null;
 }
 
 export function createSarEvidenceListRequest(
@@ -333,6 +347,7 @@ export default function PopupSarEditor({
   const statusMeta =
     SAR_STATUS_META[currentStatus] ?? SAR_STATUS_META[DEFAULT_SAR_STATUS];
   const submitEnabled = canSubmitSar(currentStatus, canSubmitByRole);
+  const pdcaPhaseLabel = getSarPdcaPhaseLabel(currentStatus);
   const showRevisionReasonBanner = shouldShowSarRevisionReasonBanner(
     currentStatus,
     draft?.RevisionReason,
@@ -839,11 +854,11 @@ export default function PopupSarEditor({
 
       const success = await onSubmitSar(cycle.CycleId);
       if (!success) {
-        toast.error("Gửi SAR phê duyệt không thành công");
+        toast.error("Gửi thẩm định SAR không thành công");
         return;
       }
 
-      toast.success("Đã gửi SAR phê duyệt");
+      toast.success("Đã gửi thẩm định SAR");
       onRefreshDraft();
     } finally {
       setIsSubmittingFlow(false);
@@ -934,6 +949,11 @@ export default function PopupSarEditor({
                   <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                     {statusMeta.label}
                   </span>
+                  {pdcaPhaseLabel && (
+                    <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-500">
+                      {pdcaPhaseLabel}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-slate-500 truncate">
                   {cycle?.EvaluationPurpose || "--"}
@@ -1008,7 +1028,7 @@ export default function PopupSarEditor({
                 </Button>
               )}
 
-              {(currentStatus === 2 || currentStatus === 4) && (
+              {currentStatus !== 1 && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1025,22 +1045,24 @@ export default function PopupSarEditor({
                 </Button>
               )}
 
-              <Button
-                size="sm"
-                className="h-10 px-5 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={
-                  !submitEnabled ||
-                  isSubmitting ||
-                  isDraftLoading ||
-                  isSubmittingFlow
-                }
-                onClick={() => {
-                  void handleSubmit();
-                }}
-              >
-                Gửi Phê duyệt
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {(currentStatus === 1 || currentStatus === 3) && (
+                <Button
+                  size="sm"
+                  className="h-10 px-5 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white"
+                  disabled={
+                    !submitEnabled ||
+                    isSubmitting ||
+                    isDraftLoading ||
+                    isSubmittingFlow
+                  }
+                  onClick={() => {
+                    void handleSubmit();
+                  }}
+                >
+                  Gửi thẩm định
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )}
             </div>
           </header>
 
@@ -1375,7 +1397,6 @@ export default function PopupSarEditor({
           }}
           readOnly
           isLoading={isEvidencePreviewLoading}
-          isApproving={false}
         />
       </Suspense>
     </>

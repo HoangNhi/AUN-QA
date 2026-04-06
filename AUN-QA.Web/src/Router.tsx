@@ -22,6 +22,7 @@ import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPa
 import AuditLogPage from "./features/system/routes/AuditLog/AuditLogPage";
 import { CriterionEvaluationPage } from "./features/business/routes/CriterionEvaluation/CriterionEvaluationPage";
 import SarPage from "./features/business/routes/Sar/SarPage";
+import InternalReviewPage from "./features/business/routes/InternalReview/InternalReviewPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -59,6 +60,7 @@ const Router: FC = () => {
           <Route path="/auditlog" element={<AuditLogPage />} />
           <Route path="/criterionevaluation" element={<CriterionEvaluationPage />} />
           <Route path="/sar" element={<SarPage />} />
+          <Route path="/internalreview" element={<InternalReviewPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

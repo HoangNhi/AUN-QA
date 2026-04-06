@@ -364,95 +364,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<SarFeedbackDto>> GetFeedbacks(GetSarFeedbackRequest request)
-        {
-            await CheckCycleCheckStageAsync(request.CycleId);
-            await RequireCouncilRoleAsync(request.CycleId, Roles(
-                CouncilRole.HeadOfCouncil,
-                CouncilRole.ViceChairman,
-                CouncilRole.Secretary,
-                CouncilRole.Evaluator,
-                CouncilRole.EvidenceProvider));
-
-            var report = await GetSarReportOrThrowAsync(request.CycleId);
-            var query = _context.SarReviewComments
-                .AsNoTracking()
-                .Where(x => x.SarReportId == report.Id && !x.IsDeleted && x.IsActived);
-
-            if (!string.IsNullOrWhiteSpace(request.CriterionCode))
-            {
-                var criterionCode = request.CriterionCode.Trim();
-                query = query.Where(x => x.CriterionCode == criterionCode);
-            }
-
-            if (request.CommentType.HasValue)
-            {
-                query = query.Where(x => x.CommentType == request.CommentType.Value);
-            }
-
-            var comments = await query
-                .OrderByDescending(x => x.CreatedAt)
-                .ToListAsync();
-
-            return comments.Select(x => new SarFeedbackDto
-            {
-                Id = x.Id,
-                SarReportId = x.SarReportId,
-                CycleId = report.CycleId,
-                CriterionCode = x.CriterionCode,
-                CommentText = x.CommentText,
-                CommentType = x.CommentType,
-                RoleId = x.RoleId,
-                IsResolved = x.IsResolved,
-                ResolvedAt = x.ResolvedAt,
-                ResolvedBy = x.ResolvedBy,
-                CreatedAt = x.CreatedAt,
-                CreatedBy = x.CreatedBy,
-                UpdatedAt = x.UpdatedAt,
-                UpdatedBy = x.UpdatedBy
-            }).ToList();
-        }
-
-        public async Task AddFeedback(AddSarFeedbackRequest request)
-        {
-            await CheckCycleCheckStageAsync(request.CycleId);
-            var council = await RequireCouncilRoleAsync(request.CycleId, Roles(
-                CouncilRole.HeadOfCouncil,
-                CouncilRole.ViceChairman,
-                CouncilRole.Secretary,
-                CouncilRole.Evaluator));
-
-            var report = await GetSarReportOrThrowAsync(request.CycleId);
-            if (report.Status == (int)SarStatus.Approved)
-            {
-                throw new BusinessException("SAR is approved and read-only");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.CommentText))
-            {
-                throw new BusinessException("Comment text is required");
-            }
-
-            var now = DateTime.UtcNow;
-            var comment = new SarReviewComment
-            {
-                Id = Guid.NewGuid(),
-                SarReportId = report.Id,
-                CriterionCode = string.IsNullOrWhiteSpace(request.CriterionCode) ? null : request.CriterionCode.Trim(),
-                CommentText = request.CommentText.Trim(),
-                CommentType = request.CommentType,
-                RoleId = council?.RoleId,
-                IsResolved = false,
-                CreatedAt = now,
-                CreatedBy = GetDisplayName(),
-                IsActived = true,
-                IsDeleted = false
-            };
-
-            await _context.SarReviewComments.AddAsync(comment);
-            await _context.SaveChangesAsync();
-        }
-
         private async Task<SarReport> EnsureSarReportAsync(Guid cycleId)
         {
             var cycleExists = await _context.Cycles
@@ -565,6 +476,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 SarReportId = report.Id,
                 CycleId = report.CycleId,
                 Status = report.Status,
+                ReviewRound = report.ReviewRound,
                 CurrentUserCouncilRoleId = currentUserCouncilRoleId,
                 CanSubmitByRole = canSubmitByRole,
                 CanEditByRole = canEditByRole,
@@ -574,6 +486,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     : null,
                 RenderedHtml = report.RenderedHtml,
                 RevisionReason = report.RevisionReason,
+                SubmittedAt = report.SubmittedAt,
+                SubmittedBy = report.SubmittedBy,
                 LastSavedAt = report.LastSavedAt,
                 CreatedAt = report.CreatedAt,
                 CreatedBy = report.CreatedBy,

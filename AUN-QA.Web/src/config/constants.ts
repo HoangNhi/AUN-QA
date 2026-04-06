@@ -174,6 +174,12 @@ export const API_ENDPOINTS = {
       GET_EVIDENCES: `${BUSINESS_BASE}/CriterionEvaluation/get-evidences`,
       GET_POPUP_DATA: `${BUSINESS_BASE}/CriterionEvaluation/get-popup-data`,
     },
+    InternalReview: {
+      GET_COMMENTS: `${BUSINESS_BASE}/internal-review/comments/get`,
+      ADD_COMMENT: `${BUSINESS_BASE}/internal-review/comments/add`,
+      DELETE_COMMENT: (id: string) =>
+        `${BUSINESS_BASE}/internal-review/comments/${id}`,
+    },
     Sar: {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
       GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
@@ -181,8 +187,6 @@ export const API_ENDPOINTS = {
       SUBMIT: `${BUSINESS_BASE}/Sar/submit`,
       REQUEST_REVISION: `${BUSINESS_BASE}/Sar/request-revision`,
       APPROVE: `${BUSINESS_BASE}/Sar/approve`,
-      GET_FEEDBACKS: `${BUSINESS_BASE}/Sar/get-feedbacks`,
-      ADD_FEEDBACK: `${BUSINESS_BASE}/Sar/add-feedback`,
       GET_AUTOFILL_PAYLOAD: `${BUSINESS_BASE}/Sar/get-autofill-payload`,
       EXPORT_DOCX: `${BUSINESS_BASE}/Sar/export-docx`,
     },

@@ -43,5 +43,7 @@ public partial class SarReport
 
     public string? RevisionReason { get; set; }
 
-    public virtual ICollection<SarReviewComment> SarReviewComments { get; set; } = new List<SarReviewComment>();
+    public int ReviewRound { get; set; }
+
+    public virtual ICollection<InternalComment> InternalComments { get; set; } = new List<InternalComment>();
 }

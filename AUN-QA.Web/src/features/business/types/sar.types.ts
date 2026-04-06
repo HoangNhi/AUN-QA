@@ -13,6 +13,9 @@ export interface SarGetListItem {
   CycleName: string;
   Year: number;
   Status: SarStatus;
+  ReviewRound?: number;
+  SubmittedAt?: string | null;
+  RevisionReason?: string | null;
   LastSavedAt?: string | null;
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
@@ -23,12 +26,15 @@ export interface SarDraft {
   SarReportId: string;
   CycleId: string;
   Status: SarStatus;
+  ReviewRound?: number;
   CurrentUserCouncilRoleId?: number | null;
   CanSubmitByRole?: boolean;
   CanEditByRole?: boolean;
   YDocSnapshotBase64?: string | null;
   RenderedHtml?: string | null;
   RevisionReason?: string | null;
+  SubmittedAt?: string | null;
+  SubmittedBy?: string | null;
   LastSavedAt?: string | null;
   CreatedAt: string;
   CreatedBy: string;
@@ -57,36 +63,6 @@ export interface RequestSarRevisionRequest {
 
 export interface ApproveSarRequest {
   CycleId: string;
-}
-
-export interface GetSarFeedbackRequest {
-  CycleId: string;
-  CriterionCode?: string | null;
-  CommentType?: number | null;
-}
-
-export interface AddSarFeedbackRequest {
-  CycleId: string;
-  CriterionCode?: string | null;
-  CommentText: string;
-  CommentType?: number;
-}
-
-export interface SarFeedback {
-  Id: string;
-  SarReportId: string;
-  CycleId: string;
-  CriterionCode?: string | null;
-  CommentText: string;
-  CommentType: number;
-  RoleId?: number | null;
-  IsResolved: boolean;
-  ResolvedAt?: string | null;
-  ResolvedBy?: string | null;
-  CreatedAt: string;
-  CreatedBy: string;
-  UpdatedAt?: string | null;
-  UpdatedBy?: string | null;
 }
 
 export interface GetSarAutofillPayloadRequest {

@@ -3,12 +3,9 @@ import { API_ENDPOINTS } from "@/config/constants";
 import { getAccessToken } from "@/lib/cookies";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import type {
-  AddSarFeedbackRequest,
   ApproveSarRequest,
-  GetSarFeedbackRequest,
   GetSarByCycleRequest,
   SarDraft,
-  SarFeedback,
   SarGetListItem,
   SarGetListPagingRequest,
   SaveSarDraftRequest,
@@ -23,7 +20,6 @@ type SaveSarDraftResponse = null;
 type SubmitSarResponse = null;
 type RequestSarRevisionResponse = null;
 type ApproveSarResponse = null;
-type AddSarFeedbackResponse = null;
 
 const SAR_ERROR_TRANSLATIONS: Array<{ match: RegExp; vi: string }> = [
   { match: /SAR is not in a valid state for save draft/i, vi: "Không thể lưu vì báo cáo SAR không còn ở trạng thái cho phép chỉnh sửa." },
@@ -104,21 +100,6 @@ export const sarService = {
 
   approve: async (request: ApproveSarRequest): Promise<ApiResponse<ApproveSarResponse>> => {
     return api.post<ApproveSarResponse>(API_ENDPOINTS.Business.Sar.APPROVE, request);
-  },
-
-  getFeedbacks: async (
-    request: GetSarFeedbackRequest,
-  ): Promise<ApiResponse<SarFeedback[]>> => {
-    return api.post<SarFeedback[]>(API_ENDPOINTS.Business.Sar.GET_FEEDBACKS, request);
-  },
-
-  addFeedback: async (
-    request: AddSarFeedbackRequest,
-  ): Promise<ApiResponse<AddSarFeedbackResponse>> => {
-    return api.post<AddSarFeedbackResponse>(
-      API_ENDPOINTS.Business.Sar.ADD_FEEDBACK,
-      request,
-    );
   },
 
   getAutofillPayload: async (

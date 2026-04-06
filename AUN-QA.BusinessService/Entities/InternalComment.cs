@@ -3,25 +3,19 @@ using System.Collections.Generic;
 
 namespace AUN_QA.BusinessService.Entities;
 
-public partial class SarReviewComment
+public partial class InternalComment
 {
     public Guid Id { get; set; }
 
     public Guid SarReportId { get; set; }
 
-    public string? CriterionCode { get; set; }
-
     public string CommentText { get; set; } = null!;
 
-    public int CommentType { get; set; }
+    public string? HighlightedText { get; set; }
 
-    public int? RoleId { get; set; }
+    public string? CommentMarkId { get; set; }
 
-    public bool IsResolved { get; set; }
-
-    public DateTime? ResolvedAt { get; set; }
-
-    public string? ResolvedBy { get; set; }
+    public int ReviewRound { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

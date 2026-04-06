@@ -76,22 +76,6 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse(true, 200));
         }
 
-        [HttpPost, Route("get-feedbacks")]
-        [AttributePermission(Action = ActionType.NONE)]
-        public async Task<IActionResult> GetFeedbacks([FromBody] GetSarFeedbackRequest request)
-        {
-            var result = await _service.GetFeedbacks(request);
-            return Ok(new BaseResponse<List<SarFeedbackDto>> { Data = result, Success = true });
-        }
-
-        [HttpPost, Route("add-feedback")]
-        [AttributePermission(Action = ActionType.NONE)]
-        public async Task<IActionResult> AddFeedback([FromBody] AddSarFeedbackRequest request)
-        {
-            await _service.AddFeedback(request);
-            return Ok(new BaseResponse(true, 200));
-        }
-
         [HttpPost, Route("get-autofill-payload")]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetAutofillPayload([FromBody] GetSarAutofillPayloadRequest request)

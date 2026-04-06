@@ -28,9 +28,9 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<EvidenceCycleMap> EvidenceCycleMaps { get; set; }
 
-    public virtual DbSet<SarReport> SarReports { get; set; }
+    public virtual DbSet<InternalComment> InternalComments { get; set; }
 
-    public virtual DbSet<SarReviewComment> SarReviewComments { get; set; }
+    public virtual DbSet<SarReport> SarReports { get; set; }
 
     public virtual DbSet<SurveyCampaign> SurveyCampaigns { get; set; }
 
@@ -209,6 +209,30 @@ public partial class BusinessContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<InternalComment>(entity =>
+        {
+            entity.ToTable("InternalComment");
+
+            entity.HasIndex(e => e.ReviewRound, "IX_InternalComment_ReviewRound");
+
+            entity.HasIndex(e => e.SarReportId, "IX_InternalComment_SarReportId");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CommentMarkId).HasMaxLength(100);
+            entity.Property(e => e.CommentText).HasMaxLength(2000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.CreatedBy).HasMaxLength(256);
+            entity.Property(e => e.HighlightedText).HasMaxLength(500);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.ReviewRound).HasDefaultValue(1);
+            entity.Property(e => e.UpdatedBy).HasMaxLength(256);
+
+            entity.HasOne(d => d.SarReport).WithMany(p => p.InternalComments)
+                .HasForeignKey(d => d.SarReportId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InternalComment_SarReport");
+        });
+
         modelBuilder.Entity<SarReport>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__SarRepor__3214EC0728CE31E1");
@@ -226,6 +250,7 @@ public partial class BusinessContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.LastSavedAt).HasColumnType("datetime");
+            entity.Property(e => e.ReviewRound).HasDefaultValue(1);
             entity.Property(e => e.RevisionReason).HasMaxLength(1000);
             entity.Property(e => e.RevisionRequestedAt).HasColumnType("datetime");
             entity.Property(e => e.RevisionRequestedBy)
@@ -241,42 +266,6 @@ public partial class BusinessContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.YdocSnapshot).HasColumnName("YDocSnapshot");
-        });
-
-        modelBuilder.Entity<SarReviewComment>(entity =>
-        {
-            entity.ToTable("SarReviewComment");
-
-            entity.HasIndex(e => e.CriterionCode, "IX_SarReviewComment_CriterionCode");
-
-            entity.HasIndex(e => e.SarReportId, "IX_SarReviewComment_SarReportId");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.CommentText).HasMaxLength(2000);
-            entity.Property(e => e.CommentType).HasDefaultValue(1);
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getutcdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.CreatedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
-            entity.Property(e => e.CriterionCode)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.IsActived).HasDefaultValue(true);
-            entity.Property(e => e.ResolvedAt).HasColumnType("datetime");
-            entity.Property(e => e.ResolvedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
-            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
-            entity.Property(e => e.UpdatedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.SarReport).WithMany(p => p.SarReviewComments)
-                .HasForeignKey(d => d.SarReportId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SarReviewComment_SarReport");
         });
 
         modelBuilder.Entity<SurveyCampaign>(entity =>

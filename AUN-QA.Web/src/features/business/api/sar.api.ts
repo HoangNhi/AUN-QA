@@ -21,45 +21,6 @@ type SubmitSarResponse = null;
 type RequestSarRevisionResponse = null;
 type ApproveSarResponse = null;
 
-const SAR_ERROR_TRANSLATIONS: Array<{ match: RegExp; vi: string }> = [
-  { match: /SAR is not in a valid state for save draft/i, vi: "Không thể lưu vì báo cáo SAR không còn ở trạng thái cho phép chỉnh sửa." },
-  { match: /SAR is not in a valid state for submit/i, vi: "Không thể gửi duyệt vì báo cáo SAR không còn ở trạng thái hợp lệ." },
-  { match: /SAR is not in a valid state for request revision/i, vi: "Không thể yêu cầu chỉnh sửa vì báo cáo SAR không ở trạng thái hợp lệ." },
-  { match: /SAR is not in a valid state for approve/i, vi: "Không thể phê duyệt vì báo cáo SAR không ở trạng thái hợp lệ." },
-  { match: /SAR is approved and read-only/i, vi: "Báo cáo SAR đã được phê duyệt và chỉ cho phép xem." },
-  { match: /SAR must not be in Draft status to export/i, vi: "Chỉ có thể xuất file khi SAR đã được nộp." },
-  { match: /Cycle does not exist/i, vi: "Chu kỳ không tồn tại." },
-  { match: /You do not have permission to perform this action in this PDCA cycle/i, vi: "Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA hiện tại." },
-  { match: /You do not have permission to request SAR revision/i, vi: "Bạn không có quyền yêu cầu chỉnh sửa SAR." },
-  { match: /You do not have permission to approve SAR/i, vi: "Bạn không có quyền phê duyệt SAR." },
-  { match: /Workflow action requires cycle in Check stage/i, vi: "Thao tác này yêu cầu chu kỳ đang ở giai đoạn Check." },
-  { match: /HTTP 40\\d|HTTP 50\\d/i, vi: "Có lỗi kết nối máy chủ. Vui lòng thử lại." },
-];
-
-export function toVietnameseSarMessage(
-  message?: string | null,
-  fallback = "Đã xảy ra lỗi trong chức năng SAR.",
-): string {
-  const normalized = (message ?? "").trim();
-  if (!normalized) {
-    return fallback;
-  }
-
-  for (const item of SAR_ERROR_TRANSLATIONS) {
-    if (item.match.test(normalized)) {
-      return item.vi;
-    }
-  }
-
-  // If backend returns an unmapped English message, keep UX in Vietnamese.
-  const hasVietnameseDiacritics = /[À-ỹà-ỹĂăÂâĐđÊêÔôƠơƯư]/u.test(normalized);
-  if (!hasVietnameseDiacritics) {
-    return fallback;
-  }
-
-  return normalized;
-}
-
 export const sarService = {
   getList: async (
     request: SarGetListPagingRequest,
@@ -131,9 +92,7 @@ export const sarService = {
 
     if (!response.ok) {
       const message = await response.text();
-      throw new Error(
-        toVietnameseSarMessage(message, `Xuất DOCX thất bại (HTTP ${response.status})`),
-      );
+      throw new Error(message || `Xuất DOCX thất bại (HTTP ${response.status})`);
     }
 
     return response.blob();

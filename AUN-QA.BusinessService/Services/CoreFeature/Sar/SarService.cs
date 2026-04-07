@@ -97,6 +97,16 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     sr.Status == status));
             }
 
+            if (request.ExcludeDraft == true)
+            {
+                var draftStatus = (int)SarStatus.Draft;
+                cycleQuery = cycleQuery.Where(c => _context.SarReports
+                    .Where(sr => sr.CycleId == c.Id && !sr.IsDeleted && sr.IsActived)
+                    .OrderByDescending(sr => sr.UpdatedAt ?? sr.LastSavedAt ?? sr.CreatedAt)
+                    .Take(1)
+                    .Any(sr => sr.Status != draftStatus));
+            }
+
             if (request.CycleId.HasValue)
             {
                 cycleQuery = cycleQuery.Where(x => x.Id == request.CycleId.Value);
@@ -226,14 +236,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 CouncilRole.Evaluator));
             if (!SarWorkflowPolicy.CanSaveDraft(currentStatus))
             {
-                throw new BusinessException("SAR is not in a valid state for save draft");
+                throw new BusinessException("SAR không ở trạng thái hợp lệ để lưu bản nháp");
             }
 
             if (council != null
                 && council.RoleId == (int)CouncilRole.Evaluator
                 && !SarWorkflowPolicy.HasValidEvaluatorScope(council.AssignedStandards))
             {
-                throw new BusinessException("Evaluator does not have a valid assigned standards scope");
+                throw new BusinessException("Thành viên đánh giá không có phạm vi tiêu chuẩn được phân công hợp lệ");
             }
 
             report ??= await EnsureSarReportAsync(request.CycleId);
@@ -254,7 +264,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             if (!SarWorkflowPolicy.CanSubmit(report.Status))
             {
-                throw new BusinessException("SAR is not in a valid state for submit");
+                throw new BusinessException("SAR không ở trạng thái hợp lệ để nộp");
             }
 
             await CheckCycleStageForDraftOrRevisionAsync(request.CycleId, report.Status);
@@ -276,7 +286,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             report.UpdatedAt = now;
             report.UpdatedBy = GetDisplayName();
 
-            _context.SarReports.Update(report);
+            var cycle = await _context.Cycles.FirstOrDefaultAsync(x =>
+                x.Id == request.CycleId &&
+                !x.IsDeleted &&
+                x.IsActived);
+
+            if (cycle == null)
+            {
+                throw new BusinessException("Chu kỳ không tồn tại hoặc không còn hoạt động");
+            }
+
+            if (cycle.Status == (int)CycleStatus.Do)
+            {
+                cycle.Status = (int)CycleStatus.Check;
+                cycle.UpdatedAt = now;
+                cycle.UpdatedBy = GetDisplayName();
+            }
+
             await _context.SaveChangesAsync();
         }
 
@@ -290,12 +316,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             if (!SarWorkflowPolicy.CanRequestRevision(report.Status))
             {
-                throw new BusinessException("SAR is not in a valid state for request revision");
+                throw new BusinessException("SAR không ở trạng thái hợp lệ để yêu cầu chỉnh sửa");
             }
 
             if (council == null && !IsAdmin())
             {
-                throw new BusinessException("You do not have permission to request SAR revision");
+                throw new BusinessException("Bạn không có quyền yêu cầu chỉnh sửa SAR");
             }
 
             var now = DateTime.UtcNow;
@@ -330,17 +356,17 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             if (!SarWorkflowPolicy.CanApprove(report.Status))
             {
-                throw new BusinessException("SAR is not in a valid state for approve");
+                throw new BusinessException("SAR không ở trạng thái hợp lệ để phê duyệt");
             }
 
             if (council == null && !IsAdmin())
             {
-                throw new BusinessException("You do not have permission to approve SAR");
+                throw new BusinessException("Bạn không có quyền phê duyệt SAR");
             }
 
             if (council != null && !SarWorkflowPolicy.CanApprove(council))
             {
-                throw new BusinessException("Vice chairman requires active delegation to approve SAR");
+                throw new BusinessException("Phó Chủ tịch cần được ủy quyền đang hoạt động để phê duyệt SAR");
             }
 
             var now = DateTime.UtcNow;
@@ -372,7 +398,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (!cycleExists)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             var report = await _context.SarReports
@@ -413,7 +439,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (report == null)
             {
-                throw new BusinessException("SAR report does not exist for this cycle");
+                throw new BusinessException("Báo cáo TĐG không tồn tại trong chu kỳ này");
             }
 
             return report;
@@ -442,7 +468,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var userId = GetCurrentUserIdOrNull();
             if (userId == null)
             {
-                throw new BusinessException("Cannot determine current user");
+                throw new BusinessException("Không thể xác định người dùng hiện tại");
             }
 
             var council = await _context.Councils.AsNoTracking().FirstOrDefaultAsync(x =>
@@ -453,12 +479,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (council == null)
             {
-                throw new BusinessException("You do not have permission to perform this action in this PDCA cycle");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
             }
 
             if (allowedRoles != null && allowedRoles.Count > 0 && !allowedRoles.Contains(council.RoleId))
             {
-                throw new BusinessException("You do not have permission to perform this action in this PDCA cycle");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
             }
 
             return council;
@@ -509,7 +535,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             }
             catch (FormatException)
             {
-                throw new BusinessException("YDocSnapshotBase64 is invalid");
+                throw new BusinessException("Nội dung tài liệu không hợp lệ");
             }
         }
 
@@ -548,7 +574,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var userId = GetCurrentUserIdOrNull();
             if (userId == null)
             {
-                throw new BusinessException("Cannot determine current user");
+                throw new BusinessException("Không thể xác định người dùng hiện tại");
             }
 
             var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
@@ -560,7 +586,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (!allowed)
             {
-                throw new BusinessException("You do not have permission to perform this action in this PDCA cycle");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
             }
         }
 
@@ -569,7 +595,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var (found, status) = await _cycleService.GetCycleStatusAsync(cycleId);
             if (!found)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             if (status == (int)CycleStatus.Do)
@@ -585,7 +611,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var userId = GetCurrentUserIdOrNull();
             if (userId == null)
             {
-                throw new BusinessException("Cycle is not in Do stage and user cannot perform this action");
+                throw new BusinessException("Chu kỳ không ở pha Do, người dùng không thể thực hiện thao tác này");
             }
 
             var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
@@ -597,7 +623,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (!allowed)
             {
-                throw new BusinessException("Cycle is not in Do stage and user cannot perform this action");
+                throw new BusinessException("Chu kỳ không ở pha Do, người dùng không thể thực hiện thao tác này");
             }
         }
 
@@ -606,7 +632,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var (found, status) = await _cycleService.GetCycleStatusAsync(cycleId);
             if (!found)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             if (status == (int)CycleStatus.Do || status == (int)CycleStatus.Check)
@@ -622,7 +648,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var userId = GetCurrentUserIdOrNull();
             if (userId == null)
             {
-                throw new BusinessException("Cycle is not in Do/Check stage and user cannot perform this action");
+                throw new BusinessException("Chu kỳ không ở pha Do hoặc Check, người dùng không thể thực hiện thao tác này");
             }
 
             var allowed = await _cycleService.CanUserDoActionInPdcaAsync(new PdcaActionCheckRequest
@@ -634,7 +660,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (!allowed)
             {
-                throw new BusinessException("Cycle is not in Do/Check stage and user cannot perform this action");
+                throw new BusinessException("Chu kỳ không ở pha Do hoặc Check, người dùng không thể thực hiện thao tác này");
             }
         }
 
@@ -643,7 +669,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var (found, status) = await _cycleService.GetCycleStatusAsync(cycleId);
             if (!found)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             if (status == (int)CycleStatus.Check)
@@ -656,7 +682,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 return;
             }
 
-            throw new BusinessException("Workflow action requires cycle in Check stage");
+            throw new BusinessException("Thao tác này yêu cầu chu kỳ đang ở pha Kiểm tra (CHECK)");
         }
 
         public async Task<SarAutofillPayloadDto> GetAutofillPayload(GetSarAutofillPayloadRequest request)
@@ -671,7 +697,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
             if (cycle == null)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             var evaluations = await _context.CriterionEvaluations
@@ -718,7 +744,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var report = await GetSarReportOrThrowAsync(request.CycleId);
             if (report.Status != (int)SarStatus.Submitted && report.Status != (int)SarStatus.Approved)
             {
-                throw new BusinessException("SAR must be in Submitted or Approved status to export");
+                throw new BusinessException("SAR phải ở trạng thái Đã nộp hoặc Đã phê duyệt để xuất file");
             }
 
             using var mem = new MemoryStream();
@@ -1075,4 +1101,5 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         }
     }
 }
+
 

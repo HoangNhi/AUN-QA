@@ -17,6 +17,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
         {
             (int)CouncilRole.HeadOfCouncil,
             (int)CouncilRole.ViceChairman,
+            (int)CouncilRole.Secretary,
             (int)CouncilRole.Evaluator,
             (int)CouncilRole.EvidenceProvider
         };
@@ -71,7 +72,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             var commentText = request.CommentText?.Trim() ?? string.Empty;
             if (commentText.Length < 10)
             {
-                throw new BusinessException("Comment text must be at least 10 characters long");
+                throw new BusinessException("Nội dung nhận xét phải có ít nhất 10 ký tự");
             }
 
             var accessContext = await ValidateReviewAccessAsync(request.CycleId);
@@ -113,22 +114,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (comment == null)
             {
-                throw new BusinessException("Internal comment does not exist");
+                throw new BusinessException("Nhận xét nội bộ không tồn tại");
             }
 
             if (!string.Equals(comment.CreatedBy, username, StringComparison.OrdinalIgnoreCase))
             {
-                throw new BusinessException("You can only delete your own comments");
+                throw new BusinessException("Bạn chỉ có thể xóa nhận xét của chính mình");
             }
 
             if (comment.SarReport == null || comment.SarReport.IsDeleted || !comment.SarReport.IsActived)
             {
-                throw new BusinessException("SAR report does not exist for this cycle");
+                throw new BusinessException("Báo cáo TĐG không tồn tại trong chu kỳ này");
             }
 
             if (comment.SarReport.Status != (int)SarStatus.Submitted)
             {
-                throw new BusinessException("Internal comments can only be deleted while SAR is submitted");
+                throw new BusinessException("Chỉ có thể xóa nhận xét khi SAR đang ở trạng thái Đã nộp");
             }
 
             comment.IsDeleted = true;
@@ -147,12 +148,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (cycle == null)
             {
-                throw new BusinessException("Cycle does not exist");
+                throw new BusinessException("Chu kỳ không tồn tại");
             }
 
             if (cycle.Status != (int)CycleStatus.Check)
             {
-                throw new BusinessException("Internal review comments are only available when the cycle is in Check stage");
+                throw new BusinessException("Nhận xét nội bộ chỉ khả dụng khi chu kỳ đang ở pha Kiểm tra (CHECK)");
             }
 
             var sarReport = await _context.SarReports
@@ -161,18 +162,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (sarReport == null)
             {
-                throw new BusinessException("SAR report does not exist for this cycle");
+                throw new BusinessException("Báo cáo TĐG không tồn tại trong chu kỳ này");
             }
 
             if (sarReport.Status != (int)SarStatus.Submitted)
             {
-                throw new BusinessException("Internal review comments are only available when the SAR is submitted");
+                throw new BusinessException("Nhận xét nội bộ chỉ khả dụng khi SAR đang ở trạng thái Đã nộp");
             }
 
             var userId = GetCurrentUserIdOrNull();
             if (userId == null)
             {
-                throw new BusinessException("Cannot determine current user");
+                throw new BusinessException("Không thể xác định người dùng hiện tại");
             }
 
             var council = await _context.Councils
@@ -185,7 +186,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (council == null || !AllowedCouncilRoles.Contains(council.RoleId))
             {
-                throw new BusinessException("You do not have permission to perform this action in this PDCA cycle");
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
             }
 
             return new ReviewAccessContext
@@ -216,7 +217,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new BusinessException("Cannot determine current user");
+                throw new BusinessException("Không thể xác định người dùng hiện tại");
             }
 
             return username.Trim();

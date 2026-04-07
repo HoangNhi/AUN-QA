@@ -6,5 +6,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Requests
     {
         public int? Status { get; set; }
         public Guid? CycleId { get; set; }
+        public bool? ExcludeDraft { get; set; }
     }
 }

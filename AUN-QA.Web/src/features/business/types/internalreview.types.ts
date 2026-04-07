@@ -12,6 +12,7 @@ export interface InternalReviewListItem {
   RenderedHtml?: string | null;
   YDocSnapshotBase64?: string | null;
   RevisionReason?: string | null;
+  EvaluationPurpose?: string | null;
   CurrentUserCouncilRoleId?: number | null;
 }
 
@@ -40,4 +41,3 @@ export interface AddInternalCommentRequest {
   HighlightedText?: string | null;
   CommentMarkId?: string | null;
 }
-

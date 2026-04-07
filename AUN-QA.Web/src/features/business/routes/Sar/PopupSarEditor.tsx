@@ -40,10 +40,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useAuth } from "@/hooks/useAuth";
 import { cn, getFileUrl } from "@/lib/utils";
 import { fileService } from "@/features/file/api/uploadfile.api";
-import {
-  sarService,
-  toVietnameseSarMessage,
-} from "@/features/business/api/sar.api";
+import { sarService } from "@/features/business/api/sar.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -281,10 +278,8 @@ export default function PopupSarEditor({
       toast.success("Đã tải xuống báo cáo");
     } catch (error) {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Xuất báo cáo thất bại",
-        ),
       );
     } finally {
       setIsExporting(false);
@@ -313,15 +308,13 @@ export default function PopupSarEditor({
         toast.success("Đã điền dữ liệu gợi ý");
       } else {
         toast.error(
-          toVietnameseSarMessage(res.Message, "Lỗi khi lấy dữ liệu gợi ý"),
+          res.Message || "Lỗi khi lấy dữ liệu gợi ý",
         );
       }
     } catch (error) {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Lỗi hệ thống khi gọi API Đổ dữ liệu",
-        ),
       );
     } finally {
       setIsAutofilling(false);
@@ -421,10 +414,7 @@ export default function PopupSarEditor({
   useEffect(() => {
     if (evidenceResponse && !evidenceResponse.Success) {
       toast.error(
-        toVietnameseSarMessage(
-          evidenceResponse.Message,
-          "Không tải được danh sách minh chứng",
-        ),
+        evidenceResponse.Message || "Không tải được danh sách minh chứng",
       );
     }
   }, [evidenceResponse]);
@@ -432,10 +422,7 @@ export default function PopupSarEditor({
   useEffect(() => {
     if (evidencePreviewResponse && !evidencePreviewResponse.Success) {
       toast.error(
-        toVietnameseSarMessage(
-          evidencePreviewResponse.Message,
-          "Không tải được minh chứng",
-        ),
+        evidencePreviewResponse.Message || "Không tải được minh chứng",
       );
     }
   }, [evidencePreviewResponse]);
@@ -816,7 +803,7 @@ export default function PopupSarEditor({
           }
         } else {
           toast.error(
-            toVietnameseSarMessage(response.Message, "Tải ảnh thất bại"),
+            response.Message || "Tải ảnh thất bại",
             { id: toastId },
           );
         }

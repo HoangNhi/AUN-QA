@@ -22,8 +22,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Requests
                 .WithMessage("CycleId is required");
 
             RuleFor(x => x.CommentText)
-                .NotEmpty()
-                .WithMessage("CommentText is required");
+                .MaximumLength(2000)
+                .WithMessage("CommentText must be 2000 characters or fewer");
         }
     }
 }

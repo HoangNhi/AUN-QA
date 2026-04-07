@@ -5,6 +5,7 @@ export type SarStatus = 1 | 2 | 3 | 4;
 export interface SarGetListPagingRequest extends GetListPagingRequest {
   Status?: SarStatus;
   CycleId?: string;
+  ExcludeDraft?: boolean;
 }
 
 export interface SarGetListItem {
@@ -19,7 +20,7 @@ export interface SarGetListItem {
   LastSavedAt?: string | null;
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
-  EvaluationPurpose?: string;
+  EvaluationPurpose?: string | null;
 }
 
 export interface SarDraft {

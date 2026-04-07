@@ -21,6 +21,7 @@ export default function CommentItem({
   const createdAtLabel = comment.CreatedAt
     ? format(new Date(comment.CreatedAt), "dd/MM/yyyy HH:mm")
     : "--";
+  const commentText = comment.CommentText?.trim() || "(Không có nội dung)";
 
   return (
     <article
@@ -50,7 +51,7 @@ export default function CommentItem({
           </Button>
         ) : null}
       </header>
-      <p className="whitespace-pre-wrap text-sm text-slate-700">{comment.CommentText}</p>
+      <p className="whitespace-pre-wrap text-sm text-slate-700">{commentText}</p>
       {comment.HighlightedText ? (
         <p className="mt-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
           "{comment.HighlightedText}"

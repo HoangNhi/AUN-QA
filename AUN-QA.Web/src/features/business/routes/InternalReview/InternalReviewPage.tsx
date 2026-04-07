@@ -22,7 +22,7 @@ function parseSarStatus(value?: string): SarStatus | undefined {
     return undefined;
   }
 
-  if (value === "1" || value === "2" || value === "3" || value === "4") {
+  if (value === "2" || value === "3" || value === "4") {
     return Number(value) as SarStatus;
   }
 
@@ -148,7 +148,6 @@ export default function InternalReviewPage() {
         <>
           <Combobox
             options={[
-              { Text: "Nháp", Value: "1" },
               { Text: "Đã nộp", Value: "2" },
               { Text: "Yêu cầu chỉnh sửa", Value: "3" },
               { Text: "Đã phê duyệt", Value: "4" },

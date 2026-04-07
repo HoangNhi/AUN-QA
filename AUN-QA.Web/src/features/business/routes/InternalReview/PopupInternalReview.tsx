@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { toVietnameseSarMessage } from "@/features/business/api/sar.api";
+
 import { internalReviewService } from "@/features/business/api/internalreview.api";
 import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
 import type { InternalReviewListItem } from "@/features/business/types/internalreview.types";
@@ -30,7 +30,7 @@ interface TocItem {
 }
 
 const DECISION_ROLES = new Set([1]);
-const COMMENT_ROLES = new Set([1, 2, 4, 5]);
+const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
 
 function isBusinessDay(date: Date): boolean {
   const day = date.getDay();
@@ -442,10 +442,8 @@ export default function PopupInternalReview({
       onOpenChange(false);
     } catch (error) {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể phê duyệt SAR.",
-        ),
       );
     } finally {
       setIsDecisionLoading(false);
@@ -473,10 +471,8 @@ export default function PopupInternalReview({
       onOpenChange(false);
     } catch (error) {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể gửi yêu cầu chỉnh sửa.",
-        ),
       );
     } finally {
       setIsDecisionLoading(false);
@@ -502,10 +498,8 @@ export default function PopupInternalReview({
       toast.success("Đã xuất file Word.");
     } catch (error) {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể xuất file Word.",
-        ),
       );
     } finally {
       setIsExporting(false);
@@ -523,35 +517,37 @@ export default function PopupInternalReview({
         <header className="sticky top-0 z-30 border-b bg-white px-6 py-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Internal Review</p>
               <h2 className="text-lg font-semibold text-slate-900">
                 {item ? `${item.CycleName} (${item.Year})` : "--"}
               </h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                <span className={`rounded-full px-3 py-1 font-medium ${statusBadgeClass}`}>
+                  {statusLabel}
+                </span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                  Vòng {item?.ReviewRound ?? 1}
+                </span>
+              </div>
+              {item?.EvaluationPurpose ? (
+                <p className="mt-2 text-sm text-slate-500">{item.EvaluationPurpose}</p>
+              ) : null}
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className={`rounded-full px-3 py-1 font-medium ${statusBadgeClass}`}>
-                {statusLabel}
-              </span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                Vòng {item?.ReviewRound ?? 1}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void handleExportDocx();
-                }}
-                disabled={isExporting}
-              >
-                {isExporting ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <FileDown className="mr-1.5 h-4 w-4" />
-                )}
-                Xuất Word
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void handleExportDocx();
+              }}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="mr-1.5 h-4 w-4" />
+              )}
+              Xuất Word
+            </Button>
           </div>
         </header>
 

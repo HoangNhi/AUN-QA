@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { internalReviewService } from "../api/internalreview.api";
-import { toVietnameseSarMessage } from "../api/sar.api";
+
 import type {
   AddInternalCommentRequest,
   InternalComment,
@@ -51,7 +51,7 @@ export function useInternalReviewComments({
   useEffect(() => {
     if (query.error instanceof Error) {
       toast.error(
-        toVietnameseSarMessage(query.error.message, "Không thể tải danh sách nhận xét."),
+        query.error.message || "Không thể tải danh sách nhận xét.",
       );
     }
   }, [query.error]);
@@ -71,10 +71,8 @@ export function useInternalReviewComments({
     },
     onError: (error) => {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể thêm nhận xét.",
-        ),
       );
     },
   });
@@ -93,10 +91,8 @@ export function useInternalReviewComments({
     },
     onError: (error) => {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể xóa nhận xét.",
-        ),
       );
     },
   });

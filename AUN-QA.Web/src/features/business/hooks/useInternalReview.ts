@@ -3,7 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { internalReviewService } from "../api/internalreview.api";
-import { toVietnameseSarMessage } from "../api/sar.api";
+
 import type { SarGetListPagingRequest, SarStatus } from "../types/sar.types";
 import type { InternalReviewListItem } from "../types/internalreview.types";
 
@@ -21,6 +21,7 @@ async function buildListItem(
     CycleName: string;
     Year: number;
     Status: SarStatus;
+    EvaluationPurpose?: string | null;
   },
 ): Promise<InternalReviewListItem> {
   const detailResponse = await internalReviewService.getSarByCycle(cycleId);
@@ -56,6 +57,7 @@ async function buildListItem(
     RenderedHtml: detail?.RenderedHtml ?? null,
     YDocSnapshotBase64: detail?.YDocSnapshotBase64 ?? null,
     RevisionReason: detail?.RevisionReason ?? null,
+    EvaluationPurpose: fallback.EvaluationPurpose ?? null,
     CurrentUserCouncilRoleId: detail?.CurrentUserCouncilRoleId ?? null,
   };
 }
@@ -86,6 +88,7 @@ export const useInternalReview = () => {
             CycleName: item.CycleName,
             Year: item.Year,
             Status: item.Status as SarStatus,
+            EvaluationPurpose: item.EvaluationPurpose,
           }),
         ),
       );
@@ -104,7 +107,7 @@ export const useInternalReview = () => {
   useEffect(() => {
     if (listResponse && !listResponse.Success) {
       toast.error(
-        toVietnameseSarMessage(listResponse.Message, "Không thể tải danh sách"),
+        listResponse.Message || "Không thể tải danh sách",
       );
     }
   }, [listResponse]);

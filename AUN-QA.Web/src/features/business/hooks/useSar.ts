@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
-import { sarService, toVietnameseSarMessage } from "../api/sar.api";
+import { sarService } from "../api/sar.api";
 import type {
   SarDraft,
   SarGetListItem,
@@ -41,7 +41,7 @@ export const useSar = () => {
 
   useEffect(() => {
     if (listResponse && !listResponse.Success) {
-      toast.error(toVietnameseSarMessage(listResponse.Message, "Không thể tải danh sách SAR."));
+      toast.error(listResponse.Message || "Không thể tải danh sách SAR.");
     }
   }, [listResponse]);
 
@@ -66,7 +66,7 @@ export const useSar = () => {
 
   useEffect(() => {
     if (draftResponse && !draftResponse.Success) {
-      toast.error(toVietnameseSarMessage(draftResponse.Message, "Không thể tải nội dung SAR."));
+      toast.error(draftResponse.Message || "Không thể tải nội dung SAR.");
     }
   }, [draftResponse]);
 
@@ -99,7 +99,7 @@ export const useSar = () => {
       }
 
       toast.error(
-        toVietnameseSarMessage(response.Message, "Không thể lưu bản nháp SAR."),
+        response.Message || "Không thể lưu bản nháp SAR.",
       );
       await refetchDraft();
     },
@@ -110,10 +110,7 @@ export const useSar = () => {
       }
 
       toast.error(
-        toVietnameseSarMessage(
-          message,
-          "Không thể lưu bản nháp SAR.",
-        ),
+        message || "Không thể lưu bản nháp SAR.",
       );
       await refetchDraft();
     },
@@ -124,7 +121,7 @@ export const useSar = () => {
     onSuccess: (response) => {
       if (!response.Success) {
         toast.error(
-          toVietnameseSarMessage(response.Message, "Không thể gửi SAR phê duyệt."),
+          response.Message || "Không thể gửi SAR phê duyệt.",
         );
         return;
       }
@@ -133,10 +130,8 @@ export const useSar = () => {
     },
     onError: (error) => {
       toast.error(
-        toVietnameseSarMessage(
-          error instanceof Error ? error.message : undefined,
+        (error instanceof Error ? error.message : undefined) ||
           "Không thể gửi SAR phê duyệt.",
-        ),
       );
     },
   });

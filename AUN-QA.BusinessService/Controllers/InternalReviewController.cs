@@ -1,6 +1,8 @@
 using AUN_QA.BusinessService.DTOs.Base;
 using AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Requests;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos;
+using AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Requests;
 using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.InternalReview;
 using AUN_QA.Shared.Common;
@@ -9,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
 {
-    [Route("api/internal-review/comments")]
+    [Route("api/internal-review")]
     [ApiController]
     public class InternalReviewController : BaseController<InternalReviewController>
     {
@@ -20,7 +22,19 @@ namespace AUN_QA.BusinessService.Controllers
             _service = service;
         }
 
-        [HttpPost("get")]
+        [HttpPost("list")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetList([FromBody] SarGetListPagingRequest request)
+        {
+            var result = await _service.GetList(request);
+            return Ok(new BaseResponse<GetListPagingResponse<SarGetListItemDto>>
+            {
+                Data = result,
+                Success = true
+            });
+        }
+
+        [HttpPost("comments/get")]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetComments([FromBody] GetInternalCommentsRequest request)
         {
@@ -32,7 +46,7 @@ namespace AUN_QA.BusinessService.Controllers
             });
         }
 
-        [HttpPost("add")]
+        [HttpPost("comments/add")]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddComment([FromBody] AddInternalCommentRequest request)
         {
@@ -44,7 +58,7 @@ namespace AUN_QA.BusinessService.Controllers
             });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("comments/{id}")]
         [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> DeleteComment(Guid id)
         {

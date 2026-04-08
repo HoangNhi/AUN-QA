@@ -175,6 +175,7 @@ export const API_ENDPOINTS = {
       GET_POPUP_DATA: `${BUSINESS_BASE}/CriterionEvaluation/get-popup-data`,
     },
     InternalReview: {
+      GET_LIST: `${BUSINESS_BASE}/internal-review/list`,
       GET_COMMENTS: `${BUSINESS_BASE}/internal-review/comments/get`,
       ADD_COMMENT: `${BUSINESS_BASE}/internal-review/comments/add`,
       DELETE_COMMENT: (id: string) =>

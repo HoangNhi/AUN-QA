@@ -373,10 +373,6 @@ export default function PopupInternalReview({
     }
 
     const commentText = newCommentText.trim();
-    if (commentText.length < 10) {
-      toast.error("Nhận xét phải có ít nhất 10 ký tự.");
-      return;
-    }
 
     const selection = editor.state.selection;
     const from = selection.from;
@@ -509,7 +505,7 @@ export default function PopupInternalReview({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-screen max-w-[100vw] grid-rows-[auto_1fr_auto] gap-0 overflow-hidden rounded-none border-0 p-0"
+        className="h-screen w-screen max-w-[100vw] sm:max-w-[100vw] grid-rows-[auto_1fr_auto] gap-0 overflow-hidden rounded-none border-0 p-0"
         showCloseButton={false}
       >
         <DialogTitle className="sr-only">Internal review</DialogTitle>
@@ -643,7 +639,7 @@ export default function PopupInternalReview({
                             <Input
                               value={newCommentText}
                               onChange={(event) => setNewCommentText(event.target.value)}
-                              placeholder="Nhập nội dung nhận xét (tối thiểu 10 ký tự)"
+                              placeholder="Nhập nội dung nhận xét"
                             />
                             <div className="flex justify-end gap-2">
                               <Button

@@ -24,7 +24,10 @@ export const internalReviewService = {
   getList: async (
     request: SarGetListPagingRequest,
   ): Promise<ApiResponse<GetListPagingResponse<SarGetListItem>>> => {
-    return sarService.getList(request);
+    return api.post<GetListPagingResponse<SarGetListItem>>(
+      API_ENDPOINTS.Business.InternalReview.GET_LIST,
+      request,
+    );
   },
 
   getSarByCycle: async (cycleId: string): Promise<ApiResponse<SarDraft>> => {
@@ -67,4 +70,3 @@ export const internalReviewService = {
     return sarService.requestRevision(request);
   },
 };
-

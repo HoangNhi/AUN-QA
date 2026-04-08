@@ -14,6 +14,7 @@ export interface InternalReviewListItem {
   RevisionReason?: string | null;
   EvaluationPurpose?: string | null;
   CurrentUserCouncilRoleId?: number | null;
+  CanApproveByRole?: boolean | null;
 }
 
 export interface InternalComment {

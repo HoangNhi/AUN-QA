@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import CommentItem, { getInitials, stringToHslColor } from "./CommentItem";
 import type { InternalComment } from "@/features/business/types/internalreview.types";
@@ -86,5 +86,16 @@ describe("CommentItem", () => {
 
     const card = screen.getByText("Alice Brown").closest("article");
     expect(card).toHaveClass("border-l-4", "border-amber-400", "bg-amber-50");
+  });
+
+  it("wires optional click handler to the card", () => {
+    const onClick = vi.fn();
+    render(<CommentItem comment={baseComment()} onClick={onClick} />);
+
+    const card = screen.getByText("Alice Brown").closest("article");
+    expect(card).toHaveClass("cursor-pointer");
+
+    fireEvent.click(card as HTMLElement);
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

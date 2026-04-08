@@ -11,6 +11,7 @@ interface CommentItemProps {
   canDelete?: boolean;
   deleting?: boolean;
   onDelete?: (comment: InternalComment) => void;
+  onClick?: () => void;
 }
 
 export function getInitials(name: string): string {
@@ -48,6 +49,7 @@ export default function CommentItem({
   canDelete = false,
   deleting = false,
   onDelete,
+  onClick,
 }: CommentItemProps) {
   const createdAtLabel = comment.CreatedAt
     ? format(new Date(comment.CreatedAt), "dd/MM/yyyy HH:mm")
@@ -61,8 +63,10 @@ export default function CommentItem({
       className={cn(
         "rounded-lg border bg-white shadow-sm px-3 py-3 transition-colors border-slate-200",
         active && "border-l-4 border-amber-400 bg-amber-50",
+        onClick && "cursor-pointer",
       )}
       data-comment-id={comment.CommentMarkId ?? comment.Id}
+      onClick={onClick}
     >
       <header className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -86,7 +90,10 @@ export default function CommentItem({
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-slate-500 hover:text-red-600"
-              onClick={() => onDelete(comment)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDelete(comment);
+              }}
               disabled={deleting}
               title="Xóa nhận xét"
               aria-label="Xóa nhận xét"

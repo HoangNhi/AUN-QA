@@ -29,6 +29,7 @@ export interface SarDraft {
   Status: SarStatus;
   ReviewRound?: number;
   CurrentUserCouncilRoleId?: number | null;
+  CanApproveByRole?: boolean;
   CanSubmitByRole?: boolean;
   CanEditByRole?: boolean;
   YDocSnapshotBase64?: string | null;

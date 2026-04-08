@@ -5,7 +5,6 @@ import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
 import { ChevronLeft, ChevronRight, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -13,8 +12,14 @@ import { cn } from "@/lib/utils";
 
 import { internalReviewService } from "@/features/business/api/internalreview.api";
 import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
-import { useInternalReviewCollab } from "@/features/business/hooks/useInternalReviewCollab";
-import type { InternalReviewListItem } from "@/features/business/types/internalreview.types";
+import {
+  useInternalReviewCollab,
+  type CollaboratorState,
+} from "@/features/business/hooks/useInternalReviewCollab";
+import type {
+  InternalComment,
+  InternalReviewListItem,
+} from "@/features/business/types/internalreview.types";
 import { sarService } from "@/features/business/api/sar.api";
 import DecisionToolbar from "./components/DecisionToolbar";
 import CommentPanel from "./components/CommentPanel";
@@ -32,7 +37,6 @@ interface TocItem {
   pos: number;
 }
 
-const DECISION_ROLES = new Set([1]);
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
 
 function isBusinessDay(date: Date): boolean {
@@ -138,6 +142,101 @@ function hasCommentMark(
   return found;
 }
 
+export function canDecideInternalReview(item: InternalReviewListItem | null): boolean {
+  return !!item && item.Status === 2 && item.CanApproveByRole === true;
+}
+
+export function normalizeEvaluationPurpose(
+  evaluationPurpose: string | null | undefined,
+): string | null {
+  const normalized = evaluationPurpose?.trim();
+  return normalized ? normalized : null;
+}
+
+interface PopupInternalReviewCollaboratorsProps {
+  collaborators: CollaboratorState[];
+}
+
+export function PopupInternalReviewCollaborators({
+  collaborators,
+}: PopupInternalReviewCollaboratorsProps) {
+  const visibleCollaborators = collaborators.slice(0, 4);
+  const collaboratorOverflowCount = Math.max(
+    collaborators.length - visibleCollaborators.length,
+    0,
+  );
+
+  if (visibleCollaborators.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex -space-x-2">
+      {visibleCollaborators.map((collaborator) => (
+        <div
+          key={collaborator.clientId}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white text-[11px] font-semibold text-white shadow-sm"
+          style={{ backgroundColor: collaborator.color }}
+          title={collaborator.name}
+          aria-label={collaborator.name}
+        >
+          {collaborator.initials}
+        </div>
+      ))}
+      {collaboratorOverflowCount > 0 ? (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[11px] font-semibold text-slate-600 shadow-sm">
+          +{collaboratorOverflowCount}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface PopupInternalReviewHeaderTitleProps {
+  title: string;
+}
+
+export function PopupInternalReviewHeaderTitle({ title }: PopupInternalReviewHeaderTitleProps) {
+  return <h2 className="truncate text-lg font-semibold text-slate-900">{title}</h2>;
+}
+
+interface PopupInternalReviewHeaderMetaProps {
+  statusLabel: string;
+  statusBadgeClass: string;
+  reviewRound?: number | null;
+  evaluationPurpose?: string | null;
+}
+
+export function PopupInternalReviewHeaderMeta({
+  statusLabel,
+  statusBadgeClass,
+  reviewRound,
+  evaluationPurpose,
+}: PopupInternalReviewHeaderMetaProps) {
+  const normalizedPurpose = normalizeEvaluationPurpose(evaluationPurpose);
+
+  return (
+    <div className="mt-1.5 flex min-w-0 flex-nowrap items-center gap-2 overflow-hidden text-sm">
+      <span className={`shrink-0 rounded-full px-3 py-1 font-medium ${statusBadgeClass}`}>
+        {statusLabel}
+      </span>
+      <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+        Vòng {reviewRound ?? 1}
+      </span>
+      {normalizedPurpose ? (
+        <>
+          <span className="shrink-0 text-slate-300" aria-hidden="true">
+            ·
+          </span>
+          <span className="min-w-0 max-w-[320px] truncate text-slate-500">
+            {normalizedPurpose}
+          </span>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export default function PopupInternalReview({
   open,
   item,
@@ -183,12 +282,6 @@ export default function PopupInternalReview({
     onCommentSignal: handleCommentSignal,
     currentUserFullname: user?.Fullname,
   });
-
-  const visibleCollaborators = useMemo(() => collaborators.slice(0, 4), [collaborators]);
-  const collaboratorOverflowCount = Math.max(
-    collaborators.length - visibleCollaborators.length,
-    0,
-  );
 
   const visibleComments = useMemo(
     () => (item?.Status === 2 ? comments : []),
@@ -327,26 +420,6 @@ export default function PopupInternalReview({
       .run();
   }, [editor, isCommentsLoading, open, visibleComments]);
 
-  useEffect(() => {
-    if (!activeCommentId) {
-      return;
-    }
-
-    const escapedCommentId =
-      typeof CSS !== "undefined" && typeof CSS.escape === "function"
-        ? CSS.escape(activeCommentId)
-        : null;
-    const element = escapedCommentId
-      ? document.querySelector(`[data-comment-id="${escapedCommentId}"]`)
-      : Array.from(document.querySelectorAll<HTMLElement>("[data-comment-id]")).find(
-          (candidate) => candidate.getAttribute("data-comment-id") === activeCommentId,
-        );
-
-    if (element instanceof HTMLElement) {
-      element.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    }
-  }, [activeCommentId]);
-
   const scrollToHeading = useCallback(
     (pos: number) => {
       if (!editor || editor.isDestroyed || editor.view.isDestroyed) {
@@ -377,9 +450,34 @@ export default function PopupInternalReview({
     [editor],
   );
 
+  const handleCommentPanelClick = useCallback(
+    (comment: InternalComment) => {
+      const markId = comment.CommentMarkId ?? comment.Id;
+      setActiveCommentId(markId);
+
+      if (!editor || !comment.HighlightedText || editor.isDestroyed || editor.view.isDestroyed) {
+        return;
+      }
+
+      const range = findTextRange(editor, comment.HighlightedText);
+      if (!range) {
+        return;
+      }
+
+      try {
+        const { node } = editor.view.domAtPos(range.from);
+        const target = node instanceof HTMLElement ? node : node.parentElement;
+        target?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch {
+        // Ignore stale view during rapid updates.
+      }
+    },
+    [editor],
+  );
+
   const roleId = item?.CurrentUserCouncilRoleId ?? null;
   const canComment = !!item && item.Status === 2 && roleId !== null && COMMENT_ROLES.has(roleId);
-  const canDecide = !!item && item.Status === 2 && roleId !== null && DECISION_ROLES.has(roleId);
+  const canDecide = canDecideInternalReview(item);
 
   const statusBadgeClass = useMemo(() => {
     switch (item?.Status) {
@@ -570,24 +668,19 @@ export default function PopupInternalReview({
         <DialogTitle className="sr-only">Internal review</DialogTitle>
 
         <header className="sticky top-0 z-30 border-b bg-white px-6 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                {item ? `${item.CycleName} (${item.Year})` : "--"}
-              </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                <span className={`rounded-full px-3 py-1 font-medium ${statusBadgeClass}`}>
-                  {statusLabel}
-                </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                  Vòng {item?.ReviewRound ?? 1}
-                </span>
-              </div>
-              {item?.EvaluationPurpose ? (
-                <p className="mt-2 text-sm text-slate-500">{item.EvaluationPurpose}</p>
-              ) : null}
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <PopupInternalReviewHeaderTitle
+                title={item ? `${item.CycleName} (${item.Year})` : "--"}
+              />
+              <PopupInternalReviewHeaderMeta
+                statusLabel={statusLabel}
+                statusBadgeClass={statusBadgeClass}
+                reviewRound={item?.ReviewRound}
+                evaluationPurpose={item?.EvaluationPurpose}
+              />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-3">
               <div
                 className="flex items-center gap-2"
                 title={isConnected ? "Kết nối cộng tác" : "Đang kết nối cộng tác"}
@@ -598,27 +691,7 @@ export default function PopupInternalReview({
                     isConnected ? "bg-emerald-500" : "bg-amber-500",
                   )}
                 />
-                {visibleCollaborators.length > 0 ? (
-                  <div className="flex -space-x-2">
-                    {visibleCollaborators.map((collaborator) => (
-                      <Avatar
-                        key={collaborator.clientId}
-                        className="h-8 w-8 border-2 border-white shadow-sm"
-                        style={{ backgroundColor: collaborator.color }}
-                        title={collaborator.name}
-                      >
-                        <AvatarFallback className="bg-transparent text-[11px] font-semibold text-white">
-                          {collaborator.initials}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                    {collaboratorOverflowCount > 0 ? (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[11px] font-semibold text-slate-600 shadow-sm">
-                        +{collaboratorOverflowCount}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                <PopupInternalReviewCollaborators collaborators={collaborators} />
               </div>
               <Button
                 type="button"
@@ -777,6 +850,7 @@ export default function PopupInternalReview({
               onDeleteComment={(comment) => {
                 void handleDeleteComment(comment.Id, comment.CommentMarkId);
               }}
+              onCommentClick={handleCommentPanelClick}
             />
           </div>
         </div>

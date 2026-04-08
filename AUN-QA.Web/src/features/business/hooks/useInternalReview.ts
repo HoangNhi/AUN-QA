@@ -59,6 +59,7 @@ async function buildListItem(
     RevisionReason: detail?.RevisionReason ?? null,
     EvaluationPurpose: fallback.EvaluationPurpose ?? null,
     CurrentUserCouncilRoleId: detail?.CurrentUserCouncilRoleId ?? null,
+    CanApproveByRole: detail?.CanApproveByRole ?? false,
   };
 }
 

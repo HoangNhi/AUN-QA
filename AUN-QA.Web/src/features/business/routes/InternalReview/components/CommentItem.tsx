@@ -1,6 +1,8 @@
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { InternalComment } from "@/features/business/types/internalreview.types";
 
 interface CommentItemProps {
@@ -9,6 +11,35 @@ interface CommentItemProps {
   canDelete?: boolean;
   deleting?: boolean;
   onDelete?: (comment: InternalComment) => void;
+}
+
+export function getInitials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "?";
+  }
+
+  const initials = trimmed
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0] ?? "")
+    .join("")
+    .toUpperCase();
+
+  return initials || trimmed.slice(0, 2).toUpperCase();
+}
+
+export function stringToHslColor(str: string): string {
+  const seed = str.trim() || "anonymous";
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+
+  const hue = hash % 360;
+  return `hsl(${hue} 72% 48%)`;
 }
 
 export default function CommentItem({
@@ -21,42 +52,58 @@ export default function CommentItem({
   const createdAtLabel = comment.CreatedAt
     ? format(new Date(comment.CreatedAt), "dd/MM/yyyy HH:mm")
     : "--";
+  const displayName = comment.CreatedByName?.trim() || comment.CreatedBy?.trim() || "Người dùng";
   const commentText = comment.CommentText?.trim() || "(Không có nội dung)";
+  const highlightedText = comment.HighlightedText?.trim();
 
   return (
     <article
-      className={`rounded-lg border p-3 transition-colors ${
-        active ? "border-amber-400 bg-amber-50" : "border-slate-200 bg-white"
-      }`}
+      className={cn(
+        "rounded-lg border bg-white shadow-sm px-3 py-3 transition-colors border-slate-200",
+        active && "border-l-4 border-amber-400 bg-amber-50",
+      )}
       data-comment-id={comment.CommentMarkId ?? comment.Id}
     >
-      <header className="mb-2 flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold text-slate-800">
-            {comment.CreatedByName || comment.CreatedBy}
-          </p>
-          <p className="text-xs text-slate-500">{createdAtLabel}</p>
-        </div>
-        {canDelete && onDelete ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-slate-500 hover:text-red-600"
-            onClick={() => onDelete(comment)}
-            disabled={deleting}
-            title="Xóa nhận xét"
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar
+            className="h-8 w-8 shrink-0"
+            style={{ backgroundColor: stringToHslColor(displayName) }}
           >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        ) : null}
+            <AvatarFallback className="bg-transparent text-[11px] font-semibold text-white">
+              {getInitials(displayName)}
+            </AvatarFallback>
+          </Avatar>
+
+          <p className="min-w-0 truncate text-sm font-semibold text-slate-800">{displayName}</p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs text-slate-400">{createdAtLabel}</span>
+          {canDelete && onDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-slate-500 hover:text-red-600"
+              onClick={() => onDelete(comment)}
+              disabled={deleting}
+              title="Xóa nhận xét"
+              aria-label="Xóa nhận xét"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
       </header>
-      <p className="whitespace-pre-wrap text-sm text-slate-700">{commentText}</p>
-      {comment.HighlightedText ? (
-        <p className="mt-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
-          "{comment.HighlightedText}"
-        </p>
+
+      {highlightedText ? (
+        <blockquote className="mt-2 rounded-r-sm border-l-2 border-slate-300 bg-slate-50 py-1 pl-2 text-xs italic text-slate-600">
+          {highlightedText}
+        </blockquote>
       ) : null}
+
+      <p className="mt-2 whitespace-pre-wrap text-sm text-slate-800">{commentText}</p>
     </article>
   );
 }

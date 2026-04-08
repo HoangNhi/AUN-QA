@@ -5,12 +5,15 @@ import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
 import { ChevronLeft, ChevronRight, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 import { internalReviewService } from "@/features/business/api/internalreview.api";
 import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
+import { useInternalReviewCollab } from "@/features/business/hooks/useInternalReviewCollab";
 import type { InternalReviewListItem } from "@/features/business/types/internalreview.types";
 import { sarService } from "@/features/business/api/sar.api";
 import DecisionToolbar from "./components/DecisionToolbar";
@@ -150,6 +153,7 @@ export default function PopupInternalReview({
   const [isExporting, setIsExporting] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
+  const isCommentRealtimeEnabled = open && !!item && item.Status === 2;
 
   const {
     comments,
@@ -157,11 +161,34 @@ export default function PopupInternalReview({
     addComment,
     isAdding,
     deleteComment,
+    refetch,
   } = useInternalReviewComments({
     cycleId: item?.CycleId,
     reviewRound: item?.ReviewRound,
-    enabled: open && !!item && item.Status === 2,
+    enabled: isCommentRealtimeEnabled,
   });
+
+  const handleCommentSignal = useCallback(() => {
+    if (!isCommentRealtimeEnabled) {
+      return;
+    }
+
+    void refetch();
+  }, [isCommentRealtimeEnabled, refetch]);
+
+  const { collaborators, isConnected, broadcastCommentChange } = useInternalReviewCollab({
+    cycleId: item?.CycleId,
+    reviewRound: item?.ReviewRound,
+    enabled: open && !!item,
+    onCommentSignal: handleCommentSignal,
+    currentUserFullname: user?.Fullname,
+  });
+
+  const visibleCollaborators = useMemo(() => collaborators.slice(0, 4), [collaborators]);
+  const collaboratorOverflowCount = Math.max(
+    collaborators.length - visibleCollaborators.length,
+    0,
+  );
 
   const visibleComments = useMemo(
     () => (item?.Status === 2 ? comments : []),
@@ -236,12 +263,42 @@ export default function PopupInternalReview({
   }, [editor, item?.RenderedHtml]);
 
   useEffect(() => {
-    if (!editor || !open || visibleComments.length === 0) {
+    if (!editor || !open || isCommentsLoading) {
       return;
     }
 
     const previousSelection = editor.state.selection;
-    let hasAppliedCommentMark = false;
+    const currentCommentIds = new Set(
+      visibleComments
+        .map((comment) => comment.CommentMarkId?.trim())
+        .filter((commentId): commentId is string => !!commentId),
+    );
+    const staleCommentIds = new Set<string>();
+
+    editor.state.doc.descendants((node) => {
+      if (!node.marks.length) {
+        return true;
+      }
+
+      node.marks.forEach((mark) => {
+        if (mark.type.name !== "comment") {
+          return;
+        }
+
+        const commentId = String(mark.attrs.commentId ?? "").trim();
+        if (commentId && !currentCommentIds.has(commentId)) {
+          staleCommentIds.add(commentId);
+        }
+      });
+
+      return true;
+    });
+
+    staleCommentIds.forEach((commentId) => {
+      editor.commands.unsetComment(commentId);
+    });
+
+    let hasAppliedCommentMark = staleCommentIds.size > 0;
     visibleComments.forEach((comment) => {
       if (!comment.CommentMarkId || !comment.HighlightedText) {
         return;
@@ -268,7 +325,7 @@ export default function PopupInternalReview({
       .chain()
       .setTextSelection({ from: previousSelection.from, to: previousSelection.to })
       .run();
-  }, [editor, open, visibleComments]);
+  }, [editor, isCommentsLoading, open, visibleComments]);
 
   useEffect(() => {
     if (!activeCommentId) {
@@ -395,6 +452,7 @@ export default function PopupInternalReview({
         CommentMarkId: markId,
       });
 
+      broadcastCommentChange();
       setShowComposer(false);
       setNewCommentText("");
       toast.success("Đã thêm nhận xét.");
@@ -411,6 +469,7 @@ export default function PopupInternalReview({
       if (editor && markId) {
         editor.commands.unsetComment(markId);
       }
+      broadcastCommentChange();
       toast.success("Đã xóa nhận xét.");
       onDataChanged();
     } finally {
@@ -528,22 +587,56 @@ export default function PopupInternalReview({
                 <p className="mt-2 text-sm text-slate-500">{item.EvaluationPurpose}</p>
               ) : null}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                void handleExportDocx();
-              }}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <FileDown className="mr-1.5 h-4 w-4" />
-              )}
-              Xuất Word
-            </Button>
+            <div className="flex items-center gap-3">
+              <div
+                className="flex items-center gap-2"
+                title={isConnected ? "Kết nối cộng tác" : "Đang kết nối cộng tác"}
+              >
+                <span
+                  className={cn(
+                    "h-2.5 w-2.5 rounded-full",
+                    isConnected ? "bg-emerald-500" : "bg-amber-500",
+                  )}
+                />
+                {visibleCollaborators.length > 0 ? (
+                  <div className="flex -space-x-2">
+                    {visibleCollaborators.map((collaborator) => (
+                      <Avatar
+                        key={collaborator.clientId}
+                        className="h-8 w-8 border-2 border-white shadow-sm"
+                        style={{ backgroundColor: collaborator.color }}
+                        title={collaborator.name}
+                      >
+                        <AvatarFallback className="bg-transparent text-[11px] font-semibold text-white">
+                          {collaborator.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {collaboratorOverflowCount > 0 ? (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[11px] font-semibold text-slate-600 shadow-sm">
+                        +{collaboratorOverflowCount}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void handleExportDocx();
+                }}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-1.5 h-4 w-4" />
+                )}
+                Xuất Word
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -675,7 +768,7 @@ export default function PopupInternalReview({
             </div>
           </div>
 
-          <div className="w-[320px] shrink-0">
+          <div className="w-[360px] shrink-0">
             <CommentPanel
               comments={visibleComments}
               activeCommentId={activeCommentId}

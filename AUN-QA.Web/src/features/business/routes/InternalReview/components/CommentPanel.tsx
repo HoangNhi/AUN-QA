@@ -30,7 +30,7 @@ export default function CommentPanel({
           <p className="text-xs text-slate-500">{comments.length} nhận xét</p>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
           {comments.length === 0 ? (
             <div className="rounded-md border border-dashed border-slate-300 bg-white px-3 py-4 text-sm text-slate-500">
               Chưa có nhận xét nào.

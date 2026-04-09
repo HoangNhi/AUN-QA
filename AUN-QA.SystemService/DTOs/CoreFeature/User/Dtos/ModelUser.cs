@@ -14,6 +14,8 @@ namespace AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos
 
         public Guid RoleId { get; set; }
 
+        public string? RoleName { get; set; }
+
         public string Email { get; set; } = null!;
 
         public string? Avatar { get; set; }

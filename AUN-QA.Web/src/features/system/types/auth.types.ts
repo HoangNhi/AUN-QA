@@ -29,6 +29,7 @@ export interface AuthContextType {
   systemGroup: SystemGroup[] | null;
   menu: MenuGetListPaging[] | null;
   permissions: GetPermissionByUser[] | null;
+  roleName: string | null;
   loading: boolean;
   isAuthenticated: boolean;
   login: (

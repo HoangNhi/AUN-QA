@@ -41,12 +41,19 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [systemGroup, setSystemGroup] = useState<SystemGroup[]>([]);
   const [menu, setMenu] = useState<MenuGetListPaging[]>([]);
   const [permissions, setPermissions] = useState<GetPermissionByUser[]>([]);
+  const [roleName, setRoleName] = useState<string | null>(null);
+
+  const syncRoleName = useCallback((currentUser?: User | null) => {
+    const role = currentUser?.RoleName?.trim();
+    setRoleName(role ? role : null);
+  }, []);
 
   const performLogout = async () => {
     setUser(null);
     setSystemGroup([]);
     setMenu([]);
     setPermissions([]);
+    setRoleName(null);
     clearTokens();
     localStorage.removeItem("user");
     localStorage.removeItem("systemGroup");
@@ -109,7 +116,21 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       }
     }
     setPermissions(currentPermissions || []);
-  }, []);
+
+    // 4. Sync Role Name from current user profile
+    if (currentUser.RoleName?.trim()) {
+      syncRoleName(currentUser);
+    } else {
+      const profileResponse = await userService.getCurrentUser();
+      if (profileResponse.Success && profileResponse.Data) {
+        setUser(profileResponse.Data);
+        localStorage.setItem("user", JSON.stringify(profileResponse.Data));
+        syncRoleName(profileResponse.Data);
+      } else {
+        setRoleName(null);
+      }
+    }
+  }, [syncRoleName]);
 
   const initAuth = useCallback(async () => {
     try {
@@ -143,11 +164,28 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
               const response = await authService.refreshToken({
                 RefreshToken: refreshToken,
               });
-              if (response.Success) {
+              if (response.Success && response.Data) {
                 const accessToken = response.Data?.AccessToken || "";
                 const refreshToken = response.Data?.RefreshToken || "";
                 saveTokens(accessToken, refreshToken);
-                localStorage.setItem("user", JSON.stringify(response.Data));
+
+                if (userJson) {
+                  const userData = JSON.parse(userJson);
+                  setUser(userData);
+                  await fetchUserData(userData);
+                } else {
+                  const userResponse = await userService.getCurrentUser();
+                  if (userResponse.Success && userResponse.Data) {
+                    setUser(userResponse.Data);
+                    localStorage.setItem(
+                      "user",
+                      JSON.stringify(userResponse.Data)
+                    );
+                    await fetchUserData(userResponse.Data);
+                  }
+                }
+              } else {
+                await performLogout();
               }
             } else {
               await performLogout();
@@ -384,6 +422,7 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
     systemGroup,
     menu,
     permissions,
+    roleName,
     isAuthenticated: !!user,
     loading,
     login,
@@ -394,6 +433,9 @@ export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
       if (response.Success && response.Data) {
         setUser(response.Data);
         localStorage.setItem("user", JSON.stringify(response.Data));
+        syncRoleName(response.Data);
+      } else {
+        setRoleName(null);
       }
     },
   };

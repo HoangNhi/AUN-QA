@@ -78,6 +78,10 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 throw new BusinessException("Không tìm thấy dữ liệu");
             }
             var result = _mapper.Map<ModelUser>(data);
+            result.RoleName = await _context.Roles.AsNoTracking()
+                .Where(x => x.Id == data.RoleId && !x.IsDeleted && x.IsActived)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
             return result;
         }
 

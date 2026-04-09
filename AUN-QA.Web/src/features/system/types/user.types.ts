@@ -5,6 +5,7 @@ export interface User extends BaseRequest {
   Username: string;
   Fullname: string;
   RoleId: string;
+  RoleName?: string;
   Email: string;
   Avatar?: string;
   Password?: string;

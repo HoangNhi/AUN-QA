@@ -371,7 +371,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
             // === Role-based visibility filter ===
             var username = _contextAccessor.HttpContext.User.Identity.Name;
-            var roleClaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "role")?.Value;
 
             var privilegedRoleIds = new[]
             {

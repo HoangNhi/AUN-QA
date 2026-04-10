@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
@@ -35,6 +35,32 @@ interface TocItem {
   text: string;
   level: number;
   pos: number;
+}
+
+interface ComposerDraft {
+  markId: string;
+  highlightedText: string;
+  from: number;
+  to: number;
+}
+
+interface BuildComposerDraftInput {
+  from: number;
+  to: number;
+  highlightedText: string;
+  markId: string;
+}
+
+interface BubbleSelectionRange {
+  from: number;
+  to: number;
+}
+
+interface CommentActivationGuardParams {
+  selectionFrom: number;
+  selectionTo: number;
+  isComposerOpen: boolean;
+  hasDraft: boolean;
 }
 
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
@@ -142,6 +168,100 @@ function hasCommentMark(
   return found;
 }
 
+function getCommentMarkElements(editorDom: HTMLElement, commentId: string): HTMLElement[] {
+  const escapedCommentId =
+    typeof CSS !== "undefined" && typeof CSS.escape === "function"
+      ? CSS.escape(commentId)
+      : null;
+
+  if (escapedCommentId) {
+    return Array.from(
+      editorDom.querySelectorAll<HTMLElement>(`span[data-comment-id="${escapedCommentId}"]`),
+    );
+  }
+
+  return Array.from(editorDom.querySelectorAll<HTMLElement>("span[data-comment-id]")).filter(
+    (candidate) => candidate.getAttribute("data-comment-id") === commentId,
+  );
+}
+
+export function applyCommentMarkVisualState(
+  editorDom: HTMLElement,
+  activeCommentId: string | null,
+): void {
+  const allMarks = editorDom.querySelectorAll<HTMLElement>("span[data-comment-id]");
+  allMarks.forEach((element) => {
+    element.style.backgroundColor = "";
+    element.style.boxShadow = "";
+  });
+
+  if (activeCommentId) {
+    const activeMarks = getCommentMarkElements(editorDom, activeCommentId);
+    activeMarks.forEach((element) => {
+      element.style.backgroundColor = "rgb(252 211 77)";
+      element.style.boxShadow = "0 0 0 2px rgb(245 158 11)";
+    });
+  }
+}
+
+export function shouldShowCommentComposerBubble(
+  selection: BubbleSelectionRange,
+  isComposerOpen: boolean,
+): boolean {
+  return isComposerOpen || selection.from !== selection.to;
+}
+
+export function shouldHandleCommentActivated({
+  selectionFrom,
+  selectionTo,
+  isComposerOpen,
+  hasDraft,
+}: CommentActivationGuardParams): boolean {
+  if (isComposerOpen || hasDraft) {
+    return false;
+  }
+
+  return selectionFrom === selectionTo;
+}
+
+export function buildComposerDraftFromSelection(
+  input: BuildComposerDraftInput,
+): ComposerDraft | null {
+  const highlightedText = input.highlightedText.trim();
+  if (input.from === input.to || !highlightedText) {
+    return null;
+  }
+
+  return {
+    markId: input.markId,
+    highlightedText,
+    from: input.from,
+    to: input.to,
+  };
+}
+
+interface PopupInternalReviewComposerSnippetPreviewProps {
+  highlightedText: string;
+}
+
+export function PopupInternalReviewComposerSnippetPreview({
+  highlightedText,
+}: PopupInternalReviewComposerSnippetPreviewProps) {
+  return (
+    <div className="relative rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+        Đoạn đã chọn
+      </p>
+      <p className="max-h-[50px] overflow-hidden whitespace-pre-wrap break-words pr-8 text-sm leading-5 text-amber-950">
+        {highlightedText}
+      </p>
+      <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-amber-100 px-1 text-[11px] font-medium leading-none text-amber-700">
+        ...
+      </span>
+    </div>
+  );
+}
+
 export function canDecideInternalReview(item: InternalReviewListItem | null): boolean {
   return !!item && item.Status === 2 && item.CanApproveByRole === true;
 }
@@ -247,6 +367,11 @@ export default function PopupInternalReview({
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
   const [newCommentText, setNewCommentText] = useState("");
   const [showComposer, setShowComposer] = useState(false);
+  const [composerDraft, setComposerDraft] = useState<ComposerDraft | null>(null);
+  const showComposerRef = useRef(false);
+  const composerDraftRef = useRef<ComposerDraft | null>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const previousItemKeyRef = useRef<string | null>(null);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [isDecisionLoading, setIsDecisionLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -266,6 +391,14 @@ export default function PopupInternalReview({
     reviewRound: item?.ReviewRound,
     enabled: isCommentRealtimeEnabled,
   });
+
+  useEffect(() => {
+    showComposerRef.current = showComposer;
+  }, [showComposer]);
+
+  useEffect(() => {
+    composerDraftRef.current = composerDraft;
+  }, [composerDraft]);
 
   const handleCommentSignal = useCallback(() => {
     if (!isCommentRealtimeEnabled) {
@@ -289,6 +422,22 @@ export default function PopupInternalReview({
   );
 
   const handleCommentActivated = useCallback((commentId: string) => {
+    const currentEditor = editorRef.current;
+    if (!currentEditor) {
+      return;
+    }
+
+    const { from, to } = currentEditor.state.selection;
+    const canActivateComment = shouldHandleCommentActivated({
+      selectionFrom: from,
+      selectionTo: to,
+      isComposerOpen: showComposerRef.current,
+      hasDraft: !!composerDraftRef.current,
+    });
+    if (!canActivateComment) {
+      return;
+    }
+
     const normalizedCommentId = commentId || null;
     setActiveCommentId((prev) => (prev === normalizedCommentId ? prev : normalizedCommentId));
   }, []);
@@ -318,6 +467,10 @@ export default function PopupInternalReview({
       },
     },
   });
+
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) {
@@ -419,6 +572,17 @@ export default function PopupInternalReview({
       .setTextSelection({ from: previousSelection.from, to: previousSelection.to })
       .run();
   }, [editor, isCommentsLoading, open, visibleComments]);
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || editor.view.isDestroyed) {
+      return;
+    }
+
+    applyCommentMarkVisualState(
+      editor.view.dom as HTMLElement,
+      activeCommentId,
+    );
+  }, [activeCommentId, editor, visibleComments]);
 
   const scrollToHeading = useCallback(
     (pos: number) => {
@@ -522,41 +686,93 @@ export default function PopupInternalReview({
       ? "Chưa đủ 10 ngày làm việc để ra quyết định."
       : null;
 
-  const handleAddComment = async () => {
+  const handleComposerClose = useCallback(() => {
+    composerDraftRef.current = null;
+    setComposerDraft(null);
+    setShowComposer(false);
+    setNewCommentText("");
+  }, []);
+
+  const currentItemKey = useMemo(
+    () => `${item?.SarReportId ?? ""}|${item?.CycleId ?? ""}|${item?.ReviewRound ?? ""}`,
+    [item?.CycleId, item?.ReviewRound, item?.SarReportId],
+  );
+
+  useEffect(() => {
+    if (!open) {
+      previousItemKeyRef.current = currentItemKey;
+      handleComposerClose();
+      setActiveCommentId(null);
+      return;
+    }
+
+    const previousItemKey = previousItemKeyRef.current;
+    if (previousItemKey !== null && previousItemKey !== currentItemKey) {
+      handleComposerClose();
+      setActiveCommentId(null);
+    }
+
+    previousItemKeyRef.current = currentItemKey;
+  }, [currentItemKey, handleComposerClose, open]);
+
+  const handleOpenComposer = useCallback(() => {
     if (!editor || !item || !canComment) {
       return;
     }
 
-    const commentText = newCommentText.trim();
+    const { from, to } = editor.state.selection;
+    const draft = buildComposerDraftFromSelection({
+      from,
+      to,
+      highlightedText: editor.state.doc.textBetween(from, to, " "),
+      markId: crypto.randomUUID(),
+    });
 
-    const selection = editor.state.selection;
-    const from = selection.from;
-    const to = selection.to;
-    if (from === to) {
+    if (!draft) {
       toast.error("Hãy bôi đen đoạn văn bản trước khi thêm nhận xét.");
       return;
     }
 
-    const highlightedText = editor.state.doc.textBetween(from, to, " ").trim();
-    const markId = crypto.randomUUID();
+    composerDraftRef.current = draft;
+    setComposerDraft(draft);
+    setShowComposer(true);
+  }, [canComment, editor, item]);
 
-    editor.chain().focus().setComment(markId).run();
+  const handleAddComment = async () => {
+    const currentComposerDraft = composerDraftRef.current ?? composerDraft;
+    if (!editor || !item || !canComment || !currentComposerDraft) {
+      toast.error("Hãy bôi đen đoạn văn bản trước khi thêm nhận xét.");
+      return;
+    }
+
+    const commentText = newCommentText.trim();
+    if (!commentText) {
+      toast.error("Vui lòng nhập nội dung nhận xét.");
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: currentComposerDraft.from, to: currentComposerDraft.to })
+      .setComment(currentComposerDraft.markId)
+      .run();
 
     try {
       await addComment({
         CycleId: item.CycleId,
         CommentText: commentText,
-        HighlightedText: highlightedText || null,
-        CommentMarkId: markId,
+        HighlightedText: currentComposerDraft.highlightedText,
+        CommentMarkId: currentComposerDraft.markId,
       });
 
       broadcastCommentChange();
-      setShowComposer(false);
-      setNewCommentText("");
+      handleComposerClose();
       toast.success("Đã thêm nhận xét.");
       onDataChanged();
     } catch {
-      editor.commands.unsetComment(markId);
+      editor.commands.unsetComment(currentComposerDraft.markId);
+      handleComposerClose();
     }
   };
 
@@ -570,6 +786,8 @@ export default function PopupInternalReview({
       broadcastCommentChange();
       toast.success("Đã xóa nhận xét.");
       onDataChanged();
+    } catch {
+      // Error toast is already handled by useInternalReviewComments mutation onError.
     } finally {
       setDeletingCommentId(null);
     }
@@ -788,20 +1006,36 @@ export default function PopupInternalReview({
                   {canComment ? (
                     <BubbleMenu
                       editor={editor}
-                      shouldShow={({ from, to }) => from !== to}
-                      tippyOptions={{ duration: 120 }}
+                      shouldShow={({ from, to }) =>
+                        shouldShowCommentComposerBubble({ from, to }, showComposer)
+                      }
+                      tippyOptions={{
+                        duration: 120,
+                        onClickOutside: () => {
+                          handleComposerClose();
+                        },
+                      }}
                     >
                       <div className="space-y-2 rounded-lg border bg-white p-2 shadow-lg">
                         {!showComposer ? (
                           <Button
                             type="button"
                             size="sm"
-                            onClick={() => setShowComposer(true)}
+                            onMouseDown={(event) => {
+                              // Keep ProseMirror selection before onClick reads selected range.
+                              event.preventDefault();
+                            }}
+                            onClick={() => {
+                              handleOpenComposer();
+                            }}
                           >
                             + Thêm nhận xét
                           </Button>
-                        ) : (
+                        ) : composerDraft ? (
                           <div className="flex w-72 flex-col gap-2">
+                            <PopupInternalReviewComposerSnippetPreview
+                              highlightedText={composerDraft.highlightedText}
+                            />
                             <Input
                               value={newCommentText}
                               onChange={(event) => setNewCommentText(event.target.value)}
@@ -813,8 +1047,7 @@ export default function PopupInternalReview({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  setShowComposer(false);
-                                  setNewCommentText("");
+                                  handleComposerClose();
                                 }}
                               >
                                 Hủy
@@ -825,13 +1058,14 @@ export default function PopupInternalReview({
                                 onClick={() => {
                                   void handleAddComment();
                                 }}
-                                disabled={isAdding}
+                                disabled={isAdding || newCommentText.trim().length === 0}
                               >
                                 Lưu
                               </Button>
                             </div>
                           </div>
-                        )}
+                        ) : null
+                        }
                       </div>
                     </BubbleMenu>
                   ) : null}

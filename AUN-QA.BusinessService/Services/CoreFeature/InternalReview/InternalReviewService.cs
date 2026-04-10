@@ -219,9 +219,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             var userMap = await FetchFullNamesByUsernamesAsync(comments.Select(x => x.CreatedBy));
 
             return comments
-                .Select(x => ToDto(
-                    x,
-                    userMap.TryGetValue(x.CreatedBy, out var createdByName) ? createdByName : x.CreatedBy))
+                .Select(x =>
+                {
+                    var createdByInfo = userMap.TryGetValue(x.CreatedBy, out var info)
+                        ? info
+                        : (FullName: x.CreatedBy, Avatar: (string?)null);
+                    return ToDto(x, createdByInfo.FullName, createdByInfo.Avatar);
+                })
                 .ToList();
         }
 
@@ -257,9 +261,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             await _context.SaveChangesAsync();
 
             var userMap = await FetchFullNamesByUsernamesAsync(new[] { username });
+            var createdByInfo = userMap.TryGetValue(username, out var info)
+                ? info
+                : (FullName: username, Avatar: (string?)null);
             return ToDto(
                 comment,
-                userMap.TryGetValue(username, out var createdByName) ? createdByName : username);
+                createdByInfo.FullName,
+                createdByInfo.Avatar);
         }
 
         public async Task DeleteComment(DeleteInternalCommentRequest request)
@@ -387,7 +395,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             return username.Trim();
         }
 
-        private async Task<Dictionary<string, string>> FetchFullNamesByUsernamesAsync(IEnumerable<string> usernames)
+        private async Task<Dictionary<string, (string FullName, string? Avatar)>> FetchFullNamesByUsernamesAsync(IEnumerable<string> usernames)
         {
             var distinctUsernames = usernames
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -397,7 +405,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
             if (distinctUsernames.Count == 0)
             {
-                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                return new Dictionary<string, (string FullName, string? Avatar)>(StringComparer.OrdinalIgnoreCase);
             }
 
             try
@@ -407,15 +415,17 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
                 var grpcResponse = await _systemClient.GetUsersByUsernamesAsync(grpcRequest);
 
                 return grpcResponse.Users
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Username) && !string.IsNullOrWhiteSpace(x.Fullname))
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Username))
                     .ToDictionary(
                         x => x.Username.Trim(),
-                        x => x.Fullname.Trim(),
+                        x => (
+                            FullName: string.IsNullOrWhiteSpace(x.Fullname) ? x.Username.Trim() : x.Fullname.Trim(),
+                            Avatar: string.IsNullOrWhiteSpace(x.Avatar) ? null : x.Avatar.Trim()),
                         StringComparer.OrdinalIgnoreCase);
             }
             catch
             {
-                return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                return new Dictionary<string, (string FullName, string? Avatar)>(StringComparer.OrdinalIgnoreCase);
             }
         }
 
@@ -424,7 +434,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
 
-        private static InternalCommentDto ToDto(InternalComment comment, string createdByName)
+        private static InternalCommentDto ToDto(InternalComment comment, string createdByName, string? createdByAvatar)
         {
             return new InternalCommentDto
             {
@@ -437,6 +447,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
                 CreatedAt = comment.CreatedAt,
                 CreatedBy = comment.CreatedBy,
                 CreatedByName = createdByName,
+                CreatedByAvatar = createdByAvatar,
                 UpdatedAt = comment.UpdatedAt,
                 UpdatedBy = comment.UpdatedBy
             };

@@ -27,6 +27,7 @@ export interface InternalComment {
   CreatedAt: string;
   CreatedBy: string;
   CreatedByName?: string | null;
+  CreatedByAvatar?: string | null;
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
 }

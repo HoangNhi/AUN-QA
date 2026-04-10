@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
-import { ChevronLeft, ChevronRight, FileDown, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -64,59 +64,6 @@ interface CommentActivationGuardParams {
 }
 
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
-
-function isBusinessDay(date: Date): boolean {
-  const day = date.getDay();
-  return day !== 0 && day !== 6;
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function addBusinessDays(date: Date, businessDays: number): Date {
-  let remaining = businessDays;
-  let cursor = startOfDay(date);
-
-  while (remaining > 0) {
-    cursor = addDays(cursor, 1);
-    if (isBusinessDay(cursor)) {
-      remaining -= 1;
-    }
-  }
-
-  return cursor;
-}
-
-function businessDaysUntil(targetDate: Date): number {
-  const today = startOfDay(new Date());
-  const target = startOfDay(targetDate);
-
-  if (today > target) {
-    return -1;
-  }
-
-  if (today.getTime() === target.getTime()) {
-    return 0;
-  }
-
-  let count = 0;
-  let cursor = today;
-  while (cursor < target) {
-    cursor = addDays(cursor, 1);
-    if (isBusinessDay(cursor)) {
-      count += 1;
-    }
-  }
-
-  return count;
-}
 
 function findTextRange(
   editor: NonNullable<ReturnType<typeof useEditor>>,
@@ -673,19 +620,6 @@ export default function PopupInternalReview({
     }
   }, [item?.Status]);
 
-  const remainingDays = useMemo(() => {
-    if (!item?.SubmittedAt) {
-      return null;
-    }
-    const dueDate = addBusinessDays(new Date(item.SubmittedAt), 10);
-    return businessDaysUntil(dueDate);
-  }, [item?.SubmittedAt]);
-
-  const decisionDisabledReason =
-    remainingDays !== null && remainingDays > 0
-      ? "Chưa đủ 10 ngày làm việc để ra quyết định."
-      : null;
-
   const handleComposerClose = useCallback(() => {
     composerDraftRef.current = null;
     setComposerDraft(null);
@@ -927,6 +861,16 @@ export default function PopupInternalReview({
                 )}
                 Xuất Word
               </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  onOpenChange(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </header>
@@ -1091,8 +1035,7 @@ export default function PopupInternalReview({
 
         {canDecide ? (
           <DecisionToolbar
-            canDecide={!decisionDisabledReason}
-            disabledReason={decisionDisabledReason}
+            canDecide={canDecide}
             isSubmitting={isDecisionLoading || isCommentsLoading}
             onApprove={handleApprove}
             onRequestRevision={handleRequestRevision}

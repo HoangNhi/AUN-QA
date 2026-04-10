@@ -1,8 +1,8 @@
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getFileUrl } from "@/lib/utils";
 import type { InternalComment } from "@/features/business/types/internalreview.types";
 
 interface CommentItemProps {
@@ -71,10 +71,13 @@ export default function CommentItem({
       <header className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar
-            className="h-8 w-8 shrink-0"
-            style={{ backgroundColor: stringToHslColor(displayName) }}
+            className="h-8 w-8 shrink-0 rounded-full"
           >
-            <AvatarFallback className="bg-transparent text-[11px] font-semibold text-white">
+            <AvatarImage src={getFileUrl(comment.CreatedByAvatar)} alt={displayName} />
+            <AvatarFallback
+              className="rounded-full text-[11px] font-semibold text-white"
+              style={{ backgroundColor: stringToHslColor(displayName) }}
+            >
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>

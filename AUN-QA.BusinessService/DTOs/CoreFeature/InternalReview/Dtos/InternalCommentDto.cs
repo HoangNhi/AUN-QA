@@ -20,6 +20,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Dtos
 
         public string CreatedByName { get; set; } = string.Empty;
 
+        public string? CreatedByAvatar { get; set; }
+
         public DateTime? UpdatedAt { get; set; }
 
         public string? UpdatedBy { get; set; }

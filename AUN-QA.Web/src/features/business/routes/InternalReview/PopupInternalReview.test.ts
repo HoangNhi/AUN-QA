@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { InternalReviewListItem } from "@/features/business/types/internalreview.types";
 import {
   canDecideInternalReview,
+  resolveEvidenceTagClickTargetId,
   shouldSyncInternalReviewCommentMarks,
 } from "./PopupInternalReview";
 
@@ -38,5 +39,34 @@ describe("shouldSyncInternalReviewCommentMarks", () => {
     expect(shouldSyncInternalReviewCommentMarks(3, true, false)).toBe(false);
     expect(shouldSyncInternalReviewCommentMarks(2, false, false)).toBe(false);
     expect(shouldSyncInternalReviewCommentMarks(2, true, true)).toBe(false);
+  });
+});
+
+describe("resolveEvidenceTagClickTargetId", () => {
+  it("returns a trimmed evidence id for evidence tags", () => {
+    expect(
+      resolveEvidenceTagClickTargetId({
+        type: { name: "evidenceTag" },
+        attrs: { evidenceId: "  ev-123  " },
+      } as never),
+    ).toBe("ev-123");
+  });
+
+  it("returns null for non evidence tags", () => {
+    expect(
+      resolveEvidenceTagClickTargetId({
+        type: { name: "paragraph" },
+        attrs: { evidenceId: "ev-123" },
+      } as never),
+    ).toBeNull();
+  });
+
+  it("returns null when the evidence id is blank", () => {
+    expect(
+      resolveEvidenceTagClickTargetId({
+        type: { name: "evidenceTag" },
+        attrs: { evidenceId: "   " },
+      } as never),
+    ).toBeNull();
   });
 });

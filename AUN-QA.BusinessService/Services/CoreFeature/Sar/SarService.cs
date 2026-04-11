@@ -696,8 +696,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
         public async Task<SarAutofillPayloadDto> GetAutofillPayload(GetSarAutofillPayloadRequest request)
         {
-            await CheckCycleStageAsync(request.CycleId);
-
             var cycle = await _context.Cycles
                 .AsNoTracking()
                 .Where(x => x.Id == request.CycleId && !x.IsDeleted && x.IsActived)

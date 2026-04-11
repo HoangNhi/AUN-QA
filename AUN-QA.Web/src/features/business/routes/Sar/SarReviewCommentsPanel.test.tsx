@@ -21,9 +21,20 @@ type FakeDescendant = {
   isText: true;
   text: string;
   pos: number;
+  marks?: FakeMark[];
+  nodeSize?: number;
 };
 
-function createEditor(descendants: FakeDescendant[], isDestroyed = false) {
+type FakeMark = {
+  type: { name: string };
+  attrs: Record<string, unknown>;
+};
+
+function createEditor(
+  descendants: FakeDescendant[],
+  isDestroyed = false,
+  textBetweenImpl?: (from: number, to: number) => string,
+) {
   const focus = vi.fn(() => chainApi);
   const setTextSelection = vi.fn(() => chainApi);
   const scrollIntoView = vi.fn(() => chainApi);
@@ -42,9 +53,17 @@ function createEditor(descendants: FakeDescendant[], isDestroyed = false) {
       doc: {
         descendants(callback: (node: FakeDescendant, pos: number) => boolean | void) {
           descendants.forEach((node) => {
-            callback(node, node.pos);
+            callback(
+              {
+                ...node,
+                marks: node.marks ?? [],
+                nodeSize: node.nodeSize ?? node.text.length,
+              },
+              node.pos,
+            );
           });
         },
+        textBetween: textBetweenImpl ?? vi.fn(() => ""),
       },
     },
     chain: () => chainApi,
@@ -119,7 +138,7 @@ describe("SarReviewCommentsPanel", () => {
     expect(container.querySelector("blockquote")).not.toBeInTheDocument();
   });
 
-  it("shows linked comments with a go-to-position action", () => {
+  it("does not render a go-to-position button", () => {
     const editor = createEditor([{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }]);
 
     render(
@@ -131,10 +150,30 @@ describe("SarReviewCommentsPanel", () => {
       />,
     );
 
-    const button = screen.getByRole("button", { name: /đến vị trí/i });
-    expect(button).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /đến vị trí/i })).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(button);
+  it("navigates when clicking a linked comment card", () => {
+    const editor = createEditor([{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }]);
+    const onCommentClick = vi.fn();
+
+    render(
+      <SarReviewCommentsPanel
+        comments={[makeComment()]}
+        editor={editor}
+        isLoading={false}
+        reviewRound={2}
+        onCommentClick={onCommentClick}
+      />,
+    );
+
+    const card = screen.getByText("Nguyễn Văn A").closest("article");
+    expect(card).toHaveClass("cursor-pointer");
+    fireEvent.click(card!);
+    expect(onCommentClick).toHaveBeenCalledOnce();
+    expect(onCommentClick).toHaveBeenCalledWith(
+      expect.objectContaining({ Id: "comment-1" }),
+    );
 
     const chain = (editor.chain as unknown as () => {
       focus: ReturnType<typeof vi.fn>;
@@ -149,33 +188,79 @@ describe("SarReviewCommentsPanel", () => {
     expect(chain.run).toHaveBeenCalled();
   });
 
-  it("navigates when clicking a linked comment card", () => {
-    const editor = createEditor([{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }]);
+  it("shows text-modified when the marked text no longer matches the original highlight", () => {
+    const comment = makeComment({
+      CommentMarkId: "mark-xyz",
+      HighlightedText: "chuẩn đầu ra",
+    });
+
+    const editor = createEditor(
+      [
+        {
+          isText: true,
+          text: "chuẩn đầu ra đã được chỉnh sửa",
+          pos: 0,
+          marks: [
+            {
+              type: { name: "comment" },
+              attrs: { commentId: "mark-xyz" },
+            },
+          ],
+        },
+      ],
+      false,
+      () => "chuẩn đầu ra đã được chỉnh sửa",
+    );
 
     render(
       <SarReviewCommentsPanel
-        comments={[makeComment()]}
+        comments={[comment]}
         editor={editor}
         isLoading={false}
         reviewRound={2}
       />,
     );
 
-    const card = screen.getByText("Nguyễn Văn A").closest("article");
-    expect(card).toHaveClass("cursor-pointer");
-    fireEvent.click(card!);
+    expect(screen.getByText("Đoạn đã được chỉnh sửa")).toBeInTheDocument();
+    expect(screen.getByText("Nguyễn Văn A").closest("article")).not.toHaveClass(
+      "opacity-60",
+    );
+  });
 
-    const chain = (editor.chain as unknown as () => {
-      focus: ReturnType<typeof vi.fn>;
-      setTextSelection: ReturnType<typeof vi.fn>;
-      scrollIntoView: ReturnType<typeof vi.fn>;
-      run: ReturnType<typeof vi.fn>;
-    })();
+  it("does not show the text-modified badge when the marked text still matches the highlight", () => {
+    const comment = makeComment({
+      CommentMarkId: "mark-xyz",
+      HighlightedText: "chuẩn đầu ra",
+    });
 
-    expect(chain.focus).toHaveBeenCalled();
-    expect(chain.setTextSelection).toHaveBeenCalledWith(16);
-    expect(chain.scrollIntoView).toHaveBeenCalled();
-    expect(chain.run).toHaveBeenCalled();
+    const editor = createEditor(
+      [
+        {
+          isText: true,
+          text: "chuẩn đầu ra",
+          pos: 0,
+          marks: [
+            {
+              type: { name: "comment" },
+              attrs: { commentId: "mark-xyz" },
+            },
+          ],
+        },
+      ],
+      false,
+      () => "chuẩn đầu ra",
+    );
+
+    render(
+      <SarReviewCommentsPanel
+        comments={[comment]}
+        editor={editor}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    expect(screen.queryByText("Đoạn đã được chỉnh sửa")).not.toBeInTheDocument();
   });
 
   it("marks orphaned comments when the highlighted text is missing from the editor", () => {
@@ -204,8 +289,9 @@ describe("SarReviewCommentsPanel", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /đến vị trí/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Đoạn đã được chỉnh sửa")).not.toBeInTheDocument();
+    const card = screen.getByText("Nguyễn Văn A").closest("article");
+    expect(card).not.toHaveClass("cursor-pointer");
   });
 
   it("shows the review round subtitle", () => {
@@ -222,6 +308,13 @@ describe("SarReviewCommentsPanel", () => {
   });
 
   it("applies active highlight when activeCommentId matches the comment mark id", () => {
+    if (!HTMLElement.prototype.scrollIntoView) {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        value: () => undefined,
+        writable: true,
+      });
+    }
+
     render(
       <SarReviewCommentsPanel
         comments={[makeComment({ Id: "comment-1", CommentMarkId: "mark-abc" })]}

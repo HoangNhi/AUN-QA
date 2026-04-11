@@ -50,6 +50,7 @@ import type {
   SaveSarDraftRequest,
   SarStatus,
 } from "@/features/business/types/sar.types";
+import type { InternalComment } from "@/features/business/types/internalreview.types";
 import type {
   EvidenceCycleMap,
   EvidenceCycleMapGetListPaging,
@@ -63,6 +64,7 @@ import {
 import type { TocItem } from "./sarEditorExtensions";
 import { isLocalSarAutosaveOrigin } from "./autosave-origin";
 import SarReviewCommentsPanel from "./SarReviewCommentsPanel";
+import { applyCommentMarkVisualState } from "@/features/business/routes/InternalReview/commentEditorUtils";
 
 interface PopupSarEditorProps {
   open: boolean;
@@ -401,6 +403,11 @@ export default function PopupSarEditor({
     }
   };
 
+  const handleCommentPanelClick = useCallback((comment: InternalComment) => {
+    const markId = comment.CommentMarkId ?? comment.Id;
+    setActiveCommentId(markId);
+  }, []);
+
   const { user } = useAuth();
 
   const wsUrl =
@@ -616,6 +623,14 @@ export default function PopupSarEditor({
       closeEvidencePreview(false);
     }
   }, [closeEvidencePreview, open]);
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || editor.view.isDestroyed) {
+      return;
+    }
+
+    applyCommentMarkVisualState(editor.view.dom as HTMLElement, activeCommentId);
+  }, [activeCommentId, editor]);
 
   useEffect(() => {
     if (!editor || !isEditable) {
@@ -1536,6 +1551,7 @@ export default function PopupSarEditor({
                           reviewRound={draft?.ReviewRound}
                           embedded
                           activeCommentId={activeCommentId}
+                          onCommentClick={handleCommentPanelClick}
                         />
                       ) : (
                         <div className="h-full min-h-0 overflow-hidden">

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   findMarkRange,
@@ -17,9 +16,10 @@ interface SarReviewCommentsPanelProps {
   reviewRound?: number | null;
   activeCommentId?: string | null;
   embedded?: boolean;
+  onCommentClick?: (comment: InternalComment) => void;
 }
 
-type CommentViewState = "linked" | "orphaned" | "unknown";
+type CommentViewState = "linked" | "orphaned" | "unknown" | "text-modified";
 
 type CommentViewModel = {
   comment: InternalComment;
@@ -50,10 +50,34 @@ function getCommentViewModel(
 
   if (comment.CommentMarkId) {
     const isLinked = hasCommentMarkById(editor, comment.CommentMarkId);
+    if (!isLinked) {
+      return {
+        comment,
+        state: "orphaned",
+        range: null,
+        displayName,
+      };
+    }
+
+    const range = findMarkRange(editor, comment.CommentMarkId);
+    const originalText = comment.HighlightedText?.trim() ?? "";
+
+    if (range && originalText) {
+      const currentText = editor.state.doc.textBetween(range.from, range.to, "\n").trim();
+      if (currentText !== originalText) {
+        return {
+          comment,
+          state: "text-modified",
+          range,
+          displayName,
+        };
+      }
+    }
+
     return {
       comment,
-      state: isLinked ? "linked" : "orphaned",
-      range: isLinked ? findMarkRange(editor, comment.CommentMarkId) : null,
+      state: "linked",
+      range,
       displayName,
     };
   }
@@ -84,6 +108,7 @@ export default function SarReviewCommentsPanel({
   reviewRound,
   activeCommentId,
   embedded = false,
+  onCommentClick,
 }: SarReviewCommentsPanelProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const commentViews = useMemo(
@@ -110,7 +135,9 @@ export default function SarReviewCommentsPanel({
     target?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [activeCommentId]);
 
-  const handleGoToLocation = (view: CommentViewModel) => {
+  const handleCommentCardClick = (view: CommentViewModel) => {
+    onCommentClick?.(view.comment);
+
     if (!editor || editor.isDestroyed || !view.range) {
       return;
     }
@@ -152,7 +179,9 @@ export default function SarReviewCommentsPanel({
             const highlightedText = comment.HighlightedText?.trim() ?? "";
             const createdBy = view.displayName;
             const canNavigate =
-              !!editor && !editor.isDestroyed && view.state === "linked";
+              !!editor &&
+              !editor.isDestroyed &&
+              (view.state === "linked" || view.state === "text-modified");
             const commentRefId = comment.CommentMarkId?.trim() || comment.Id;
             const isActive = !!activeCommentId && activeCommentId === commentRefId;
 
@@ -166,7 +195,7 @@ export default function SarReviewCommentsPanel({
                   view.state === "orphaned" && "opacity-60",
                   canNavigate && "cursor-pointer",
                 )}
-                onClick={canNavigate ? () => handleGoToLocation(view) : undefined}
+                onClick={canNavigate ? () => handleCommentCardClick(view) : undefined}
               >
                 <header className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -174,21 +203,6 @@ export default function SarReviewCommentsPanel({
                       {createdBy}
                     </p>
                   </div>
-
-                  {canNavigate ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-[11px] font-semibold text-blue-700 hover:bg-blue-50 hover:text-blue-800"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleGoToLocation(view);
-                      }}
-                    >
-                      Đến vị trí
-                    </Button>
-                  ) : null}
                 </header>
 
                 {highlightedText ? (
@@ -208,7 +222,7 @@ export default function SarReviewCommentsPanel({
                   {comment.CommentText}
                 </p>
 
-                {view.state === "orphaned" ? (
+                {view.state === "orphaned" || view.state === "text-modified" ? (
                   <div className="mt-2">
                     <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
                       Đoạn đã được chỉnh sửa

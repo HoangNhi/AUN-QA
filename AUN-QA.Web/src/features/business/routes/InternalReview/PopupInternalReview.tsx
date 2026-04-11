@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
+import { useQuery } from "@tanstack/react-query";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 import { internalReviewService } from "@/features/business/api/internalreview.api";
+import { evidenceCycleMapService } from "@/features/business/api/evidenceCycleMap.api";
 import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
 import {
   useInternalReviewCollab,
@@ -23,6 +25,13 @@ import type {
   InternalReviewListItem,
 } from "@/features/business/types/internalreview.types";
 import { sarService } from "@/features/business/api/sar.api";
+import type { EvidenceCycleMap } from "@/features/business/types/evidence-cycle-map.types";
+import {
+  createSarEvidenceListRequest,
+  createSarEvidencePreviewCycleMap,
+  createSarEvidencePreviewQueryKey,
+  resolveSarEvidencePreviewCycleMapId,
+} from "@/features/business/routes/Sar/PopupSarEditor";
 import {
   applyCommentMarkVisualState,
   findMarkRange,
@@ -72,6 +81,25 @@ interface CommentActivationGuardParams {
 }
 
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
+const PopupEvidenceCycleMap = lazy(
+  () => import("@/features/business/routes/EvidenceCycleMap/PopupEvidenceCycleMap"),
+);
+
+interface EvidenceTagClickNode {
+  type: { name: string };
+  attrs?: { evidenceId?: unknown };
+}
+
+export function resolveEvidenceTagClickTargetId(
+  node: EvidenceTagClickNode,
+): string | null {
+  if (node.type.name !== "evidenceTag") {
+    return null;
+  }
+
+  const evidenceId = String(node.attrs?.evidenceId ?? "").trim();
+  return evidenceId || null;
+}
 
 export function shouldShowCommentComposerBubble(
   selection: BubbleSelectionRange,
@@ -246,6 +274,8 @@ export default function PopupInternalReview({
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [isDecisionLoading, setIsDecisionLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [evidencePreviewId, setEvidencePreviewId] = useState<string | null>(null);
+  const [isEvidencePreviewOpen, setIsEvidencePreviewOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [tocItems, setTocItems] = useState<TocItem[]>([]);
   const isCommentRealtimeEnabled = open && !!item && item.Status === 2;
@@ -292,6 +322,67 @@ export default function PopupInternalReview({
     () => (item?.Status === 2 ? comments : []),
     [comments, item?.Status],
   );
+
+  const evidenceListRequest = useMemo(
+    () => (item?.CycleId ? createSarEvidenceListRequest(item.CycleId) : null),
+    [item?.CycleId],
+  );
+
+  const { data: evidenceListResponse } = useQuery({
+    queryKey: ["internal-review-verified-evidences", item?.CycleId],
+    queryFn: () => evidenceCycleMapService.getList(evidenceListRequest!),
+    enabled: open && !!evidenceListRequest,
+  });
+
+  const verifiedEvidences = useMemo(
+    () => evidenceListResponse?.Data?.Data ?? [],
+    [evidenceListResponse?.Data?.Data],
+  );
+
+  const openEvidencePreview = useCallback((evidenceId: string) => {
+    setEvidencePreviewId(evidenceId);
+    setIsEvidencePreviewOpen(true);
+  }, []);
+
+  const closeEvidencePreview = useCallback((nextOpen: boolean) => {
+    setIsEvidencePreviewOpen(nextOpen);
+    if (!nextOpen) {
+      setEvidencePreviewId(null);
+    }
+  }, []);
+
+  const { data: evidencePreviewResponse, isFetching: isEvidencePreviewLoading } = useQuery({
+    queryKey: createSarEvidencePreviewQueryKey(
+      evidencePreviewId,
+      verifiedEvidences,
+    ),
+    queryFn: () => {
+      const mappingId = resolveSarEvidencePreviewCycleMapId(
+        verifiedEvidences,
+        evidencePreviewId,
+      );
+
+      return evidenceCycleMapService.getById(mappingId);
+    },
+    retry: false,
+    enabled:
+      open &&
+      isEvidencePreviewOpen &&
+      !!evidencePreviewId &&
+      verifiedEvidences.length > 0 &&
+      evidenceListResponse?.Success === true,
+  });
+
+  const evidencePreviewCycleMap = useMemo<EvidenceCycleMap | null>(() => {
+    if (!evidencePreviewResponse?.Data) {
+      return null;
+    }
+
+    return createSarEvidencePreviewCycleMap(
+      evidencePreviewResponse.Data,
+      item?.CycleId,
+    );
+  }, [evidencePreviewResponse?.Data, item?.CycleId]);
 
   const handleCommentActivated = useCallback((commentId: string) => {
     const currentEditor = editorRef.current;
@@ -347,9 +438,23 @@ export default function PopupInternalReview({
         attributes: {
           class: "prose prose-sm max-w-none min-h-[720px] p-8 focus:outline-none",
         },
+        handleClickOn: (_view, _pos, node, _nodePos, event) => {
+          const evidenceId = resolveEvidenceTagClickTargetId({
+            type: { name: node.type.name },
+            attrs: node.attrs as { evidenceId?: unknown } | undefined,
+          });
+
+          if (!evidenceId) {
+            return false;
+          }
+
+          event.preventDefault();
+          openEvidencePreview(evidenceId);
+          return true;
+        },
       },
     },
-    [sarYdoc],
+    [openEvidencePreview, sarYdoc],
   );
 
   useEffect(() => {
@@ -430,6 +535,28 @@ export default function PopupInternalReview({
       activeCommentId,
     );
   }, [activeCommentId, editor, visibleComments]);
+
+  useEffect(() => {
+    if (evidenceListResponse && !evidenceListResponse.Success) {
+      toast.error(
+        evidenceListResponse.Message || "Không tải được danh sách minh chứng",
+      );
+    }
+  }, [evidenceListResponse]);
+
+  useEffect(() => {
+    if (evidencePreviewResponse && !evidencePreviewResponse.Success) {
+      toast.error(
+        evidencePreviewResponse.Message || "Không tải được minh chứng",
+      );
+    }
+  }, [evidencePreviewResponse]);
+
+  useEffect(() => {
+    if (!open) {
+      closeEvidencePreview(false);
+    }
+  }, [closeEvidencePreview, open]);
 
   const scrollToHeading = useCallback(
     (pos: number) => {
@@ -720,7 +847,8 @@ export default function PopupInternalReview({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="h-screen w-screen max-w-[100vw] sm:max-w-[100vw] grid-rows-[auto_1fr_auto] gap-0 overflow-hidden rounded-none border-0 p-0"
         showCloseButton={false}
@@ -951,6 +1079,23 @@ export default function PopupInternalReview({
           />
         ) : null}
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      <Suspense fallback={null}>
+        <PopupEvidenceCycleMap
+          evidenceCycleMap={evidencePreviewCycleMap}
+          isOpen={isEvidencePreviewOpen}
+          onOpenChange={closeEvidencePreview}
+          saveChange={() => {
+            // Read-only preview mode: no save action.
+          }}
+          onApprove={() => {
+            // Read-only preview mode: no approve action.
+          }}
+          readOnly
+          isLoading={isEvidencePreviewLoading}
+        />
+      </Suspense>
+    </>
   );
 }

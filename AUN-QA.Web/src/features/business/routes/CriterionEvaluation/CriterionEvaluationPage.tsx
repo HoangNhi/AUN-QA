@@ -31,7 +31,9 @@ function modeToFramework(mode?: number | null): FrameworkType | null {
   return null;
 }
 
-function inferFrameworkFromGroups(groups: StandardEvaluationGroup[]): FrameworkType | null {
+function inferFrameworkFromGroups(
+  groups: StandardEvaluationGroup[],
+): FrameworkType | null {
   const items = groups.flatMap((group) => group.Items);
 
   if (items.some((item) => item.OfficialResult != null)) return "MOET";
@@ -69,7 +71,8 @@ export function CriterionEvaluationPage() {
     handleApprove,
   } = useCriterionEvaluation();
 
-  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+  const { options: cycleOptions, isLoading: isCycleLoading } =
+    useCycleOptions();
 
   const { data: standardSetData } = useQuery({
     queryKey: ["standardSet-detail", standardSetId],
@@ -89,17 +92,24 @@ export function CriterionEvaluationPage() {
     ? (popupFramework ?? standardSetFramework ?? inferredFramework ?? "AUN")
     : (standardSetFramework ?? inferredFramework ?? popupFramework ?? "AUN");
 
-  const userCouncil = cycleData?.ListCouncil?.find((c) => c.UserId === user?.Id);
+  const userCouncil = cycleData?.ListCouncil?.find(
+    (c) => c.UserId === user?.Id,
+  );
   const userRole = userCouncil?.RoleId ?? 0;
-  const userAssignedStandardIds = new Set(userCouncil?.AssignedStandardIds ?? []);
+  const userAssignedStandardIds = new Set(
+    userCouncil?.AssignedStandardIds ?? [],
+  );
   const activeItem =
     activeItemId != null
-      ? groups.flatMap((g) => g.Items).find((item) => item.Id === activeItemId) ?? null
+      ? (groups
+          .flatMap((g) => g.Items)
+          .find((item) => item.Id === activeItemId) ?? null)
       : null;
   const activeStandardId =
     activeItemId != null
-      ? groups.find((group) => group.Items.some((item) => item.Id === activeItemId))
-          ?.StandardId ?? null
+      ? (groups.find((group) =>
+          group.Items.some((item) => item.Id === activeItemId),
+        )?.StandardId ?? null)
       : null;
   const cycleStatus = Number(cycleData?.Status ?? 0);
   const sarRevisionMode = cycleStatus === 3 && isRevisionAllowed;
@@ -113,7 +123,7 @@ export function CriterionEvaluationPage() {
   const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
 
   const submitButtonText = sarRevisionMode
-    ? "Cập nhật phiếu đánh giá (SAR đã được yêu cầu chỉnh sửa)"
+    ? "Cập nhật phiếu đánh giá"
     : mySubmission
       ? "Cập nhật phiếu đánh giá"
       : "Gửi phiếu đánh giá";
@@ -146,7 +156,7 @@ export function CriterionEvaluationPage() {
       </div>
 
       {/* Summary bar */}
-      {(isSummaryLoading && selectedCycleId) ? (
+      {isSummaryLoading && selectedCycleId ? (
         <div className="flex items-center gap-2 px-6 py-3 border-b text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           Đang tải dữ liệu tổng hợp...
@@ -175,7 +185,9 @@ export function CriterionEvaluationPage() {
                   onValueChange={(val) =>
                     setFilters((f) => ({
                       ...f,
-                      Status: val ? (Number(val) as EvaluationStatus) : undefined,
+                      Status: val
+                        ? (Number(val) as EvaluationStatus)
+                        : undefined,
                     }))
                   }
                   placeholder="Trạng thái"
@@ -191,7 +203,9 @@ export function CriterionEvaluationPage() {
       <div className="flex-1 overflow-y-auto">
         {!selectedCycleId ? (
           <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-            <p className="text-sm">Vui lòng chọn chu kỳ để xem đánh giá tiêu chí.</p>
+            <p className="text-sm">
+              Vui lòng chọn chu kỳ để xem đánh giá tiêu chí.
+            </p>
           </div>
         ) : isListLoading ? (
           <div className="flex items-center justify-center py-24">
@@ -227,11 +241,14 @@ export function CriterionEvaluationPage() {
           submitButtonTooltip={submitButtonTooltip}
           sarRevisionMode={sarRevisionMode}
           onClose={() => setActiveItemId(null)}
-          onSubmit={async (req) => { await handleSubmit(req); }}
-          onApprove={async (req) => { await handleApprove(req); }}
+          onSubmit={async (req) => {
+            await handleSubmit(req);
+          }}
+          onApprove={async (req) => {
+            await handleApprove(req);
+          }}
         />
       )}
     </div>
   );
 }
-

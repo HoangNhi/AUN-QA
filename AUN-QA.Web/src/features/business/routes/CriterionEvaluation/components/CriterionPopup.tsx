@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { evidenceCycleMapService } from "../../../api/evidenceCycleMap.api";
 import { surveyCampaignService } from "../../../api/survey-campaign.api";
@@ -517,6 +517,15 @@ export function CriterionPopup({
 
   const isApproved = item.Status === 3;
   const showApprovedSummary = isApproved && !!officialFields && !sarRevisionMode;
+
+  useEffect(() => {
+    if (officialFields) {
+      setOfficialCurrentState(officialFields.CurrentState ?? "");
+      setOfficialStrengths(officialFields.Strengths ?? "");
+      setOfficialWeaknesses(officialFields.Weaknesses ?? "");
+      setOfficialActionPlan(officialFields.ActionPlan ?? "");
+    }
+  }, [officialFields]);
 
   const handleApprove = async () => {
     await onApprove({

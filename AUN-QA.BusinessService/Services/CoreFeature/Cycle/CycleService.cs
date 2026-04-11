@@ -565,6 +565,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
             return (true, cycle.Status);
         }
 
+        public async Task<bool> IsRevisionAllowedAsync(Guid cycleId)
+        {
+            var sarReport = await _context.SarReports
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.CycleId == cycleId && !x.IsDeleted && x.IsActived);
+
+            return sarReport != null && sarReport.Status == (int)SarStatus.RevisionRequested;
+        }
+
         private static bool IsDelegationActive(Entities.Council council)
         {
             if (!council.IsDelegated)

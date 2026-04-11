@@ -646,6 +646,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             if (status == CycleStatusDo)
                 return;
 
+            var isRevisionAllowed = await _cycleService.IsRevisionAllowedAsync(Guid.Parse(cycleId));
+            if (isRevisionAllowed)
+                return;
+
             var username = _contextAccessor.HttpContext!.User.Identity?.Name;
             if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
                 return;

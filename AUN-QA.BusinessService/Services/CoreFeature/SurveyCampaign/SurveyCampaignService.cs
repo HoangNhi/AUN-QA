@@ -1425,6 +1425,11 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             if (status == CycleStatusDo)
                 return;
 
+            // Cycle is not in Do stage — allow if SAR is in revision
+            var isRevisionAllowed = await _cycleService.IsRevisionAllowedAsync(Guid.Parse(cycleId));
+            if (isRevisionAllowed)
+                return;
+
             // Cycle is not in Do stage — check if caller is privileged
             var username = _contextAccessor.HttpContext!.User.Identity?.Name;
             if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))

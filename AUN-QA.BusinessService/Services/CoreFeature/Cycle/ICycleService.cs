@@ -26,6 +26,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         Task<int?> GetUserRoleAsync(Guid cycleId, Guid userId);
         Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId);
         Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId);
+        Task<bool> IsRevisionAllowedAsync(Guid cycleId);
         #endregion
     }
 }

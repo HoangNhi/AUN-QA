@@ -283,6 +283,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     changedBy: GetDisplayName(),
                     changedAt: now));
 
+            report.ReviewRound += 1;
             report.Status = (int)SarStatus.Submitted;
             report.SubmittedAt = now;
             report.SubmittedBy = GetDisplayName();

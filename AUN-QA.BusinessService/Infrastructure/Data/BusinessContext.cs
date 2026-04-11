@@ -224,7 +224,7 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(256);
             entity.Property(e => e.HighlightedText).HasMaxLength(500);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
-            entity.Property(e => e.ReviewRound).HasDefaultValue(1);
+            entity.Property(e => e.ReviewRound).HasDefaultValue(0);
             entity.Property(e => e.UpdatedBy).HasMaxLength(256);
 
             entity.HasOne(d => d.SarReport).WithMany(p => p.InternalComments)
@@ -250,7 +250,6 @@ public partial class BusinessContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.LastSavedAt).HasColumnType("datetime");
-            entity.Property(e => e.ReviewRound).HasDefaultValue(1);
             entity.Property(e => e.RevisionReason).HasMaxLength(1000);
             entity.Property(e => e.RevisionRequestedAt).HasColumnType("datetime");
             entity.Property(e => e.RevisionRequestedBy)

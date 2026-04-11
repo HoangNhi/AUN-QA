@@ -269,7 +269,7 @@ export default function PopupInternalReview({
     void refetch();
   }, [isCommentRealtimeEnabled, refetch]);
 
-  const { collaborators, isConnected, broadcastCommentChange } = useInternalReviewCollab({
+  const { collaborators, isConnected, broadcastCommentChange, sarYdoc } = useInternalReviewCollab({
     cycleId: item?.CycleId,
     reviewRound: item?.ReviewRound,
     enabled: open && !!item,

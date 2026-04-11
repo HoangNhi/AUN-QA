@@ -30,7 +30,7 @@ async function buildListItem(
   const reviewRound = detail?.ReviewRound ?? 1;
 
   let commentCount = 0;
-  if (status === 2) {
+  if (status === 2 || status === 3) {
     try {
       const commentsResponse = await internalReviewService.getComments({
         CycleId: cycleId,

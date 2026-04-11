@@ -77,6 +77,7 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddSingleton<IBackgroundTaskQueue>(ctx => new BackgroundTaskQueue(1000));
             builder.Services.AddHostedService<QueuedHostedService>();
+            builder.Services.AddHttpClient();
 
             //CORS
             builder.Services.AddCors(options =>

@@ -533,8 +533,10 @@ export default function PopupSarEditor({
           : undefined,
         {
           onCommentActivated: (commentId) => {
-            setActiveCommentId(commentId);
-            setRightPanelTab("comments");
+            setActiveCommentId(commentId || null);
+            if (commentId) {
+              setRightPanelTab("comments");
+            }
           },
         },
       ),
@@ -569,6 +571,33 @@ export default function PopupSarEditor({
 
     editor.setEditable(!isReadOnly);
   }, [editor, isReadOnly]);
+
+  useEffect(() => {
+    if (currentStatus !== 2 || !editor || editor.isDestroyed) {
+      return;
+    }
+
+    const markIds = new Set<string>();
+
+    editor.state.doc.descendants((node) => {
+      node.marks.forEach((mark) => {
+        if (mark.type.name !== "comment") {
+          return;
+        }
+
+        const id = String(mark.attrs.commentId ?? "").trim();
+        if (id) {
+          markIds.add(id);
+        }
+      });
+
+      return true;
+    });
+
+    markIds.forEach((id) => {
+      editor.commands.unsetComment(id);
+    });
+  }, [currentStatus, editor]);
 
   useEffect(() => {
     setActiveCommentId(null);
@@ -1498,7 +1527,7 @@ export default function PopupSarEditor({
                       ))}
                     </div>
 
-                    <div className="flex-1 min-h-0 overflow-hidden">
+                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                       {rightPanelTab === "comments" ? (
                         <SarReviewCommentsPanel
                           comments={reviewComments}

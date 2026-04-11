@@ -17,7 +17,9 @@ using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http;
 using System.Net;
+using System.Net.Http;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 {
@@ -29,19 +31,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         private readonly ICycleService _cycleService;
         private readonly ICatalogIntegrationService _catalogService;
         private readonly SystemProto.SystemProtoClient _systemClient;
+        private readonly IHttpClientFactory? _httpClientFactory;
 
         public SarService(
             BusinessContext context,
             IHttpContextAccessor contextAccessor,
             ICycleService cycleService,
             ICatalogIntegrationService catalogService,
-            SystemProto.SystemProtoClient systemClient)
+            SystemProto.SystemProtoClient systemClient,
+            IHttpClientFactory? httpClientFactory = null)
         {
             _context = context;
             _contextAccessor = contextAccessor;
             _cycleService = cycleService;
             _catalogService = catalogService;
             _systemClient = systemClient;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<GetListPagingResponse<SarGetListItemDto>> GetList(SarGetListPagingRequest request)
@@ -762,11 +767,26 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                         AlternativeFormatImportPartType.Html,
                         partId);
 
+                    var htmlToExport = report.RenderedHtml;
+                    if (_httpClientFactory is not null)
+                    {
+                        using var httpClient = _httpClientFactory.CreateClient();
+                        var httpRequest = _contextAccessor.HttpContext?.Request;
+                        var serverBaseUrl = httpRequest is not null
+                            ? $"{httpRequest.Scheme}://{httpRequest.Host}"
+                            : string.Empty;
+
+                        htmlToExport = await HtmlWordExportHelper.EmbedImagesAsBase64Async(
+                            htmlToExport,
+                            httpClient,
+                            serverBaseUrl);
+                    }
+
                     await using (var stream = htmlPart.GetStream(FileMode.Create, FileAccess.Write))
                     await using (var writer = new StreamWriter(stream, Encoding.UTF8))
                     {
                         await writer.WriteAsync(HtmlWordExportHelper.BuildExportHtmlDocument(
-                            report.RenderedHtml));
+                            htmlToExport));
                     }
 
                     body.AppendChild(new AltChunk { Id = partId });

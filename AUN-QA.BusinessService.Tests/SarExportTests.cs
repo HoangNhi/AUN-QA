@@ -95,6 +95,58 @@ public class SarExportTests
         Assert.Contains("padding: 0", result);
     }
 
+    [Fact]
+    public async Task EmbedImagesAsBase64_ReplacesRelativeImgSrc_WithDataUri()
+    {
+        var fakeBytes = new byte[] { 0xFF, 0xD8, 0xFF };
+        var handler = new FakeHttpMessageHandler(fakeBytes, "image/jpeg");
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("http://localhost:5001/")
+        };
+
+        var html = "<p>Hello</p><img src=\"/files/sar/test.jpg\" /><p>World</p>";
+
+        var result = await HtmlWordExportHelper.EmbedImagesAsBase64Async(
+            html,
+            httpClient,
+            "http://localhost:5001");
+
+        Assert.DoesNotContain("src=\"/files/sar/test.jpg\"", result);
+        Assert.Contains("src=\"data:image/jpeg;base64,", result);
+        Assert.Contains(Convert.ToBase64String(fakeBytes), result);
+    }
+
+    [Fact]
+    public async Task EmbedImagesAsBase64_SkipsAbsoluteExternalUrls_WhenFetchFails()
+    {
+        var handler = new FakeHttpMessageHandler(null, null);
+        using var httpClient = new HttpClient(handler);
+
+        var html = "<img src=\"https://external.example.com/img.png\" />";
+
+        var result = await HtmlWordExportHelper.EmbedImagesAsBase64Async(
+            html,
+            httpClient,
+            "http://localhost:5001");
+
+        Assert.Contains("src=\"https://external.example.com/img.png\"", result);
+    }
+
+    [Fact]
+    public async Task EmbedImagesAsBase64_ReturnsHtmlUnchanged_WhenNoImgTags()
+    {
+        using var httpClient = new HttpClient();
+        var html = "<p>No images here</p>";
+
+        var result = await HtmlWordExportHelper.EmbedImagesAsBase64Async(
+            html,
+            httpClient,
+            "http://localhost:5001");
+
+        Assert.Equal(html, result);
+    }
+
     [Theory]
     [InlineData((int)SarStatus.Draft)]
     [InlineData((int)SarStatus.Submitted)]
@@ -216,5 +268,36 @@ public class SarExportTests
 
         public Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId)
             => Task.FromResult((cycleId == _cycleId, _cycleStatus));
+    }
+
+    private sealed class FakeHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly byte[]? _bytes;
+        private readonly string? _contentType;
+
+        public FakeHttpMessageHandler(byte[]? bytes, string? contentType)
+        {
+            _bytes = bytes;
+            _contentType = contentType;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (_bytes is null)
+            {
+                return Task.FromResult(
+                    new HttpResponseMessage(System.Net.HttpStatusCode.NotFound));
+            }
+
+            var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(_bytes)
+            };
+            response.Content.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(_contentType!);
+            return Task.FromResult(response);
+        }
     }
 }

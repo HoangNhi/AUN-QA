@@ -153,14 +153,16 @@ export default function SarReviewCommentsPanel({
             const createdBy = view.displayName;
             const canNavigate =
               !!editor && !editor.isDestroyed && view.state === "linked";
+            const commentRefId = comment.CommentMarkId?.trim() || comment.Id;
+            const isActive = !!activeCommentId && activeCommentId === commentRefId;
 
             return (
               <article
                 key={comment.Id}
-                data-comment-id={comment.CommentMarkId?.trim() || comment.Id}
+                data-comment-id={commentRefId}
                 className={cn(
                   "rounded-lg border bg-white px-3 py-3 shadow-sm transition-colors",
-                  view.state === "linked" ? "border-slate-200" : "border-slate-200",
+                  isActive ? "border-l-4 border-amber-400 bg-amber-50" : "border-slate-200",
                   view.state === "orphaned" && "opacity-60",
                   canNavigate && "cursor-pointer",
                 )}

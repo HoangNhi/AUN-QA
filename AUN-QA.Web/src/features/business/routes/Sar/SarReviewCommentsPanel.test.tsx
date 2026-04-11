@@ -221,6 +221,38 @@ describe("SarReviewCommentsPanel", () => {
     expect(screen.getByText("Vòng 2 · 1 nhận xét")).toBeInTheDocument();
   });
 
+  it("applies active highlight when activeCommentId matches the comment mark id", () => {
+    render(
+      <SarReviewCommentsPanel
+        comments={[makeComment({ Id: "comment-1", CommentMarkId: "mark-abc" })]}
+        activeCommentId="mark-abc"
+        editor={null}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    const card = screen.getByText("Nguyễn Văn A").closest("article");
+    expect(card).toHaveClass("bg-amber-50");
+    expect(card).toHaveClass("border-l-4");
+    expect(card).toHaveClass("border-amber-400");
+  });
+
+  it("does not apply active highlight when activeCommentId does not match", () => {
+    render(
+      <SarReviewCommentsPanel
+        comments={[makeComment({ Id: "comment-1", CommentMarkId: "mark-abc" })]}
+        activeCommentId="mark-other"
+        editor={null}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    const card = screen.getByText("Nguyễn Văn A").closest("article");
+    expect(card).not.toHaveClass("bg-amber-50");
+  });
+
   it("scrolls the matching comment card into view when activeCommentId changes", async () => {
     if (!HTMLElement.prototype.scrollIntoView) {
       Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {

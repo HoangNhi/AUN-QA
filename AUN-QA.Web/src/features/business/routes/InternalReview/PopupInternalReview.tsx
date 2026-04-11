@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
 import { ChevronLeft, ChevronRight, FileDown, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ import {
   findMarkRange,
   findTextRange,
 } from "./commentEditorUtils";
+import { EvidenceTag } from "../Sar/extensions/EvidenceTag";
 import DecisionToolbar from "./components/DecisionToolbar";
 import CommentPanel from "./components/CommentPanel";
 
@@ -324,6 +326,12 @@ export default function PopupInternalReview({
         },
         onCommentActivated: handleCommentActivated,
       }),
+      Image.configure({
+        HTMLAttributes: {
+          style: "max-width: 100%; height: auto; display: block;",
+        },
+      }),
+      EvidenceTag,
     ],
     [handleCommentActivated, sarYdoc],
   );

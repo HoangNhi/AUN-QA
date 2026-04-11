@@ -48,7 +48,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         {
             var cycleQuery = _context.Cycles
                 .AsNoTracking()
-                .Where(x => !x.IsDeleted && x.IsActived);
+                .Where(x => !x.IsDeleted && x.IsActived
+                    && (x.Status == (int)CycleStatus.Do
+                        || x.Status == (int)CycleStatus.Check
+                        || x.Status == (int)CycleStatus.Act));
 
             if (!string.IsNullOrWhiteSpace(request.TextSearch))
             {

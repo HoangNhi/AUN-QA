@@ -14,7 +14,6 @@ import * as Y from "yjs";
 import { createSarEditorExtensions } from "./sarEditorExtensions";
 import { SarEditorToolbar } from "./SarEditorToolbar";
 import { evidenceCycleMapService } from "@/features/business/api/evidenceCycleMap.api";
-import { evidenceService } from "@/features/business/api/evidence.api";
 import { format } from "date-fns";
 import {
   Loader2,
@@ -117,8 +116,6 @@ export function canSubmitSar(
   return canSubmitByRole && (status === 1 || status === 3);
 }
 
-
-
 export function shouldShowSarRevisionReasonBanner(
   status: SarStatus,
   revisionReason?: string | null,
@@ -147,6 +144,79 @@ export function createSarEvidenceListRequest(
     TextSearch: "",
     CycleId: cycleId,
     EvidenceStatus: 3,
+  };
+}
+
+function createSarEvidencePreviewLookupSignature(
+  verifiedEvidences: Pick<EvidenceCycleMapGetListPaging, "Id" | "EvidenceId">[],
+): string {
+  return verifiedEvidences
+    .map(
+      ({ EvidenceId, Id }) =>
+        `${(EvidenceId ?? "").trim()}:${(Id ?? "").trim()}`,
+    )
+    .sort()
+    .join("|");
+}
+
+export function createSarEvidencePreviewQueryKey(
+  evidencePreviewId: string | null | undefined,
+  verifiedEvidences: Pick<EvidenceCycleMapGetListPaging, "Id" | "EvidenceId">[],
+) {
+  return [
+    "sar-evidence-preview",
+    evidencePreviewId,
+    createSarEvidencePreviewLookupSignature(verifiedEvidences),
+  ] as const;
+}
+
+export function findEvidenceCycleMapIdByEvidenceId(
+  verifiedEvidences: Pick<EvidenceCycleMapGetListPaging, "Id" | "EvidenceId">[],
+  evidenceId: string | null | undefined,
+): string | null {
+  const targetEvidenceId = evidenceId?.trim();
+  if (!targetEvidenceId) {
+    return null;
+  }
+
+  return (
+    verifiedEvidences.find((evidence) => evidence.EvidenceId === targetEvidenceId)
+      ?.Id ?? null
+  );
+}
+
+export function resolveSarEvidencePreviewCycleMapId(
+  verifiedEvidences: Pick<EvidenceCycleMapGetListPaging, "Id" | "EvidenceId">[],
+  evidenceId: string | null | undefined,
+): string {
+  const mappingId = findEvidenceCycleMapIdByEvidenceId(
+    verifiedEvidences,
+    evidenceId,
+  );
+
+  if (!mappingId) {
+    throw new Error("Không tìm thấy minh chứng đã xác minh để xem trước.");
+  }
+
+  return mappingId;
+}
+
+export function createSarEvidencePreviewCycleMap(
+  evidenceCycleMap: EvidenceCycleMap,
+  cycleId?: string | null,
+): EvidenceCycleMap {
+  const sarCycleId = cycleId ?? evidenceCycleMap.CycleId;
+
+  return {
+    ...evidenceCycleMap,
+    CycleId: sarCycleId ?? evidenceCycleMap.CycleId,
+    IsEdit: true,
+    Evidence: evidenceCycleMap.Evidence
+      ? {
+          ...evidenceCycleMap.Evidence,
+          CycleId: sarCycleId ?? evidenceCycleMap.Evidence.CycleId,
+        }
+      : undefined,
   };
 }
 
@@ -395,32 +465,36 @@ export default function PopupSarEditor({
     data: evidencePreviewResponse,
     isFetching: isEvidencePreviewLoading,
   } = useQuery({
-    queryKey: ["sar-evidence-preview", evidencePreviewId],
-    queryFn: () => evidenceService.getById(evidencePreviewId!),
-    enabled: open && isEvidencePreviewOpen && !!evidencePreviewId,
+    queryKey: createSarEvidencePreviewQueryKey(
+      evidencePreviewId,
+      verifiedEvidences,
+    ),
+    queryFn: () => {
+      const mappingId = resolveSarEvidencePreviewCycleMapId(
+        verifiedEvidences,
+        evidencePreviewId,
+      );
+
+      return evidenceCycleMapService.getById(mappingId);
+    },
+    retry: false,
+    enabled:
+      open &&
+      isEvidencePreviewOpen &&
+      !!evidencePreviewId &&
+      verifiedEvidences.length > 0 &&
+      evidenceResponse?.Success === true,
   });
-  const evidencePreview = evidencePreviewResponse?.Data ?? null;
   const evidencePreviewCycleMap = useMemo<EvidenceCycleMap | null>(() => {
-    if (!evidencePreview || !cycle?.CycleId) {
+    if (!evidencePreviewResponse?.Data) {
       return null;
     }
 
-    return {
-      Id: `sar-preview-${evidencePreview.Id}`,
-      EvidenceId: evidencePreview.Id,
-      CycleId: cycle.CycleId,
-      ReviewStatus: 3,
-      Evidence: {
-        ...evidencePreview,
-        CycleId: cycle.CycleId,
-      },
-      IsEdit: true,
-      IsActived: true,
-      FolderUpload: evidencePreview.FolderUpload ?? "",
-      CreatedBy: evidencePreview.CreatedBy ?? "",
-      CreatedAt: evidencePreview.CreatedAt ?? "",
-    };
-  }, [cycle?.CycleId, evidencePreview]);
+    return createSarEvidencePreviewCycleMap(
+      evidencePreviewResponse.Data,
+      cycle?.CycleId,
+    );
+  }, [cycle?.CycleId, evidencePreviewResponse?.Data]);
 
   useEffect(() => {
     if (evidenceResponse && !evidenceResponse.Success) {

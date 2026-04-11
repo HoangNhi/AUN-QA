@@ -1,12 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
   canSubmitSar,
+  createSarEvidencePreviewCycleMap,
+  createSarEvidencePreviewQueryKey,
   isSarEditorReadOnly,
   createSarEvidenceListRequest,
+  findEvidenceCycleMapIdByEvidenceId,
+  resolveSarEvidencePreviewCycleMapId,
   shouldShowSarRevisionReasonBanner,
 } from "./PopupSarEditor";
 
 describe("PopupSarEditor workflow helpers", () => {
+  const baseEvidence = {
+    Id: "ev-2",
+    Name: "Evidence 2",
+    Code: "EV-2",
+    Status: 3,
+    FileTypeId: "file-type-1",
+    IsEdit: false,
+    IsActived: true,
+    CycleId: "workflow-cycle",
+  };
+
   it.each([
     [1, false],
     [2, true],
@@ -70,6 +85,71 @@ describe("PopupSarEditor workflow helpers", () => {
       TextSearch: "",
       CycleId: "cycle-123",
       EvidenceStatus: 3,
+    });
+  });
+
+  it("builds distinct preview keys when verified evidence mappings change", () => {
+    const basePreviewKey = createSarEvidencePreviewQueryKey("ev-2", [
+      { Id: "map-1", EvidenceId: "ev-1" },
+      { Id: "map-2", EvidenceId: "ev-2" },
+    ]);
+    const changedPreviewKey = createSarEvidencePreviewQueryKey("ev-2", [
+      { Id: "map-1", EvidenceId: "ev-1" },
+      { Id: "map-9", EvidenceId: "ev-2" },
+    ]);
+
+    expect(basePreviewKey).not.toEqual(changedPreviewKey);
+  });
+
+  it("finds the verified evidence mapping id by evidence id", () => {
+    expect(
+      findEvidenceCycleMapIdByEvidenceId(
+        [
+          { Id: "map-1", EvidenceId: "ev-1" },
+          { Id: "map-2", EvidenceId: "ev-2" },
+        ],
+        "ev-2",
+      ),
+    ).toBe("map-2");
+  });
+
+  it("throws a clear error when the evidence id is missing from verified evidences", () => {
+    expect(() =>
+      resolveSarEvidencePreviewCycleMapId(
+        [
+          { Id: "map-1", EvidenceId: "ev-1" },
+          { Id: "map-2", EvidenceId: "ev-2" },
+        ],
+        "ev-missing",
+      ),
+    ).toThrowError("Không tìm thấy minh chứng đã xác minh để xem trước.");
+  });
+
+  it("normalizes a workflow preview while preserving SAR context", () => {
+    expect(
+      createSarEvidencePreviewCycleMap(
+        {
+          Id: "map-2",
+          EvidenceId: "ev-2",
+          CycleId: "workflow-cycle",
+          ReviewStatus: 3,
+          Evidence: baseEvidence,
+          IsEdit: false,
+          IsActived: true,
+        },
+        "sar-cycle-123",
+      ),
+    ).toEqual({
+      Id: "map-2",
+      EvidenceId: "ev-2",
+      CycleId: "sar-cycle-123",
+      ReviewStatus: 3,
+      IsActived: true,
+      Evidence: {
+        ...baseEvidence,
+        CycleId: "sar-cycle-123",
+      },
+      IsEdit: true,
     });
   });
 });

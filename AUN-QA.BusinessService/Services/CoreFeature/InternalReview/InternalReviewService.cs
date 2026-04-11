@@ -25,6 +25,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             (int)CouncilRole.EvidenceProvider
         };
 
+        private static readonly int[] AllowedSarStatusesForReadComments =
+        {
+            (int)SarStatus.Submitted,
+            (int)SarStatus.RevisionRequested,
+            (int)SarStatus.Approved,
+        };
+
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly SystemProto.SystemProtoClient _systemClient;
@@ -196,7 +203,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
 
         public async Task<List<InternalCommentDto>> GetComments(GetInternalCommentsRequest request)
         {
-            var accessContext = await ValidateReviewAccessAsync(request.CycleId);
+            var accessContext = await ValidateReviewAccessAsync(request.CycleId, requireSubmitted: false);
             var reviewRound = request.ReviewRound ?? accessContext.SarReport.ReviewRound;
 
             var query = _context.InternalComments
@@ -306,7 +313,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
             await _context.SaveChangesAsync();
         }
 
-        private async Task<ReviewAccessContext> ValidateReviewAccessAsync(Guid cycleId)
+        private async Task<ReviewAccessContext> ValidateReviewAccessAsync(Guid cycleId, bool requireSubmitted = true)
         {
             var cycle = await _context.Cycles
                 .AsNoTracking()
@@ -331,9 +338,19 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.InternalReview
                 throw new BusinessException("Báo cáo TĐG không tồn tại trong chu kỳ này");
             }
 
-            if (sarReport.Status != (int)SarStatus.Submitted)
+            if (requireSubmitted)
             {
-                throw new BusinessException("Nhận xét nội bộ chỉ khả dụng khi SAR đang ở trạng thái Đã nộp");
+                if (sarReport.Status != (int)SarStatus.Submitted)
+                {
+                    throw new BusinessException("Nhận xét nội bộ chỉ khả dụng khi SAR đang ở trạng thái Đã nộp");
+                }
+            }
+            else
+            {
+                if (!AllowedSarStatusesForReadComments.Contains(sarReport.Status))
+                {
+                    throw new BusinessException("Không thể xem nhận xét khi SAR đang ở trạng thái này");
+                }
             }
 
             var userId = GetCurrentUserIdOrNull();

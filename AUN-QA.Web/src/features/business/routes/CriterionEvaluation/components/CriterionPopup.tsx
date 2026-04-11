@@ -90,6 +90,7 @@ function EvaluationForm({
   item,
   framework,
   mySubmission,
+  officialFields,
   viewingSubmission,
   getDisplayName,
   canSubmit,
@@ -103,6 +104,7 @@ function EvaluationForm({
   item: CriterionEvaluationItem;
   framework: FrameworkType;
   mySubmission: EvaluationSubmissionRequest | null;
+  officialFields?: OfficialDescriptiveFields | null;
   viewingSubmission: EvaluationSubmission | null;
   getDisplayName: (submission: EvaluationSubmission) => string;
   canSubmit: boolean;
@@ -121,10 +123,18 @@ function EvaluationForm({
   const [form, setForm] = useState<EvaluationSubmissionRequest>({
     Id: mySubmission?.Id,
     CriterionEvaluationId: item.Id,
-    CurrentState: mySubmission?.CurrentState ?? "",
-    Strengths: mySubmission?.Strengths ?? "",
-    Weaknesses: mySubmission?.Weaknesses ?? "",
-    ActionPlan: mySubmission?.ActionPlan ?? "",
+    CurrentState: isRevisionMode
+      ? officialFields?.CurrentState ?? mySubmission?.CurrentState ?? ""
+      : mySubmission?.CurrentState ?? "",
+    Strengths: isRevisionMode
+      ? officialFields?.Strengths ?? mySubmission?.Strengths ?? ""
+      : mySubmission?.Strengths ?? "",
+    Weaknesses: isRevisionMode
+      ? officialFields?.Weaknesses ?? mySubmission?.Weaknesses ?? ""
+      : mySubmission?.Weaknesses ?? "",
+    ActionPlan: isRevisionMode
+      ? officialFields?.ActionPlan ?? mySubmission?.ActionPlan ?? ""
+      : mySubmission?.ActionPlan ?? "",
     ProposedScore: mySubmission?.ProposedScore ?? null,
     ProposedResult: mySubmission?.ProposedResult ?? null,
   });
@@ -516,7 +526,8 @@ export function CriterionPopup({
   };
 
   const isApproved = item.Status === 3;
-  const showApprovedSummary = isApproved && !!officialFields && !sarRevisionMode;
+  const showApprovedSummary =
+    isApproved && !!officialFields && (!sarRevisionMode || canApprove);
 
   useEffect(() => {
     if (officialFields) {
@@ -615,6 +626,7 @@ export function CriterionPopup({
                     item={item}
                     framework={framework}
                     mySubmission={mySubmission}
+                    officialFields={officialFields}
                     viewingSubmission={viewingSubmission}
                     getDisplayName={getDisplayName}
                     canSubmit={canSubmit}

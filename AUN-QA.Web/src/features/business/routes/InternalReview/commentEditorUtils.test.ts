@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import { describe, expect, it } from "vitest";
-import { findTextRange } from "./commentEditorUtils";
+import { findTextRange, getOccurrenceIndex } from "./commentEditorUtils";
 
 type FakeTextNode = {
   isText: true;
@@ -64,6 +64,21 @@ describe("findTextRange", () => {
     expect(findTextRange(editor, "Match")).toEqual({ from: 0, to: 5 });
   });
 
+  it("returns the second occurrence when occurrenceIndex is 1", () => {
+    const editor = createEditor([
+      { node: { isText: true, text: "Match here" }, pos: 0 },
+      { node: { isText: true, text: "Match here too" }, pos: 20 },
+    ]);
+
+    expect(findTextRange(editor, "Match", 1)).toEqual({ from: 20, to: 25 });
+  });
+
+  it("returns null when occurrenceIndex exceeds available occurrences", () => {
+    const editor = createEditor([{ node: { isText: true, text: "Match here" }, pos: 0 }]);
+
+    expect(findTextRange(editor, "Match", 5)).toBeNull();
+  });
+
   it("returns null when no match exists", () => {
     const editor = createEditor([
       { node: { isText: true, text: "Alpha" }, pos: 0 },
@@ -83,5 +98,31 @@ describe("findTextRange", () => {
     ]);
 
     expect(findTextRange(editor, "one paragraph two")).toEqual({ from: 10, to: 33 });
+  });
+});
+
+describe("getOccurrenceIndex", () => {
+  it("returns 0 for the first occurrence", () => {
+    const editor = createEditor([
+      { node: { isText: true, text: "Match here" }, pos: 0 },
+      { node: { isText: true, text: "Match there" }, pos: 20 },
+    ]);
+
+    expect(getOccurrenceIndex(editor, "Match", 0)).toBe(0);
+  });
+
+  it("returns 1 for the second occurrence", () => {
+    const editor = createEditor([
+      { node: { isText: true, text: "Match here" }, pos: 0 },
+      { node: { isText: true, text: "Match there" }, pos: 20 },
+    ]);
+
+    expect(getOccurrenceIndex(editor, "Match", 20)).toBe(1);
+  });
+
+  it("returns 0 as fallback when fromPosition does not match any occurrence", () => {
+    const editor = createEditor([{ node: { isText: true, text: "Hello world" }, pos: 0 }]);
+
+    expect(getOccurrenceIndex(editor, "Hello", 999)).toBe(0);
   });
 });

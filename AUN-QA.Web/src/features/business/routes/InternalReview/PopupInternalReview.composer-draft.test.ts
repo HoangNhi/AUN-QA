@@ -9,6 +9,7 @@ describe("buildComposerDraftFromSelection", () => {
         to: 20,
         highlightedText: "abc",
         markId: "id-1",
+        occurrenceIndex: 0,
       }),
     ).toBeNull();
   });
@@ -20,6 +21,7 @@ describe("buildComposerDraftFromSelection", () => {
         to: 15,
         highlightedText: "   ",
         markId: "id-2",
+        occurrenceIndex: 0,
       }),
     ).toBeNull();
   });
@@ -31,12 +33,14 @@ describe("buildComposerDraftFromSelection", () => {
         to: 15,
         highlightedText: "đoạn văn bản được chọn",
         markId: "id-3",
+        occurrenceIndex: 2,
       }),
     ).toEqual({
       markId: "id-3",
       highlightedText: "đoạn văn bản được chọn",
       from: 5,
       to: 15,
+      occurrenceIndex: 2,
     });
   });
 });

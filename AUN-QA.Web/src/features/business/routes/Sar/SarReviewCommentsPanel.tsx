@@ -42,7 +42,7 @@ function getCommentViewModel(
     };
   }
 
-  const range = findTextRange(editor, highlightedText);
+  const range = findTextRange(editor, highlightedText, comment.OccurrenceIndex ?? 0);
 
   return {
     comment,

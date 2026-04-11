@@ -24,6 +24,7 @@ import { sarService } from "@/features/business/api/sar.api";
 import {
   applyCommentMarkVisualState,
   findTextRange,
+  getOccurrenceIndex,
 } from "./commentEditorUtils";
 import DecisionToolbar from "./components/DecisionToolbar";
 import CommentPanel from "./components/CommentPanel";
@@ -46,6 +47,7 @@ interface ComposerDraft {
   highlightedText: string;
   from: number;
   to: number;
+  occurrenceIndex: number;
 }
 
 interface BuildComposerDraftInput {
@@ -53,6 +55,7 @@ interface BuildComposerDraftInput {
   to: number;
   highlightedText: string;
   markId: string;
+  occurrenceIndex: number;
 }
 
 interface BubbleSelectionRange {
@@ -122,6 +125,7 @@ export function buildComposerDraftFromSelection(
     highlightedText,
     from: input.from,
     to: input.to,
+    occurrenceIndex: input.occurrenceIndex,
   };
 }
 
@@ -433,7 +437,11 @@ export default function PopupInternalReview({
         return;
       }
 
-      const range = findTextRange(editor, comment.HighlightedText);
+      const range = findTextRange(
+        editor,
+        comment.HighlightedText,
+        comment.OccurrenceIndex ?? 0,
+      );
       if (!range) {
         return;
       }
@@ -502,7 +510,11 @@ export default function PopupInternalReview({
         return;
       }
 
-      const range = findTextRange(editor, comment.HighlightedText);
+      const range = findTextRange(
+        editor,
+        comment.HighlightedText,
+        comment.OccurrenceIndex ?? 0,
+      );
       if (!range) {
         return;
       }
@@ -587,11 +599,14 @@ export default function PopupInternalReview({
     }
 
     const { from, to } = editor.state.selection;
+    const highlightedText = editor.state.doc.textBetween(from, to, "\n");
+    const occurrenceIndex = getOccurrenceIndex(editor, highlightedText, from);
     const draft = buildComposerDraftFromSelection({
       from,
       to,
-      highlightedText: editor.state.doc.textBetween(from, to, "\n"),
+      highlightedText,
       markId: crypto.randomUUID(),
+      occurrenceIndex,
     });
 
     if (!draft) {
@@ -630,6 +645,7 @@ export default function PopupInternalReview({
         CommentText: commentText,
         HighlightedText: currentComposerDraft.highlightedText,
         CommentMarkId: currentComposerDraft.markId,
+        OccurrenceIndex: currentComposerDraft.occurrenceIndex,
       });
 
       broadcastCommentChange();

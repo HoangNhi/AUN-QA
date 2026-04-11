@@ -23,6 +23,7 @@ export interface InternalComment {
   CommentText: string;
   HighlightedText?: string | null;
   CommentMarkId?: string | null;
+  OccurrenceIndex?: number | null;
   ReviewRound: number;
   CreatedAt: string;
   CreatedBy: string;
@@ -42,4 +43,5 @@ export interface AddInternalCommentRequest {
   CommentText: string;
   HighlightedText?: string | null;
   CommentMarkId?: string | null;
+  OccurrenceIndex?: number | null;
 }

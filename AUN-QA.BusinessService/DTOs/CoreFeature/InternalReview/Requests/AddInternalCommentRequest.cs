@@ -11,6 +11,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Requests
         public string? HighlightedText { get; set; }
 
         public string? CommentMarkId { get; set; }
+
+        public int? OccurrenceIndex { get; set; }
     }
 
     public class AddInternalCommentRequestValidator : AbstractValidator<AddInternalCommentRequest>

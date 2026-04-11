@@ -1,34 +1,121 @@
 import type { Editor } from "@tiptap/react";
 
+function normalizeWhitespace(text: string): string {
+  return text
+    .trim()
+    .replace(/[\n\r\t]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+type TextNodeEntry = {
+  text: string;
+  pos: number;
+  parent: unknown;
+};
+
+function buildSearchableText(entries: TextNodeEntry[]): {
+  text: string;
+  positions: number[];
+} {
+  const rawCharacters: string[] = [];
+  const positions: number[] = [];
+
+  let previousParent: unknown = null;
+  let previousWasWhitespace = true;
+
+  entries.forEach((entry, index) => {
+    const parentChanged = index > 0 && entry.parent !== previousParent;
+    if (parentChanged && !previousWasWhitespace) {
+      rawCharacters.push(" ");
+      positions.push(entry.pos);
+      previousWasWhitespace = true;
+    }
+
+    for (let charIndex = 0; charIndex < entry.text.length; charIndex += 1) {
+      const char = entry.text[charIndex];
+      const isWhitespace = /\s/.test(char);
+
+      if (isWhitespace) {
+        if (previousWasWhitespace) {
+          continue;
+        }
+
+        rawCharacters.push(" ");
+        positions.push(entry.pos + charIndex);
+        previousWasWhitespace = true;
+        continue;
+      }
+
+      rawCharacters.push(char.toLowerCase());
+      positions.push(entry.pos + charIndex);
+      previousWasWhitespace = false;
+    }
+
+    previousParent = entry.parent;
+  });
+
+  let startIndex = 0;
+  while (startIndex < rawCharacters.length && rawCharacters[startIndex] === " ") {
+    startIndex += 1;
+  }
+
+  let endIndex = rawCharacters.length;
+  while (endIndex > startIndex && rawCharacters[endIndex - 1] === " ") {
+    endIndex -= 1;
+  }
+
+  return {
+    text: rawCharacters.slice(startIndex, endIndex).join(""),
+    positions: positions.slice(startIndex, endIndex),
+  };
+}
+
 export function findTextRange(
   editor: Editor,
   text: string,
 ): { from: number; to: number } | null {
-  const normalized = text.trim();
-  if (!normalized) {
+  const normalizedSearchText = normalizeWhitespace(text).toLowerCase();
+  if (!normalizedSearchText) {
     return null;
   }
 
-  let range: { from: number; to: number } | null = null;
+  const textEntries: TextNodeEntry[] = [];
 
-  editor.state.doc.descendants((node, pos) => {
-    if (range || !node.isText || !node.text) {
-      return !range;
+  editor.state.doc.descendants((node, pos, parent) => {
+    if (!node.isText || !node.text) {
+      return true;
     }
 
-    const index = node.text.toLowerCase().indexOf(normalized.toLowerCase());
-    if (index >= 0) {
-      range = {
-        from: pos + index,
-        to: pos + index + normalized.length,
-      };
-      return false;
-    }
+    textEntries.push({
+      text: node.text,
+      pos,
+      parent,
+    });
 
     return true;
   });
 
-  return range;
+  if (textEntries.length === 0) {
+    return null;
+  }
+
+  const searchableText = buildSearchableText(textEntries);
+  const searchIndex = searchableText.text.indexOf(normalizedSearchText);
+  if (searchIndex < 0) {
+    return null;
+  }
+
+  const fromPosition = searchableText.positions[searchIndex];
+  const toPosition = searchableText.positions[searchIndex + normalizedSearchText.length - 1];
+
+  if (fromPosition === undefined || toPosition === undefined) {
+    return null;
+  }
+
+  return {
+    from: fromPosition,
+    to: toPosition + 1,
+  };
 }
 
 export function applyCommentMarkVisualState(

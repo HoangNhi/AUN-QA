@@ -10,15 +10,22 @@ type FakeTextNode = {
 type FakeDescendant = {
   node: FakeTextNode;
   pos: number;
+  parent?: object | null;
 };
 
 function createEditor(descendants: FakeDescendant[]) {
   return {
     state: {
       doc: {
-        descendants(callback: (node: FakeTextNode, pos: number) => boolean | void) {
-          descendants.forEach(({ node, pos }) => {
-            callback(node, pos);
+        descendants(
+          callback: (
+            node: FakeTextNode,
+            pos: number,
+            parent?: object | null,
+          ) => boolean | void,
+        ) {
+          descendants.forEach(({ node, pos, parent }) => {
+            callback(node, pos, parent ?? null);
           });
         },
       },
@@ -64,5 +71,17 @@ describe("findTextRange", () => {
     ]);
 
     expect(findTextRange(editor, "Gamma")).toBeNull();
+  });
+
+  it("finds text across paragraph boundaries", () => {
+    const firstParagraph = { type: { isBlock: true } };
+    const secondParagraph = { type: { isBlock: true } };
+
+    const editor = createEditor([
+      { node: { isText: true, text: "Paragraph one" }, pos: 0, parent: firstParagraph },
+      { node: { isText: true, text: "Paragraph two" }, pos: 20, parent: secondParagraph },
+    ]);
+
+    expect(findTextRange(editor, "one paragraph two")).toEqual({ from: 10, to: 33 });
   });
 });

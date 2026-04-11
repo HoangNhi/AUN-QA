@@ -590,7 +590,7 @@ export default function PopupInternalReview({
     const draft = buildComposerDraftFromSelection({
       from,
       to,
-      highlightedText: editor.state.doc.textBetween(from, to, " "),
+      highlightedText: editor.state.doc.textBetween(from, to, "\n"),
       markId: crypto.randomUUID(),
     });
 

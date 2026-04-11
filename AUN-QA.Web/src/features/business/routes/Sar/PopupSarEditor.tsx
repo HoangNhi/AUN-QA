@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn, getFileUrl } from "@/lib/utils";
 import { fileService } from "@/features/file/api/uploadfile.api";
 import { sarService } from "@/features/business/api/sar.api";
+import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -62,6 +63,7 @@ import {
 } from "./extensions/EvidenceTag";
 import type { TocItem } from "./sarEditorExtensions";
 import { isLocalSarAutosaveOrigin } from "./autosave-origin";
+import SarReviewCommentsPanel from "./SarReviewCommentsPanel";
 
 interface PopupSarEditorProps {
   open: boolean;
@@ -95,7 +97,7 @@ const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> =
       className: "bg-blue-100 text-blue-700 border border-blue-300",
     },
     3: {
-      label: "Đang hoàn thiện",
+      label: "Yêu cầu chỉnh sửa",
       className: "bg-amber-100 text-amber-800 border border-amber-300",
     },
     4: {
@@ -130,7 +132,7 @@ export function getSarPdcaPhaseLabel(status: SarStatus): string | null {
   }
 
   if (status === 3) {
-    return "Pha CHECK \u2014 Ho\u00e0n thi\u1ec7n theo nh\u1eadn x\u00e9t";
+    return "Pha CHECK — Hoàn thiện theo yêu cầu chỉnh sửa";
   }
 
   return null;
@@ -345,6 +347,12 @@ export default function PopupSarEditor({
     currentStatus,
     draft?.RevisionReason,
   );
+  const { comments: reviewComments, isLoading: isReviewCommentsLoading } =
+    useInternalReviewComments({
+      cycleId: cycle?.CycleId,
+      reviewRound: draft?.ReviewRound,
+      enabled: open && currentStatus === 3,
+    });
   const evidenceRequest = useMemo(
     () => (cycle?.CycleId ? createSarEvidenceListRequest(cycle.CycleId) : null),
     [cycle?.CycleId],
@@ -354,7 +362,10 @@ export default function PopupSarEditor({
     queryFn: () => evidenceCycleMapService.getList(evidenceRequest!),
     enabled: open && !!evidenceRequest,
   });
-  const verifiedEvidences = evidenceResponse?.Data?.Data ?? [];
+  const verifiedEvidences = useMemo(
+    () => evidenceResponse?.Data?.Data ?? [],
+    [evidenceResponse?.Data?.Data],
+  );
   const filteredEvidences = useMemo(() => {
     const keyword = evidenceKeyword.trim().toLowerCase();
     if (!keyword) {
@@ -540,7 +551,7 @@ export default function PopupSarEditor({
   }, [editor, isEditable]);
 
   useEffect(() => {
-    if (!open || !cycle || !draftReportId) {
+    if (!open || !roomName || !draftReportId) {
       return;
     }
 
@@ -588,13 +599,6 @@ export default function PopupSarEditor({
     hasUnsavedLocalChangesRef.current = false;
     setChangeVersion(0);
     setIsAutoSaveEnabled(false);
-    setLastSavedAt(draft?.LastSavedAt ? new Date(draft.LastSavedAt) : null);
-
-    if (!isReadOnly) {
-      enableAutoSaveTimerRef.current = window.setTimeout(() => {
-        setIsAutoSaveEnabled(true);
-      }, 700);
-    }
 
     return () => {
       if (enableAutoSaveTimerRef.current) {
@@ -617,7 +621,51 @@ export default function PopupSarEditor({
       setChangeVersion(0);
       setIsAutoSaveEnabled(false);
     };
-  }, [open, cycle?.CycleId, draftReportId, draftSnapshot, roomName, wsUrl]);
+  }, [
+    open,
+    draftReportId,
+    draftSnapshot,
+    roomName,
+    wsUrl,
+  ]);
+
+  useEffect(() => {
+    if (!open) {
+      setLastSavedAt(null);
+      return;
+    }
+
+    setLastSavedAt(draft?.LastSavedAt ? new Date(draft.LastSavedAt) : null);
+  }, [open, draft?.LastSavedAt]);
+
+  useEffect(() => {
+    if (enableAutoSaveTimerRef.current) {
+      window.clearTimeout(enableAutoSaveTimerRef.current);
+      enableAutoSaveTimerRef.current = null;
+    }
+
+    if (!open || isReadOnly) {
+      setIsAutoSaveEnabled(false);
+      return;
+    }
+
+    enableAutoSaveTimerRef.current = window.setTimeout(() => {
+      setIsAutoSaveEnabled(true);
+    }, 700);
+
+    return () => {
+      if (enableAutoSaveTimerRef.current) {
+        window.clearTimeout(enableAutoSaveTimerRef.current);
+        enableAutoSaveTimerRef.current = null;
+      }
+    };
+  }, [
+    open,
+    draftReportId,
+    isReadOnly,
+    roomName,
+    draftSnapshot,
+  ]);
 
   // Set awareness state with full user info (including initials and avatar)
   // This runs AFTER the editor is mounted and CollaborationCursor plugin has initialized
@@ -1250,101 +1298,110 @@ export default function PopupSarEditor({
               </div>
 
               {/* RIGHT PANEL */}
-              <aside
-                className={`border-l bg-white transition-all duration-200 overflow-hidden shrink-0 ${
-                  isEvidencePanelOpen ? "w-[320px]" : "w-0"
-                }`}
-              >
-                <div className="h-full min-h-0 flex flex-col">
-                  <div className="flex items-start justify-between gap-3 border-b px-3 py-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Minh chứng
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-slate-400">
-                        Kéo thả vào nội dung để chèn thẻ minh chứng
-                      </p>
-                    </div>
-                    <button
-                      onClick={toggleEvidencePanel}
-                      className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                      title="Thu gọn panel minh chứng"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <div className="border-b px-3 py-2">
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input
-                        value={evidenceKeyword}
-                        onChange={(event) =>
-                          setEvidenceKeyword(event.target.value)
-                        }
-                        placeholder="Tìm theo mã hoặc tên..."
-                        className="h-9 pl-8"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto p-3">
-                    {isEvidenceLoading ? (
-                      <div className="flex h-24 items-center justify-center text-slate-400">
-                        <Loader2 className="h-5 w-5 animate-spin" />
+              {currentStatus === 3 ? (
+                <SarReviewCommentsPanel
+                  comments={reviewComments}
+                  editor={editor}
+                  isLoading={isReviewCommentsLoading}
+                  reviewRound={draft?.ReviewRound}
+                />
+              ) : (
+                <aside
+                  className={`border-l bg-white transition-all duration-200 overflow-hidden shrink-0 ${
+                    isEvidencePanelOpen ? "w-[320px]" : "w-0"
+                  }`}
+                >
+                  <div className="h-full min-h-0 flex flex-col">
+                    <div className="flex items-start justify-between gap-3 border-b px-3 py-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Minh chứng
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-slate-400">
+                          Kéo thả vào nội dung để chèn thẻ minh chứng
+                        </p>
                       </div>
-                    ) : filteredEvidences.length === 0 ? (
-                      <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
-                        {verifiedEvidences.length === 0
-                          ? "Không có minh chứng đã xác minh cho chu kỳ này."
-                          : "Không tìm thấy minh chứng khớp từ khóa."}
+                      <button
+                        onClick={toggleEvidencePanel}
+                        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                        title="Thu gọn panel minh chứng"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <div className="border-b px-3 py-2">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Input
+                          value={evidenceKeyword}
+                          onChange={(event) =>
+                            setEvidenceKeyword(event.target.value)
+                          }
+                          placeholder="Tìm theo mã hoặc tên..."
+                          className="h-9 pl-8"
+                        />
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {filteredEvidences.map((evidence) => (
-                          <button
-                            key={evidence.EvidenceId}
-                            type="button"
-                            draggable={isEditable}
-                            onDragStart={(event) =>
-                              handleEvidenceDragStart(event, evidence)
-                            }
-                            disabled={!isEditable}
-                            className={cn(
-                              "w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left shadow-sm transition",
-                              isEditable
-                                ? "cursor-grab hover:border-blue-300 hover:bg-blue-50/70 active:cursor-grabbing"
-                                : "cursor-default opacity-70",
-                            )}
-                            title={
-                              isEditable
-                                ? "Kéo thả để chèn vào nội dung"
-                                : "Chế độ chỉ đọc"
-                            }
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                                    [{evidence.evidenceCode || "Mã"}]
-                                  </span>
-                                  <span className="text-[11px] uppercase tracking-wide text-emerald-600">
-                                    Đã xác minh
-                                  </span>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-3">
+                      {isEvidenceLoading ? (
+                        <div className="flex h-24 items-center justify-center text-slate-400">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        </div>
+                      ) : filteredEvidences.length === 0 ? (
+                        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+                          {verifiedEvidences.length === 0
+                            ? "Không có minh chứng đã xác minh cho chu kỳ này."
+                            : "Không tìm thấy minh chứng khớp từ khóa."}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {filteredEvidences.map((evidence) => (
+                            <button
+                              key={evidence.EvidenceId}
+                              type="button"
+                              draggable={isEditable}
+                              onDragStart={(event) =>
+                                handleEvidenceDragStart(event, evidence)
+                              }
+                              disabled={!isEditable}
+                              className={cn(
+                                "w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left shadow-sm transition",
+                                isEditable
+                                  ? "cursor-grab hover:border-blue-300 hover:bg-blue-50/70 active:cursor-grabbing"
+                                  : "cursor-default opacity-70",
+                              )}
+                              title={
+                                isEditable
+                                  ? "Kéo thả để chèn vào nội dung"
+                                  : "Chế độ chỉ đọc"
+                              }
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                                      [{evidence.evidenceCode || "Mã"}]
+                                    </span>
+                                    <span className="text-[11px] uppercase tracking-wide text-emerald-600">
+                                      Đã xác minh
+                                    </span>
+                                  </div>
+                                  <p className="mt-2 truncate text-sm font-medium text-slate-800">
+                                    {evidence.evidenceName ||
+                                      "Không có tên minh chứng"}
+                                  </p>
                                 </div>
-                                <p className="mt-2 truncate text-sm font-medium text-slate-800">
-                                  {evidence.evidenceName ||
-                                    "Không có tên minh chứng"}
-                                </p>
                               </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </aside>
+                </aside>
+              )}
             </div>
 
             {/* Sidebar toggle when closed */}
@@ -1358,7 +1415,7 @@ export default function PopupSarEditor({
               </button>
             )}
 
-            {!isEvidencePanelOpen && (
+            {currentStatus !== 3 && !isEvidencePanelOpen && (
               <button
                 onClick={toggleEvidencePanel}
                 className="absolute right-0 top-1/2 -translate-y-1/2 h-12 min-w-[28px] bg-white border border-r-0 border-slate-200 hover:bg-slate-50 text-slate-600 text-xs flex items-center justify-center rounded-l transition-colors z-20 shadow-sm"

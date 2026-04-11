@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommentMarkVisualState } from "./PopupInternalReview";
+import { applyCommentMarkVisualState } from "./commentEditorUtils";
 
 function createEditorDom(): HTMLDivElement {
   const container = document.createElement("div");

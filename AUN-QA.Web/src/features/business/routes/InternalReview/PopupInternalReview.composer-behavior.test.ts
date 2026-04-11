@@ -1,10 +1,5 @@
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import {
-  PopupInternalReviewComposerSnippetPreview,
-  shouldHandleCommentActivated,
-  shouldShowCommentComposerBubble,
-} from "./PopupInternalReview";
+import { shouldHandleCommentActivated, shouldShowCommentComposerBubble } from "./PopupInternalReview";
 
 describe("shouldShowCommentComposerBubble", () => {
   it("keeps bubble visible while composer is open even when selection is collapsed", () => {
@@ -63,37 +58,5 @@ describe("shouldHandleCommentActivated", () => {
         hasDraft: false,
       }),
     ).toBe(true);
-  });
-});
-
-describe("PopupInternalReviewComposerSnippetPreview", () => {
-  it("renders selected snippet with readable classes and explicit ellipsis overlay", () => {
-    render(
-      PopupInternalReviewComposerSnippetPreview({
-        highlightedText: "Đoạn văn bản được chọn để hiển thị trong composer.",
-      }),
-    );
-
-    expect(screen.getByText("Đoạn đã chọn")).toHaveClass("text-amber-700");
-
-    const snippet = screen.getByText("Đoạn văn bản được chọn để hiển thị trong composer.");
-    expect(snippet).toHaveClass(
-      "max-h-[50px]",
-      "overflow-hidden",
-      "pr-8",
-      "text-sm",
-      "leading-5",
-      "whitespace-pre-wrap",
-      "break-words",
-    );
-
-    const ellipsis = screen.getByText("...");
-    expect(ellipsis).toHaveClass(
-      "pointer-events-none",
-      "absolute",
-      "bottom-2",
-      "right-2",
-      "text-amber-700",
-    );
   });
 });

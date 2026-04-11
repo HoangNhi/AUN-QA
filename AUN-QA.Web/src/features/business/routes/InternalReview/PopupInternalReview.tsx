@@ -21,6 +21,10 @@ import type {
   InternalReviewListItem,
 } from "@/features/business/types/internalreview.types";
 import { sarService } from "@/features/business/api/sar.api";
+import {
+  applyCommentMarkVisualState,
+  findTextRange,
+} from "./commentEditorUtils";
 import DecisionToolbar from "./components/DecisionToolbar";
 import CommentPanel from "./components/CommentPanel";
 
@@ -65,36 +69,6 @@ interface CommentActivationGuardParams {
 
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
 
-function findTextRange(
-  editor: NonNullable<ReturnType<typeof useEditor>>,
-  text: string,
-): { from: number; to: number } | null {
-  const normalized = text.trim();
-  if (!normalized) {
-    return null;
-  }
-
-  let range: { from: number; to: number } | null = null;
-  editor.state.doc.descendants((node, pos) => {
-    if (range || !node.isText || !node.text) {
-      return !range;
-    }
-
-    const index = node.text.toLowerCase().indexOf(normalized.toLowerCase());
-    if (index >= 0) {
-      range = {
-        from: pos + index,
-        to: pos + index + normalized.length,
-      };
-      return false;
-    }
-
-    return true;
-  });
-
-  return range;
-}
-
 function hasCommentMark(
   editor: NonNullable<ReturnType<typeof useEditor>>,
   commentId: string,
@@ -113,42 +87,6 @@ function hasCommentMark(
   });
 
   return found;
-}
-
-function getCommentMarkElements(editorDom: HTMLElement, commentId: string): HTMLElement[] {
-  const escapedCommentId =
-    typeof CSS !== "undefined" && typeof CSS.escape === "function"
-      ? CSS.escape(commentId)
-      : null;
-
-  if (escapedCommentId) {
-    return Array.from(
-      editorDom.querySelectorAll<HTMLElement>(`span[data-comment-id="${escapedCommentId}"]`),
-    );
-  }
-
-  return Array.from(editorDom.querySelectorAll<HTMLElement>("span[data-comment-id]")).filter(
-    (candidate) => candidate.getAttribute("data-comment-id") === commentId,
-  );
-}
-
-export function applyCommentMarkVisualState(
-  editorDom: HTMLElement,
-  activeCommentId: string | null,
-): void {
-  const allMarks = editorDom.querySelectorAll<HTMLElement>("span[data-comment-id]");
-  allMarks.forEach((element) => {
-    element.style.backgroundColor = "";
-    element.style.boxShadow = "";
-  });
-
-  if (activeCommentId) {
-    const activeMarks = getCommentMarkElements(editorDom, activeCommentId);
-    activeMarks.forEach((element) => {
-      element.style.backgroundColor = "rgb(252 211 77)";
-      element.style.boxShadow = "0 0 0 2px rgb(245 158 11)";
-    });
-  }
 }
 
 export function shouldShowCommentComposerBubble(
@@ -195,17 +133,11 @@ export function PopupInternalReviewComposerSnippetPreview({
   highlightedText,
 }: PopupInternalReviewComposerSnippetPreviewProps) {
   return (
-    <div className="relative rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-        Đoạn đã chọn
-      </p>
-      <p className="max-h-[50px] overflow-hidden whitespace-pre-wrap break-words pr-8 text-sm leading-5 text-amber-950">
+    <blockquote className="max-h-[3.5rem] overflow-hidden border-l-2 border-amber-400 bg-amber-50 px-3 py-2">
+      <p className="line-clamp-2 whitespace-pre-wrap break-words text-sm italic leading-5 text-amber-950">
         {highlightedText}
       </p>
-      <span className="pointer-events-none absolute bottom-2 right-2 rounded bg-amber-100 px-1 text-[11px] font-medium leading-none text-amber-700">
-        ...
-      </span>
-    </div>
+    </blockquote>
   );
 }
 
@@ -727,9 +659,9 @@ export default function PopupInternalReview({
     }
   };
 
-  const handleApprove = async () => {
+  const handleApprove = async (): Promise<boolean> => {
     if (!item) {
-      return;
+      return false;
     }
 
     setIsDecisionLoading(true);
@@ -745,19 +677,21 @@ export default function PopupInternalReview({
       toast.success("Đã phê duyệt SAR.");
       onDataChanged();
       onOpenChange(false);
+      return true;
     } catch (error) {
       toast.error(
         (error instanceof Error ? error.message : undefined) ||
           "Không thể phê duyệt SAR.",
       );
+      return false;
     } finally {
       setIsDecisionLoading(false);
     }
   };
 
-  const handleRequestRevision = async (reason: string) => {
+  const handleRequestRevision = async (reason: string): Promise<boolean> => {
     if (!item) {
-      return;
+      return false;
     }
 
     setIsDecisionLoading(true);
@@ -774,11 +708,13 @@ export default function PopupInternalReview({
       toast.success("Đã gửi yêu cầu chỉnh sửa.");
       onDataChanged();
       onOpenChange(false);
+      return true;
     } catch (error) {
       toast.error(
         (error instanceof Error ? error.message : undefined) ||
           "Không thể gửi yêu cầu chỉnh sửa.",
       );
+      return false;
     } finally {
       setIsDecisionLoading(false);
     }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +14,12 @@ interface DecisionToolbarProps {
   canDecide: boolean;
   disabledReason?: string | null;
   isSubmitting?: boolean;
-  onApprove: () => Promise<void> | void;
-  onRequestRevision: (reason: string) => Promise<void> | void;
+  onApprove: () => boolean | Promise<boolean>;
+  onRequestRevision: (reason: string) => boolean | Promise<boolean>;
+}
+
+export function isRevisionReasonValid(trimmedReason: string): boolean {
+  return trimmedReason.length > 0;
 }
 
 export default function DecisionToolbar({
@@ -29,14 +33,9 @@ export default function DecisionToolbar({
   const [revisionOpen, setRevisionOpen] = useState(false);
   const [reason, setReason] = useState("");
   const trimmedReason = reason.trim();
-  const canSubmitRevision = trimmedReason.length >= 20;
+  const canSubmitRevision = isRevisionReasonValid(trimmedReason);
   const effectiveDisabledReason =
     !canDecide ? disabledReason ?? "Không đủ điều kiện phê duyệt." : null;
-
-  const revisionHint = useMemo(
-    () => `${trimmedReason.length}/20 ký tự`,
-    [trimmedReason.length],
-  );
 
   return (
     <>
@@ -80,8 +79,10 @@ export default function DecisionToolbar({
             <Button
               type="button"
               onClick={async () => {
-                await onApprove();
-                setApproveOpen(false);
+                const success = await onApprove();
+                if (success) {
+                  setApproveOpen(false);
+                }
               }}
               disabled={isSubmitting}
             >
@@ -104,7 +105,7 @@ export default function DecisionToolbar({
           <DialogHeader>
             <DialogTitle>Yêu cầu SAR chỉnh sửa</DialogTitle>
             <DialogDescription>
-              Vui lòng nhập lý do ít nhất 20 ký tự.
+              Vui lòng nhập lý do yêu cầu chỉnh sửa.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -114,7 +115,6 @@ export default function DecisionToolbar({
               rows={5}
               placeholder="Nhập lý do yêu cầu chỉnh sửa..."
             />
-            <p className="text-right text-xs text-slate-500">{revisionHint}</p>
           </div>
           <DialogFooter>
             <Button
@@ -129,9 +129,11 @@ export default function DecisionToolbar({
               type="button"
               disabled={!canSubmitRevision || isSubmitting}
               onClick={async () => {
-                await onRequestRevision(trimmedReason);
-                setRevisionOpen(false);
-                setReason("");
+                const success = await onRequestRevision(trimmedReason);
+                if (success) {
+                  setRevisionOpen(false);
+                  setReason("");
+                }
               }}
             >
               Gửi yêu cầu

@@ -409,6 +409,11 @@ export default function PopupSarEditor({
   }, []);
 
   const { user } = useAuth();
+  const userFullnameRef = useRef(user?.Fullname ?? "Ẩn danh");
+
+  useEffect(() => {
+    userFullnameRef.current = user?.Fullname ?? "Ẩn danh";
+  }, [user?.Fullname]);
 
   const wsUrl =
     (import.meta.env.VITE_SAR_WS_URL as string | undefined)?.trim() ||
@@ -536,7 +541,7 @@ export default function PopupSarEditor({
         providerRef.current,
         setTocItems,
         ydoc
-          ? { name: user?.Fullname ?? "Ẩn danh", color: userColorRef.current }
+          ? { name: userFullnameRef.current, color: userColorRef.current }
           : undefined,
         {
           onCommentActivated: (commentId) => {
@@ -568,7 +573,7 @@ export default function PopupSarEditor({
       },
       editable: isEditable,
     },
-    [openEvidencePreview, ydoc, user],
+    [openEvidencePreview, ydoc],
   );
 
   useEffect(() => {

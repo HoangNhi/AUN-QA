@@ -34,6 +34,7 @@ function createEditor(
   descendants: FakeDescendant[],
   isDestroyed = false,
   textBetweenImpl?: (from: number, to: number) => string,
+  dom?: HTMLElement,
 ) {
   const focus = vi.fn(() => chainApi);
   const setTextSelection = vi.fn(() => chainApi);
@@ -67,6 +68,7 @@ function createEditor(
       },
     },
     chain: () => chainApi,
+    view: { dom: dom ?? document.createElement("div") },
   } as unknown as Editor;
 }
 
@@ -153,8 +155,20 @@ describe("SarReviewCommentsPanel", () => {
     expect(screen.queryByRole("button", { name: /đến vị trí/i })).not.toBeInTheDocument();
   });
 
-  it("navigates when clicking a linked comment card", () => {
-    const editor = createEditor([{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }]);
+  it("scrolls the editor mark element into view when clicking a linked comment card", () => {
+    const dom = document.createElement("div");
+    const span = document.createElement("span");
+    span.setAttribute("data-comment-id", "comment-1");
+    dom.appendChild(span);
+    const scrollIntoViewMock = vi.fn();
+    span.scrollIntoView = scrollIntoViewMock;
+
+    const editor = createEditor(
+      [{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }],
+      false,
+      undefined,
+      dom,
+    );
     const onCommentClick = vi.fn();
 
     render(
@@ -175,17 +189,35 @@ describe("SarReviewCommentsPanel", () => {
       expect.objectContaining({ Id: "comment-1" }),
     );
 
-    const chain = (editor.chain as unknown as () => {
-      focus: ReturnType<typeof vi.fn>;
-      setTextSelection: ReturnType<typeof vi.fn>;
-      scrollIntoView: ReturnType<typeof vi.fn>;
-      run: ReturnType<typeof vi.fn>;
-    })();
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "center",
+    });
+  });
 
-    expect(chain.focus).toHaveBeenCalled();
-    expect(chain.setTextSelection).toHaveBeenCalledWith(16);
-    expect(chain.scrollIntoView).toHaveBeenCalled();
-    expect(chain.run).toHaveBeenCalled();
+  it("does not call editor.chain when navigating from the comment panel", () => {
+    const dom = document.createElement("div");
+    const editor = createEditor(
+      [{ isText: true, text: "Giới thiệu chuẩn đầu ra", pos: 5 }],
+      false,
+      undefined,
+      dom,
+    );
+    const chainSpy = vi.spyOn(editor, "chain");
+
+    render(
+      <SarReviewCommentsPanel
+        comments={[makeComment()]}
+        editor={editor}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    const card = screen.getByText("Nguyễn Văn A").closest("article");
+    fireEvent.click(card!);
+
+    expect(chainSpy).not.toHaveBeenCalled();
   });
 
   it("shows text-modified when the marked text no longer matches the original highlight", () => {

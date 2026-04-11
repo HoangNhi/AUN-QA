@@ -136,13 +136,20 @@ export default function SarReviewCommentsPanel({
   }, [activeCommentId]);
 
   const handleCommentCardClick = (view: CommentViewModel) => {
-    onCommentClick?.(view.comment);
-
-    if (!editor || editor.isDestroyed || !view.range) {
-      return;
+    if (editor && !editor.isDestroyed) {
+      const markId = (view.comment.CommentMarkId?.trim() || view.comment.Id) ?? "";
+      const editorDom = editor.view.dom as HTMLElement;
+      const escapedId =
+        typeof CSS !== "undefined" && typeof CSS.escape === "function"
+          ? CSS.escape(markId)
+          : markId;
+      const markEl = editorDom.querySelector<HTMLElement>(
+        `span[data-comment-id="${escapedId}"]`,
+      );
+      markEl?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
-    editor.chain().focus().setTextSelection(view.range.from).scrollIntoView().run();
+    onCommentClick?.(view.comment);
   };
 
   const subtitle = isLoading

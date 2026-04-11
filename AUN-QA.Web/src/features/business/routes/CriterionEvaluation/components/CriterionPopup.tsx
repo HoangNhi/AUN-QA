@@ -48,12 +48,14 @@ interface CriterionPopupProps {
   mySubmission: EvaluationSubmissionRequest | null;
   isMySubmissionLoading: boolean;
   framework: FrameworkType;
-  cycleStatus: number;
   canSubmit: boolean;
   canApprove: boolean;
   isSubmitting: boolean;
   isApproving: boolean;
   isSubmissionsFetching: boolean;
+  submitButtonText?: string;
+  submitButtonTooltip?: string;
+  sarRevisionMode?: boolean;
   officialFields?: OfficialDescriptiveFields | null;
   onClose: () => void;
   onSubmit: (request: EvaluationSubmissionRequest) => Promise<void>;
@@ -90,9 +92,11 @@ function EvaluationForm({
   mySubmission,
   viewingSubmission,
   getDisplayName,
-  cycleStatus,
   canSubmit,
   isSubmitting,
+  isRevisionMode,
+  submitButtonText,
+  submitButtonTooltip,
   onSubmit,
   onClearViewing,
 }: {
@@ -101,16 +105,17 @@ function EvaluationForm({
   mySubmission: EvaluationSubmissionRequest | null;
   viewingSubmission: EvaluationSubmission | null;
   getDisplayName: (submission: EvaluationSubmission) => string;
-  cycleStatus: number;
   canSubmit: boolean;
   isSubmitting: boolean;
+  isRevisionMode: boolean;
+  submitButtonText?: string;
+  submitButtonTooltip?: string;
   onSubmit: (req: EvaluationSubmissionRequest) => Promise<void>;
   onClearViewing: () => void;
 }) {
   const isReadOnly =
     !canSubmit ||
-    cycleStatus !== 2 ||
-    item.Status === 3 ||
+    (item.Status === 3 && !isRevisionMode) ||
     viewingSubmission !== null;
 
   const [form, setForm] = useState<EvaluationSubmissionRequest>({
@@ -200,6 +205,22 @@ function EvaluationForm({
             </p>
             <p className="text-xs text-slate-500">
               Nhập nhận định độc lập và đề xuất mức điểm cho tiêu chí này.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isRevisionMode && item.Status === 3 && (
+        <div className="flex items-center gap-3 bg-amber-100/60 border border-amber-200 p-3 rounded-xl">
+          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+            <Undo2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="font-bold text-amber-800 text-base">
+              Phiếu này đã được duyệt và đang mở lại để chỉnh sửa theo yêu cầu SAR.
+            </p>
+            <p className="text-xs text-amber-700">
+              Bạn có thể cập nhật nội dung, còn điểm/kết quả chốt sẽ được CTH rà soát lại sau.
             </p>
           </div>
         </div>
@@ -410,18 +431,17 @@ function EvaluationForm({
               <Undo2 className="w-4 h-4" /> Quay lại phiếu của tôi
             </button>
           ) : (
-            !isReadOnly && (
-              <button
-                onClick={handleSubmitClick}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-60"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : null}
-                {mySubmission ? "Cập nhật phiếu" : "Gửi Phiếu"}
-              </button>
-            )
+            <button
+              onClick={handleSubmitClick}
+              disabled={isReadOnly || isSubmitting}
+              title={submitButtonTooltip}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : null}
+              {submitButtonText ?? (mySubmission ? "Cập nhật phiếu" : "Gửi Phiếu")}
+            </button>
           )}
         </div>
       </div>
@@ -437,12 +457,14 @@ export function CriterionPopup({
   mySubmission,
   isMySubmissionLoading,
   framework,
-  cycleStatus,
   canSubmit,
   canApprove,
   isSubmitting,
   isApproving,
   isSubmissionsFetching,
+  submitButtonText,
+  submitButtonTooltip,
+  sarRevisionMode = false,
   officialFields,
   onClose,
   onSubmit,
@@ -494,6 +516,7 @@ export function CriterionPopup({
   };
 
   const isApproved = item.Status === 3;
+  const showApprovedSummary = isApproved && !!officialFields && !sarRevisionMode;
 
   const handleApprove = async () => {
     await onApprove({
@@ -554,7 +577,7 @@ export function CriterionPopup({
             <div className="flex flex-col lg:flex-row items-start gap-6">
               {/* Left: panel switches based on role + approval state */}
               <div className="flex-1 w-full min-w-0">
-                {isApproved && officialFields ? (
+                {showApprovedSummary ? (
                   <ApprovedContentView
                     officialFields={officialFields}
                     framework={framework}
@@ -585,9 +608,11 @@ export function CriterionPopup({
                     mySubmission={mySubmission}
                     viewingSubmission={viewingSubmission}
                     getDisplayName={getDisplayName}
-                    cycleStatus={cycleStatus}
                     canSubmit={canSubmit}
                     isSubmitting={isSubmitting}
+                    isRevisionMode={sarRevisionMode}
+                    submitButtonText={submitButtonText}
+                    submitButtonTooltip={submitButtonTooltip}
                     onSubmit={onSubmit}
                     onClearViewing={() => setViewingSubmission(null)}
                   />

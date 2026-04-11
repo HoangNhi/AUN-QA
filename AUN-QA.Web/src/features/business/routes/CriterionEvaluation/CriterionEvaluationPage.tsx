@@ -58,6 +58,7 @@ export function CriterionEvaluationPage() {
     mySubmission,
     evaluationMode,
     officialFields,
+    isRevisionAllowed,
     isSummaryLoading,
     isListLoading,
     isPopupDataLoading,
@@ -100,14 +101,27 @@ export function CriterionEvaluationPage() {
       ? groups.find((group) => group.Items.some((item) => item.Id === activeItemId))
           ?.StandardId ?? null
       : null;
-  const canSubmit = canEvaluatorSubmit(
-    userRole,
-    userCouncil?.AssignedStandardIds,
-    activeStandardId,
-  ); // TVH
+  const cycleStatus = Number(cycleData?.Status ?? 0);
+  const sarRevisionMode = cycleStatus === 3 && isRevisionAllowed;
+  const canSubmit =
+    (cycleStatus === 2 || sarRevisionMode) &&
+    canEvaluatorSubmit(
+      userRole,
+      userCouncil?.AssignedStandardIds,
+      activeStandardId,
+    ); // TVH
   const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
 
-  const cycleStatus = Number(cycleData?.Status ?? 0);
+  const submitButtonText = sarRevisionMode
+    ? "Cập nhật phiếu đánh giá (SAR đã được yêu cầu chỉnh sửa)"
+    : mySubmission
+      ? "Cập nhật phiếu đánh giá"
+      : "Gửi phiếu đánh giá";
+  const submitButtonTooltip = !canSubmit
+    ? sarRevisionMode
+      ? "Bạn không có quyền cập nhật tiêu chí này"
+      : "Chỉ cập nhật khi ở pha DO hoặc SAR yêu cầu chỉnh sửa"
+    : undefined;
 
   return (
     <div className="flex flex-col h-full">
@@ -205,11 +219,13 @@ export function CriterionEvaluationPage() {
           isSubmissionsFetching={isPopupDataFetching}
           officialFields={officialFields}
           framework={framework}
-          cycleStatus={cycleStatus}
           canSubmit={canSubmit}
           canApprove={canApprove}
           isSubmitting={isSubmitting}
           isApproving={isApproving}
+          submitButtonText={submitButtonText}
+          submitButtonTooltip={submitButtonTooltip}
+          sarRevisionMode={sarRevisionMode}
           onClose={() => setActiveItemId(null)}
           onSubmit={async (req) => { await handleSubmit(req); }}
           onApprove={async (req) => { await handleApprove(req); }}

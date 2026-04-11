@@ -11,6 +11,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.CriterionEvaluation.Dtos
         public List<ModelSurveyCampaign> SurveyCampaigns { get; set; } = new();
         public int EvaluationMode { get; set; } = 1; // 1: SCORING_7 (AUN), 2: PASS_FAIL (MOET)
         public OfficialDescriptiveFields? OfficialFields { get; set; }
+        public bool IsRevisionAllowed { get; set; }
     }
 
     public class OfficialDescriptiveFields

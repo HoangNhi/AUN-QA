@@ -416,7 +416,20 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             if (evaluation == null)
                 throw new BusinessException("Không tìm thấy tiêu chí đánh giá");
 
-            if (evaluation.Status == (int)CriterionEvaluationStatus.Approved)
+            var cycle = await _context.Cycles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == evaluation.CycleId && !x.IsDeleted && x.IsActived);
+
+            if (cycle == null)
+                throw new BusinessException("Chu kỳ không tồn tại");
+
+            var isDoPhase = cycle.Status == (int)CycleStatus.Do;
+            var isRevisionAllowed = await IsRevisionAllowedAsync(evaluation.CycleId);
+
+            if (!isDoPhase && !isRevisionAllowed)
+                throw new BusinessException("Chỉ có thể cập nhật phiếu đánh giá ở pha DO hoặc khi SAR yêu cầu chỉnh sửa");
+
+            if (evaluation.Status == (int)CriterionEvaluationStatus.Approved && !isRevisionAllowed)
                 throw new BusinessException("Tiêu chí đã được duyệt, không thể chỉnh sửa phiếu đánh giá");
 
             var currentState = request.CurrentState!.Trim();
@@ -474,6 +487,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             }
 
             if (evaluation.Status == (int)CriterionEvaluationStatus.Empty)
+            {
+                evaluation.Status = (int)CriterionEvaluationStatus.Waiting;
+                evaluation.UpdatedAt = DateTime.UtcNow;
+                evaluation.UpdatedBy = userName;
+                _context.CriterionEvaluations.Update(evaluation);
+            }
+            else if (evaluation.Status == (int)CriterionEvaluationStatus.Approved && isRevisionAllowed)
             {
                 evaluation.Status = (int)CriterionEvaluationStatus.Waiting;
                 evaluation.UpdatedAt = DateTime.UtcNow;
@@ -645,7 +665,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
                 }).ToList(),
                 SurveyCampaigns = surveyCampaigns,
                 EvaluationMode = evaluationMode,
-                OfficialFields = officialFields
+                OfficialFields = officialFields,
+                IsRevisionAllowed = await IsRevisionAllowedAsync(request.CycleId)
             };
         }
         #endregion
@@ -771,6 +792,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation
             var failedCount = approvedItemList.Count(i => i.OfficialResult == false);
             var prerequisiteFailed = approvedItemList.Any(i => i.IsPrerequisite && i.OfficialResult == false);
             return !prerequisiteFailed && failedCount <= 2;
+        }
+
+        private async Task<bool> IsRevisionAllowedAsync(Guid cycleId)
+        {
+            var sarReport = await _context.SarReports
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.CycleId == cycleId && !x.IsDeleted && x.IsActived);
+
+            return sarReport != null && sarReport.Status == (int)SarStatus.RevisionRequested;
         }
         #endregion
     }

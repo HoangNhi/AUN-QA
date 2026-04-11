@@ -184,6 +184,7 @@ export interface CriterionPopupData {
   SurveyCampaigns: SurveyCampaignItem[];
   EvaluationMode: number; // 1: AUN, 2: MOET
   OfficialFields?: OfficialDescriptiveFields | null;
+  IsRevisionAllowed: boolean;
 }
 
 export interface GetPopupDataRequest {

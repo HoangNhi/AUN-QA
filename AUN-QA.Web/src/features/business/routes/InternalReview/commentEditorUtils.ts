@@ -70,14 +70,22 @@ function buildSearchableText(entries: TextNodeEntry[]): {
   };
 }
 
-function collectTextEntries(editor: Editor): TextNodeEntry[] {
-  const entries: TextNodeEntry[] = [];
+export function findTextRange(
+  editor: Editor,
+  text: string,
+): { from: number; to: number } | null {
+  const normalizedSearchText = normalizeWhitespace(text).toLowerCase();
+  if (!normalizedSearchText) {
+    return null;
+  }
+
+  const textEntries: TextNodeEntry[] = [];
   editor.state.doc.descendants((node, pos, parent) => {
     if (!node.isText || !node.text) {
       return true;
     }
 
-    entries.push({
+    textEntries.push({
       text: node.text,
       pos,
       parent,
@@ -86,92 +94,81 @@ function collectTextEntries(editor: Editor): TextNodeEntry[] {
     return true;
   });
 
-  return entries;
+  if (textEntries.length === 0) {
+    return null;
+  }
+
+  const searchableText = buildSearchableText(textEntries);
+  const searchIndex = searchableText.text.indexOf(normalizedSearchText);
+  if (searchIndex < 0) {
+    return null;
+  }
+
+  const fromPosition = searchableText.positions[searchIndex];
+  const toPosition = searchableText.positions[searchIndex + normalizedSearchText.length - 1];
+
+  if (fromPosition === undefined || toPosition === undefined) {
+    return null;
+  }
+
+  return {
+    from: fromPosition,
+    to: toPosition + 1,
+  };
 }
 
-export function findTextRange(
+export function hasCommentMarkById(editor: Editor, commentId: string): boolean {
+  let found = false;
+
+  editor.state.doc.descendants((node) => {
+    if (found) {
+      return false;
+    }
+
+    found = node.marks.some(
+      (mark) => mark.type.name === "comment" && mark.attrs.commentId === commentId,
+    );
+
+    return !found;
+  });
+
+  return found;
+}
+
+export function findMarkRange(
   editor: Editor,
-  text: string,
-  occurrenceIndex?: number,
+  commentId: string,
 ): { from: number; to: number } | null {
-  const normalizedSearchText = normalizeWhitespace(text).toLowerCase();
-  if (!normalizedSearchText) {
+  let from: number | null = null;
+  let to: number | null = null;
+
+  editor.state.doc.descendants((node, pos) => {
+    if (!node.isText) {
+      return true;
+    }
+
+    const hasMark = node.marks.some(
+      (mark) => mark.type.name === "comment" && mark.attrs.commentId === commentId,
+    );
+
+    if (!hasMark) {
+      return true;
+    }
+
+    if (from === null) {
+      from = pos;
+    }
+
+    to = pos + node.nodeSize;
+
+    return true;
+  });
+
+  if (from === null || to === null) {
     return null;
   }
 
-  const textEntries = collectTextEntries(editor);
-  if (textEntries.length === 0) {
-    return null;
-  }
-
-  const searchableText = buildSearchableText(textEntries);
-  const targetIndex = occurrenceIndex ?? 0;
-
-  let matchCount = 0;
-  let searchFrom = 0;
-
-  while (true) {
-    const searchIndex = searchableText.text.indexOf(normalizedSearchText, searchFrom);
-    if (searchIndex < 0) {
-      return null;
-    }
-
-    if (matchCount === targetIndex) {
-      const fromPosition = searchableText.positions[searchIndex];
-      const toPosition = searchableText.positions[
-        searchIndex + normalizedSearchText.length - 1
-      ];
-
-      if (fromPosition === undefined || toPosition === undefined) {
-        return null;
-      }
-
-      return {
-        from: fromPosition,
-        to: toPosition + 1,
-      };
-    }
-
-    matchCount += 1;
-    searchFrom = searchIndex + 1;
-  }
-}
-
-export function getOccurrenceIndex(
-  editor: Editor,
-  text: string,
-  fromPosition: number,
-): number {
-  const normalizedSearchText = normalizeWhitespace(text).toLowerCase();
-  if (!normalizedSearchText) {
-    return 0;
-  }
-
-  const textEntries = collectTextEntries(editor);
-  if (textEntries.length === 0) {
-    return 0;
-  }
-
-  const searchableText = buildSearchableText(textEntries);
-
-  let occurrenceIndex = 0;
-  let searchFrom = 0;
-
-  while (true) {
-    const searchIndex = searchableText.text.indexOf(normalizedSearchText, searchFrom);
-    if (searchIndex < 0) {
-      break;
-    }
-
-    if (searchableText.positions[searchIndex] === fromPosition) {
-      return occurrenceIndex;
-    }
-
-    occurrenceIndex += 1;
-    searchFrom = searchIndex + 1;
-  }
-
-  return 0;
+  return { from, to };
 }
 
 export function applyCommentMarkVisualState(

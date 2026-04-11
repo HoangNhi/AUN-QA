@@ -3,7 +3,11 @@ import { Loader2 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { findTextRange } from "@/features/business/routes/InternalReview/commentEditorUtils";
+import {
+  findMarkRange,
+  findTextRange,
+  hasCommentMarkById,
+} from "@/features/business/routes/InternalReview/commentEditorUtils";
 import type { InternalComment } from "@/features/business/types/internalreview.types";
 
 interface SarReviewCommentsPanelProps {
@@ -33,7 +37,7 @@ function getCommentViewModel(
   const displayName = getDisplayName(comment);
   const highlightedText = comment.HighlightedText?.trim() ?? "";
 
-  if (!editor || editor.isDestroyed || !highlightedText) {
+  if (!editor || editor.isDestroyed) {
     return {
       comment,
       state: "unknown",
@@ -42,7 +46,26 @@ function getCommentViewModel(
     };
   }
 
-  const range = findTextRange(editor, highlightedText, comment.OccurrenceIndex ?? 0);
+  if (comment.CommentMarkId) {
+    const isLinked = hasCommentMarkById(editor, comment.CommentMarkId);
+    return {
+      comment,
+      state: isLinked ? "linked" : "orphaned",
+      range: isLinked ? findMarkRange(editor, comment.CommentMarkId) : null,
+      displayName,
+    };
+  }
+
+  if (!highlightedText) {
+    return {
+      comment,
+      state: "unknown",
+      range: null,
+      displayName,
+    };
+  }
+
+  const range = findTextRange(editor, highlightedText);
 
   return {
     comment,

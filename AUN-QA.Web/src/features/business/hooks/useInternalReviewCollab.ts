@@ -15,6 +15,7 @@ export interface UseInternalReviewCollabOptions {
   enabled?: boolean;
   onCommentSignal: () => void;
   currentUserFullname?: string | null;
+  sarYDocSnapshot?: string | null;
 }
 
 function getInitials(fullname?: string | null): string {
@@ -63,12 +64,18 @@ function normalizeCollaboratorState(
     return null;
   }
 
-  return {
-    clientId,
-    name,
-    initials,
-    color,
-  };
+  return { clientId, name, initials, color };
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes;
 }
 
 export function useInternalReviewCollab({
@@ -77,10 +84,14 @@ export function useInternalReviewCollab({
   enabled = true,
   onCommentSignal,
   currentUserFullname,
+  sarYDocSnapshot,
 }: UseInternalReviewCollabOptions) {
   const providerRef = useRef<WebsocketProvider | null>(null);
   const docRef = useRef<Y.Doc | null>(null);
   const signalMapRef = useRef<Y.Map<unknown> | null>(null);
+  const sarProviderRef = useRef<WebsocketProvider | null>(null);
+  const sarDocRef = useRef<Y.Doc | null>(null);
+  const [sarYdoc, setSarYdoc] = useState<Y.Doc | null>(null);
   const [collaborators, setCollaborators] = useState<CollaboratorState[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -97,14 +108,15 @@ export function useInternalReviewCollab({
     }
 
     const wsUrl = import.meta.env.VITE_SAR_WS_URL || "ws://localhost:1234";
-    const roomName = `internal_review_${cycleId}`;
-    const doc = new Y.Doc();
-    const provider = new WebsocketProvider(wsUrl, roomName, doc);
-    const commentSignalMap = doc.getMap("commentSignal");
-    const awareness = provider.awareness;
 
-    docRef.current = doc;
-    providerRef.current = provider;
+    const signalRoomName = `internal_review_${cycleId}`;
+    const signalDoc = new Y.Doc();
+    const signalProvider = new WebsocketProvider(wsUrl, signalRoomName, signalDoc);
+    const commentSignalMap = signalDoc.getMap("commentSignal");
+    const awareness = signalProvider.awareness;
+
+    docRef.current = signalDoc;
+    providerRef.current = signalProvider;
     signalMapRef.current = commentSignalMap;
 
     const syncCollaborators = () => {
@@ -145,7 +157,7 @@ export function useInternalReviewCollab({
       onCommentSignal();
     };
 
-    provider.on("status", handleStatus);
+    signalProvider.on("status", handleStatus);
     awareness.on("change", syncCollaborators);
     commentSignalMap.observe(handleCommentSignal);
 
@@ -157,10 +169,26 @@ export function useInternalReviewCollab({
 
     syncCollaborators();
 
+    const sarRoomName = `sar_cycle_${cycleId}`;
+    const sarDoc = new Y.Doc();
+
+    if (sarYDocSnapshot) {
+      try {
+        Y.applyUpdate(sarDoc, base64ToUint8Array(sarYDocSnapshot));
+      } catch {
+        // Fall back to the live websocket content if the snapshot is invalid.
+      }
+    }
+
+    const sarProvider = new WebsocketProvider(wsUrl, sarRoomName, sarDoc);
+    sarDocRef.current = sarDoc;
+    sarProviderRef.current = sarProvider;
+    setSarYdoc(sarDoc);
+
     return () => {
       commentSignalMap.unobserve(handleCommentSignal);
       awareness.off("change", syncCollaborators);
-      provider.off("status", handleStatus);
+      signalProvider.off("status", handleStatus);
 
       signalMapRef.current = null;
       providerRef.current = null;
@@ -168,14 +196,21 @@ export function useInternalReviewCollab({
       setCollaborators([]);
       setIsConnected(false);
 
-      provider.destroy();
-      doc.destroy();
+      signalProvider.destroy();
+      signalDoc.destroy();
+
+      sarProvider.destroy();
+      sarDoc.destroy();
+      sarProviderRef.current = null;
+      sarDocRef.current = null;
+      setSarYdoc(null);
     };
-  }, [cycleId, currentUserFullname, enabled, onCommentSignal, reviewRound]);
+  }, [cycleId, currentUserFullname, enabled, onCommentSignal, reviewRound, sarYDocSnapshot]);
 
   return {
     collaborators,
     isConnected,
     broadcastCommentChange,
+    sarYdoc,
   };
 }

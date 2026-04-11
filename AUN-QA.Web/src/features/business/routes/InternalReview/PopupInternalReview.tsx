@@ -16,6 +16,7 @@ import {
   useInternalReviewCollab,
   type CollaboratorState,
 } from "@/features/business/hooks/useInternalReviewCollab";
+import Collaboration from "@tiptap/extension-collaboration";
 import type {
   InternalComment,
   InternalReviewListItem,
@@ -23,8 +24,8 @@ import type {
 import { sarService } from "@/features/business/api/sar.api";
 import {
   applyCommentMarkVisualState,
+  findMarkRange,
   findTextRange,
-  getOccurrenceIndex,
 } from "./commentEditorUtils";
 import DecisionToolbar from "./components/DecisionToolbar";
 import CommentPanel from "./components/CommentPanel";
@@ -47,7 +48,6 @@ interface ComposerDraft {
   highlightedText: string;
   from: number;
   to: number;
-  occurrenceIndex: number;
 }
 
 interface BuildComposerDraftInput {
@@ -55,7 +55,6 @@ interface BuildComposerDraftInput {
   to: number;
   highlightedText: string;
   markId: string;
-  occurrenceIndex: number;
 }
 
 interface BubbleSelectionRange {
@@ -71,26 +70,6 @@ interface CommentActivationGuardParams {
 }
 
 const COMMENT_ROLES = new Set([1, 2, 3, 4, 5]);
-
-function hasCommentMark(
-  editor: NonNullable<ReturnType<typeof useEditor>>,
-  commentId: string,
-): boolean {
-  let found = false;
-  editor.state.doc.descendants((node) => {
-    if (found) {
-      return false;
-    }
-
-    found = node.marks.some(
-      (mark) => mark.type.name === "comment" && mark.attrs.commentId === commentId,
-    );
-
-    return !found;
-  });
-
-  return found;
-}
 
 export function shouldShowCommentComposerBubble(
   selection: BubbleSelectionRange,
@@ -125,7 +104,6 @@ export function buildComposerDraftFromSelection(
     highlightedText,
     from: input.from,
     to: input.to,
-    occurrenceIndex: input.occurrenceIndex,
   };
 }
 
@@ -297,6 +275,7 @@ export default function PopupInternalReview({
     enabled: open && !!item,
     onCommentSignal: handleCommentSignal,
     currentUserFullname: user?.Fullname,
+    sarYDocSnapshot: item?.YDocSnapshotBase64,
   });
 
   const visibleComments = useMemo(
@@ -327,7 +306,10 @@ export default function PopupInternalReview({
 
   const editorExtensions = useMemo(
     () => [
-      StarterKit,
+      StarterKit.configure({
+        history: sarYdoc ? false : {},
+      }),
+      ...(sarYdoc ? [Collaboration.configure({ document: sarYdoc })] : []),
       CommentExtension.configure({
         HTMLAttributes: {
           class: "rounded-sm bg-amber-200/70 px-0.5 ring-1 ring-amber-300",
@@ -335,38 +317,33 @@ export default function PopupInternalReview({
         onCommentActivated: handleCommentActivated,
       }),
     ],
-    [handleCommentActivated],
+    [handleCommentActivated, sarYdoc],
   );
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    shouldRerenderOnTransaction: false,
-    extensions: editorExtensions,
-    content: "",
-    editable: false,
-    editorProps: {
-      attributes: {
-        class: "prose prose-sm max-w-none min-h-[720px] p-8 focus:outline-none",
+  const editor = useEditor(
+    {
+      immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
+      extensions: editorExtensions,
+      content: "",
+      editable: false,
+      editorProps: {
+        attributes: {
+          class: "prose prose-sm max-w-none min-h-[720px] p-8 focus:outline-none",
+        },
       },
     },
-  });
+    [sarYdoc],
+  );
 
   useEffect(() => {
     editorRef.current = editor;
   }, [editor]);
 
   useEffect(() => {
-    if (!editor) {
+    if (!editor || !sarYdoc) {
       return;
     }
-
-    if (!item?.RenderedHtml) {
-      editor.commands.setContent("<p>Không có nội dung SAR để hiển thị.</p>");
-      setTocItems([]);
-      return;
-    }
-
-    editor.commands.setContent(item.RenderedHtml);
 
     const nextTocItems: TocItem[] = [];
     editor.state.doc.descendants((node, pos) => {
@@ -389,14 +366,13 @@ export default function PopupInternalReview({
     });
 
     setTocItems(nextTocItems);
-  }, [editor, item?.RenderedHtml]);
+  }, [editor, sarYdoc]);
 
   useEffect(() => {
     if (!editor || !open || isCommentsLoading) {
       return;
     }
 
-    const previousSelection = editor.state.selection;
     const currentCommentIds = new Set(
       visibleComments
         .map((comment) => comment.CommentMarkId?.trim())
@@ -426,38 +402,6 @@ export default function PopupInternalReview({
     staleCommentIds.forEach((commentId) => {
       editor.commands.unsetComment(commentId);
     });
-
-    let hasAppliedCommentMark = staleCommentIds.size > 0;
-    visibleComments.forEach((comment) => {
-      if (!comment.CommentMarkId || !comment.HighlightedText) {
-        return;
-      }
-
-      if (hasCommentMark(editor, comment.CommentMarkId)) {
-        return;
-      }
-
-      const range = findTextRange(
-        editor,
-        comment.HighlightedText,
-        comment.OccurrenceIndex ?? 0,
-      );
-      if (!range) {
-        return;
-      }
-
-      editor.chain().setTextSelection(range).setComment(comment.CommentMarkId).run();
-      hasAppliedCommentMark = true;
-    });
-
-    if (!hasAppliedCommentMark) {
-      return;
-    }
-
-    editor
-      .chain()
-      .setTextSelection({ from: previousSelection.from, to: previousSelection.to })
-      .run();
   }, [editor, isCommentsLoading, open, visibleComments]);
 
   useEffect(() => {
@@ -506,15 +450,14 @@ export default function PopupInternalReview({
       const markId = comment.CommentMarkId ?? comment.Id;
       setActiveCommentId(markId);
 
-      if (!editor || !comment.HighlightedText || editor.isDestroyed || editor.view.isDestroyed) {
+      if (!editor || editor.isDestroyed || editor.view.isDestroyed) {
         return;
       }
 
-      const range = findTextRange(
-        editor,
-        comment.HighlightedText,
-        comment.OccurrenceIndex ?? 0,
-      );
+      const range = comment.CommentMarkId
+        ? findMarkRange(editor, comment.CommentMarkId)
+        : findTextRange(editor, comment.HighlightedText ?? "");
+
       if (!range) {
         return;
       }
@@ -600,13 +543,11 @@ export default function PopupInternalReview({
 
     const { from, to } = editor.state.selection;
     const highlightedText = editor.state.doc.textBetween(from, to, "\n");
-    const occurrenceIndex = getOccurrenceIndex(editor, highlightedText, from);
     const draft = buildComposerDraftFromSelection({
       from,
       to,
       highlightedText,
       markId: crypto.randomUUID(),
-      occurrenceIndex,
     });
 
     if (!draft) {
@@ -645,7 +586,6 @@ export default function PopupInternalReview({
         CommentText: commentText,
         HighlightedText: currentComposerDraft.highlightedText,
         CommentMarkId: currentComposerDraft.markId,
-        OccurrenceIndex: currentComposerDraft.occurrenceIndex,
       });
 
       broadcastCommentChange();

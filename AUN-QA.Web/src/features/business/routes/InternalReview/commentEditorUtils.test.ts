@@ -1,10 +1,21 @@
 import type { Editor } from "@tiptap/react";
 import { describe, expect, it } from "vitest";
-import { findTextRange, getOccurrenceIndex } from "./commentEditorUtils";
+import {
+  findMarkRange,
+  findTextRange,
+  hasCommentMarkById,
+} from "./commentEditorUtils";
+
+type FakeMark = {
+  type: { name: string };
+  attrs: Record<string, unknown>;
+};
 
 type FakeTextNode = {
   isText: true;
   text: string;
+  marks?: FakeMark[];
+  nodeSize?: number;
 };
 
 type FakeDescendant = {
@@ -19,13 +30,21 @@ function createEditor(descendants: FakeDescendant[]) {
       doc: {
         descendants(
           callback: (
-            node: FakeTextNode,
+            node: FakeTextNode & { marks: FakeMark[]; nodeSize: number },
             pos: number,
             parent?: object | null,
           ) => boolean | void,
         ) {
           descendants.forEach(({ node, pos, parent }) => {
-            callback(node, pos, parent ?? null);
+            callback(
+              {
+                ...node,
+                marks: node.marks ?? [],
+                nodeSize: node.nodeSize ?? node.text.length,
+              },
+              pos,
+              parent ?? null,
+            );
           });
         },
       },
@@ -49,10 +68,10 @@ describe("findTextRange", () => {
   it("finds text case-insensitively", () => {
     const editor = createEditor([
       { node: { isText: true, text: "Intro" }, pos: 0 },
-      { node: { isText: true, text: "Chuẩn đầu ra" }, pos: 6 },
+      { node: { isText: true, text: "Target text" }, pos: 6 },
     ]);
 
-    expect(findTextRange(editor, "chuẩn đầu")).toEqual({ from: 6, to: 15 });
+    expect(findTextRange(editor, "target")).toEqual({ from: 6, to: 12 });
   });
 
   it("returns the first matching range", () => {
@@ -62,21 +81,6 @@ describe("findTextRange", () => {
     ]);
 
     expect(findTextRange(editor, "Match")).toEqual({ from: 0, to: 5 });
-  });
-
-  it("returns the second occurrence when occurrenceIndex is 1", () => {
-    const editor = createEditor([
-      { node: { isText: true, text: "Match here" }, pos: 0 },
-      { node: { isText: true, text: "Match here too" }, pos: 20 },
-    ]);
-
-    expect(findTextRange(editor, "Match", 1)).toEqual({ from: 20, to: 25 });
-  });
-
-  it("returns null when occurrenceIndex exceeds available occurrences", () => {
-    const editor = createEditor([{ node: { isText: true, text: "Match here" }, pos: 0 }]);
-
-    expect(findTextRange(editor, "Match", 5)).toBeNull();
   });
 
   it("returns null when no match exists", () => {
@@ -101,28 +105,89 @@ describe("findTextRange", () => {
   });
 });
 
-describe("getOccurrenceIndex", () => {
-  it("returns 0 for the first occurrence", () => {
+describe("hasCommentMarkById", () => {
+  it("returns true when a comment mark with the matching id exists", () => {
     const editor = createEditor([
-      { node: { isText: true, text: "Match here" }, pos: 0 },
-      { node: { isText: true, text: "Match there" }, pos: 20 },
+      {
+        node: {
+          isText: true,
+          text: "Hello",
+          marks: [{ type: { name: "comment" }, attrs: { commentId: "mark-1" } }],
+        },
+        pos: 0,
+      },
     ]);
 
-    expect(getOccurrenceIndex(editor, "Match", 0)).toBe(0);
+    expect(hasCommentMarkById(editor, "mark-1")).toBe(true);
   });
 
-  it("returns 1 for the second occurrence", () => {
+  it("returns false when the document has no comment marks", () => {
+    const editor = createEditor([{ node: { isText: true, text: "Hello" }, pos: 0 }]);
+
+    expect(hasCommentMarkById(editor, "mark-1")).toBe(false);
+  });
+
+  it("returns false when the id does not match", () => {
     const editor = createEditor([
-      { node: { isText: true, text: "Match here" }, pos: 0 },
-      { node: { isText: true, text: "Match there" }, pos: 20 },
+      {
+        node: {
+          isText: true,
+          text: "Hello",
+          marks: [{ type: { name: "comment" }, attrs: { commentId: "other" } }],
+        },
+        pos: 0,
+      },
     ]);
 
-    expect(getOccurrenceIndex(editor, "Match", 20)).toBe(1);
+    expect(hasCommentMarkById(editor, "mark-1")).toBe(false);
+  });
+});
+
+describe("findMarkRange", () => {
+  it("returns range for a single text node with matching mark", () => {
+    const editor = createEditor([
+      {
+        node: {
+          isText: true,
+          text: "Hello",
+          marks: [{ type: { name: "comment" }, attrs: { commentId: "mark-1" } }],
+          nodeSize: 5,
+        },
+        pos: 10,
+      },
+    ]);
+
+    expect(findMarkRange(editor, "mark-1")).toEqual({ from: 10, to: 15 });
   });
 
-  it("returns 0 as fallback when fromPosition does not match any occurrence", () => {
-    const editor = createEditor([{ node: { isText: true, text: "Hello world" }, pos: 0 }]);
+  it("returns combined range when the mark spans multiple text nodes", () => {
+    const editor = createEditor([
+      {
+        node: {
+          isText: true,
+          text: "Hel",
+          marks: [{ type: { name: "comment" }, attrs: { commentId: "mark-1" } }],
+          nodeSize: 3,
+        },
+        pos: 5,
+      },
+      {
+        node: {
+          isText: true,
+          text: "lo",
+          marks: [{ type: { name: "comment" }, attrs: { commentId: "mark-1" } }],
+          nodeSize: 2,
+        },
+        pos: 8,
+      },
+    ]);
 
-    expect(getOccurrenceIndex(editor, "Hello", 999)).toBe(0);
+    expect(findMarkRange(editor, "mark-1")).toEqual({ from: 5, to: 10 });
+  });
+
+  it("returns null when the mark is not found", () => {
+    const editor = createEditor([{ node: { isText: true, text: "Hello" }, pos: 0 }]);
+
+    expect(findMarkRange(editor, "missing")).toBeNull();
   });
 });

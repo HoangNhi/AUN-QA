@@ -12,8 +12,6 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.InternalReview.Dtos
 
         public string? CommentMarkId { get; set; }
 
-        public int? OccurrenceIndex { get; set; }
-
         public int ReviewRound { get; set; }
 
         public DateTime CreatedAt { get; set; }

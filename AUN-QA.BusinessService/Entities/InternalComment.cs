@@ -29,7 +29,5 @@ public partial class InternalComment
 
     public bool IsDeleted { get; set; }
 
-    public int? OccurrenceIndex { get; set; }
-
     public virtual SarReport SarReport { get; set; } = null!;
 }

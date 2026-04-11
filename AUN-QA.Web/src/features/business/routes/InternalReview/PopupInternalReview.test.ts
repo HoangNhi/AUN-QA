@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { InternalReviewListItem } from "@/features/business/types/internalreview.types";
-import { canDecideInternalReview } from "./PopupInternalReview";
+import {
+  canDecideInternalReview,
+  shouldSyncInternalReviewCommentMarks,
+} from "./PopupInternalReview";
 
 function createItem(
   overrides: Partial<InternalReviewListItem> = {},
@@ -26,5 +29,14 @@ describe("canDecideInternalReview", () => {
     [createItem({ Status: 2, CanApproveByRole: true }), true],
   ])("returns %s => %s", (item, expected) => {
     expect(canDecideInternalReview(item as InternalReviewListItem | null)).toBe(expected);
+  });
+});
+
+describe("shouldSyncInternalReviewCommentMarks", () => {
+  it("only syncs cleanup while the review popup is open in review mode", () => {
+    expect(shouldSyncInternalReviewCommentMarks(2, true, false)).toBe(true);
+    expect(shouldSyncInternalReviewCommentMarks(3, true, false)).toBe(false);
+    expect(shouldSyncInternalReviewCommentMarks(2, false, false)).toBe(false);
+    expect(shouldSyncInternalReviewCommentMarks(2, true, true)).toBe(false);
   });
 });

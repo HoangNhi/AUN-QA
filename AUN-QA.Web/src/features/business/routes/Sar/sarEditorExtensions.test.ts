@@ -12,5 +12,9 @@ describe("createSarEditorExtensions", () => {
     const extensions = createSarEditorExtensions(new Y.Doc());
     expect(extensions.some((extension) => extension.name === "collaboration")).toBe(true);
   });
-});
 
+  it("keeps comment marks in the schema so collaboration does not strip them", () => {
+    const extensions = createSarEditorExtensions(new Y.Doc());
+    expect(extensions.some((extension) => extension.name === "comment")).toBe(true);
+  });
+});

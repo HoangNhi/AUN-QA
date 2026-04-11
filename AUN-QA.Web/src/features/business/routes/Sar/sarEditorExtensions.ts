@@ -12,6 +12,7 @@ import TableCell from "@tiptap/extension-table-cell";
 import TableOfContents from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import Image from "@tiptap/extension-image";
+import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
 import type * as Y from "yjs";
 import type { WebsocketProvider } from "y-websocket";
 import { EvidenceTag } from "./extensions/EvidenceTag";
@@ -55,6 +56,11 @@ export function createSarEditorExtensions(
     Image.configure({
       HTMLAttributes: {
         style: "max-width: 100%; height: auto; display: block;",
+      },
+    }),
+    CommentExtension.configure({
+      HTMLAttributes: {
+        class: "rounded-sm bg-amber-200/70 px-0.5 ring-1 ring-amber-300",
       },
     }),
     EvidenceTag,

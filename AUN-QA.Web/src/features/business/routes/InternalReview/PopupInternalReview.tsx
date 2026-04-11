@@ -134,6 +134,14 @@ export function normalizeEvaluationPurpose(
   return normalized ? normalized : null;
 }
 
+export function shouldSyncInternalReviewCommentMarks(
+  status: InternalReviewListItem["Status"] | null | undefined,
+  open: boolean,
+  isCommentsLoading: boolean,
+): boolean {
+  return open && !isCommentsLoading && status === 2;
+}
+
 interface PopupInternalReviewCollaboratorsProps {
   collaborators: CollaboratorState[];
 }
@@ -369,7 +377,7 @@ export default function PopupInternalReview({
   }, [editor, sarYdoc]);
 
   useEffect(() => {
-    if (!editor || !open || isCommentsLoading) {
+    if (!editor || !shouldSyncInternalReviewCommentMarks(item?.Status, open, isCommentsLoading)) {
       return;
     }
 
@@ -402,7 +410,7 @@ export default function PopupInternalReview({
     staleCommentIds.forEach((commentId) => {
       editor.commands.unsetComment(commentId);
     });
-  }, [editor, isCommentsLoading, open, visibleComments]);
+  }, [editor, isCommentsLoading, item?.Status, open, visibleComments]);
 
   useEffect(() => {
     if (!editor || editor.isDestroyed || editor.view.isDestroyed) {

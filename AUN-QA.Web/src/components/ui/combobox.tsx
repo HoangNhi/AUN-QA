@@ -159,7 +159,7 @@ export function Combobox({
                   {options.map((option) => (
                     <CommandItem
                       key={option.Value}
-                      value={option.Value}
+                      value={option.Text}
                       className={cn(
                         "cursor-pointer",
                         "flex w-full items-center gap-2",

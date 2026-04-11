@@ -869,18 +869,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             return result;
         }
 
-        private static string BuildAutofillPayloadHtml(
+        internal static string BuildAutofillPayloadHtml(
             IEnumerable<Entities.CriterionEvaluation> evaluations,
             IEnumerable<EvaluationSubmission> submissions,
             IReadOnlyDictionary<Guid, StandardWithCriteriaDto> criterionMeta,
             IReadOnlyDictionary<Guid, string> evaluatorNames,
             IReadOnlyDictionary<string, string> approverNames)
         {
-            var submissionLookup = submissions
-                .GroupBy(x => x.CriterionEvaluationId)
-                .ToDictionary(g => g.Key, g => g.OrderBy(s => s.CreatedAt).ToList());
-
             var orderedEvaluations = evaluations
+                .Where(x => !string.IsNullOrWhiteSpace(x.ApprovedBy))
                 .OrderBy(x => criterionMeta.TryGetValue(x.CriterionId, out var meta) ? meta.StandardOrder : int.MaxValue)
                 .ThenBy(x => criterionMeta.TryGetValue(x.CriterionId, out var meta) ? meta.CriterionOrder : int.MaxValue)
                 .ThenBy(x => x.CreatedAt)
@@ -892,12 +889,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             var sectionCount = 0;
             foreach (var eval in orderedEvaluations)
             {
-                submissionLookup.TryGetValue(eval.Id, out var evalSubmissions);
-                evalSubmissions ??= new List<EvaluationSubmission>();
+                var hasFinalResult = !string.IsNullOrWhiteSpace(eval.OfficialCurrentState)
+                    || !string.IsNullOrWhiteSpace(eval.OfficialStrengths)
+                    || !string.IsNullOrWhiteSpace(eval.OfficialWeaknesses)
+                    || !string.IsNullOrWhiteSpace(eval.OfficialActionPlan)
+                    || eval.OfficialScore.HasValue
+                    || eval.OfficialResult.HasValue;
 
-                var hasSubmissionData = evalSubmissions.Any(HasMeaningfulSubmissionData);
-                var hasFinalResult = eval.OfficialScore.HasValue || eval.OfficialResult.HasValue;
-                if (!hasSubmissionData && !hasFinalResult)
+                if (!hasFinalResult)
                 {
                     continue;
                 }
@@ -912,61 +911,24 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 sectionCount += 1;
                 sb.AppendLine($"<h4>{Encode(criterionCode)}. {Encode(criterionName)}</h4>");
 
-                var labelsBySubmission = new Dictionary<Guid, string>();
-                for (var i = 0; i < evalSubmissions.Count; i += 1)
+                if (!string.IsNullOrWhiteSpace(eval.OfficialCurrentState))
                 {
-                    labelsBySubmission[evalSubmissions[i].Id] = $"TVH {ToAlphabetIndex(i)}";
+                    sb.AppendLine($"<p><strong>Mô tả:</strong> \"{Encode(NormalizeText(eval.OfficialCurrentState))}\"</p>");
                 }
 
-                AppendSubmissionSection(
-                    sb,
-                    "Mô tả:",
-                    evalSubmissions,
-                    labelsBySubmission,
-                    evaluatorNames,
-                    x => x.CurrentState);
-
-                AppendSubmissionSection(
-                    sb,
-                    "Điểm mạnh:",
-                    evalSubmissions,
-                    labelsBySubmission,
-                    evaluatorNames,
-                    x => x.Strengths);
-
-                AppendSubmissionSection(
-                    sb,
-                    "Điểm cần cải tiến:",
-                    evalSubmissions,
-                    labelsBySubmission,
-                    evaluatorNames,
-                    x => x.Weaknesses);
-
-                AppendSubmissionSection(
-                    sb,
-                    "Kế hoạch hành động:",
-                    evalSubmissions,
-                    labelsBySubmission,
-                    evaluatorNames,
-                    x => x.ActionPlan);
-
-                var proposed = evalSubmissions
-                    .Where(x => x.ProposedScore.HasValue)
-                    .Select(x =>
-                    {
-                        var label = labelsBySubmission.GetValueOrDefault(x.Id, "TVH");
-                        var displayName = evaluatorNames.TryGetValue(x.EvaluatorId, out var evaluatorName)
-                            && !string.IsNullOrWhiteSpace(evaluatorName)
-                            ? evaluatorName
-                            : label;
-
-                        return $"{Encode(displayName)} ({x.ProposedScore!.Value}/7)";
-                    })
-                    .ToList();
-
-                if (proposed.Count > 0)
+                if (!string.IsNullOrWhiteSpace(eval.OfficialStrengths))
                 {
-                    sb.AppendLine($"<p><strong>Mức tự đánh giá:</strong> Điểm đề xuất: {string.Join(", ", proposed)}</p>");
+                    sb.AppendLine($"<p><strong>Điểm mạnh:</strong> \"{Encode(NormalizeText(eval.OfficialStrengths))}\"</p>");
+                }
+
+                if (!string.IsNullOrWhiteSpace(eval.OfficialWeaknesses))
+                {
+                    sb.AppendLine($"<p><strong>Điểm cần cải tiến:</strong> \"{Encode(NormalizeText(eval.OfficialWeaknesses))}\"</p>");
+                }
+
+                if (!string.IsNullOrWhiteSpace(eval.OfficialActionPlan))
+                {
+                    sb.AppendLine($"<p><strong>Kế hoạch hành động:</strong> \"{Encode(NormalizeText(eval.OfficialActionPlan))}\"</p>");
                 }
 
                 if (eval.OfficialScore.HasValue)
@@ -996,72 +958,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             }
 
             return sb.ToString();
-        }
-
-        private static void AppendSubmissionSection(
-            StringBuilder sb,
-            string sectionTitle,
-            IReadOnlyCollection<EvaluationSubmission> submissions,
-            IReadOnlyDictionary<Guid, string> labelsBySubmission,
-            IReadOnlyDictionary<Guid, string> evaluatorNames,
-            Func<EvaluationSubmission, string?> selector)
-        {
-            var rows = submissions
-                .Select(submission =>
-                {
-                    var value = NormalizeText(selector(submission));
-                    if (string.IsNullOrWhiteSpace(value))
-                    {
-                        return null;
-                    }
-
-                    var label = labelsBySubmission.GetValueOrDefault(submission.Id, "TVH");
-                    var displayName = evaluatorNames.TryGetValue(submission.EvaluatorId, out var evaluatorName)
-                        && !string.IsNullOrWhiteSpace(evaluatorName)
-                        ? evaluatorName
-                        : label;
-                    return $"<li><strong>{Encode(displayName)}:</strong> \"{Encode(value)}\"</li>";
-                })
-                .Where(row => row != null)
-                .Cast<string>()
-                .ToList();
-
-            if (rows.Count == 0)
-            {
-                return;
-            }
-
-            sb.AppendLine($"<p><strong>{Encode(sectionTitle)}</strong></p>");
-            sb.AppendLine("<ul>");
-            foreach (var row in rows)
-            {
-                sb.AppendLine(row);
-            }
-            sb.AppendLine("</ul>");
-        }
-
-        private static bool HasMeaningfulSubmissionData(EvaluationSubmission submission)
-        {
-            return !string.IsNullOrWhiteSpace(submission.CurrentState)
-                || !string.IsNullOrWhiteSpace(submission.Strengths)
-                || !string.IsNullOrWhiteSpace(submission.Weaknesses)
-                || !string.IsNullOrWhiteSpace(submission.ActionPlan)
-                || submission.ProposedScore.HasValue
-                || submission.ProposedResult.HasValue;
-        }
-
-        private static string ToAlphabetIndex(int index)
-        {
-            var normalized = Math.Max(0, index);
-            var result = string.Empty;
-
-            do
-            {
-                result = (char)('A' + (normalized % 26)) + result;
-                normalized = (normalized / 26) - 1;
-            } while (normalized >= 0);
-
-            return result;
         }
 
         private static string NormalizeText(string? value)

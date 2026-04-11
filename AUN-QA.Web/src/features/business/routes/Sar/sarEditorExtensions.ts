@@ -26,11 +26,16 @@ export interface TocItem {
   isScrolledOver: boolean;
 }
 
+export interface SarEditorCommentExtensionOptions {
+  onCommentActivated?: (commentId: string) => void;
+}
+
 export function createSarEditorExtensions(
   ydoc: Y.Doc | null,
   provider?: WebsocketProvider | null,
   onTocUpdate?: (items: TocItem[]) => void,
   userInfo?: { name: string; color: string },
+  commentOptions: SarEditorCommentExtensionOptions = {},
 ): AnyExtension[] {
   const extensions: AnyExtension[] = [
     StarterKit.configure({
@@ -62,6 +67,7 @@ export function createSarEditorExtensions(
       HTMLAttributes: {
         class: "rounded-sm bg-amber-200/70 px-0.5 ring-1 ring-amber-300",
       },
+      ...commentOptions,
     }),
     EvidenceTag,
   ];

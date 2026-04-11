@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import type { Editor } from "@tiptap/react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ interface SarReviewCommentsPanelProps {
   editor: Editor | null;
   isLoading: boolean;
   reviewRound?: number | null;
+  activeCommentId?: string | null;
+  embedded?: boolean;
 }
 
 type CommentViewState = "linked" | "orphaned" | "unknown";
@@ -80,11 +82,33 @@ export default function SarReviewCommentsPanel({
   editor,
   isLoading,
   reviewRound,
+  activeCommentId,
+  embedded = false,
 }: SarReviewCommentsPanelProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const commentViews = useMemo(
     () => comments.map((comment) => getCommentViewModel(comment, editor)),
     [comments, editor],
   );
+
+  useEffect(() => {
+    if (!activeCommentId || !scrollContainerRef.current) {
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+    const escapedCommentId =
+      typeof CSS !== "undefined" && typeof CSS.escape === "function"
+        ? CSS.escape(activeCommentId)
+        : null;
+    const target = escapedCommentId
+      ? container.querySelector<HTMLElement>(`[data-comment-id="${escapedCommentId}"]`)
+      : Array.from(container.querySelectorAll<HTMLElement>("[data-comment-id]")).find(
+          (candidate) => candidate.getAttribute("data-comment-id") === activeCommentId,
+        );
+
+    target?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [activeCommentId]);
 
   const handleGoToLocation = (view: CommentViewModel) => {
     if (!editor || editor.isDestroyed || !view.range) {
@@ -99,13 +123,18 @@ export default function SarReviewCommentsPanel({
     : `Vòng ${reviewRound ?? 1} · ${comments.length} nhận xét`;
 
   return (
-    <aside className="flex h-full min-h-0 w-[320px] shrink-0 flex-col overflow-hidden border-l bg-slate-50">
+    <aside
+      className={cn(
+        "flex min-h-0 shrink-0 flex-col overflow-hidden bg-slate-50",
+        embedded ? "flex-1 w-full" : "h-full w-[320px] border-l",
+      )}
+    >
       <div className="flex-shrink-0 border-b bg-white px-4 py-3">
         <h3 className="text-sm font-semibold text-slate-700">Nhận xét hội đồng</h3>
         <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+      <div ref={scrollContainerRef} className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
         {isLoading ? (
           <div
             className="flex h-24 items-center justify-center text-slate-400"
@@ -128,6 +157,7 @@ export default function SarReviewCommentsPanel({
             return (
               <article
                 key={comment.Id}
+                data-comment-id={comment.CommentMarkId?.trim() || comment.Id}
                 className={cn(
                   "rounded-lg border bg-white px-3 py-3 shadow-sm transition-colors",
                   view.state === "linked" ? "border-slate-200" : "border-slate-200",

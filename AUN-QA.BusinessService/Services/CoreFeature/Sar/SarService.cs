@@ -746,10 +746,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         public async Task<byte[]> ExportDocx(ExportSarDocxRequest request)
         {
             var report = await GetSarReportOrThrowAsync(request.CycleId);
-            if (report.Status != (int)SarStatus.Submitted && report.Status != (int)SarStatus.Approved)
-            {
-                throw new BusinessException("SAR phải ở trạng thái Đã nộp hoặc Đã phê duyệt để xuất file");
-            }
 
             using var mem = new MemoryStream();
             using (var wordDocument = WordprocessingDocument.Create(mem, WordprocessingDocumentType.Document, true))

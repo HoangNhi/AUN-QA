@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
 import { createSarEditorExtensions } from "./sarEditorExtensions";
 
@@ -16,5 +16,24 @@ describe("createSarEditorExtensions", () => {
   it("keeps comment marks in the schema so collaboration does not strip them", () => {
     const extensions = createSarEditorExtensions(new Y.Doc());
     expect(extensions.some((extension) => extension.name === "comment")).toBe(true);
+  });
+
+  it("wires the comment activation callback into the comment extension", () => {
+    const onCommentActivated = vi.fn();
+
+    const extensions = createSarEditorExtensions(
+      null,
+      null,
+      undefined,
+      undefined,
+      { onCommentActivated },
+    );
+
+    const commentExtension = extensions.find((extension) => extension.name === "comment");
+    const commentOptions = (commentExtension?.options ?? {}) as {
+      onCommentActivated?: typeof onCommentActivated;
+    };
+
+    expect(commentOptions.onCommentActivated).toBe(onCommentActivated);
   });
 });

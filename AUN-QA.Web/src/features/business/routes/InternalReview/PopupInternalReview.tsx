@@ -809,7 +809,7 @@ export default function PopupInternalReview({
                       key={`${tocItem.pos}-${tocItem.text}`}
                       type="button"
                       onClick={() => scrollToHeading(tocItem.pos)}
-                      className={`block w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-slate-100 ${
+                      className={`block w-full truncate rounded-md px-3 py-2 text-left text-sm transition hover:bg-slate-100 ${
                         tocItem.level === 1
                           ? "font-semibold text-slate-900"
                           : "font-normal text-slate-600"
@@ -817,6 +817,7 @@ export default function PopupInternalReview({
                       style={{
                         paddingLeft: `${12 + Math.max(tocItem.level - 1, 0) * 12}px`,
                       }}
+                      title={tocItem.text}
                     >
                       {tocItem.text}
                     </button>

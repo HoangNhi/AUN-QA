@@ -3,9 +3,10 @@ import {
   canSubmitSar,
   createSarEvidencePreviewCycleMap,
   createSarEvidencePreviewQueryKey,
-  isSarEditorReadOnly,
   createSarEvidenceListRequest,
   findEvidenceCycleMapIdByEvidenceId,
+  getSarRightPanelTabs,
+  isSarEditorReadOnly,
   resolveSarEvidencePreviewCycleMapId,
   shouldShowSarRevisionReasonBanner,
 } from "./PopupSarEditor";
@@ -43,8 +44,7 @@ describe("PopupSarEditor workflow helpers", () => {
   ] as const)(
     "combines status %s with canEditByRole=%s into isReadOnly=%s",
     (status, canEditByRole, expected) => {
-      const isReadOnly =
-        isSarEditorReadOnly(status) || !canEditByRole;
+      const isReadOnly = isSarEditorReadOnly(status) || !canEditByRole;
       expect(isReadOnly).toBe(expected);
     },
   );
@@ -72,9 +72,7 @@ describe("PopupSarEditor workflow helpers", () => {
   ] as const)(
     "shows revision banner for status %s and reason %s => %s",
     (status, revisionReason, expected) => {
-      expect(
-        shouldShowSarRevisionReasonBanner(status, revisionReason),
-      ).toBe(expected);
+      expect(shouldShowSarRevisionReasonBanner(status, revisionReason)).toBe(expected);
     },
   );
 
@@ -122,7 +120,7 @@ describe("PopupSarEditor workflow helpers", () => {
         ],
         "ev-missing",
       ),
-    ).toThrowError("Không tìm thấy minh chứng đã xác minh để xem trước.");
+    ).toThrowError(/minh chứng đã xác minh để xem trước/i);
   });
 
   it("normalizes a workflow preview while preserving SAR context", () => {
@@ -152,4 +150,16 @@ describe("PopupSarEditor workflow helpers", () => {
       IsEdit: true,
     });
   });
+
+  it.each([
+    [3, ["comments", "evidence"]],
+    [1, ["evidence"]],
+    [2, ["evidence"]],
+    [4, ["evidence"]],
+  ] as const)(
+    "returns the expected right panel tabs for status %s",
+    (status, expectedTabs) => {
+      expect(getSarRightPanelTabs(status)).toEqual(expectedTabs);
+    },
+  );
 });

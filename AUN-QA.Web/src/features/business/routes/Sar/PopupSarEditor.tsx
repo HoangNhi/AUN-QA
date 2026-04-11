@@ -289,6 +289,12 @@ function BubbleMenuToolbarButton({
   );
 }
 
+export type SarRightPanelTab = "comments" | "evidence";
+
+export function getSarRightPanelTabs(status: SarStatus): SarRightPanelTab[] {
+  return status === 3 ? ["comments", "evidence"] : ["evidence"];
+}
+
 export default function PopupSarEditor({
   open,
   cycle,
@@ -322,6 +328,7 @@ export default function PopupSarEditor({
     readStoredBoolean("sar-editor-sidebar", true),
   );
   const [isEvidencePanelOpen, setIsEvidencePanelOpen] = useState(true);
+  const [rightPanelTab, setRightPanelTab] = useState<SarRightPanelTab>("comments");
   const [evidenceKeyword, setEvidenceKeyword] = useState("");
   const [evidencePreviewId, setEvidencePreviewId] = useState<string | null>(
     null,
@@ -333,6 +340,7 @@ export default function PopupSarEditor({
   const [isAutofilling, setIsAutofilling] = useState(false);
   const [isSubmittingFlow, setIsSubmittingFlow] = useState(false);
   const [isSavingLocal, setIsSavingLocal] = useState(false);
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
   const handleExportDocx = async () => {
     if (!cycle?.CycleId) return;
@@ -417,6 +425,7 @@ export default function PopupSarEditor({
     currentStatus,
     draft?.RevisionReason,
   );
+  const rightPanelTabs = getSarRightPanelTabs(currentStatus);
   const { comments: reviewComments, isLoading: isReviewCommentsLoading } =
     useInternalReviewComments({
       cycleId: cycle?.CycleId,
@@ -522,6 +531,12 @@ export default function PopupSarEditor({
         ydoc
           ? { name: user?.Fullname ?? "Ẩn danh", color: userColorRef.current }
           : undefined,
+        {
+          onCommentActivated: (commentId) => {
+            setActiveCommentId(commentId);
+            setRightPanelTab("comments");
+          },
+        },
       ),
       editorProps: {
         attributes: {
@@ -556,13 +571,16 @@ export default function PopupSarEditor({
   }, [editor, isReadOnly]);
 
   useEffect(() => {
+    setActiveCommentId(null);
+    setRightPanelTab("comments");
+
     if (!open) {
       return;
     }
 
     setIsEvidencePanelOpen(true);
     setEvidenceKeyword("");
-  }, [open, cycle?.CycleId]);
+  }, [open, currentStatus]);
 
   useEffect(() => {
     if (!open) {
@@ -1025,6 +1043,95 @@ export default function PopupSarEditor({
     );
   };
 
+  const renderSarEvidencePanelContent = (showToggleButton: boolean) => (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-start justify-between gap-3 border-b px-3 py-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Minh chứng
+          </p>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            Kéo thả vào nội dung để chèn thẻ minh chứng
+          </p>
+        </div>
+        {showToggleButton ? (
+          <button
+            onClick={toggleEvidencePanel}
+            className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            title="Thu gọn panel minh chứng"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
+
+      <div className="border-b px-3 py-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={evidenceKeyword}
+            onChange={(event) => setEvidenceKeyword(event.target.value)}
+            placeholder="Tìm theo mã hoặc tên..."
+            className="h-9 pl-8"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3">
+        {isEvidenceLoading ? (
+          <div className="flex h-24 items-center justify-center text-slate-400">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        ) : filteredEvidences.length === 0 ? (
+          <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
+            {verifiedEvidences.length === 0
+              ? "Không có minh chứng đã xác minh cho chu kỳ này."
+              : "Không tìm thấy minh chứng khớp từ khóa."}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {filteredEvidences.map((evidence) => (
+              <button
+                key={evidence.EvidenceId}
+                type="button"
+                draggable={isEditable}
+                onDragStart={(event) => handleEvidenceDragStart(event, evidence)}
+                disabled={!isEditable}
+                className={cn(
+                  "w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left shadow-sm transition",
+                  isEditable
+                    ? "cursor-grab hover:border-blue-300 hover:bg-blue-50/70 active:cursor-grabbing"
+                    : "cursor-default opacity-70",
+                )}
+                title={
+                  isEditable
+                    ? "Kéo thả để chèn vào nội dung"
+                    : "Chế độ chỉ đọc"
+                }
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                        [{evidence.evidenceCode || "Mã"}]
+                      </span>
+                      <span className="text-[11px] uppercase tracking-wide text-emerald-600">
+                        Đã xác minh
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-sm font-medium text-slate-800">
+                      {evidence.evidenceName || "Không có tên minh chứng"}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -1137,22 +1244,20 @@ export default function PopupSarEditor({
                 </Button>
               )}
 
-              {currentStatus !== 1 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
-                  disabled={isExporting}
-                  onClick={handleExportDocx}
-                >
-                  {isExporting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <FileDown className="mr-2 h-4 w-4 text-blue-600" />
-                  )}
-                  Xuất báo cáo
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                disabled={isExporting}
+                onClick={handleExportDocx}
+              >
+                {isExporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4 text-blue-600" />
+                )}
+                Xuất báo cáo
+              </Button>
 
               {(currentStatus === 1 || currentStatus === 3) && (
                 <Button
@@ -1373,107 +1478,51 @@ export default function PopupSarEditor({
 
               {/* RIGHT PANEL */}
               {currentStatus === 3 ? (
-                <SarReviewCommentsPanel
-                  comments={reviewComments}
-                  editor={editor}
-                  isLoading={isReviewCommentsLoading}
-                  reviewRound={draft?.ReviewRound}
-                />
+                <aside className="border-l bg-white transition-all duration-200 overflow-hidden shrink-0 w-[320px]">
+                  <div className="flex h-full min-h-0 flex-col">
+                    <div className="flex shrink-0 border-b">
+                      {rightPanelTabs.map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setRightPanelTab(tab)}
+                          className={cn(
+                            "flex-1 px-3 py-2 text-sm font-semibold transition",
+                            rightPanelTab === tab
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700",
+                          )}
+                        >
+                          {tab === "comments" ? "Nhận xét" : "Minh chứng"}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      {rightPanelTab === "comments" ? (
+                        <SarReviewCommentsPanel
+                          comments={reviewComments}
+                          editor={editor}
+                          isLoading={isReviewCommentsLoading}
+                          reviewRound={draft?.ReviewRound}
+                          embedded
+                          activeCommentId={activeCommentId}
+                        />
+                      ) : (
+                        <div className="h-full min-h-0 overflow-hidden">
+                          {renderSarEvidencePanelContent(false)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </aside>
               ) : (
                 <aside
                   className={`border-l bg-white transition-all duration-200 overflow-hidden shrink-0 ${
                     isEvidencePanelOpen ? "w-[320px]" : "w-0"
                   }`}
                 >
-                  <div className="h-full min-h-0 flex flex-col">
-                    <div className="flex items-start justify-between gap-3 border-b px-3 py-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Minh chứng
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-slate-400">
-                          Kéo thả vào nội dung để chèn thẻ minh chứng
-                        </p>
-                      </div>
-                      <button
-                        onClick={toggleEvidencePanel}
-                        className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                        title="Thu gọn panel minh chứng"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="border-b px-3 py-2">
-                      <div className="relative">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <Input
-                          value={evidenceKeyword}
-                          onChange={(event) =>
-                            setEvidenceKeyword(event.target.value)
-                          }
-                          placeholder="Tìm theo mã hoặc tên..."
-                          className="h-9 pl-8"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-3">
-                      {isEvidenceLoading ? (
-                        <div className="flex h-24 items-center justify-center text-slate-400">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        </div>
-                      ) : filteredEvidences.length === 0 ? (
-                        <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500">
-                          {verifiedEvidences.length === 0
-                            ? "Không có minh chứng đã xác minh cho chu kỳ này."
-                            : "Không tìm thấy minh chứng khớp từ khóa."}
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {filteredEvidences.map((evidence) => (
-                            <button
-                              key={evidence.EvidenceId}
-                              type="button"
-                              draggable={isEditable}
-                              onDragStart={(event) =>
-                                handleEvidenceDragStart(event, evidence)
-                              }
-                              disabled={!isEditable}
-                              className={cn(
-                                "w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-left shadow-sm transition",
-                                isEditable
-                                  ? "cursor-grab hover:border-blue-300 hover:bg-blue-50/70 active:cursor-grabbing"
-                                  : "cursor-default opacity-70",
-                              )}
-                              title={
-                                isEditable
-                                  ? "Kéo thả để chèn vào nội dung"
-                                  : "Chế độ chỉ đọc"
-                              }
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                                      [{evidence.evidenceCode || "Mã"}]
-                                    </span>
-                                    <span className="text-[11px] uppercase tracking-wide text-emerald-600">
-                                      Đã xác minh
-                                    </span>
-                                  </div>
-                                  <p className="mt-2 truncate text-sm font-medium text-slate-800">
-                                    {evidence.evidenceName ||
-                                      "Không có tên minh chứng"}
-                                  </p>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  {renderSarEvidencePanelContent(true)}
                 </aside>
               )}
             </div>

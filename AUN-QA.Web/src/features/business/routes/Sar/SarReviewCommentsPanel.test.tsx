@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Editor } from "@tiptap/react";
 import { describe, expect, it, vi } from "vitest";
 import type { InternalComment } from "@/features/business/types/internalreview.types";
@@ -219,5 +219,52 @@ describe("SarReviewCommentsPanel", () => {
     );
 
     expect(screen.getByText("Vòng 2 · 1 nhận xét")).toBeInTheDocument();
+  });
+
+  it("scrolls the matching comment card into view when activeCommentId changes", async () => {
+    if (!HTMLElement.prototype.scrollIntoView) {
+      Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        value: () => undefined,
+        writable: true,
+      });
+    }
+
+    const scrollSpy = vi
+      .spyOn(HTMLElement.prototype, "scrollIntoView")
+      .mockImplementation(() => undefined);
+
+    const comments = [
+      makeComment({ Id: "comment-1", CommentMarkId: "mark-1" }),
+      makeComment({
+        Id: "comment-2",
+        CommentMarkId: "mark-2",
+        CommentText: "Bình luận thứ hai",
+      }),
+    ];
+
+    const { rerender } = render(
+      <SarReviewCommentsPanel
+        comments={comments}
+        editor={null}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    rerender(
+      <SarReviewCommentsPanel
+        comments={comments}
+        activeCommentId="mark-2"
+        editor={null}
+        isLoading={false}
+        reviewRound={2}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: "smooth", block: "nearest" });
+    });
+
+    scrollSpy.mockRestore();
   });
 });

@@ -1,9 +1,12 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/combobox";
-import { useUserOptions } from "@/features/system/hooks/useUserOptions";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ExternalReviewAccount } from "@/features/business/types/externalReview.types";
 
 interface AccountTabProps {
@@ -11,107 +14,202 @@ interface AccountTabProps {
   accounts: ExternalReviewAccount[];
   isSubmitting: boolean;
   isReadOnly: boolean;
-  onAddAccounts: (userIds: string[]) => Promise<void>;
+  onCreateAndLinkAccount: (payload: {
+    fullname: string;
+    username: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
   onRemoveAccount: (accountId: string) => Promise<void>;
 }
+
+const EMPTY_FORM = { fullname: "", username: "", email: "", password: "" };
+
+const FIELDS = [
+  { key: "fullname" as const, label: "Họ tên", type: "text" },
+  { key: "username" as const, label: "Tên tài khoản", type: "text" },
+  { key: "email" as const, label: "Email", type: "text" },
+  { key: "password" as const, label: "Mật khẩu", type: "password" },
+];
 
 export function AccountTab({
   externalReviewId,
   accounts,
   isSubmitting,
   isReadOnly,
-  onAddAccounts,
+  onCreateAndLinkAccount,
   onRemoveAccount,
 }: AccountTabProps) {
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const { options: userOptions, isLoading: isUserOptionsLoading } = useUserOptions(
-    !!externalReviewId,
-  );
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  const selectableUsers = useMemo(() => {
-    const selectedIds = new Set(accounts.map((item) => item.UserId));
-    return userOptions.filter((item) => !selectedIds.has(item.Value || ""));
-  }, [accounts, userOptions]);
+  const isFormValid = form.fullname && form.username && form.email && form.password;
 
-  const handleAdd = async () => {
-    if (!selectedUserId) {
-      return;
+  const handleCreate = async () => {
+    if (!isFormValid) return;
+
+    setIsCreating(true);
+    setCreateError(null);
+
+    try {
+      await onCreateAndLinkAccount(form);
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Lỗi không xác định.");
+    } finally {
+      setIsCreating(false);
     }
+  };
 
-    await onAddAccounts([selectedUserId]);
-    setSelectedUserId("");
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setForm(EMPTY_FORM);
+    setCreateError(null);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cau hinh tai khoan doan danh gia ngoai</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-          <Combobox
-            options={selectableUsers}
-            loading={isUserOptionsLoading}
-            value={selectedUserId}
-            onValueChange={(value) => setSelectedUserId(value)}
-            placeholder="Chon tai khoan de them"
-            searchPlaceholder="Tim tai khoan..."
-            emptyText="Khong con tai khoan phu hop."
-            disabled={!externalReviewId || isReadOnly}
-          />
-          <Button
-            type="button"
-            onClick={() => {
-              void handleAdd();
-            }}
-            disabled={!externalReviewId || !selectedUserId || isSubmitting || isReadOnly}
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Them tai khoan
-          </Button>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-800">
+            Danh sách tài khoản Chuyên gia (EXT)
+          </h3>
+          <p className="text-xs text-slate-500">
+            {accounts.length} tài khoản đã liên kết
+          </p>
         </div>
+        {!isReadOnly && externalReviewId ? (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+            Thêm chuyên gia
+          </Button>
+        ) : null}
+      </div>
 
-        <div className="rounded-md border">
-          {accounts.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              Chua co tai khoan nao trong danh sach danh gia ngoai.
-            </div>
-          ) : (
-            <div className="divide-y">
-              {accounts.map((account) => {
-                const displayName =
-                  account.Fullname || account.Username || account.UserId;
-                return (
-                  <div
-                    key={account.Id || account.UserId}
-                    className="flex items-center justify-between gap-3 p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{displayName}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {account.Username || account.UserId}
-                      </p>
-                    </div>
-                    {!isReadOnly ? (
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50">
+              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Họ tên
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Tài khoản
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Trạng thái
+              </th>
+              {!isReadOnly ? (
+                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Thao tác
+                </th>
+              ) : null}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {accounts.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={isReadOnly ? 3 : 4}
+                  className="px-4 py-8 text-center text-sm text-slate-400"
+                >
+                  Chưa có tài khoản chuyên gia nào
+                </td>
+              </tr>
+            ) : (
+              accounts.map((acc) => (
+                <tr key={acc.Id || acc.UserId} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">
+                    {acc.Fullname ?? acc.UserId}
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {acc.Username ?? "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={[
+                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        acc.IsActived
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-slate-100 text-slate-500",
+                      ].join(" ")}
+                    >
+                      <span
+                        className={[
+                          "h-1.5 w-1.5 rounded-full",
+                          acc.IsActived ? "bg-emerald-500" : "bg-slate-400",
+                        ].join(" ")}
+                      />
+                      {acc.IsActived ? "Đang hoạt động" : "Không hoạt động"}
+                    </span>
+                  </td>
+                  {!isReadOnly ? (
+                    <td className="px-4 py-3">
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          void onRemoveAccount(account.Id);
-                        }}
+                        onClick={() => void onRemoveAccount(acc.Id)}
                         disabled={isSubmitting}
+                        className="text-red-400 hover:bg-red-50 hover:text-red-600"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    ) : null}
-                  </div>
-                );
-              })}
+                    </td>
+                  ) : null}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={showForm} onOpenChange={(open) => { if (!open) handleCloseForm(); }}>
+        <DialogContent className="max-w-md">
+          <DialogTitle>Thêm tài khoản Chuyên gia</DialogTitle>
+
+          <div className="space-y-3 pt-1">
+            {FIELDS.map(({ key, label, type }) => (
+              <div key={key} className="space-y-1">
+                <label className="block text-xs font-medium text-slate-600">
+                  {label}
+                </label>
+                <Input
+                  type={type}
+                  value={form[key]}
+                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  disabled={isCreating}
+                />
+              </div>
+            ))}
+
+            {createError ? (
+              <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
+                {createError}
+              </p>
+            ) : null}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={handleCloseForm}
+                disabled={isCreating}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={() => void handleCreate()}
+                disabled={isCreating || !isFormValid}
+              >
+                {isCreating ? "Đang tạo..." : "Tạo tài khoản"}
+              </Button>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

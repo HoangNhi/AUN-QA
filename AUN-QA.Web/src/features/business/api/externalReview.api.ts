@@ -5,6 +5,7 @@ import type {
   AddExternalReviewAccountsRequest,
   AddExternalReviewFindingRequest,
   ConfirmExternalReviewCompletionRequest,
+  CreateAndLinkExternalReviewAccountRequest,
   CreateExternalReviewRequest,
   DeleteExternalReviewFindingRequest,
   ExternalReviewAccount,
@@ -172,6 +173,20 @@ export const externalReviewService = {
       Success: true,
       StatusCode: 200,
     };
+  },
+
+  createAndLinkAccount: async (
+    request: CreateAndLinkExternalReviewAccountRequest,
+  ): Promise<ApiResponse<ExternalReviewAccount>> => {
+    return api.post<ExternalReviewAccount>(
+      API_ENDPOINTS.Business.ExternalReview.CREATE_AND_LINK_ACCOUNT(request.ExternalReviewId),
+      {
+        Fullname: request.Fullname,
+        Username: request.Username,
+        Email: request.Email,
+        Password: request.Password,
+      },
+    );
   },
 
   removeAccount: async (

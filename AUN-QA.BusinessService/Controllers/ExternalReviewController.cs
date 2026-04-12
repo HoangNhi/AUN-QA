@@ -22,6 +22,7 @@ namespace AUN_QA.BusinessService.Controllers
         private const string FindingsRoute = "findings";
         private const string FindingByIdRoute = "findings/{id:guid}";
         private const string AccountsByExternalReviewRoute = "{id:guid}/accounts";
+        private const string CreateAndLinkAccountRoute = "{id:guid}/accounts/create-and-link";
         private const string AccountByIdRoute = "accounts/{accountId:guid}";
 
         private readonly IExternalReviewService _service;
@@ -128,6 +129,14 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> AddAccount(Guid id, [FromBody] ExternalReviewAddAccountRequest request)
         {
             var result = await _service.AddAccountAsync(id, request.UserId);
+            return Ok(new BaseResponse<ModelExtAccount> { Data = result, Success = true });
+        }
+
+        [HttpPost(CreateAndLinkAccountRoute)]
+        [AttributePermission(Action = ActionType.ADD)]
+        public async Task<IActionResult> CreateAndLinkAccount(Guid id, [FromBody] ExternalReviewCreateAccountRequest request)
+        {
+            var result = await _service.CreateAndLinkAccountAsync(id, request);
             return Ok(new BaseResponse<ModelExtAccount> { Data = result, Success = true });
         }
 

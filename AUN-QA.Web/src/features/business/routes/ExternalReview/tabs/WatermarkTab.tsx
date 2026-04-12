@@ -1,146 +1,152 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import type { ExternalReviewDetail } from "@/features/business/types/externalReview.types";
 
-const STATUS_OPTIONS = [
-  { Value: "0", Text: "Moi tao" },
-  { Value: "1", Text: "Dang thuc hien" },
-  { Value: "2", Text: "Hoan tat" },
-];
-
-const WATERMARK_POSITION_OPTIONS = [
-  { Value: "0", Text: "Cheo 45 do" },
-  { Value: "1", Text: "Chinh giua" },
-  { Value: "2", Text: "Lap lai" },
-];
+const WATERMARK_POSITION_LABELS = ["Vát chéo 45°", "Chính giữa", "Lặp lại"];
 
 interface WatermarkTabProps {
   review: ExternalReviewDetail;
   isSubmitting: boolean;
   isReadOnly: boolean;
-  onUpdateStatus: (status: number) => Promise<void>;
   onUpdateWatermark: (payload: {
     text?: string | null;
     opacity: number;
     position: number;
   }) => Promise<void>;
-  onConfirmCompletion: () => Promise<void>;
 }
 
 export function WatermarkTab({
   review,
   isSubmitting,
   isReadOnly,
-  onUpdateStatus,
   onUpdateWatermark,
-  onConfirmCompletion,
 }: WatermarkTabProps) {
-  const [status, setStatus] = useState<string>(String(review.Status ?? 0));
-  const [watermarkText, setWatermarkText] = useState<string>(review.WatermarkText || "");
-  const [watermarkOpacity, setWatermarkOpacity] = useState<string>(
-    String(review.WatermarkOpacity ?? 25),
+  const [watermarkText, setWatermarkText] = useState<string>(
+    review.WatermarkText || "",
   );
-  const [watermarkPosition, setWatermarkPosition] = useState<string>(
-    String(review.WatermarkPosition ?? 0),
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(
+    review.WatermarkOpacity ?? 25,
+  );
+  const [watermarkPosition, setWatermarkPosition] = useState<number>(
+    review.WatermarkPosition ?? 0,
   );
 
   useEffect(() => {
-    setStatus(String(review.Status ?? 0));
     setWatermarkText(review.WatermarkText || "");
-    setWatermarkOpacity(String(review.WatermarkOpacity ?? 25));
-    setWatermarkPosition(String(review.WatermarkPosition ?? 0));
+    setWatermarkOpacity(review.WatermarkOpacity ?? 25);
+    setWatermarkPosition(review.WatermarkPosition ?? 0);
   }, [review]);
 
   const disabled = isSubmitting || isReadOnly;
 
+  const handleSave = () => {
+    void onUpdateWatermark({
+      text: watermarkText.trim() || null,
+      opacity: watermarkOpacity,
+      position: watermarkPosition,
+    });
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Cau hinh trang thai & watermark</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Combobox
-            options={STATUS_OPTIONS}
-            value={status}
-            onValueChange={(value) => setStatus(value)}
-            placeholder="Chon trang thai"
-            searchPlaceholder="Tim trang thai..."
-            emptyText="Khong co trang thai."
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="space-y-5">
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Nội dung Watermark
+          </label>
+          <Input
+            value={watermarkText}
+            onChange={(e) => setWatermarkText(e.target.value)}
+            placeholder="VD: BẢN MẬT - ĐH ABC - ĐGN 2026"
             disabled={disabled}
           />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              void onUpdateStatus(Number(status));
-            }}
-            disabled={disabled}
-          >
-            Cap nhat trang thai
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              void onConfirmCompletion();
-            }}
-            disabled={disabled || review.IsCompleted}
-          >
-            {review.IsCompleted ? "Da xac nhan hoan tat" : "Xac nhan hoan tat"}
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="space-y-2 md:col-span-2">
-            <p className="text-sm font-medium">Noi dung watermark</p>
-            <Input
-              value={watermarkText}
-              onChange={(event) => setWatermarkText(event.target.value)}
-              placeholder="Nhap noi dung watermark..."
-              disabled={disabled}
-            />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Độ mờ (Opacity)
+            </label>
+            <span className="text-xs font-medium text-slate-700">
+              {watermarkOpacity}%
+            </span>
           </div>
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Do mo (0-100)</p>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={watermarkOpacity}
-              onChange={(event) => setWatermarkOpacity(event.target.value)}
-              disabled={disabled}
-            />
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={watermarkOpacity}
+            onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+            disabled={disabled}
+            className="h-2 w-full cursor-pointer rounded-lg accent-slate-700 disabled:opacity-50"
+          />
+          <div className="flex justify-between text-xs text-slate-400">
+            <span>0%</span>
+            <span>100%</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
-          <Combobox
-            options={WATERMARK_POSITION_OPTIONS}
-            value={watermarkPosition}
-            onValueChange={(value) => setWatermarkPosition(value)}
-            placeholder="Chon vi tri watermark"
-            searchPlaceholder="Tim vi tri..."
-            emptyText="Khong co vi tri."
-            disabled={disabled}
-          />
-          <Button
-            type="button"
-            onClick={() => {
-              void onUpdateWatermark({
-                text: watermarkText.trim() || null,
-                opacity: Math.max(0, Math.min(100, Number(watermarkOpacity || 0))),
-                position: Number(watermarkPosition || 0),
-              });
-            }}
-            disabled={disabled}
-          >
-            Luu watermark
-          </Button>
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Vị trí
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {WATERMARK_POSITION_LABELS.map((label, i) => (
+              <button
+                key={label}
+                type="button"
+                disabled={disabled}
+                onClick={() => setWatermarkPosition(i)}
+                className={[
+                  "rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-60",
+                  watermarkPosition === i
+                    ? "border-slate-700 bg-slate-700 font-medium text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <strong>Tự động nối thêm (không chỉnh được):</strong>
+          <br />
+          Email chuyên gia · IP · Thời gian xem
+        </div>
+
+        {!isReadOnly ? (
+          <Button type="button" onClick={handleSave} disabled={disabled}>
+            {isSubmitting ? "Đang lưu..." : "Lưu cấu hình"}
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Preview
+        </label>
+        <div className="relative flex h-52 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <p className="text-center text-xs leading-loose text-slate-300 blur-[1px]">
+            Văn bản minh chứng
+            <br />
+            hiển thị tại đây...
+          </p>
+          <span
+            className="pointer-events-none absolute select-none rounded border-4 border-slate-400 px-3 py-1 font-black text-slate-400"
+            style={{
+              opacity: watermarkOpacity / 100,
+              transform: watermarkPosition === 0 ? "rotate(-12deg)" : "none",
+              fontSize: "clamp(10px, 2vw, 18px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {watermarkText || "Watermark preview"}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }

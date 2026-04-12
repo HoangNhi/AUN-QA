@@ -101,20 +101,16 @@ export const getColumns = (
     header: "Người cập nhật",
     cell: ({ row }) => row.original.UpdatedBy || "--",
   },
-  ...(isReadOnly
-    ? []
-    : [
-        {
-          id: "actions",
-          header: () => <div className="text-center">Thao tác</div>,
-          meta: {
-            className: "text-center",
-          },
-          cell: ({ row }) => (
-            <Button size="sm" onClick={() => openEditor(row.original)}>
-              Mở
-            </Button>
-          ),
-        } satisfies ColumnDef<SarGetListItem>,
-      ]),
+  {
+    id: "actions",
+    header: () => <div className="text-center">Thao tác</div>,
+    meta: {
+      className: "text-center",
+    },
+    cell: ({ row }) => (
+      <Button size="sm" onClick={() => openEditor(row.original)}>
+        Xem
+      </Button>
+    ),
+  },
 ];

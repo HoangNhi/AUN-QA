@@ -13,6 +13,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
     [RegisterClassAsTransient]
     public class ExternalReviewService : IExternalReviewService
     {
+        private const string ExtRoleId = "551d1351-008e-4910-a39c-1fcdde409fdf";
+
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _accessor;
         private readonly SystemProto.SystemProtoClient _systemClient;
@@ -534,6 +536,68 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 Id = account.Id,
                 ExternalReviewId = account.ExternalReviewId,
                 UserId = account.UserId,
+                CreatedAt = account.CreatedAt,
+                CreatedBy = account.CreatedBy,
+                IsActived = shouldActivate
+            };
+        }
+
+        public async Task<ModelExtAccount> CreateAndLinkAccountAsync(
+            Guid externalReviewId,
+            ExternalReviewCreateAccountRequest request)
+        {
+            var review = await GetReviewOrThrowAsync(externalReviewId);
+
+            var grpcRequest = new CreateExternalUserRequest
+            {
+                Fullname = request.Fullname.Trim(),
+                Username = request.Username.Trim(),
+                Email = request.Email.Trim(),
+                Password = request.Password,
+                RoleId = ExtRoleId
+            };
+
+            var grpcResponse = await _systemClient.CreateExternalUserAsync(grpcRequest);
+
+            if (!grpcResponse.Success)
+            {
+                throw new BusinessException(grpcResponse.Message ?? "Không thể tạo tài khoản chuyên gia.");
+            }
+
+            var userId = Guid.Parse(grpcResponse.Id);
+
+            var exists = await _context.ExternalReviewAccounts
+                .AnyAsync(x => x.ExternalReviewId == externalReviewId && x.UserId == userId);
+
+            if (exists)
+            {
+                throw new BusinessException("Tài khoản đã được liên kết vào đánh giá này.");
+            }
+
+            var account = new Entities.ExternalReviewAccount
+            {
+                Id = Guid.NewGuid(),
+                ExternalReviewId = externalReviewId,
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = GetCurrentUsernameOrThrow()
+            };
+
+            _context.ExternalReviewAccounts.Add(account);
+            await _context.SaveChangesAsync();
+
+            var shouldActivate = review.Status == (int)ExternalReviewStatus.InProgress
+                && !review.IsCompleted;
+
+            await SyncUsersActivationAsync(new[] { userId }, shouldActivate);
+
+            return new ModelExtAccount
+            {
+                Id = account.Id,
+                ExternalReviewId = account.ExternalReviewId,
+                UserId = account.UserId,
+                Fullname = request.Fullname.Trim(),
+                Username = request.Username.Trim(),
                 CreatedAt = account.CreatedAt,
                 CreatedBy = account.CreatedBy,
                 IsActived = shouldActivate

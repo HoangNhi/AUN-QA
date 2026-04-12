@@ -1,6 +1,7 @@
 using AUN_QA.SystemService.Protos;
 using AUN_QA.SystemService.Services.CoreFeature.User;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Helpers;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -93,6 +94,57 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
             await _context.SaveChangesAsync();
 
             return new SetUsersActivedResponse { Success = true };
+        }
+
+        public override async Task<CreateExternalUserResponse> CreateExternalUser(
+            CreateExternalUserRequest request, ServerCallContext context)
+        {
+            var exists = await _context.Users.AnyAsync(x =>
+                (x.Username == request.Username || x.Email == request.Email) && !x.IsDeleted);
+
+            if (exists)
+            {
+                return new CreateExternalUserResponse
+                {
+                    Success = false,
+                    Message = "Tên đăng nhập hoặc email đã tồn tại."
+                };
+            }
+
+            if (!Guid.TryParse(request.RoleId, out var roleId))
+            {
+                return new CreateExternalUserResponse
+                {
+                    Success = false,
+                    Message = "RoleId không hợp lệ."
+                };
+            }
+
+            var salt = Encrypt_DecryptHelper.GenerateSalt();
+            var user = new Entities.User
+            {
+                Id = Guid.NewGuid(),
+                Username = request.Username.Trim(),
+                Fullname = request.Fullname.Trim(),
+                Email = request.Email.Trim(),
+                Password = Encrypt_DecryptHelper.EncodePassword(request.Password, salt),
+                PasswordSalt = salt,
+                RoleId = roleId,
+                IsActived = true,
+                IsDeleted = false,
+                CreatedBy = "System",
+                CreatedAt = DateTime.UtcNow,
+                Avatar = string.Empty
+            };
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            return new CreateExternalUserResponse
+            {
+                Id = user.Id.ToString(),
+                Success = true
+            };
         }
     }
 }

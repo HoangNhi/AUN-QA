@@ -186,6 +186,40 @@ export function useExternalReview(selectedCycleId: string | null) {
     },
   });
 
+  const createAndLinkAccountMutation = useMutation({
+    mutationFn: async (payload: {
+      fullname: string;
+      username: string;
+      email: string;
+      password: string;
+    }) => {
+      if (!review?.Id) {
+        throw new Error("External Review chưa được khởi tạo.");
+      }
+
+      const response = await externalReviewService.createAndLinkAccount({
+        ExternalReviewId: review.Id,
+        Fullname: payload.fullname,
+        Username: payload.username,
+        Email: payload.email,
+        Password: payload.password,
+      });
+
+      if (!response.Success) {
+        throw new Error(response.Message || "Không thể tạo tài khoản chuyên gia.");
+      }
+    },
+    onSuccess: async () => {
+      toast.success("Đã tạo và liên kết tài khoản chuyên gia.");
+      await invalidateCurrent();
+    },
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error ? mutationError.message : "Không thể tạo tài khoản.",
+      );
+    },
+  });
+
   const removeAccountMutation = useMutation({
     mutationFn: async (accountId: string) => {
       if (!review?.Id) {
@@ -217,9 +251,11 @@ export function useExternalReview(selectedCycleId: string | null) {
       updateWatermarkMutation.isPending ||
       confirmCompletionMutation.isPending ||
       addAccountsMutation.isPending ||
+      createAndLinkAccountMutation.isPending ||
       removeAccountMutation.isPending,
     [
       addAccountsMutation.isPending,
+      createAndLinkAccountMutation.isPending,
       confirmCompletionMutation.isPending,
       removeAccountMutation.isPending,
       updateStatusMutation.isPending,
@@ -237,6 +273,8 @@ export function useExternalReview(selectedCycleId: string | null) {
       updateWatermarkMutation.mutateAsync(payload),
     confirmCompletion: () => confirmCompletionMutation.mutateAsync(),
     addAccounts: (userIds: string[]) => addAccountsMutation.mutateAsync(userIds),
+    createAndLinkAccount: (payload: { fullname: string; username: string; email: string; password: string }) =>
+      createAndLinkAccountMutation.mutateAsync(payload),
     removeAccount: (accountId: string) => removeAccountMutation.mutateAsync(accountId),
   };
 }

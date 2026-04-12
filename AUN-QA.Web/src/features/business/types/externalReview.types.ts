@@ -154,6 +154,14 @@ export interface AddExternalReviewAccountsRequest {
   UserIds: string[];
 }
 
+export interface CreateAndLinkExternalReviewAccountRequest {
+  ExternalReviewId: string;
+  Fullname: string;
+  Username: string;
+  Email: string;
+  Password: string;
+}
+
 export interface RemoveExternalReviewAccountRequest {
   AccountId: string;
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,11 @@ export default function PopupExternalReview({
   );
 
   const isReadOnly = isExternalReviewer || review?.IsCompleted === true;
+  const [headerStatus, setHeaderStatus] = useState<string>(String(currentStatus));
+
+  useEffect(() => {
+    setHeaderStatus(String(currentStatus));
+  }, [currentStatus]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
@@ -83,8 +88,13 @@ export default function PopupExternalReview({
     onDataChanged();
   };
 
-  const handleAddAccounts = async (userIds: string[]) => {
-    await reviewQuery.addAccounts(userIds);
+  const handleCreateAndLinkAccount = async (payload: {
+    fullname: string;
+    username: string;
+    email: string;
+    password: string;
+  }) => {
+    await reviewQuery.createAndLinkAccount(payload);
     onDataChanged();
   };
 
@@ -134,38 +144,72 @@ export default function PopupExternalReview({
       >
         <DialogTitle className="sr-only">External review</DialogTitle>
 
-        <header className="sticky top-0 z-30 border-b bg-white px-6 py-4">
-          <div className="flex min-w-0 items-start justify-between gap-3">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-6 py-3.5">
+          <div className="flex min-w-0 items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-semibold text-slate-900">
+              <h2 className="truncate text-base font-semibold text-slate-900">
                 {item ? `${item.CycleName} (${item.Year})` : "External Review"}
               </h2>
-              <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2 text-sm">
+              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
                 <span
                   className={cn(
-                    "shrink-0 rounded-full border px-3 py-1 font-medium",
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium",
                     getStatusBadgeClass(currentStatus),
                   )}
                 >
                   {getStatusLabel(currentStatus)}
                 </span>
-                <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                  Accounts: {review?.Accounts?.length ?? item?.AccountCount ?? 0}
+                <span className="text-slate-300">·</span>
+                <span className="text-xs text-slate-500">
+                  {review?.Accounts?.length ?? item?.AccountCount ?? 0} chuyên gia
                 </span>
-                <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                  Kết quả: {review?.Results?.length ?? item?.ResultCount ?? 0}
+                <span className="text-slate-300">·</span>
+                <span className="text-xs text-slate-500">
+                  {review?.Results?.length ?? item?.ResultCount ?? 0} kết quả
                 </span>
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2">
+              {!isReadOnly && review ? (
+                <>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1">
+                    <select
+                      value={headerStatus}
+                      onChange={(e) => setHeaderStatus(e.target.value)}
+                      className="rounded border-0 bg-transparent px-2 py-1 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300"
+                    >
+                      <option value="0">Mới tạo</option>
+                      <option value="1">Đang thực hiện</option>
+                    </select>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void handleStatusUpdate(Number(headerStatus))}
+                      disabled={reviewQuery.isMutating}
+                      className="h-7 px-3 text-xs"
+                    >
+                      Cập nhật
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => void handleConfirmCompletion()}
+                    disabled={reviewQuery.isMutating || review.IsCompleted}
+                    className="h-8"
+                  >
+                    {review.IsCompleted ? "Đã hoàn tất" : "Xác nhận hoàn tất"}
+                  </Button>
+                </>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => {
-                  handleOpenChange(false);
-                }}
+                onClick={() => { handleOpenChange(false); }}
+                className="ml-1"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -191,9 +235,9 @@ export default function PopupExternalReview({
             <div className="h-full overflow-auto px-6 py-6">
               <Tabs defaultValue="account" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="account">Account</TabsTrigger>
-                  <TabsTrigger value="watermark">Watermark</TabsTrigger>
-                  <TabsTrigger value="results">Results</TabsTrigger>
+                  <TabsTrigger value="account">Tài khoản Chuyên gia</TabsTrigger>
+                  <TabsTrigger value="watermark">Cấu hình Watermark</TabsTrigger>
+                  <TabsTrigger value="results">Kết quả ĐGN</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="account" className="mt-0">
@@ -201,7 +245,7 @@ export default function PopupExternalReview({
                     externalReviewId={review.Id}
                     accounts={review.Accounts || []}
                     isSubmitting={reviewQuery.isMutating}
-                    onAddAccounts={handleAddAccounts}
+                    onCreateAndLinkAccount={handleCreateAndLinkAccount}
                     onRemoveAccount={handleRemoveAccount}
                     isReadOnly={isReadOnly}
                   />
@@ -211,9 +255,7 @@ export default function PopupExternalReview({
                   <WatermarkTab
                     review={review}
                     isSubmitting={reviewQuery.isMutating}
-                    onUpdateStatus={handleStatusUpdate}
                     onUpdateWatermark={handleWatermarkUpdate}
-                    onConfirmCompletion={handleConfirmCompletion}
                     isReadOnly={isReadOnly}
                   />
                 </TabsContent>

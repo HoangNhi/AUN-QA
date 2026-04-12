@@ -1,0 +1,164 @@
+import api, { type ApiResponse } from "@/lib/api";
+import { API_ENDPOINTS } from "@/config/constants";
+import type {
+  AddExternalReviewAccountsRequest,
+  AddExternalReviewFindingRequest,
+  ConfirmExternalReviewCompletionRequest,
+  CreateExternalReviewRequest,
+  DeleteExternalReviewFindingRequest,
+  ExternalReviewAccount,
+  ExternalReviewDetail,
+  ExternalReviewFinding,
+  ExternalReviewResult,
+  GetExternalReviewAccountsRequest,
+  GetExternalReviewRequest,
+  RemoveExternalReviewAccountRequest,
+  UpdateExternalReviewFindingRequest,
+  UpdateExternalReviewStatusRequest,
+  UpdateExternalReviewWatermarkRequest,
+  UpsertExternalReviewResultRequest,
+} from "../types/externalReview.types";
+
+export const externalReviewService = {
+  create: async (
+    request: CreateExternalReviewRequest,
+  ): Promise<ApiResponse<ExternalReviewDetail>> => {
+    return api.post<ExternalReviewDetail>(
+      API_ENDPOINTS.Business.ExternalReview.CREATE,
+      request,
+    );
+  },
+
+  get: async (
+    request: GetExternalReviewRequest,
+  ): Promise<ApiResponse<ExternalReviewDetail>> => {
+    return api.get<ExternalReviewDetail>(
+      API_ENDPOINTS.Business.ExternalReview.GET_BY_CYCLE,
+      {
+        params: { cycleId: request.CycleId },
+      },
+    );
+  },
+
+  updateStatus: async (
+    request: UpdateExternalReviewStatusRequest,
+  ): Promise<ApiResponse<ExternalReviewDetail>> => {
+    return api.put<ExternalReviewDetail>(
+      API_ENDPOINTS.Business.ExternalReview.UPDATE_STATUS,
+      {
+        Id: request.ExternalReviewId,
+        Status: request.Status,
+      },
+    );
+  },
+
+  updateWatermark: async (
+    request: UpdateExternalReviewWatermarkRequest,
+  ): Promise<ApiResponse<ExternalReviewDetail>> => {
+    return api.put<ExternalReviewDetail>(
+      API_ENDPOINTS.Business.ExternalReview.UPDATE_WATERMARK,
+      {
+        Id: request.ExternalReviewId,
+        WatermarkText: request.WatermarkText,
+        WatermarkOpacity: request.WatermarkOpacity,
+        WatermarkPosition: request.WatermarkPosition,
+      },
+    );
+  },
+
+  confirmCompletion: async (
+    request: ConfirmExternalReviewCompletionRequest,
+  ): Promise<ApiResponse<ExternalReviewDetail>> => {
+    return api.post<ExternalReviewDetail>(
+      API_ENDPOINTS.Business.ExternalReview.CONFIRM_COMPLETION(
+        request.ExternalReviewId,
+      ),
+    );
+  },
+
+  upsertResult: async (
+    request: UpsertExternalReviewResultRequest,
+  ): Promise<ApiResponse<ExternalReviewResult>> => {
+    return api.post<ExternalReviewResult>(
+      API_ENDPOINTS.Business.ExternalReview.UPSERT_RESULT,
+      request,
+    );
+  },
+
+  addFinding: async (
+    request: AddExternalReviewFindingRequest,
+  ): Promise<ApiResponse<ExternalReviewFinding>> => {
+    return api.post<ExternalReviewFinding>(
+      API_ENDPOINTS.Business.ExternalReview.ADD_FINDING,
+      request,
+    );
+  },
+
+  updateFinding: async (
+    request: UpdateExternalReviewFindingRequest,
+  ): Promise<ApiResponse<ExternalReviewFinding>> => {
+    return api.put<ExternalReviewFinding>(
+      API_ENDPOINTS.Business.ExternalReview.UPDATE_FINDING,
+      {
+        Id: request.FindingId,
+        FindingType: request.FindingType,
+        Content: request.Content,
+        CriterionId: request.CriterionId,
+      },
+    );
+  },
+
+  deleteFinding: async (
+    request: DeleteExternalReviewFindingRequest,
+  ): Promise<ApiResponse<null>> => {
+    return api.delete<null>(
+      API_ENDPOINTS.Business.ExternalReview.DELETE_FINDING(request.FindingId),
+    );
+  },
+
+  getAccounts: async (
+    request: GetExternalReviewAccountsRequest,
+  ): Promise<ApiResponse<ExternalReviewAccount[]>> => {
+    return api.get<ExternalReviewAccount[]>(
+      API_ENDPOINTS.Business.ExternalReview.GET_ACCOUNTS(request.ExternalReviewId),
+    );
+  },
+
+  addAccounts: async (
+    request: AddExternalReviewAccountsRequest,
+  ): Promise<ApiResponse<ExternalReviewAccount[]>> => {
+    const created: ExternalReviewAccount[] = [];
+
+    for (const userId of request.UserIds) {
+      const response = await api.post<ExternalReviewAccount>(
+        API_ENDPOINTS.Business.ExternalReview.ADD_ACCOUNT(request.ExternalReviewId),
+        {
+          UserId: userId,
+        },
+      );
+
+      if (!response.Success) {
+        throw new Error(response.Message || "Khong the them tai khoan.");
+      }
+
+      if (response.Data) {
+        created.push(response.Data);
+      }
+    }
+
+    return {
+      Data: created,
+      Message: "",
+      Success: true,
+      StatusCode: 200,
+    };
+  },
+
+  removeAccount: async (
+    request: RemoveExternalReviewAccountRequest,
+  ): Promise<ApiResponse<null>> => {
+    return api.delete<null>(
+      API_ENDPOINTS.Business.ExternalReview.REMOVE_ACCOUNT(request.AccountId),
+    );
+  },
+};

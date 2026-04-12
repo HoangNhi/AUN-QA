@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
-import { useSar } from "@/features/business/hooks/useSar";
+import { useAuth } from "@/hooks/useAuth";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import { useSar } from "@/features/business/hooks/useSar";
 import type { SarStatus } from "@/features/business/types/sar.types";
 import { getColumns } from "./columns";
 import PopupSarEditor from "./PopupSarEditor";
@@ -35,6 +36,7 @@ function parseSarStatus(value?: string): SarStatus | undefined {
 }
 
 export default function SarPage() {
+  const { isExternalReviewer } = useAuth();
   const {
     data,
     rowSelection,
@@ -56,7 +58,10 @@ export default function SarPage() {
   } = useSar();
 
   const cycleOptions = useCycleOptions();
-  const columns = useMemo(() => getColumns(showPopupDetail), [showPopupDetail]);
+  const columns = useMemo(
+    () => getColumns(showPopupDetail, !isExternalReviewer),
+    [isExternalReviewer, showPopupDetail],
+  );
 
   const listPage = useListPage({
     data,
@@ -64,7 +69,7 @@ export default function SarPage() {
     pageRequest,
     setPageRequest,
     deleteList: () => {
-      // SAR demo scope does not include delete.
+      // SAR scope does not include delete action.
     },
     setRowSelection,
     defaultPageRequest: {
@@ -136,10 +141,11 @@ export default function SarPage() {
           onSaveDraft={saveDraft}
           onSubmitSar={submitSar}
           isSubmitting={isSubmitting}
-          canSubmitByRole={draft?.CanSubmitByRole ?? false}
-          canEditByRole={draft?.CanEditByRole ?? false}
+          canSubmitByRole={isExternalReviewer ? false : (draft?.CanSubmitByRole ?? false)}
+          canEditByRole={isExternalReviewer ? false : (draft?.CanEditByRole ?? false)}
         />
       )}
     </ListPageLayout>
   );
 }
+

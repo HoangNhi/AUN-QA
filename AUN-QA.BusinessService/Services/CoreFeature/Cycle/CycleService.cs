@@ -463,6 +463,41 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
             return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
         }
 
+        public async Task<List<ModelCombobox>> GetComboboxForExternalReview()
+        {
+            var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return new List<ModelCombobox>();
+            }
+
+            var query = _context.Cycles
+                .AsNoTracking()
+                .Where(c => !c.IsDeleted && c.IsActived)
+                .Where(c => _context.Councils.Any(co =>
+                    co.CycleId == c.Id
+                    && !co.IsDeleted
+                    && co.IsActived
+                    && co.UserId == userId))
+                .Where(c => _context.SarReports
+                    .Where(sr => sr.CycleId == c.Id && !sr.IsDeleted && sr.IsActived)
+                    .OrderByDescending(sr => sr.UpdatedAt ?? sr.LastSavedAt ?? sr.CreatedAt)
+                    .Take(1)
+                    .Any(sr => sr.Status == (int)SarStatus.Approved))
+                .Select(c => new ModelCombobox
+                {
+                    Text = c.Name,
+                    Value = c.Id.ToString()
+                });
+
+            return await query
+                .Distinct()
+                .OrderBy(x => x.Text)
+                .ToListAsync();
+        }
+
         public async Task ChangeStatusAsync(CycleChangeStatusRequest request)
         {
             var cycle = await _context.Cycles.FindAsync(request.Id);

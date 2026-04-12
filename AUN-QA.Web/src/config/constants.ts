@@ -109,6 +109,7 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/Cycle/update`,
       DELETE_LIST: `${BUSINESS_BASE}/Cycle/delete-list`,
       GET_COMBBOX_BY_USER: `${BUSINESS_BASE}/Cycle/get-combobox-by-user`,
+      GET_COMBOBOX_FOR_EXTERNAL_REVIEW: `${BUSINESS_BASE}/Cycle/get-combobox-for-external-review`,
       CHANGE_STATUS: `${BUSINESS_BASE}/Cycle/change-status`,
     },
     Evidence: {
@@ -180,6 +181,25 @@ export const API_ENDPOINTS = {
       ADD_COMMENT: `${BUSINESS_BASE}/internal-review/comments/add`,
       DELETE_COMMENT: (id: string) =>
         `${BUSINESS_BASE}/internal-review/comments/${id}`,
+    },
+    ExternalReview: {
+      CREATE: `${BUSINESS_BASE}/api/external-review`,
+      GET_BY_CYCLE: `${BUSINESS_BASE}/api/external-review/by-cycle`,
+      UPDATE_STATUS: `${BUSINESS_BASE}/api/external-review/status`,
+      UPDATE_WATERMARK: `${BUSINESS_BASE}/api/external-review/watermark`,
+      CONFIRM_COMPLETION: (id: string) =>
+        `${BUSINESS_BASE}/api/external-review/${id}/confirm-completion`,
+      UPSERT_RESULT: `${BUSINESS_BASE}/api/external-review/results`,
+      ADD_FINDING: `${BUSINESS_BASE}/api/external-review/findings`,
+      UPDATE_FINDING: `${BUSINESS_BASE}/api/external-review/findings`,
+      DELETE_FINDING: (id: string) =>
+        `${BUSINESS_BASE}/api/external-review/findings/${id}`,
+      GET_ACCOUNTS: (id: string) =>
+        `${BUSINESS_BASE}/api/external-review/${id}/accounts`,
+      ADD_ACCOUNT: (id: string) =>
+        `${BUSINESS_BASE}/api/external-review/${id}/accounts`,
+      REMOVE_ACCOUNT: (accountId: string) =>
+        `${BUSINESS_BASE}/api/external-review/accounts/${accountId}`,
     },
     Sar: {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,

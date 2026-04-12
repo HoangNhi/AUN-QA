@@ -28,6 +28,14 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<EvidenceCycleMap> EvidenceCycleMaps { get; set; }
 
+    public virtual DbSet<ExternalReview> ExternalReviews { get; set; }
+
+    public virtual DbSet<ExternalReviewAccount> ExternalReviewAccounts { get; set; }
+
+    public virtual DbSet<ExternalReviewFinding> ExternalReviewFindings { get; set; }
+
+    public virtual DbSet<ExternalReviewResult> ExternalReviewResults { get; set; }
+
     public virtual DbSet<InternalComment> InternalComments { get; set; }
 
     public virtual DbSet<SarReport> SarReports { get; set; }
@@ -209,6 +217,99 @@ public partial class BusinessContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<ExternalReview>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ExternalReview_pk");
+
+            entity.ToTable("ExternalReview");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+            entity.Property(e => e.CompletedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.WatermarkOpacity).HasDefaultValue(25);
+            entity.Property(e => e.WatermarkText).HasMaxLength(500);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.ExternalReviews)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ExternalReview_Cycle_fk");
+        });
+
+        modelBuilder.Entity<ExternalReviewAccount>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ExternalReviewAccount_pk");
+
+            entity.ToTable("ExternalReviewAccount");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ExternalReview).WithMany(p => p.ExternalReviewAccounts)
+                .HasForeignKey(d => d.ExternalReviewId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ExternalReviewAccount_ExternalReview_fk");
+        });
+
+        modelBuilder.Entity<ExternalReviewFinding>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ExternalReviewFinding_pk");
+
+            entity.ToTable("ExternalReviewFinding");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ExternalReviewResult).WithMany(p => p.ExternalReviewFindings)
+                .HasForeignKey(d => d.ExternalReviewResultId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ExternalReviewFinding_Result_fk");
+        });
+
+        modelBuilder.Entity<ExternalReviewResult>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ExternalReviewResult_pk");
+
+            entity.ToTable("ExternalReviewResult");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ExternalReview).WithMany(p => p.ExternalReviewResults)
+                .HasForeignKey(d => d.ExternalReviewId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ExternalReviewResult_ExternalReview_fk");
+        });
+
         modelBuilder.Entity<InternalComment>(entity =>
         {
             entity.ToTable("InternalComment");
@@ -224,7 +325,7 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(256);
             entity.Property(e => e.HighlightedText).HasMaxLength(500);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
-            entity.Property(e => e.ReviewRound).HasDefaultValue(0);
+            entity.Property(e => e.ReviewRound).HasDefaultValue(1);
             entity.Property(e => e.UpdatedBy).HasMaxLength(256);
 
             entity.HasOne(d => d.SarReport).WithMany(p => p.InternalComments)

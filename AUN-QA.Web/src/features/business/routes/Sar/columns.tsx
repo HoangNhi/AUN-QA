@@ -1,6 +1,6 @@
 import { type ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 import type { SarGetListItem, SarStatus } from "@/features/business/types/sar.types";
 
 const DEFAULT_STATUS_META = {
@@ -37,19 +37,23 @@ function getStatusMeta(status: SarStatus | null | undefined) {
 
 export const getColumns = (
   openEditor: (item: SarGetListItem) => void,
+  isReadOnly: boolean = false,
 ): ColumnDef<SarGetListItem>[] => [
   {
     accessorKey: "CycleName",
     header: "Chu kỳ",
-    cell: ({ row }) => (
-      <button
-        type="button"
-        className="text-left text-primary hover:underline"
-        onClick={() => openEditor(row.original)}
-      >
-        {row.original.CycleName}
-      </button>
-    ),
+    cell: ({ row }) =>
+      isReadOnly ? (
+        <span>{row.original.CycleName}</span>
+      ) : (
+        <button
+          type="button"
+          className="text-left text-primary hover:underline"
+          onClick={() => openEditor(row.original)}
+        >
+          {row.original.CycleName}
+        </button>
+      ),
   },
   {
     accessorKey: "Year",
@@ -89,9 +93,7 @@ export const getColumns = (
         return <div className="text-center text-muted-foreground">--</div>;
       }
 
-      return (
-        <div className="text-center">{format(new Date(value), "dd/MM/yyyy HH:mm")}</div>
-      );
+      return <div className="text-center">{format(new Date(value), "dd/MM/yyyy HH:mm")}</div>;
     },
   },
   {
@@ -99,16 +101,20 @@ export const getColumns = (
     header: "Người cập nhật",
     cell: ({ row }) => row.original.UpdatedBy || "--",
   },
-  {
-    id: "actions",
-    header: () => <div className="text-center">Thao tác</div>,
-    meta: {
-      className: "text-center",
-    },
-    cell: ({ row }) => (
-      <Button size="sm" onClick={() => openEditor(row.original)}>
-        Mở
-      </Button>
-    ),
-  },
+  ...(isReadOnly
+    ? []
+    : [
+        {
+          id: "actions",
+          header: () => <div className="text-center">Thao tác</div>,
+          meta: {
+            className: "text-center",
+          },
+          cell: ({ row }) => (
+            <Button size="sm" onClick={() => openEditor(row.original)}>
+              Mở
+            </Button>
+          ),
+        } satisfies ColumnDef<SarGetListItem>,
+      ]),
 ];

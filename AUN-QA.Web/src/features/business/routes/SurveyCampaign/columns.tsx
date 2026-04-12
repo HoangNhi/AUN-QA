@@ -34,27 +34,9 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   showPopupSession: (id: string, name: string) => void,
   changeStatus: (id: string) => Promise<void>,
-): ColumnDef<SurveyCampaignGetListPaging>[] => [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-    },
+  isReadOnly: boolean = false,
+): ColumnDef<SurveyCampaignGetListPaging>[] => {
+  const columns: ColumnDef<SurveyCampaignGetListPaging>[] = [
     {
       accessorKey: "Cycle",
       header: "Quy trình",
@@ -78,20 +60,20 @@ export const getColumns = (
       cell: ({ row }) => {
         const status = row.original.Status;
         const statusConfig: Record<number, { text: string; className: string }> =
-        {
-          1: {
-            text: "Chưa bắt đầu",
-            className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-          },
-          2: {
-            text: "Đang diễn ra",
-            className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-          },
-          3: {
-            text: "Đã kết thúc",
-            className: "bg-green-100 text-green-800 hover:bg-green-200",
-          },
-        };
+          {
+            1: {
+              text: "Chưa bắt đầu",
+              className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+            },
+            2: {
+              text: "Đang diễn ra",
+              className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+            },
+            3: {
+              text: "Đã kết thúc",
+              className: "bg-green-100 text-green-800 hover:bg-green-200",
+            },
+          };
 
         const config = statusConfig[status] || {
           text: "Không xác định",
@@ -109,7 +91,31 @@ export const getColumns = (
         );
       },
     },
-    {
+  ];
+
+  if (!isReadOnly) {
+    columns.unshift({
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+    });
+
+    columns.push({
       id: "actions",
       meta: {
         className: "text-center",
@@ -123,8 +129,11 @@ export const getColumns = (
           changeStatus={changeStatus}
         />
       ),
-    },
-  ];
+    });
+  }
+
+  return columns;
+};
 
 const ActionCell = ({
   row,
@@ -144,7 +153,6 @@ const ActionCell = ({
 
   const status = row.original.Status;
   const isDraft = status === 1;
-
   const isCompleted = status === 3;
 
   return (
@@ -254,4 +262,3 @@ const ActionCell = ({
     </>
   );
 };
-

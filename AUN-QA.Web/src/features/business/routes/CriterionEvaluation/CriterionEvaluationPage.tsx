@@ -42,7 +42,7 @@ function inferFrameworkFromGroups(
   return null;
 }
 export function CriterionEvaluationPage() {
-  const { user } = useAuth();
+  const { user, isExternalReviewer } = useAuth();
 
   const {
     selectedCycleId,
@@ -114,13 +114,14 @@ export function CriterionEvaluationPage() {
   const cycleStatus = Number(cycleData?.Status ?? 0);
   const sarRevisionMode = cycleStatus === 3 && isRevisionAllowed;
   const canSubmit =
+    !isExternalReviewer &&
     (cycleStatus === 2 || sarRevisionMode) &&
     canEvaluatorSubmit(
       userRole,
       userCouncil?.AssignedStandardIds,
       activeStandardId,
     ); // TVH
-  const canApprove = userRole === 1 || userRole === 2; // CTH or PCT
+  const canApprove = !isExternalReviewer && (userRole === 1 || userRole === 2); // CTH or PCT
 
   const submitButtonText = sarRevisionMode
     ? "Cập nhật phiếu đánh giá"
@@ -240,6 +241,7 @@ export function CriterionEvaluationPage() {
           submitButtonText={submitButtonText}
           submitButtonTooltip={submitButtonTooltip}
           sarRevisionMode={sarRevisionMode}
+          isExternalReviewer={isExternalReviewer}
           onClose={() => setActiveItemId(null)}
           onSubmit={async (req) => {
             await handleSubmit(req);

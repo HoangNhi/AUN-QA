@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
+import { Combobox } from "@/components/ui/combobox";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
+import { useAuth } from "@/hooks/useAuth";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
 import { PopupSession } from "./components/PopupSession";
-import { Combobox } from "@/components/ui/combobox";
-import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
-import { ListPageLayout } from "@/components/layout/ListPageLayout";
-import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
-import { useListPage } from "@/hooks/useListPage";
 
 const SurveyCampaignPage = () => {
+  const { isExternalReviewer } = useAuth();
   const {
     data,
     surveyCampaign,
@@ -46,8 +48,9 @@ const SurveyCampaignPage = () => {
         deleteList,
         showPopupSession,
         handleChangeStatus,
+        isExternalReviewer,
       ),
-    [showPopupDetail, deleteList, showPopupSession, handleChangeStatus],
+    [deleteList, handleChangeStatus, isExternalReviewer, showPopupDetail],
   );
 
   const listPage = useListPage({
@@ -76,7 +79,7 @@ const SurveyCampaignPage = () => {
       searchTerm={listPage.searchTerm}
       onSearchTermChange={listPage.setSearchTerm}
       onResetFilters={listPage.handleResetFilters}
-      searchInputClassName="col-span-1 md:col-span-2 bg-background"
+      searchInputClassName="col-span-1 bg-background md:col-span-2"
       filterContent={
         <>
           <Combobox
@@ -111,8 +114,21 @@ const SurveyCampaignPage = () => {
           />
         </>
       }
-      onAddClick={() => showPopupDetail("", false)}
-      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      hideAdd={isExternalReviewer}
+      onAddClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              showPopupDetail("", false);
+            }
+      }
+      onDeleteClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              listPage.setShowDeleteConfirm(true);
+            }
+      }
       deleteDisabled={Object.keys(rowSelection).length === 0}
       showDeleteConfirm={listPage.showDeleteConfirm}
       onDeleteConfirmChange={listPage.setShowDeleteConfirm}
@@ -120,7 +136,7 @@ const SurveyCampaignPage = () => {
       deleteItemCount={Object.keys(rowSelection).length}
       isDeleteLoading={isLoading}
     >
-      {isOpen && (
+      {isOpen && !isExternalReviewer && (
         <PopupSurveyCampaign
           key={surveyCampaign?.Id || "new"}
           surveyCampaign={surveyCampaign}
@@ -141,3 +157,4 @@ const SurveyCampaignPage = () => {
 };
 
 export default SurveyCampaignPage;
+

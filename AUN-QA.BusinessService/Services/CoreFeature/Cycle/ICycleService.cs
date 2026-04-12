@@ -13,6 +13,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request);
         Task<List<ModelCombobox>> GetComboboxByUser();
+        Task<List<ModelCombobox>> GetComboboxForExternalReview();
         Task ChangeStatusAsync(CycleChangeStatusRequest request);
         #endregion
 

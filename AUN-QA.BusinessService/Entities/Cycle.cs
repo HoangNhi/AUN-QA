@@ -34,4 +34,6 @@ public partial class Cycle
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<ExternalReview> ExternalReviews { get; set; } = new List<ExternalReview>();
 }

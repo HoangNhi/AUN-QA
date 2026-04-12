@@ -56,6 +56,7 @@ interface CriterionPopupProps {
   submitButtonText?: string;
   submitButtonTooltip?: string;
   sarRevisionMode?: boolean;
+  isExternalReviewer?: boolean;
   officialFields?: OfficialDescriptiveFields | null;
   onClose: () => void;
   onSubmit: (request: EvaluationSubmissionRequest) => Promise<void>;
@@ -98,6 +99,7 @@ function EvaluationForm({
   isRevisionMode,
   submitButtonText,
   submitButtonTooltip,
+  hideSubmitAction,
   onSubmit,
   onClearViewing,
 }: {
@@ -112,6 +114,7 @@ function EvaluationForm({
   isRevisionMode: boolean;
   submitButtonText?: string;
   submitButtonTooltip?: string;
+  hideSubmitAction?: boolean;
   onSubmit: (req: EvaluationSubmissionRequest) => Promise<void>;
   onClearViewing: () => void;
 }) {
@@ -440,7 +443,7 @@ function EvaluationForm({
             >
               <Undo2 className="w-4 h-4" /> Quay lại phiếu của tôi
             </button>
-          ) : (
+          ) : !hideSubmitAction ? (
             <button
               onClick={handleSubmitClick}
               disabled={isReadOnly || isSubmitting}
@@ -452,7 +455,7 @@ function EvaluationForm({
               ) : null}
               {submitButtonText ?? (mySubmission ? "Cập nhật phiếu" : "Gửi Phiếu")}
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -475,6 +478,7 @@ export function CriterionPopup({
   submitButtonText,
   submitButtonTooltip,
   sarRevisionMode = false,
+  isExternalReviewer = false,
   officialFields,
   onClose,
   onSubmit,
@@ -634,6 +638,7 @@ export function CriterionPopup({
                     isRevisionMode={sarRevisionMode}
                     submitButtonText={submitButtonText}
                     submitButtonTooltip={submitButtonTooltip}
+                    hideSubmitAction={isExternalReviewer}
                     onSubmit={onSubmit}
                     onClearViewing={() => setViewingSubmission(null)}
                   />

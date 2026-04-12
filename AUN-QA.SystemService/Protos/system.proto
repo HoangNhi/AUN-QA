@@ -8,6 +8,7 @@ service SystemProto {
   rpc CheckPermission (CheckPermissionRequest) returns (CheckActionResponse);
   rpc GetUsersByIds (GetUsersByIdsRequest) returns (GetUsersByIdsResponse);
   rpc GetUsersByUsernames (GetUsersByUsernamesRequest) returns (GetUsersByUsernamesResponse);
+  rpc SetUsersActived (SetUsersActivedRequest) returns (SetUsersActivedResponse);
 }
 
 message CheckPermissionRequest {
@@ -29,6 +30,7 @@ message UserInfo {
   string fullname = 2;
   string avatar = 3;
   string username = 4;
+  bool is_actived = 5;
 }
 
 message GetUsersByIdsResponse {
@@ -41,4 +43,13 @@ message GetUsersByUsernamesRequest {
 
 message GetUsersByUsernamesResponse {
   repeated UserInfo users = 1;
+}
+
+message SetUsersActivedRequest {
+  repeated string user_ids = 1;
+  bool is_actived = 2;
+}
+
+message SetUsersActivedResponse {
+  bool success = 1;
 }

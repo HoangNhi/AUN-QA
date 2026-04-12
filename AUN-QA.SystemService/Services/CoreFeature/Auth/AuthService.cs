@@ -16,6 +16,8 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
     [RegisterClassAsTransient]
     public class AuthService : IAuthService
     {
+        private static readonly Guid ExtRoleId = new("551d1351-008e-4910-a39c-1fcdde409fdf");
+
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -43,6 +45,11 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
 
             if (!user.IsActived)
             {
+                if (user.RoleId == ExtRoleId)
+                {
+                    throw new BusinessException("Tài khoản hoặc mật khẩu không đúng");
+                }
+
                 throw new BusinessException("Tài khoản đã bị vô hiệu");
             }
 

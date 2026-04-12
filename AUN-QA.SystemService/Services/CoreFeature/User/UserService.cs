@@ -325,7 +325,8 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             Guid userId,
             string fullname,
             string username,
-            string email)
+            string email,
+            string? password = null)
         {
             var normalizedFullname = fullname.Trim();
             var normalizedUsername = username.Trim();
@@ -352,6 +353,13 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             user.Email = normalizedEmail;
             user.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             user.UpdatedAt = DateTime.UtcNow;
+
+            if (!string.IsNullOrWhiteSpace(password))
+            {
+                var salt = Encrypt_DecryptHelper.GenerateSalt();
+                user.PasswordSalt = salt;
+                user.Password = Encrypt_DecryptHelper.EncodePassword(password.Trim(), salt);
+            }
 
             await _context.SaveChangesAsync();
 

@@ -9,6 +9,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests
         public string Username { get; set; } = null!;
         public string Email { get; set; } = null!;
         public bool IsActived { get; set; } = true;
+        public string? Password { get; set; }
     }
 
     public class ExternalReviewAccountUpdateRequestValidator

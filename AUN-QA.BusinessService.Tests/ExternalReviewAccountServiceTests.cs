@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Reflection;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests;
 using AUN_QA.BusinessService.Entities;
@@ -14,6 +15,137 @@ namespace AUN_QA.BusinessService.Tests;
 
 public class ExternalReviewAccountServiceTests
 {
+    [Fact]
+    public async Task CreateAndLinkAccountAsync_AlwaysActivatesLinkedAccount()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+
+        SeedReview(context, reviewId, completed: false, status: 0);
+        await context.SaveChangesAsync();
+
+        bool? capturedIsActived = null;
+
+        var fakeInvoker = new FakeCallInvoker
+        {
+            CreateExternalUserHandler = request => new CreateExternalUserResponse
+            {
+                Id = Guid.NewGuid().ToString(),
+                Success = true
+            },
+            SetUsersActivedHandler = request =>
+            {
+                capturedIsActived = request.IsActived;
+                return new SetUsersActivedResponse { Success = true };
+            }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+
+        var result = await service.CreateAndLinkAccountAsync(reviewId, new ExternalReviewCreateAccountRequest
+        {
+            Fullname = "Reviewer New",
+            Username = "reviewer-new",
+            Email = "reviewer-new@example.com",
+            Password = "secret"
+        });
+
+        Assert.True(result.IsActived);
+        Assert.True(capturedIsActived ?? false);
+    }
+
+    [Fact]
+    public async Task RemoveAccountAsync_DeletesExternalUserAndDoesNotDeactivate()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        SeedReview(context, reviewId, completed: false);
+        var account = SeedAccount(context, reviewId, userId);
+        await context.SaveChangesAsync();
+
+        bool setUsersActivedCalled = false;
+        object? deletedUserId = null;
+
+        var fakeInvoker = new FakeCallInvoker
+        {
+            SetUsersActivedHandler = _ =>
+            {
+                setUsersActivedCalled = true;
+                return new SetUsersActivedResponse { Success = true };
+            },
+            DeleteExternalUserHandler = request =>
+            {
+                deletedUserId = request.GetType().GetProperty("UserId")?.GetValue(request);
+                return new object();
+            }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+
+        await service.RemoveAccountAsync(account.Id);
+
+        Assert.False(setUsersActivedCalled);
+        Assert.Equal(userId.ToString(), deletedUserId as string);
+        Assert.Empty(await context.ExternalReviewAccounts.ToListAsync());
+    }
+
+    [Fact]
+    public async Task UpdateAccountAsync_ForwardsPasswordToSystemService()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        SeedReview(context, reviewId, completed: false);
+        var account = SeedAccount(context, reviewId, userId);
+        await context.SaveChangesAsync();
+
+        var fakeInvoker = new FakeCallInvoker
+        {
+            UpdateUserProfileHandler = request =>
+            {
+                var password = request.GetType().GetProperty("Password")?.GetValue(request) as string;
+
+                Assert.Equal("new-secret", password);
+                return new UpdateUserProfileResponse
+                {
+                    Success = true,
+                    User = new UserInfo
+                    {
+                        Id = userId.ToString(),
+                        Fullname = "Updated Reviewer",
+                        Username = "updated-reviewer",
+                        Email = "updated-reviewer@example.com",
+                        IsActived = true,
+                    }
+                };
+            },
+            SetUsersActivedHandler = _ => new SetUsersActivedResponse { Success = true }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+
+        var request = new ExternalReviewAccountUpdateRequest
+        {
+            AccountId = account.Id,
+            Fullname = "Updated Reviewer",
+            Username = "updated-reviewer",
+            Email = "updated-reviewer@example.com",
+            IsActived = true
+        };
+
+        var passwordProperty = typeof(ExternalReviewAccountUpdateRequest).GetProperty("Password");
+        Assert.NotNull(passwordProperty);
+        passwordProperty!.SetValue(request, "new-secret");
+
+        var result = await service.UpdateAccountAsync(request);
+
+        Assert.Equal(account.Id, result.Id);
+        Assert.Equal("Updated Reviewer", result.Fullname);
+    }
+
     [Fact]
     public async Task GetAccountsListAsync_ReturnsLinkedAccountsAndPassesPagingToSystemService()
     {
@@ -251,7 +383,7 @@ public class ExternalReviewAccountServiceTests
             new SystemProto.SystemProtoClient(fakeInvoker));
     }
 
-    private static void SeedReview(BusinessContext context, Guid reviewId, bool completed)
+    private static void SeedReview(BusinessContext context, Guid reviewId, bool completed, int? status = null)
     {
         var cycleId = Guid.NewGuid();
 
@@ -276,7 +408,7 @@ public class ExternalReviewAccountServiceTests
         {
             Id = reviewId,
             CycleId = cycleId,
-            Status = completed ? 2 : 1,
+            Status = status ?? (completed ? 2 : 1),
             WatermarkOpacity = 25,
             WatermarkPosition = 0,
             IsCompleted = completed,
@@ -307,6 +439,8 @@ public class ExternalReviewAccountServiceTests
         public Func<GetUsersByIdsPagedRequest, GetUsersByIdsPagedResponse>? GetUsersByIdsPagedHandler { get; set; }
         public Func<UpdateUserProfileRequest, UpdateUserProfileResponse>? UpdateUserProfileHandler { get; set; }
         public Func<SetUsersActivedRequest, SetUsersActivedResponse>? SetUsersActivedHandler { get; set; }
+        public Func<object, object>? DeleteExternalUserHandler { get; set; }
+        public Func<CreateExternalUserRequest, CreateExternalUserResponse>? CreateExternalUserHandler { get; set; }
 
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
             Method<TRequest, TResponse> method,
@@ -314,16 +448,29 @@ public class ExternalReviewAccountServiceTests
             CallOptions options,
             TRequest request)
         {
-            object response = method.Name switch
+            object response;
+
+            if (method.Name == "DeleteExternalUser")
             {
-                "GetUsersByIdsPaged" => GetUsersByIdsPagedHandler?.Invoke((GetUsersByIdsPagedRequest)(object)request)
-                    ?? throw new InvalidOperationException("Missing GetUsersByIdsPaged handler."),
-                "UpdateUserProfile" => UpdateUserProfileHandler?.Invoke((UpdateUserProfileRequest)(object)request)
-                    ?? throw new InvalidOperationException("Missing UpdateUserProfile handler."),
-                "SetUsersActived" => SetUsersActivedHandler?.Invoke((SetUsersActivedRequest)(object)request)
-                    ?? throw new InvalidOperationException("Missing SetUsersActived handler."),
-                _ => throw new InvalidOperationException($"Unsupported gRPC method: {method.Name}")
-            };
+                _ = DeleteExternalUserHandler?.Invoke(request)
+                    ?? throw new InvalidOperationException("Missing DeleteExternalUser handler.");
+                response = CreateGrpcResponse<TResponse>(success: true, message: string.Empty);
+            }
+            else
+            {
+                response = method.Name switch
+                {
+                    "CreateExternalUser" => CreateExternalUserHandler?.Invoke((CreateExternalUserRequest)(object)request)
+                        ?? throw new InvalidOperationException("Missing CreateExternalUser handler."),
+                    "GetUsersByIdsPaged" => GetUsersByIdsPagedHandler?.Invoke((GetUsersByIdsPagedRequest)(object)request)
+                        ?? throw new InvalidOperationException("Missing GetUsersByIdsPaged handler."),
+                    "UpdateUserProfile" => UpdateUserProfileHandler?.Invoke((UpdateUserProfileRequest)(object)request)
+                        ?? throw new InvalidOperationException("Missing UpdateUserProfile handler."),
+                    "SetUsersActived" => SetUsersActivedHandler?.Invoke((SetUsersActivedRequest)(object)request)
+                        ?? throw new InvalidOperationException("Missing SetUsersActived handler."),
+                    _ => throw new InvalidOperationException($"Unsupported gRPC method: {method.Name}")
+                };
+            }
 
             return new AsyncUnaryCall<TResponse>(
                 System.Threading.Tasks.Task.FromResult((TResponse)response),
@@ -358,5 +505,24 @@ public class ExternalReviewAccountServiceTests
             string host,
             CallOptions options)
             => throw new NotSupportedException();
+
+        private static TResponse CreateGrpcResponse<TResponse>(bool success, string message)
+            where TResponse : class
+        {
+            var response = Activator.CreateInstance<TResponse>();
+            var successProperty = typeof(TResponse).GetProperty("Success");
+            if (successProperty?.CanWrite == true)
+            {
+                successProperty.SetValue(response, success);
+            }
+
+            var messageProperty = typeof(TResponse).GetProperty("Message");
+            if (messageProperty?.CanWrite == true)
+            {
+                messageProperty.SetValue(response, message);
+            }
+
+            return response;
+        }
     }
 }

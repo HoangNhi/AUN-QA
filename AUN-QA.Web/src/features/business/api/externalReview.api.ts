@@ -211,6 +211,7 @@ export const externalReviewService = {
         Username: request.Username,
         Email: request.Email,
         IsActived: request.IsActived,
+        Password: request.Password,
       },
     );
   },

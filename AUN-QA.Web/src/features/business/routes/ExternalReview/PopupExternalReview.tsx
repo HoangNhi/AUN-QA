@@ -113,6 +113,7 @@ export default function PopupExternalReview({
     username: string;
     email: string;
     isActived: boolean;
+    password?: string;
   }) => {
     await reviewQuery.updateAccount(payload);
   };

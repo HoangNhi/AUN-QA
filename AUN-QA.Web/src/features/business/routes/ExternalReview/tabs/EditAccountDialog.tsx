@@ -15,6 +15,7 @@ interface EditAccountDialogProps {
     username: string;
     email: string;
     isActived: boolean;
+    password?: string;
   }) => Promise<void>;
 }
 
@@ -30,11 +31,12 @@ export function EditAccountDialog({
     username: "",
     email: "",
     isActived: true,
+    password: "",
   });
 
   useEffect(() => {
     if (!account) {
-      setForm({ fullname: "", username: "", email: "", isActived: true });
+      setForm({ fullname: "", username: "", email: "", isActived: true, password: "" });
       return;
     }
 
@@ -43,6 +45,7 @@ export function EditAccountDialog({
       username: account.Username ?? "",
       email: account.Email ?? "",
       isActived: account.IsActived ?? true,
+      password: "",
     });
   }, [account, open]);
 
@@ -63,6 +66,7 @@ export function EditAccountDialog({
       username: form.username.trim(),
       email: form.email.trim(),
       isActived: form.isActived,
+      password: form.password.trim() || undefined,
     });
   };
 
@@ -72,6 +76,22 @@ export function EditAccountDialog({
         <DialogTitle>Cập nhật tài khoản Chuyên gia</DialogTitle>
 
         <div className="space-y-3 pt-1">
+          <div className="space-y-1.5">
+            <label htmlFor="edit-account-password" className="block text-xs font-medium text-slate-600">
+              Mật khẩu
+            </label>
+            <Input
+              id="edit-account-password"
+              type="password"
+              value={form.password}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              disabled={isSubmitting}
+              autoComplete="new-password"
+            />
+          </div>
+
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-600">
               Họ tên

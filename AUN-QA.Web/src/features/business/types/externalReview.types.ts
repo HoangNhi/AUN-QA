@@ -163,6 +163,7 @@ export interface ExternalReviewAccountUpdateRequest {
   Username: string;
   Email: string;
   IsActived: boolean;
+  Password?: string;
 }
 
 export interface AddExternalReviewAccountsRequest {

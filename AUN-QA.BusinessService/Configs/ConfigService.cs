@@ -78,6 +78,7 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.AddSingleton<IBackgroundTaskQueue>(ctx => new BackgroundTaskQueue(1000));
             builder.Services.AddHostedService<QueuedHostedService>();
             builder.Services.AddHttpClient();
+            builder.Services.AddGrpc();
 
             //CORS
             builder.Services.AddCors(options =>

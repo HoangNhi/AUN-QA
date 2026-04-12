@@ -596,10 +596,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             _context.ExternalReviewAccounts.Add(account);
             await _context.SaveChangesAsync();
 
-            var shouldActivate = review.Status == (int)ExternalReviewStatus.InProgress
-                && !review.IsCompleted;
-
-            await SyncUsersActivationAsync(new[] { userId }, shouldActivate);
+            await SyncUsersActivationAsync(new[] { userId }, true);
 
             return new ModelExtAccount
             {
@@ -608,7 +605,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 UserId = account.UserId,
                 CreatedAt = account.CreatedAt,
                 CreatedBy = account.CreatedBy,
-                IsActived = shouldActivate
+                IsActived = true
             };
         }
 
@@ -656,10 +653,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             _context.ExternalReviewAccounts.Add(account);
             await _context.SaveChangesAsync();
 
-            var shouldActivate = review.Status == (int)ExternalReviewStatus.InProgress
-                && !review.IsCompleted;
-
-            await SyncUsersActivationAsync(new[] { userId }, shouldActivate);
+            await SyncUsersActivationAsync(new[] { userId }, true);
 
             return new ModelExtAccount
             {
@@ -670,7 +664,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 Username = request.Username.Trim(),
                 CreatedAt = account.CreatedAt,
                 CreatedBy = account.CreatedBy,
-                IsActived = shouldActivate
+                IsActived = true
             };
         }
 
@@ -687,7 +681,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             _context.ExternalReviewAccounts.Remove(account);
             await _context.SaveChangesAsync();
 
-            await SyncUsersActivationAsync(new[] { account.UserId }, false);
+            var deleteResponse = await _systemClient.DeleteExternalUserAsync(
+                new DeleteExternalUserRequest { UserId = account.UserId.ToString() });
+
+            if (!deleteResponse.Success)
+            {
+                throw new BusinessException(
+                    deleteResponse.Message ?? "Không thể xóa tài khoản chuyên gia.");
+            }
         }
 
         public async Task<ModelExtAccount> UpdateAccountAsync(ExternalReviewAccountUpdateRequest request)
@@ -713,7 +714,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                     UserId = account.UserId.ToString(),
                     Fullname = request.Fullname.Trim(),
                     Username = request.Username.Trim(),
-                    Email = request.Email.Trim()
+                    Email = request.Email.Trim(),
+                    Password = request.Password?.Trim() ?? string.Empty
                 });
 
             if (!grpcResponse.Success)

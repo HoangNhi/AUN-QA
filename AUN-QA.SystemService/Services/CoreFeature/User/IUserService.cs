@@ -27,6 +27,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             Guid userId,
             string fullname,
             string username,
-            string email);
+            string email,
+            string? password = null);
     }
 }

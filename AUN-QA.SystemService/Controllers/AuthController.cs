@@ -33,7 +33,7 @@ namespace AUN_QA.SystemService.Controllers
             var ipAddress = GetClientIpAddress();
             try
             {
-                var result = _service.Login(request, ipAddress);
+                var result = await _service.LoginAsync(request, ipAddress);
 
                 await _auditWriter.WriteAsync(new AuditLog
                 {

@@ -217,6 +217,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       username: string;
       email: string;
       isActived: boolean;
+      password?: string;
     }) => {
       if (!review?.Id) {
         throw new Error("External Review chưa được khởi tạo.");
@@ -228,6 +229,7 @@ export function useExternalReview(selectedCycleId: string | null) {
         Username: payload.username,
         Email: payload.email,
         IsActived: payload.isActived,
+        Password: payload.password,
       });
 
       if (!response.Success) {
@@ -300,6 +302,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       username: string;
       email: string;
       isActived: boolean;
+      password?: string;
     }) => updateAccountMutation.mutateAsync(payload),
     removeAccount: (accountId: string) => removeAccountMutation.mutateAsync(accountId),
   };

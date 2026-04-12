@@ -30,6 +30,7 @@ interface AccountTabProps {
     username: string;
     email: string;
     isActived: boolean;
+    password?: string;
   }) => Promise<void>;
   onAccountCountChange?: (count: number) => void;
 }
@@ -157,6 +158,7 @@ export function AccountTab({
     username: string;
     email: string;
     isActived: boolean;
+    password?: string;
   }) => {
     await onUpdateAccount(payload);
     setEditingAccount(null);

@@ -12,6 +12,7 @@ service SystemProto {
   rpc CreateExternalUser (CreateExternalUserRequest) returns (CreateExternalUserResponse);
   rpc GetUsersByIdsPaged (GetUsersByIdsPagedRequest) returns (GetUsersByIdsPagedResponse);
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  rpc DeleteExternalUser (DeleteExternalUserRequest) returns (DeleteExternalUserResponse);
 }
 
 message CheckPermissionRequest {
@@ -91,10 +92,20 @@ message UpdateUserProfileRequest {
   string fullname = 2;
   string username = 3;
   string email = 4;
+  string password = 5;
 }
 
 message UpdateUserProfileResponse {
   bool success = 1;
   string message = 2;
   UserInfo user = 3;
+}
+
+message DeleteExternalUserRequest {
+  string user_id = 1;
+}
+
+message DeleteExternalUserResponse {
+  bool success = 1;
+  string message = 2;
 }

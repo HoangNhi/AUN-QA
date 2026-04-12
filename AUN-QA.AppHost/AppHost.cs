@@ -19,6 +19,8 @@ var businessService = builder.AddProject<Projects.AUN_QA_BusinessService>("Busin
     .WithReference(fileService)
     .WithReference(catalogService);
 
+systemService.WithReference(businessService);
+
 var gateway = builder.AddProject<Projects.AUN_QA_ApiGateway>("ApiGateway")
     .WithReference(systemService)
     .WithReference(catalogService)

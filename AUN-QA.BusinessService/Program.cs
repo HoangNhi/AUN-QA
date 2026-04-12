@@ -1,6 +1,8 @@
 using AUN_QA.BusinessService.Configs;
 using AUN_QA.BusinessService.Middlewares;
+using AUN_QA.BusinessService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using Grpc.AspNetCore.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,5 +51,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+app.MapGrpcService<BusinessGrpcService>();
 
 app.Run();

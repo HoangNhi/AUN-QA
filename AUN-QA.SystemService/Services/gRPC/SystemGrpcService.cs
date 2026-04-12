@@ -205,7 +205,8 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                     userId,
                     request.Fullname,
                     request.Username,
-                    request.Email);
+                    request.Email,
+                    string.IsNullOrWhiteSpace(request.Password) ? null : request.Password);
 
                 return new UpdateUserProfileResponse
                 {
@@ -230,6 +231,51 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                     Message = ex.Message
                 };
             }
+        }
+
+        public override async Task<DeleteExternalUserResponse> DeleteExternalUser(
+            DeleteExternalUserRequest request,
+            ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.UserId, out var userId))
+            {
+                return new DeleteExternalUserResponse
+                {
+                    Success = false,
+                    Message = "UserId không hợp lệ."
+                };
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Id == userId && !x.IsDeleted);
+
+            if (user == null)
+            {
+                return new DeleteExternalUserResponse
+                {
+                    Success = true,
+                    Message = string.Empty
+                };
+            }
+
+            if (user.RoleId != new Guid("551d1351-008e-4910-a39c-1fcdde409fdf"))
+            {
+                return new DeleteExternalUserResponse
+                {
+                    Success = false,
+                    Message = "Chỉ có thể xóa tài khoản có vai trò External Reviewer."
+                };
+            }
+
+            user.IsDeleted = true;
+            user.IsActived = false;
+            await _context.SaveChangesAsync();
+
+            return new DeleteExternalUserResponse
+            {
+                Success = true,
+                Message = string.Empty
+            };
         }
     }
 }

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Reflection;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.Entities;
@@ -86,6 +87,46 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task UpdateUserProfileById_UpdatesPasswordWhenProvided()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+
+        SeedUser(context, userId, "target-user", "Target User", "target@example.com", true);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var method = typeof(UserService).GetMethod(
+            "UpdateUserProfileById",
+            new[]
+            {
+                typeof(Guid),
+                typeof(string),
+                typeof(string),
+                typeof(string),
+                typeof(string)
+            });
+
+        Assert.NotNull(method);
+
+        var resultTask = (Task<ModelUser>)method!.Invoke(service, new object[]
+        {
+            userId,
+            "NgÆ°á»i DÃ¹ng Má»›i",
+            "target-user",
+            "target@example.com",
+            "new-password"
+        })!;
+
+        var updated = await resultTask;
+        var persisted = await context.Users.SingleAsync(x => x.Id == userId);
+
+        Assert.Equal("NgÆ°á»i DÃ¹ng Má»›i", updated.Fullname);
+        Assert.NotEqual("salt", persisted.PasswordSalt);
+        Assert.NotEqual("password", persisted.Password);
+    }
+
+    [Fact]
     public async Task GetUsersByIds_ReturnsUsernameAndEmail()
     {
         await using var context = CreateContext();
@@ -128,7 +169,7 @@ public class UserServiceTests
 
         var grpc = new SystemGrpcService(context, new FakeUserService
         {
-            UpdateUserProfileByIdFactory = (_, _, _, _) => Task.FromResult(new ModelUser
+            UpdateUserProfileByIdFactory = (_, _, _, _, _) => Task.FromResult(new ModelUser
             {
                 Id = userId,
                 Username = "updated-reviewer",
@@ -222,7 +263,7 @@ public class UserServiceTests
     private sealed class FakeUserService : IUserService
     {
         public Func<List<Guid>, Task<List<ModelUser>>>? GetByIdsFactory { get; set; }
-        public Func<Guid, string, string, string, Task<ModelUser>>? UpdateUserProfileByIdFactory { get; set; }
+        public Func<Guid, string, string, string, string?, Task<ModelUser>>? UpdateUserProfileByIdFactory { get; set; }
 
         public Task<ModelUser> GetById(AUN_QA.Shared.DTOs.Base.GetByIdRequest request)
             => throw new NotImplementedException();
@@ -244,7 +285,7 @@ public class UserServiceTests
         public Task<AUN_QA.Shared.DTOs.Base.GetListPagingResponse<ModelUser>> GetByIdsPaged(List<Guid> ids, string? textSearch, int pageIndex, int pageSize)
             => throw new NotImplementedException();
 
-        public Task<ModelUser> UpdateUserProfileById(Guid userId, string fullname, string username, string email)
-            => UpdateUserProfileByIdFactory?.Invoke(userId, fullname, username, email) ?? throw new NotImplementedException();
+        public Task<ModelUser> UpdateUserProfileById(Guid userId, string fullname, string username, string email, string? password = null)
+            => UpdateUserProfileByIdFactory?.Invoke(userId, fullname, username, email, password) ?? throw new NotImplementedException();
     }
 }

@@ -29,7 +29,9 @@ interface AccountTabProps {
     fullname: string;
     username: string;
     email: string;
+    isActived: boolean;
   }) => Promise<void>;
+  onAccountCountChange?: (count: number) => void;
 }
 
 const EMPTY_FORM = {
@@ -46,6 +48,7 @@ export function AccountTab({
   onCreateAndLinkAccount,
   onRemoveAccount,
   onUpdateAccount,
+  onAccountCountChange,
 }: AccountTabProps) {
   const accountList = useExternalReviewAccountList(externalReviewId);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -90,7 +93,8 @@ export function AccountTab({
         password: createForm.password.trim(),
       });
 
-      await accountList.refetch();
+      const refreshed = await accountList.refetch();
+      onAccountCountChange?.(refreshed.data?.TotalRow ?? accountList.data.TotalRow);
       handleCloseCreateDialog();
     } catch (error) {
       const message =
@@ -123,6 +127,7 @@ export function AccountTab({
 
     const refreshed = await accountList.refetch();
     const nextData = refreshed.data?.Data ?? accountList.data.Data;
+    onAccountCountChange?.(refreshed.data?.TotalRow ?? accountList.data.TotalRow);
 
     if (failedIds.length > 0) {
       const nextSelection: Record<string, boolean> = {};
@@ -151,10 +156,12 @@ export function AccountTab({
     fullname: string;
     username: string;
     email: string;
+    isActived: boolean;
   }) => {
     await onUpdateAccount(payload);
     setEditingAccount(null);
-    await accountList.refetch();
+    const refreshed = await accountList.refetch();
+    onAccountCountChange?.(refreshed.data?.TotalRow ?? accountList.data.TotalRow);
   };
 
   return (
@@ -174,8 +181,7 @@ export function AccountTab({
         searchTerm={accountList.searchTerm}
         onSearchTermChange={accountList.setSearchTerm}
         onResetFilters={accountList.handleResetFilters}
-        filterGridCols="md:grid-cols-2"
-        searchInputClassName="col-span-1 bg-background"
+        compactToolbar
         hideAdd={isReadOnly || !externalReviewId}
         onAddClick={
           isReadOnly || !externalReviewId

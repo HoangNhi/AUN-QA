@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+﻿import { useCallback, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { externalReviewService } from "@/features/business/api/externalReview.api";
@@ -44,13 +44,9 @@ export function useExternalReview(selectedCycleId: string | null) {
         return null;
       }
 
-      const accountResponse = await externalReviewService.getAccounts({
-        ExternalReviewId: detail.Id,
-      });
-
       return {
         ...detail,
-        Accounts: accountResponse.Success ? accountResponse.Data || [] : [],
+        Accounts: [],
         Results: detail.Results || [],
       };
     },
@@ -211,7 +207,6 @@ export function useExternalReview(selectedCycleId: string | null) {
     },
     onSuccess: async () => {
       toast.success("Đã tạo và liên kết tài khoản chuyên gia.");
-      await invalidateCurrent();
     },
   });
 
@@ -221,6 +216,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       fullname: string;
       username: string;
       email: string;
+      isActived: boolean;
     }) => {
       if (!review?.Id) {
         throw new Error("External Review chưa được khởi tạo.");
@@ -231,6 +227,7 @@ export function useExternalReview(selectedCycleId: string | null) {
         Fullname: payload.fullname,
         Username: payload.username,
         Email: payload.email,
+        IsActived: payload.isActived,
       });
 
       if (!response.Success) {
@@ -239,7 +236,6 @@ export function useExternalReview(selectedCycleId: string | null) {
     },
     onSuccess: async () => {
       toast.success("Đã cập nhật tài khoản chuyên gia.");
-      await invalidateCurrent();
     },
     onError: (mutationError) => {
       toast.error(
@@ -263,9 +259,6 @@ export function useExternalReview(selectedCycleId: string | null) {
       if (!response.Success) {
         throw new Error(response.Message || "Không thể gỡ tài khoản.");
       }
-    },
-    onSuccess: async () => {
-      await invalidateCurrent();
     },
   });
 
@@ -306,6 +299,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       fullname: string;
       username: string;
       email: string;
+      isActived: boolean;
     }) => updateAccountMutation.mutateAsync(payload),
     removeAccount: (accountId: string) => removeAccountMutation.mutateAsync(accountId),
   };

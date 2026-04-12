@@ -1,4 +1,4 @@
-using AUN_QA.BusinessService.DTOs.Common;
+﻿using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
@@ -721,6 +721,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 throw new BusinessException(grpcResponse.Message ?? "Không thể cập nhật tài khoản.");
             }
 
+            await SyncUsersActivationAsync(new[] { account.UserId }, request.IsActived);
+
             return new ModelExtAccount
             {
                 Id = account.Id,
@@ -731,7 +733,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 Fullname = string.IsNullOrWhiteSpace(grpcResponse.User?.Fullname) ? null : grpcResponse.User.Fullname,
                 Username = string.IsNullOrWhiteSpace(grpcResponse.User?.Username) ? null : grpcResponse.User.Username,
                 Email = string.IsNullOrWhiteSpace(grpcResponse.User?.Email) ? null : grpcResponse.User.Email,
-                IsActived = grpcResponse.User?.IsActived ?? false
+                IsActived = request.IsActived
             };
         }
 

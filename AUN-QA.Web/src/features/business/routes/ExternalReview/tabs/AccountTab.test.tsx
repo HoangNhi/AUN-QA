@@ -57,6 +57,7 @@ describe("AccountTab", () => {
         onCreateAndLinkAccount={async () => {}}
         onRemoveAccount={async () => {}}
         onUpdateAccount={async () => {}}
+        onAccountCountChange={vi.fn()}
       />,
     );
 

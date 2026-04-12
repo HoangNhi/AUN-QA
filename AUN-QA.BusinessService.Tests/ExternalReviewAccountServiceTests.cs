@@ -121,7 +121,8 @@ public class ExternalReviewAccountServiceTests
                         IsActived = true,
                     }
                 };
-            }
+            },
+            SetUsersActivedHandler = _ => new SetUsersActivedResponse { Success = true }
         };
 
         var service = CreateService(context, fakeInvoker);
@@ -131,13 +132,68 @@ public class ExternalReviewAccountServiceTests
             AccountId = account.Id,
             Fullname = "Updated Reviewer",
             Username = "updated-reviewer",
-            Email = "updated-reviewer@example.com"
+            Email = "updated-reviewer@example.com",
+            IsActived = true
         });
 
         Assert.Equal(account.Id, result.Id);
         Assert.Equal("Updated Reviewer", result.Fullname);
         Assert.Equal("updated-reviewer", result.Username);
         Assert.Equal("updated-reviewer@example.com", result.Email);
+    }
+
+    [Fact]
+    public async Task UpdateAccountAsync_CallsSetUsersActivedWithCorrectValue()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+
+        SeedReview(context, reviewId, completed: false);
+        var account = SeedAccount(context, reviewId, userId);
+        await context.SaveChangesAsync();
+
+        bool? capturedIsActived = null;
+        string? capturedUserId = null;
+
+        var fakeInvoker = new FakeCallInvoker
+        {
+            UpdateUserProfileHandler = _ => new UpdateUserProfileResponse
+            {
+                Success = true,
+                User = new UserInfo
+                {
+                    Id = userId.ToString(),
+                    Fullname = "Reviewer",
+                    Username = "reviewer",
+                    Email = "reviewer@example.com",
+                    IsActived = false,
+                }
+            },
+            SetUsersActivedHandler = request =>
+            {
+                capturedIsActived = request.IsActived;
+                capturedUserId = request.UserIds.FirstOrDefault();
+                return new SetUsersActivedResponse { Success = true };
+            }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+
+        var request = new ExternalReviewAccountUpdateRequest
+        {
+            AccountId = account.Id,
+            Fullname = "Reviewer",
+            Username = "reviewer",
+            Email = "reviewer@example.com",
+            IsActived = false
+        };
+
+        var result = await service.UpdateAccountAsync(request);
+
+        Assert.False(capturedIsActived ?? true);
+        Assert.Equal(userId.ToString(), capturedUserId);
+        Assert.False(result.IsActived);
     }
 
     [Fact]
@@ -250,6 +306,7 @@ public class ExternalReviewAccountServiceTests
     {
         public Func<GetUsersByIdsPagedRequest, GetUsersByIdsPagedResponse>? GetUsersByIdsPagedHandler { get; set; }
         public Func<UpdateUserProfileRequest, UpdateUserProfileResponse>? UpdateUserProfileHandler { get; set; }
+        public Func<SetUsersActivedRequest, SetUsersActivedResponse>? SetUsersActivedHandler { get; set; }
 
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
             Method<TRequest, TResponse> method,
@@ -263,6 +320,8 @@ public class ExternalReviewAccountServiceTests
                     ?? throw new InvalidOperationException("Missing GetUsersByIdsPaged handler."),
                 "UpdateUserProfile" => UpdateUserProfileHandler?.Invoke((UpdateUserProfileRequest)(object)request)
                     ?? throw new InvalidOperationException("Missing UpdateUserProfile handler."),
+                "SetUsersActived" => SetUsersActivedHandler?.Invoke((SetUsersActivedRequest)(object)request)
+                    ?? throw new InvalidOperationException("Missing SetUsersActived handler."),
                 _ => throw new InvalidOperationException($"Unsupported gRPC method: {method.Name}")
             };
 

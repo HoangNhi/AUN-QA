@@ -14,6 +14,7 @@ interface EditAccountDialogProps {
     fullname: string;
     username: string;
     email: string;
+    isActived: boolean;
   }) => Promise<void>;
 }
 
@@ -28,11 +29,12 @@ export function EditAccountDialog({
     fullname: "",
     username: "",
     email: "",
+    isActived: true,
   });
 
   useEffect(() => {
     if (!account) {
-      setForm({ fullname: "", username: "", email: "" });
+      setForm({ fullname: "", username: "", email: "", isActived: true });
       return;
     }
 
@@ -40,6 +42,7 @@ export function EditAccountDialog({
       fullname: account.Fullname ?? "",
       username: account.Username ?? "",
       email: account.Email ?? "",
+      isActived: account.IsActived ?? true,
     });
   }, [account, open]);
 
@@ -59,6 +62,7 @@ export function EditAccountDialog({
       fullname: form.fullname.trim(),
       username: form.username.trim(),
       email: form.email.trim(),
+      isActived: form.isActived,
     });
   };
 
@@ -106,6 +110,23 @@ export function EditAccountDialog({
               }
               disabled={isSubmitting}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-600">
+              Trạng thái
+            </label>
+            <select
+              value={form.isActived ? "true" : "false"}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, isActived: e.target.value === "true" }))
+              }
+              disabled={isSubmitting}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="true">Hoạt động</option>
+              <option value="false">Không hoạt động</option>
+            </select>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

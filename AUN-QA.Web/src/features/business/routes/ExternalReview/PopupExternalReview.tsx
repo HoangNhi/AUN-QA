@@ -61,10 +61,15 @@ export default function PopupExternalReview({
 
   const isReadOnly = isExternalReviewer || review?.IsCompleted === true;
   const [headerStatus, setHeaderStatus] = useState<string>(String(currentStatus));
+  const [liveAccountCount, setLiveAccountCount] = useState<number>(item?.AccountCount ?? 0);
 
   useEffect(() => {
     setHeaderStatus(String(currentStatus));
   }, [currentStatus]);
+
+  useEffect(() => {
+    setLiveAccountCount(item?.AccountCount ?? 0);
+  }, [item?.AccountCount]);
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
@@ -107,6 +112,7 @@ export default function PopupExternalReview({
     fullname: string;
     username: string;
     email: string;
+    isActived: boolean;
   }) => {
     await reviewQuery.updateAccount(payload);
   };
@@ -164,9 +170,7 @@ export default function PopupExternalReview({
                   {getStatusLabel(currentStatus)}
                 </span>
                 <span className="text-slate-300">·</span>
-                <span className="text-xs text-slate-500">
-                  {review?.Accounts?.length ?? item?.AccountCount ?? 0} chuyên gia
-                </span>
+                <span className="text-xs text-slate-500">{liveAccountCount} chuyên gia</span>
                 <span className="text-slate-300">·</span>
                 <span className="text-xs text-slate-500">
                   {review?.Results?.length ?? item?.ResultCount ?? 0} kết quả
@@ -228,7 +232,7 @@ export default function PopupExternalReview({
             </div>
           ) : null}
 
-          {reviewQuery.isLoading || reviewQuery.isFetching ? (
+          {reviewQuery.isLoading ? (
             <div className="flex h-full items-center justify-center">
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -251,6 +255,7 @@ export default function PopupExternalReview({
                     onCreateAndLinkAccount={handleCreateAndLinkAccount}
                     onRemoveAccount={handleRemoveAccount}
                     onUpdateAccount={handleUpdateAccount}
+                    onAccountCountChange={setLiveAccountCount}
                     isReadOnly={isReadOnly}
                   />
                 </TabsContent>

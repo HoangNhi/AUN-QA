@@ -162,6 +162,7 @@ export interface ExternalReviewAccountUpdateRequest {
   Fullname: string;
   Username: string;
   Email: string;
+  IsActived: boolean;
 }
 
 export interface AddExternalReviewAccountsRequest {

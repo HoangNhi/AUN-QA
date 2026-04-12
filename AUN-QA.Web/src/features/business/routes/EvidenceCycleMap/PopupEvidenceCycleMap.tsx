@@ -15,9 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form,
-} from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -129,6 +127,7 @@ const PopupEvidenceCycleMap = ({
   const [pendingReuseEvidence, setPendingReuseEvidence] =
     useState<ModelVerifiedEvidenceForReuse | null>(null);
   const queryClient = useQueryClient();
+  const isExternalReviewerView = !!readOnly;
 
   const reuseMutation = useMutation({
     mutationFn: () =>
@@ -148,19 +147,24 @@ const PopupEvidenceCycleMap = ({
   });
 
   const cycleId_Change = async (val: string) => {
-    if (val) {
-      const res = await cycleService.getById(val);
-      if (res.Success) {
-        setStandardSetId(res.Data?.StandardSetId || "");
-        // Extract assigned standards for current user
-        const council = res.Data?.ListCouncil?.find(
-          (c) => c.UserId === user?.Id,
-        );
-        setAssignedStandardIds(council?.AssignedStandardIds || []);
-      }
-    } else {
+    if (!val) {
       setStandardSetId("");
       setAssignedStandardIds([]);
+      return;
+    }
+
+    if (isExternalReviewerView) {
+      setStandardSetId(evidenceCycleMap?.StandardSetId || "");
+      setAssignedStandardIds([]);
+      return;
+    }
+
+    const res = await cycleService.getById(val);
+    if (res.Success) {
+      setStandardSetId(res.Data?.StandardSetId || "");
+      // Extract assigned standards for current user
+      const council = res.Data?.ListCouncil?.find((c) => c.UserId === user?.Id);
+      setAssignedStandardIds(council?.AssignedStandardIds || []);
     }
   };
 
@@ -220,7 +224,11 @@ const PopupEvidenceCycleMap = ({
   };
 
   // --- Submission ---
-  const onSubmit = async (values: z.infer<typeof formSchema>, isAddMore: boolean, status: number) => {
+  const onSubmit = async (
+    values: z.infer<typeof formSchema>,
+    isAddMore: boolean,
+    status: number,
+  ) => {
     if (!isPending) {
       const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
       if (listAttachment.length === 0 && pendingFiles.length === 0) {
@@ -330,6 +338,10 @@ const PopupEvidenceCycleMap = ({
                       handleAttachmentChange={handleAttachmentChange}
                       attachmentError={attachmentError}
                       status={form.watch("status")}
+                      viewerMode={
+                        isExternalReviewerView ? "external" : "internal"
+                      }
+                      allowAttachmentDownload={!isExternalReviewerView}
                     />
                   </div>
                 </div>
@@ -375,17 +387,17 @@ const PopupEvidenceCycleMap = ({
                         evidenceCycleMap?.Evidence?.Status?.toString() || "1",
                       issueDate: evidenceCycleMap?.Evidence?.IssueDate
                         ? format(
-                          new Date(evidenceCycleMap.Evidence.IssueDate),
-                          "yyyy-MM-dd",
-                        )
+                            new Date(evidenceCycleMap.Evidence.IssueDate),
+                            "yyyy-MM-dd",
+                          )
                         : "",
                       issuingAuthority:
                         evidenceCycleMap?.Evidence?.IssuingAuthority || "",
                       expiryDate: evidenceCycleMap?.Evidence?.ExpiryDate
                         ? format(
-                          new Date(evidenceCycleMap.Evidence.ExpiryDate),
-                          "yyyy-MM-dd",
-                        )
+                            new Date(evidenceCycleMap.Evidence.ExpiryDate),
+                            "yyyy-MM-dd",
+                          )
                         : "",
                       fileTypeId: evidenceCycleMap?.Evidence?.FileTypeId || "",
                       description:
@@ -414,9 +426,13 @@ const PopupEvidenceCycleMap = ({
                 isEdit={evidenceCycleMap?.IsEdit || false}
                 isLoading={isLoading}
                 isApproving={isApproving}
-                onApprove={(approveStatus, reason) => onApprove(evidenceCycleMap!.Id, approveStatus, reason)}
+                onApprove={(approveStatus, reason) =>
+                  onApprove(evidenceCycleMap!.Id, approveStatus, reason)
+                }
                 onSubmit={(submitStatus) => {
-                  form.handleSubmit((values) => onSubmit(values, false, submitStatus))();
+                  form.handleSubmit((values) =>
+                    onSubmit(values, false, submitStatus),
+                  )();
                 }}
               />
             )}
@@ -447,12 +463,12 @@ const PopupEvidenceCycleMap = ({
             status: "3",
           });
 
-          const ev = evidence as ModelVerifiedEvidenceForReuse & { listAttachment?: Attachment[]; folderUpload?: string };
+          const ev = evidence as ModelVerifiedEvidenceForReuse & {
+            listAttachment?: Attachment[];
+            folderUpload?: string;
+          };
           // Handle potential casing issues (PascalCase from C# vs camelCase from JSON serialization)
-          const rawAttachments =
-            ev.ListAttachment ||
-            ev.listAttachment ||
-            [];
+          const rawAttachments = ev.ListAttachment || ev.listAttachment || [];
           const normalizedAttachments: Attachment[] = rawAttachments.map(
             (att: any) => ({
               Id: att.Id || att.id,
@@ -477,4 +493,3 @@ const PopupEvidenceCycleMap = ({
 };
 
 export default PopupEvidenceCycleMap;
-

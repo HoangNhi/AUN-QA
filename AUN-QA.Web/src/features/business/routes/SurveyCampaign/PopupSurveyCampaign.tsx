@@ -54,6 +54,7 @@ const PopupSurveyCampaign = ({
   onOpenChange,
   saveChange,
   isLoading,
+  readOnly,
 }: {
   surveyCampaign: SurveyCampaign | null;
   isOpen: boolean;
@@ -63,6 +64,7 @@ const PopupSurveyCampaign = ({
     isAddMore: boolean,
   ) => void;
   isLoading?: boolean;
+  readOnly?: boolean;
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,9 +86,15 @@ const PopupSurveyCampaign = ({
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
-  const [mode, setMode] = useState<"edit" | "preview" | "results">("edit");
+  const [mode, setMode] = useState<"edit" | "preview" | "results">(
+    readOnly ? "preview" : "edit",
+  );
 
   const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
+    if (readOnly) {
+      return;
+    }
+
     const payload = {
       Id: values.id,
       Name: values.name,
@@ -124,6 +132,12 @@ const PopupSurveyCampaign = ({
     }
   }, [surveyCampaign, form, setListTopic]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setMode(readOnly ? "preview" : "edit");
+    }
+  }, [isOpen, readOnly, surveyCampaign?.Id]);
+
   // Transform data for preview
   const getPreviewData = (): SurveyView => {
     const values = form.getValues();
@@ -145,18 +159,18 @@ const PopupSurveyCampaign = ({
       <DialogContent
         className={cn(
           "p-0 gap-0 w-full flex flex-col focus:outline-none overflow-hidden duration-300 transition-all",
-          mode === "preview"
+          mode === "preview" && !readOnly
             ? "max-w-none w-screen h-screen rounded-none border-0 data-[state=open]:slide-in-from-bottom-0"
             : "sm:max-w-4xl max-h-[90vh]",
         )}
         onPointerDownOutside={(e) => e.preventDefault()}
         style={
-          mode === "preview"
+          mode === "preview" && !readOnly
             ? {
-              maxWidth: "100vw",
-              width: "100vw",
-              height: "100vh",
-            }
+                maxWidth: "100vw",
+                width: "100vw",
+                height: "100vh",
+              }
             : undefined
         }
       >
@@ -170,12 +184,12 @@ const PopupSurveyCampaign = ({
             <DialogHeader
               className={cn(
                 "p-6 pb-4 border-b shrink-0 bg-white z-10 transition-all",
-                mode === "preview" ? "py-4 shadow-sm" : "",
+                mode === "preview" && !readOnly ? "py-4 shadow-sm" : "",
               )}
             >
               <DialogTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {mode === "preview" && (
+                  {mode === "preview" && !readOnly && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -187,23 +201,32 @@ const PopupSurveyCampaign = ({
                     </Button>
                   )}
                   <span>
-                    {surveyCampaign?.IsEdit
-                      ? "Cập nhật khảo sát"
-                      : "Thêm mới khảo sát"}
+                    {readOnly
+                      ? "Xem chi tiết khảo sát"
+                      : surveyCampaign?.IsEdit
+                        ? "Cập nhật khảo sát"
+                        : "Thêm mới khảo sát"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Tabs
                     value={mode}
-                    onValueChange={(v) => setMode(v as "edit" | "preview" | "results")}
+                    onValueChange={(v) =>
+                      setMode(v as "edit" | "preview" | "results")
+                    }
                   >
-                    <TabsList className={`grid w-full ${showResultsTab ? "grid-cols-3" : "grid-cols-2"}`}>
-                      <TabsTrigger value="edit">
-                        <Edit3 size={16} className="mr-2" /> Soạn thảo
-                      </TabsTrigger>
+                    <TabsList
+                      className={`grid w-full ${readOnly ? (showResultsTab ? "grid-cols-2" : "grid-cols-1") : showResultsTab ? "grid-cols-3" : "grid-cols-2"}`}
+                    >
+                      {!readOnly && (
+                        <TabsTrigger value="edit">
+                          <Edit3 size={16} className="mr-2" /> Soạn thảo
+                        </TabsTrigger>
+                      )}
                       <TabsTrigger value="preview">
-                        <Eye size={16} className="mr-2" /> Xem trước
+                        <Eye size={16} className="mr-2" />{" "}
+                        {readOnly ? "Xem" : "Xem trước"}
                       </TabsTrigger>
                       {showResultsTab && (
                         <TabsTrigger value="results">
@@ -220,14 +243,16 @@ const PopupSurveyCampaign = ({
             <div
               className={cn(
                 "flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0",
-                (mode === "preview" || mode === "results") && "hidden",
+                (mode !== "edit" || readOnly) && "hidden",
               )}
             >
               {/* General Info Section */}
               <div className="bg-white rounded-lg border shadow-sm p-4 mb-6 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-700">Thông tin chung</h3>
+                  <h3 className="font-semibold text-gray-700">
+                    Thông tin chung
+                  </h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -265,7 +290,8 @@ const PopupSurveyCampaign = ({
                           <FormControl>
                             <Combobox
                               fetchOptions={async () => {
-                                const res = await cycleService.getComboboxByUser();
+                                const res =
+                                  await cycleService.getComboboxByUser();
                                 return (res.Data || []).map((t) => ({
                                   Value: t.Value ?? "",
                                   Text: t.Text ?? "",
@@ -324,9 +350,10 @@ const PopupSurveyCampaign = ({
                             <Combobox
                               key={stakeholderType} // Force re-mount when stakeholder changes
                               fetchOptions={async () => {
-                                const res = await surveyTemplateService.getAllCombobox({
-                                  StakeholderType: parseInt(stakeholderType),
-                                });
+                                const res =
+                                  await surveyTemplateService.getAllCombobox({
+                                    StakeholderType: parseInt(stakeholderType),
+                                  });
                                 return (res.Data || []).map((t) => ({
                                   Value: t.Value ?? "",
                                   Text: t.Text ?? "",
@@ -338,7 +365,8 @@ const PopupSurveyCampaign = ({
                                 if (val) {
                                   setIsLoadingTemplate(true);
                                   try {
-                                    const res = await surveyTemplateService.getById(val);
+                                    const res =
+                                      await surveyTemplateService.getById(val);
                                     if (res.Success) {
                                       setListTopic(res.Data?.ListTopic || []);
                                     } else {
@@ -436,7 +464,9 @@ const PopupSurveyCampaign = ({
                   <span className="text-slate-500 text-sm">
                     {
                       STAKEHOLDER_TYPES.find(
-                        (s) => s.Value === surveyCampaign?.StakeholderType?.toString(),
+                        (s) =>
+                          s.Value ===
+                          surveyCampaign?.StakeholderType?.toString(),
                       )?.Text
                     }
                   </span>
@@ -465,17 +495,21 @@ const PopupSurveyCampaign = ({
               </>
             )}
 
-            {mode === "edit" && (
+            {mode === "edit" && !readOnly && (
               <DialogFooter className="p-6 pt-4 border-t shrink-0 bg-white z-10">
                 <DialogClose asChild>
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
                 <Button
                   type="button"
-                  onClick={form.handleSubmit((values) => onSubmit(values, false))}
+                  onClick={form.handleSubmit((values) =>
+                    onSubmit(values, false),
+                  )}
                   disabled={isLoading}
                 >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Lưu
                 </Button>
                 {!surveyCampaign?.IsEdit && (

@@ -45,8 +45,10 @@ export const getColumns = (
       accessorKey: "Name",
       header: "Tên chiến dịch",
       cell: ({ row }) => (
-        <div className="max-w-[300px]">
-          <p className="line-clamp-2 font-medium leading-5">{row.original.Name}</p>
+        <div className="max-w-75">
+          <p className="line-clamp-2 font-medium leading-5">
+            {row.original.Name}
+          </p>
         </div>
       ),
     },
@@ -59,21 +61,23 @@ export const getColumns = (
       header: "Trạng thái",
       cell: ({ row }) => {
         const status = row.original.Status;
-        const statusConfig: Record<number, { text: string; className: string }> =
-          {
-            1: {
-              text: "Chưa bắt đầu",
-              className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-            },
-            2: {
-              text: "Đang diễn ra",
-              className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
-            },
-            3: {
-              text: "Đã kết thúc",
-              className: "bg-green-100 text-green-800 hover:bg-green-200",
-            },
-          };
+        const statusConfig: Record<
+          number,
+          { text: string; className: string }
+        > = {
+          1: {
+            text: "Chưa bắt đầu",
+            className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+          },
+          2: {
+            text: "Đang diễn ra",
+            className: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+          },
+          3: {
+            text: "Đã kết thúc",
+            className: "bg-green-100 text-green-800 hover:bg-green-200",
+          },
+        };
 
         const config = statusConfig[status] || {
           text: "Không xác định",
@@ -114,13 +118,23 @@ export const getColumns = (
         />
       ),
     });
+  }
 
-    columns.push({
-      id: "actions",
-      meta: {
-        className: "text-center",
-      },
-      cell: ({ row }) => (
+  columns.push({
+    id: "actions",
+    meta: {
+      className: "text-center",
+    },
+    cell: ({ row }) =>
+      isReadOnly ? (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => showPopupDetail(row.original.Id, true)}
+        >
+          Xem
+        </Button>
+      ) : (
         <ActionCell
           row={row}
           showPopupDetail={showPopupDetail}
@@ -129,8 +143,7 @@ export const getColumns = (
           changeStatus={changeStatus}
         />
       ),
-    });
-  }
+  });
 
   return columns;
 };

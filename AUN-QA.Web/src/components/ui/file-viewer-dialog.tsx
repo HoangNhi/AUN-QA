@@ -32,6 +32,7 @@ interface FileViewerDialogProps {
   onClose: () => void;
   file: Attachment | null;
   mode?: "internal" | "external";
+  allowDownload?: boolean;
 }
 
 function getFileIcon(type: string, className = "size-5") {
@@ -63,6 +64,7 @@ const FileViewerDialog = ({
   onClose,
   file,
   mode = "internal",
+  allowDownload = true,
 }: FileViewerDialogProps) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [officeBlob, setOfficeBlob] = useState<Blob | null>(null);
@@ -216,9 +218,8 @@ const FileViewerDialog = ({
             );
 
             // Post-process to physically split the DOM into separate sections for visual pagination
-            const wrapper = officeContainerRef.current.querySelector(
-              ".docx-wrapper",
-            );
+            const wrapper =
+              officeContainerRef.current.querySelector(".docx-wrapper");
             if (wrapper) {
               const sections = Array.from(
                 wrapper.querySelectorAll("section.docx"),
@@ -239,7 +240,7 @@ const FileViewerDialog = ({
                         '[style*="page-break-before: always"]',
                       ) !== null ||
                       child.querySelector('[style*="break-before: page"]') !==
-                      null;
+                        null;
 
                     if (hasPageBreak && currentSection.children.length > 0) {
                       // Create a new visual page container
@@ -312,8 +313,6 @@ const FileViewerDialog = ({
       renderOfficeFile();
     }
   }, [officeBlob, viewerType, fileExt]);
-
-
 
   const handleDownload = async () => {
     if (!file) return;
@@ -539,8 +538,8 @@ const FileViewerDialog = ({
                   <span className="uppercase tracking-wider">
                     {fileExt || "unknown"}{" "}
                     {viewerType !== "video" &&
-                      viewerType !== "office" &&
-                      viewerType !== "image"
+                    viewerType !== "office" &&
+                    viewerType !== "image"
                       ? ""
                       : `- ${viewerType}`}
                   </span>
@@ -587,13 +586,15 @@ const FileViewerDialog = ({
               )}
               */}
 
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md"
-              >
-                <Download className="size-4" />
-                <span className="hidden sm:inline">Tải xuống</span>
-              </button>
+              {allowDownload && (
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md"
+                >
+                  <Download className="size-4" />
+                  <span className="hidden sm:inline">Tải xuống</span>
+                </button>
+              )}
 
               <div className="w-px h-6 bg-white/20 mx-1"></div>
 

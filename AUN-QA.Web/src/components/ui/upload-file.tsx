@@ -23,6 +23,7 @@ import React, {
 export interface UploadFileProps {
   noUpload?: boolean;
   readonly?: boolean;
+  allowDownload?: boolean;
   listAttachment?: Attachment[];
   setListAttachment?: (attachments: Attachment[]) => void;
   multiFile?: boolean;
@@ -45,6 +46,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     {
       noUpload = false,
       readonly = false,
+      allowDownload = true,
       listAttachment = [],
       setListAttachment,
       multiFile = true,
@@ -182,14 +184,16 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                     >
                       <Eye size={16} />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(file)}
-                      className="text-gray-400 hover:text-green-500"
-                      title="Tải xuống"
-                    >
-                      <Download size={16} />
-                    </button>
+                    {allowDownload && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(file)}
+                        className="text-gray-400 hover:text-green-500"
+                        title="Tải xuống"
+                      >
+                        <Download size={16} />
+                      </button>
+                    )}
                     {!readonly && (
                       <button
                         type="button"
@@ -241,7 +245,10 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                     className="flex items-center justify-between bg-white p-2 border rounded gap-2"
                   >
                     <div className="flex flex-1 items-center gap-2 min-w-0">
-                      <FileIcon size={14} className="shrink-0 text-orange-400" />
+                      <FileIcon
+                        size={14}
+                        className="shrink-0 text-orange-400"
+                      />
                       <span
                         className="block flex-1 min-w-0 truncate italic text-xs"
                         title={f.name}
@@ -268,6 +275,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
           onClose={() => setViewerFile(null)}
           file={viewerFile}
           mode={viewerMode}
+          allowDownload={allowDownload}
         />
       </div>
     );

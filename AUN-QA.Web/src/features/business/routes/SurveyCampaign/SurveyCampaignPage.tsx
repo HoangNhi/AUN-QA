@@ -50,7 +50,13 @@ const SurveyCampaignPage = () => {
         handleChangeStatus,
         isExternalReviewer,
       ),
-    [deleteList, handleChangeStatus, isExternalReviewer, showPopupDetail],
+    [
+      deleteList,
+      handleChangeStatus,
+      isExternalReviewer,
+      showPopupDetail,
+      showPopupSession,
+    ],
   );
 
   const listPage = useListPage({
@@ -63,7 +69,8 @@ const SurveyCampaignPage = () => {
     defaultPageRequest: { StakeholderType: undefined, CycleId: undefined },
   });
 
-  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+  const { options: cycleOptions, isLoading: isCycleLoading } =
+    useCycleOptions();
 
   return (
     <ListPageLayout
@@ -136,7 +143,7 @@ const SurveyCampaignPage = () => {
       deleteItemCount={Object.keys(rowSelection).length}
       isDeleteLoading={isLoading}
     >
-      {isOpen && !isExternalReviewer && (
+      {isOpen && surveyCampaign && (
         <PopupSurveyCampaign
           key={surveyCampaign?.Id || "new"}
           surveyCampaign={surveyCampaign}
@@ -144,6 +151,7 @@ const SurveyCampaignPage = () => {
           onOpenChange={onOpenChange}
           saveChange={saveChange}
           isLoading={isLoading}
+          readOnly={isExternalReviewer}
         />
       )}
       <PopupSession
@@ -157,4 +165,3 @@ const SurveyCampaignPage = () => {
 };
 
 export default SurveyCampaignPage;
-

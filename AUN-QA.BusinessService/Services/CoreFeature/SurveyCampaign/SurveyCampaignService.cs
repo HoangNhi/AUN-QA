@@ -65,7 +65,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
-            //await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
+            await CheckPdcaReadPermissionAsync(data.CycleId);
 
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 
@@ -1407,6 +1407,29 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
             });
             if (!allowed)
                 throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+        }
+
+        private async Task CheckPdcaReadPermissionAsync(Guid cycleId)
+        {
+            var username = _contextAccessor.HttpContext?.User?.Identity?.Name;
+            if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+            }
+
+            var allowedCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId);
+            if (!allowedCycleIds.Contains(cycleId))
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+            }
         }
 
         /// <summary>

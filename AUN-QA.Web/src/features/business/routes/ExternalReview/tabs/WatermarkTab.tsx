@@ -126,25 +126,61 @@ export function WatermarkTab({
 
       <div className="space-y-2">
         <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Preview
+          Mô phỏng tài liệu
         </label>
-        <div className="relative flex h-52 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-          <p className="text-center text-xs leading-loose text-slate-300 blur-[1px]">
-            Văn bản minh chứng
-            <br />
-            hiển thị tại đây...
-          </p>
-          <span
-            className="pointer-events-none absolute select-none rounded border-4 border-slate-400 px-3 py-1 font-black text-slate-400"
-            style={{
-              opacity: watermarkOpacity / 100,
-              transform: watermarkPosition === 0 ? "rotate(-12deg)" : "none",
-              fontSize: "clamp(10px, 2vw, 18px)",
-              whiteSpace: "nowrap",
-            }}
+
+        <div className="rounded-lg bg-slate-200 p-4">
+          <div
+            className="relative mx-auto overflow-hidden rounded bg-white shadow-md"
+            style={{ minHeight: "280px", maxWidth: "360px" }}
           >
-            {watermarkText || "Watermark preview"}
-          </span>
+            <div className="p-6 space-y-2">
+              {[85, 100, 70, 90, 55, 80, 100, 65].map((w, i) => (
+                <div
+                  key={i}
+                  className="h-2 rounded bg-slate-200 blur-[1.5px]"
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+
+            <div
+              className="pointer-events-none absolute inset-0 flex select-none items-center justify-center"
+              style={{ opacity: watermarkOpacity / 100 }}
+            >
+              {watermarkPosition === 2 ? (
+                <div className="grid grid-cols-3 gap-6 p-4">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="whitespace-nowrap rotate-[-30deg] text-[10px] font-black text-slate-400"
+                    >
+                      {watermarkText || "Watermark"}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span
+                  className="whitespace-nowrap rounded border-2 border-slate-400 px-2 py-0.5 font-black text-slate-400"
+                  style={{
+                    fontSize: "clamp(11px, 2.5vw, 20px)",
+                    transform: watermarkPosition === 0 ? "rotate(-35deg)" : "none",
+                  }}
+                >
+                  {watermarkText || "Watermark preview"}
+                </span>
+              )}
+            </div>
+
+            <div
+              className="pointer-events-none absolute bottom-2 right-3 select-none text-right font-mono leading-tight text-slate-400"
+              style={{ fontSize: "9px", opacity: watermarkOpacity / 100 }}
+            >
+              chuyengia@email.com · 192.168.1.1
+              <br />
+              12/04/2026 08:30
+            </div>
+          </div>
         </div>
       </div>
     </div>

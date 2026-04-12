@@ -354,7 +354,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             user.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             user.UpdatedAt = DateTime.UtcNow;
 
-            if (!string.IsNullOrWhiteSpace(password))
+            if (!string.IsNullOrWhiteSpace(password) && password != DefaultPassword)
             {
                 var salt = Encrypt_DecryptHelper.GenerateSalt();
                 user.PasswordSalt = salt;

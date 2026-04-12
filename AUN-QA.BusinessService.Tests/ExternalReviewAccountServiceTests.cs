@@ -353,6 +353,67 @@ public class ExternalReviewAccountServiceTests
         Assert.Contains("hoàn tất", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task UpdateStatusAsync_DoesNotSyncAccountActivation_WhenStatusChangesToInProgress()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+        SeedReview(context, reviewId, completed: false, status: 0);
+        await context.SaveChangesAsync();
+
+        bool setUsersActivedCalled = false;
+        var fakeInvoker = new FakeCallInvoker
+        {
+            SetUsersActivedHandler = _ =>
+            {
+                setUsersActivedCalled = true;
+                return new SetUsersActivedResponse { Success = true };
+            }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+        await service.UpdateStatusAsync(new ExternalReviewStatusRequest { Id = reviewId, Status = 1 });
+
+        Assert.False(setUsersActivedCalled, "UpdateStatusAsync khÃ´ng Ä‘Æ°á»£c gá»i SetUsersActived");
+    }
+
+    [Fact]
+    public async Task ConfirmCompletionAsync_DoesNotSyncAccountActivation()
+    {
+        await using var context = CreateContext();
+        var reviewId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        SeedReview(context, reviewId, completed: false, status: 1);
+        _ = SeedAccount(context, reviewId, userId);
+
+        context.ExternalReviewResults.Add(new ExternalReviewResult
+        {
+            Id = Guid.NewGuid(),
+            ExternalReviewId = reviewId,
+            StandardId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        await context.SaveChangesAsync();
+
+        bool setUsersActivedCalled = false;
+        var fakeInvoker = new FakeCallInvoker
+        {
+            SetUsersActivedHandler = _ =>
+            {
+                setUsersActivedCalled = true;
+                return new SetUsersActivedResponse { Success = true };
+            }
+        };
+
+        var service = CreateService(context, fakeInvoker);
+        await service.ConfirmCompletionAsync(reviewId);
+
+        Assert.False(setUsersActivedCalled, "ConfirmCompletionAsync khÃ´ng Ä‘Æ°á»£c gá»i SetUsersActived");
+    }
+
     private static BusinessContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<BusinessContext>()

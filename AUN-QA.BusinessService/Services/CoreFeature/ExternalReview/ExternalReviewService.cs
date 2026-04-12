@@ -236,9 +236,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             review.CompletedBy = null;
 
             await _context.SaveChangesAsync();
-            await SyncAccountActivationAsync(
-                review.Id,
-                targetStatus == ExternalReviewStatus.InProgress);
         }
 
         public async Task UpdateWatermarkAsync(ExternalReviewWatermarkRequest request)
@@ -270,7 +267,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (review.IsCompleted && review.Status == (int)ExternalReviewStatus.Completed)
             {
-                await SyncAccountActivationAsync(id, false);
                 return;
             }
 
@@ -293,7 +289,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             review.UpdatedBy = username;
 
             await _context.SaveChangesAsync();
-            await SyncAccountActivationAsync(id, false);
         }
 
         public async Task<ModelExternalReviewResult> UpsertResultAsync(ExternalReviewResultRequest request)
@@ -750,23 +745,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             }
 
             return review;
-        }
-
-        private async Task SyncAccountActivationAsync(Guid externalReviewId, bool isActived)
-        {
-            var userIds = await _context.ExternalReviewAccounts
-                .AsNoTracking()
-                .Where(x => x.ExternalReviewId == externalReviewId)
-                .Select(x => x.UserId)
-                .Distinct()
-                .ToListAsync();
-
-            if (userIds.Count == 0)
-            {
-                return;
-            }
-
-            await SyncUsersActivationAsync(userIds, isActived);
         }
 
         private async Task SyncUsersActivationAsync(IEnumerable<Guid> userIds, bool isActived)

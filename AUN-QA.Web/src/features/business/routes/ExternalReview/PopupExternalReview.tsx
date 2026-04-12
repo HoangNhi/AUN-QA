@@ -250,37 +250,43 @@ export default function PopupExternalReview({
                 </TabsList>
 
                 <TabsContent value="account" className="mt-0">
-                  <AccountTab
-                    externalReviewId={review.Id}
-                    isSubmitting={reviewQuery.isMutating}
-                    onCreateAndLinkAccount={handleCreateAndLinkAccount}
-                    onRemoveAccount={handleRemoveAccount}
-                    onUpdateAccount={handleUpdateAccount}
-                    onAccountCountChange={setLiveAccountCount}
-                    isReadOnly={isReadOnly}
-                  />
+                  <div className="rounded-lg border border-slate-200 bg-white p-5">
+                    <AccountTab
+                      externalReviewId={review.Id}
+                      isSubmitting={reviewQuery.isMutating}
+                      onCreateAndLinkAccount={handleCreateAndLinkAccount}
+                      onRemoveAccount={handleRemoveAccount}
+                      onUpdateAccount={handleUpdateAccount}
+                      onAccountCountChange={setLiveAccountCount}
+                      isReadOnly={isReadOnly}
+                    />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="watermark" className="mt-0">
-                  <WatermarkTab
-                    review={review}
-                    isSubmitting={reviewQuery.isMutating}
-                    onUpdateWatermark={handleWatermarkUpdate}
-                    isReadOnly={isReadOnly}
-                  />
+                  <div className="rounded-lg border border-slate-200 bg-white p-5">
+                    <WatermarkTab
+                      review={review}
+                      isSubmitting={reviewQuery.isMutating}
+                      onUpdateWatermark={handleWatermarkUpdate}
+                      isReadOnly={isReadOnly}
+                    />
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="results" className="mt-0">
-                  <ResultsTab
-                    standards={standardsQuery.options}
-                    results={review.Results || []}
-                    isSubmitting={reviewQuery.isMutating || results.isMutating}
-                    onUpsertResult={handleUpsertResult}
-                    onAddFinding={handleAddFinding}
-                    onUpdateFinding={handleUpdateFinding}
-                    onDeleteFinding={handleDeleteFinding}
-                    isReadOnly={isReadOnly}
-                  />
+                  <div className="rounded-lg border border-slate-200 bg-white p-5">
+                    <ResultsTab
+                      standards={standardsQuery.options}
+                      results={review.Results || []}
+                      isSubmitting={reviewQuery.isMutating || results.isMutating}
+                      onUpsertResult={handleUpsertResult}
+                      onAddFinding={handleAddFinding}
+                      onUpdateFinding={handleUpdateFinding}
+                      onDeleteFinding={handleDeleteFinding}
+                      isReadOnly={isReadOnly}
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>

@@ -31,12 +31,18 @@ export function EditAccountDialog({
     username: "",
     email: "",
     isActived: true,
-    password: "",
+    password: "b86e09fa-0751",
   });
 
   useEffect(() => {
     if (!account) {
-      setForm({ fullname: "", username: "", email: "", isActived: true, password: "" });
+      setForm({
+        fullname: "",
+        username: "",
+        email: "",
+        isActived: true,
+        password: "b86e09fa-0751",
+      });
       return;
     }
 
@@ -45,7 +51,7 @@ export function EditAccountDialog({
       username: account.Username ?? "",
       email: account.Email ?? "",
       isActived: account.IsActived ?? true,
-      password: "",
+      password: "b86e09fa-0751",
     });
   }, [account, open]);
 
@@ -77,22 +83,6 @@ export function EditAccountDialog({
 
         <div className="space-y-3 pt-1">
           <div className="space-y-1.5">
-            <label htmlFor="edit-account-password" className="block text-xs font-medium text-slate-600">
-              Mật khẩu
-            </label>
-            <Input
-              id="edit-account-password"
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, password: e.target.value }))
-              }
-              disabled={isSubmitting}
-              autoComplete="new-password"
-            />
-          </div>
-
-          <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-600">
               Họ tên
             </label>
@@ -119,6 +109,26 @@ export function EditAccountDialog({
           </div>
 
           <div className="space-y-1.5">
+            <label
+              htmlFor="edit-account-password"
+              className="block text-xs font-medium text-slate-600"
+            >
+              Mật khẩu
+            </label>
+            <Input
+              id="edit-account-password"
+              type="password"
+              value={form.password}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              placeholder="Để trống nếu không muốn đổi mật khẩu"
+              disabled={isSubmitting}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-600">
               Email
             </label>
@@ -139,7 +149,10 @@ export function EditAccountDialog({
             <select
               value={form.isActived ? "true" : "false"}
               onChange={(e) =>
-                setForm((prev) => ({ ...prev, isActived: e.target.value === "true" }))
+                setForm((prev) => ({
+                  ...prev,
+                  isActived: e.target.value === "true",
+                }))
               }
               disabled={isSubmitting}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -157,7 +170,10 @@ export function EditAccountDialog({
             >
               Hủy
             </Button>
-            <Button disabled={!canSubmit || isSubmitting} onClick={() => void handleSubmit()}>
+            <Button
+              disabled={!canSubmit || isSubmitting}
+              onClick={() => void handleSubmit()}
+            >
               {isSubmitting ? "Đang lưu..." : "Lưu"}
             </Button>
           </div>

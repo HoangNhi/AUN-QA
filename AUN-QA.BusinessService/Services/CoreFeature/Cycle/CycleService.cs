@@ -443,24 +443,42 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
         public async Task<List<ModelCombobox>> GetComboboxByUser()
         {
-            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
 
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 return new List<ModelCombobox>();
             }
-            var query = from cycle in _context.Cycles
-                        join council in _context.Councils on cycle.Id equals council.CycleId
-                        where !cycle.IsDeleted && cycle.IsActived
-                           && !council.IsDeleted && council.IsActived
-                           && council.UserId == userId
-                        select new ModelCombobox
-                        {
-                            Text = cycle.Name,
-                            Value = cycle.Id.ToString()
-                        };
 
-            return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
+            var councilQuery = from cycle in _context.Cycles
+                               join council in _context.Councils on cycle.Id equals council.CycleId
+                               where !cycle.IsDeleted && cycle.IsActived
+                                  && !council.IsDeleted && council.IsActived
+                                  && council.UserId == userId
+                               select new ModelCombobox
+                               {
+                                   Text = cycle.Name,
+                                   Value = cycle.Id.ToString()
+                               };
+
+            var externalQuery = from account in _context.ExternalReviewAccounts
+                                join review in _context.ExternalReviews on account.ExternalReviewId equals review.Id
+                                join cycle in _context.Cycles on review.CycleId equals cycle.Id
+                                where account.UserId == userId
+                                   && review.Status == (int)ExternalReviewStatus.InProgress
+                                   && !review.IsDeleted
+                                   && !cycle.IsDeleted && cycle.IsActived
+                                select new ModelCombobox
+                                {
+                                    Text = cycle.Name,
+                                    Value = cycle.Id.ToString()
+                                };
+
+            return await councilQuery
+                .Union(externalQuery)
+                .Distinct()
+                .OrderBy(x => x.Text)
+                .ToListAsync();
         }
 
         public async Task<List<ModelCombobox>> GetComboboxForExternalReview()
@@ -582,11 +600,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
         public async Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId)
         {
-            return await _context.Councils
+            var councilCycles = await _context.Councils
                 .Where(c => c.UserId == userId && !c.IsDeleted && c.IsActived)
                 .Select(c => c.CycleId)
+                .ToListAsync();
+
+            var externalCycles = await _context.ExternalReviewAccounts
+                .Where(a => a.UserId == userId)
+                .Join(
+                    _context.ExternalReviews.Where(r =>
+                        r.Status == (int)ExternalReviewStatus.InProgress && !r.IsDeleted),
+                    a => a.ExternalReviewId,
+                    r => r.Id,
+                    (a, r) => r.CycleId)
                 .Distinct()
                 .ToListAsync();
+
+            return councilCycles.Union(externalCycles).Distinct().ToList();
         }
 
         public async Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId)

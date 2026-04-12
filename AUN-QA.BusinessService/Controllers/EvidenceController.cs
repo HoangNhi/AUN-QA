@@ -38,7 +38,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpGet, Route("preview/{attachmentId}")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> PreviewAttachment([FromRoute] Guid attachmentId, [FromQuery] string mode = "internal")
         {
             var result = await _service.PreviewAttachment(attachmentId, mode);

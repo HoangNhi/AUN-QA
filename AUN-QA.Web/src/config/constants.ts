@@ -199,8 +199,11 @@ export const API_ENDPOINTS = {
         `${BUSINESS_BASE}/external-review/${id}/accounts`,
       ADD_ACCOUNT: (id: string) =>
         `${BUSINESS_BASE}/external-review/${id}/accounts`,
+      GET_ACCOUNTS_LIST: `${BUSINESS_BASE}/external-review/accounts/get-list`,
       CREATE_AND_LINK_ACCOUNT: (id: string) =>
         `${BUSINESS_BASE}/external-review/${id}/accounts/create-and-link`,
+      UPDATE_ACCOUNT: (accountId: string) =>
+        `${BUSINESS_BASE}/external-review/accounts/${accountId}`,
       REMOVE_ACCOUNT: (accountId: string) =>
         `${BUSINESS_BASE}/external-review/accounts/${accountId}`,
     },

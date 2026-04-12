@@ -17,8 +17,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         Task UpdateFindingAsync(ExternalReviewFindingUpdateRequest request);
         Task DeleteFindingAsync(Guid findingId);
         Task<List<ModelExtAccount>> GetAccountsAsync(Guid externalReviewId);
+        Task<GetListPagingResponse<ModelExtAccount>> GetAccountsListAsync(ExternalReviewAccountGetListRequest request);
         Task<ModelExtAccount> AddAccountAsync(Guid externalReviewId, Guid userId);
         Task<ModelExtAccount> CreateAndLinkAccountAsync(Guid externalReviewId, ExternalReviewCreateAccountRequest request);
         Task RemoveAccountAsync(Guid accountId);
+        Task<ModelExtAccount> UpdateAccountAsync(ExternalReviewAccountUpdateRequest request);
     }
 }

@@ -155,6 +155,8 @@ public class SarReviewRoundTests
 
         public Task<List<ModelCombobox>> GetComboboxByUser() => throw new NotImplementedException();
 
+        public Task<List<ModelCombobox>> GetComboboxForExternalReview() => throw new NotImplementedException();
+
         public Task ChangeStatusAsync(CycleChangeStatusRequest request) => throw new NotImplementedException();
 
         public Task<bool> CanUserDoActionInPdcaAsync(PdcaActionCheckRequest request) => Task.FromResult(true);
@@ -167,5 +169,7 @@ public class SarReviewRoundTests
 
         public Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId)
             => Task.FromResult((cycleId == _cycleId, _cycleStatus));
+
+        public Task<bool> IsRevisionAllowedAsync(Guid cycleId) => Task.FromResult(true);
     }
 }

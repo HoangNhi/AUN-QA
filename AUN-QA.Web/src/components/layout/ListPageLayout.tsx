@@ -33,6 +33,7 @@ interface ListPageLayoutProps<TData> {
     onDeleteClick?: () => void;
     deleteDisabled?: boolean;
     extraActions?: ReactNode;
+    tableContainerClassName?: string;
 
     showDeleteConfirm?: boolean;
     onDeleteConfirmChange?: (open: boolean) => void;
@@ -71,6 +72,7 @@ export function ListPageLayout<TData>({
     isDeleteLoading = false,
     children,
     hideAdd = false,
+    tableContainerClassName,
 }: ListPageLayoutProps<TData>) {
     return (
         <div className="container mx-auto space-y-4">
@@ -152,6 +154,7 @@ export function ListPageLayout<TData>({
                 setPageRequest={setPageRequest}
                 onRefresh={onRefresh}
                 isLoading={isLoading}
+                containerClassName={tableContainerClassName}
             />
 
             {children}

@@ -10,6 +10,8 @@ service SystemProto {
   rpc GetUsersByUsernames (GetUsersByUsernamesRequest) returns (GetUsersByUsernamesResponse);
   rpc SetUsersActived (SetUsersActivedRequest) returns (SetUsersActivedResponse);
   rpc CreateExternalUser (CreateExternalUserRequest) returns (CreateExternalUserResponse);
+  rpc GetUsersByIdsPaged (GetUsersByIdsPagedRequest) returns (GetUsersByIdsPagedResponse);
+  rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
 }
 
 message CheckPermissionRequest {
@@ -32,6 +34,7 @@ message UserInfo {
   string avatar = 3;
   string username = 4;
   bool is_actived = 5;
+  string email = 6;
 }
 
 message GetUsersByIdsResponse {
@@ -67,4 +70,31 @@ message CreateExternalUserResponse {
   string id = 1;
   bool success = 2;
   string message = 3;
+}
+
+message GetUsersByIdsPagedRequest {
+  repeated string user_ids = 1;
+  string text_search = 2;
+  int32 page_index = 3;
+  int32 page_size = 4;
+}
+
+message GetUsersByIdsPagedResponse {
+  repeated UserInfo users = 1;
+  int32 page_index = 2;
+  int32 page_size = 3;
+  int32 total_row = 4;
+}
+
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string fullname = 2;
+  string username = 3;
+  string email = 4;
+}
+
+message UpdateUserProfileResponse {
+  bool success = 1;
+  string message = 2;
+  UserInfo user = 3;
 }

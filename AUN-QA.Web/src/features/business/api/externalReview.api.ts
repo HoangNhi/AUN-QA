@@ -9,6 +9,9 @@ import type {
   CreateExternalReviewRequest,
   DeleteExternalReviewFindingRequest,
   ExternalReviewAccount,
+  ExternalReviewAccountGetListRequest,
+  ExternalReviewAccountGetListResponse,
+  ExternalReviewAccountUpdateRequest,
   ExternalReviewDetail,
   ExternalReviewFinding,
   ExternalReviewGetListRequest,
@@ -145,6 +148,15 @@ export const externalReviewService = {
     );
   },
 
+  getAccountsList: async (
+    request: ExternalReviewAccountGetListRequest,
+  ): Promise<ApiResponse<ExternalReviewAccountGetListResponse>> => {
+    return api.post<ExternalReviewAccountGetListResponse>(
+      API_ENDPOINTS.Business.ExternalReview.GET_ACCOUNTS_LIST,
+      request,
+    );
+  },
+
   addAccounts: async (
     request: AddExternalReviewAccountsRequest,
   ): Promise<ApiResponse<ExternalReviewAccount[]>> => {
@@ -185,6 +197,19 @@ export const externalReviewService = {
         Username: request.Username,
         Email: request.Email,
         Password: request.Password,
+      },
+    );
+  },
+
+  updateAccount: async (
+    request: ExternalReviewAccountUpdateRequest,
+  ): Promise<ApiResponse<ExternalReviewAccount>> => {
+    return api.put<ExternalReviewAccount>(
+      API_ENDPOINTS.Business.ExternalReview.UPDATE_ACCOUNT(request.AccountId),
+      {
+        Fullname: request.Fullname,
+        Username: request.Username,
+        Email: request.Email,
       },
     );
   },

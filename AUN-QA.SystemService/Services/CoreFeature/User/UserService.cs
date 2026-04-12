@@ -51,7 +51,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         {
             var users = await _context.Users
                 .AsNoTracking()
-                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.IsActived)
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
                 .ToListAsync();
             return users.Select(x => _mapper.Map<ModelUser>(x)).ToList();
         }
@@ -60,9 +60,47 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         {
             var users = await _context.Users
                 .AsNoTracking()
-                .Where(x => usernames.Contains(x.Username) && !x.IsDeleted && x.IsActived)
+                .Where(x => usernames.Contains(x.Username) && !x.IsDeleted)
                 .ToListAsync();
             return users.Select(x => _mapper.Map<ModelUser>(x)).ToList();
+        }
+
+        public async Task<GetListPagingResponse<ModelUser>> GetByIdsPaged(
+            List<Guid> ids,
+            string? textSearch,
+            int pageIndex,
+            int pageSize)
+        {
+            var safePageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            var safePageSize = pageSize <= 0 ? 10 : pageSize;
+
+            var query = _context.Users
+                .AsNoTracking()
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(textSearch))
+            {
+                var text = textSearch.Trim().ToLower();
+                query = query.Where(x =>
+                    x.Fullname.ToLower().Contains(text)
+                    || x.Username.ToLower().Contains(text)
+                    || x.Email.ToLower().Contains(text));
+            }
+
+            var totalRow = await query.CountAsync();
+            var users = await query
+                .OrderBy(x => x.Username)
+                .Skip((safePageIndex - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToListAsync();
+
+            return new GetListPagingResponse<ModelUser>
+            {
+                PageIndex = safePageIndex,
+                PageSize = safePageSize,
+                TotalRow = totalRow,
+                Data = users.Select(x => _mapper.Map<ModelUser>(x)).ToList()
+            };
         }
 
         public async Task<ModelUser> GetCurrentUser()
@@ -281,6 +319,43 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var response = _mapper.Map<ModelUser>(update);
             response.Password = DefaultPassword;
             return response;
+        }
+
+        public async Task<ModelUser> UpdateUserProfileById(
+            Guid userId,
+            string fullname,
+            string username,
+            string email)
+        {
+            var normalizedFullname = fullname.Trim();
+            var normalizedUsername = username.Trim();
+            var normalizedEmail = email.Trim();
+
+            var duplicated = await _context.Users.AnyAsync(x =>
+                x.Id != userId
+                && !x.IsDeleted
+                && (x.Username == normalizedUsername || x.Email == normalizedEmail));
+
+            if (duplicated)
+            {
+                throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId && !x.IsDeleted);
+            if (user == null)
+            {
+                throw new BusinessException("Không tìm thấy tài khoản.");
+            }
+
+            user.Fullname = normalizedFullname;
+            user.Username = normalizedUsername;
+            user.Email = normalizedEmail;
+            user.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ModelUser>(user);
         }
     }
 }

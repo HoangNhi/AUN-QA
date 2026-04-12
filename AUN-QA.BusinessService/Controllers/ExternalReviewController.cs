@@ -22,6 +22,7 @@ namespace AUN_QA.BusinessService.Controllers
         private const string FindingsRoute = "findings";
         private const string FindingByIdRoute = "findings/{id:guid}";
         private const string AccountsByExternalReviewRoute = "{id:guid}/accounts";
+        private const string AccountsListRoute = "accounts/get-list";
         private const string CreateAndLinkAccountRoute = "{id:guid}/accounts/create-and-link";
         private const string AccountByIdRoute = "accounts/{accountId:guid}";
 
@@ -124,6 +125,18 @@ namespace AUN_QA.BusinessService.Controllers
             return Ok(new BaseResponse<List<ModelExtAccount>> { Data = result, Success = true });
         }
 
+        [HttpPost(AccountsListRoute)]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAccountsList([FromBody] ExternalReviewAccountGetListRequest request)
+        {
+            var result = await _service.GetAccountsListAsync(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ModelExtAccount>>
+            {
+                Data = result,
+                Success = true
+            });
+        }
+
         [HttpPost(AccountsByExternalReviewRoute)]
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> AddAccount(Guid id, [FromBody] ExternalReviewAddAccountRequest request)
@@ -146,6 +159,17 @@ namespace AUN_QA.BusinessService.Controllers
         {
             await _service.RemoveAccountAsync(accountId);
             return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPut(AccountByIdRoute)]
+        [AttributePermission(Action = ActionType.UPDATE)]
+        public async Task<IActionResult> UpdateAccount(
+            Guid accountId,
+            [FromBody] ExternalReviewAccountUpdateRequest request)
+        {
+            request.AccountId = accountId;
+            var result = await _service.UpdateAccountAsync(request);
+            return Ok(new BaseResponse<ModelExtAccount> { Data = result, Success = true });
         }
     }
 }

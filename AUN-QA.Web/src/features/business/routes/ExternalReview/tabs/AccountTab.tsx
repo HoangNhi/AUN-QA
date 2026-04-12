@@ -1,17 +1,20 @@
-import { useState } from "react";
-import { Trash2, UserPlus } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import type { ExternalReviewAccount } from "@/features/business/types/externalReview.types";
+import { useExternalReviewAccountList } from "../hooks/useExternalReviewAccountList";
+import { getAccountColumns } from "./accountColumns";
+import { EditAccountDialog } from "./EditAccountDialog";
+import {
+  getSelectedAccountIds,
+  summarizeBulkDelete,
+} from "./accountTab.utils";
+import { toast } from "sonner";
 
 interface AccountTabProps {
   externalReviewId?: string;
-  accounts: ExternalReviewAccount[];
   isSubmitting: boolean;
   isReadOnly: boolean;
   onCreateAndLinkAccount: (payload: {
@@ -21,170 +24,262 @@ interface AccountTabProps {
     password: string;
   }) => Promise<void>;
   onRemoveAccount: (accountId: string) => Promise<void>;
+  onUpdateAccount: (payload: {
+    accountId: string;
+    fullname: string;
+    username: string;
+    email: string;
+  }) => Promise<void>;
 }
 
-const EMPTY_FORM = { fullname: "", username: "", email: "", password: "" };
-
-const FIELDS = [
-  { key: "fullname" as const, label: "Họ tên", type: "text" },
-  { key: "username" as const, label: "Tên tài khoản", type: "text" },
-  { key: "email" as const, label: "Email", type: "text" },
-  { key: "password" as const, label: "Mật khẩu", type: "password" },
-];
+const EMPTY_FORM = {
+  fullname: "",
+  username: "",
+  email: "",
+  password: "",
+};
 
 export function AccountTab({
   externalReviewId,
-  accounts,
   isSubmitting,
   isReadOnly,
   onCreateAndLinkAccount,
   onRemoveAccount,
+  onUpdateAccount,
 }: AccountTabProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [isCreating, setIsCreating] = useState(false);
+  const accountList = useExternalReviewAccountList(externalReviewId);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [editingAccount, setEditingAccount] =
+    useState<ExternalReviewAccount | null>(null);
+  const [createForm, setCreateForm] = useState(EMPTY_FORM);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const isFormValid = form.fullname && form.username && form.email && form.password;
+  const columns = useMemo(
+    () => getAccountColumns(isReadOnly, setEditingAccount),
+    [isReadOnly],
+  );
 
-  const handleCreate = async () => {
-    if (!isFormValid) return;
+  const selectedCount = Object.keys(accountList.rowSelection).length;
+
+  const handleCloseCreateDialog = () => {
+    setShowCreateDialog(false);
+    setCreateForm(EMPTY_FORM);
+    setCreateError(null);
+  };
+
+  const handleCreateAccount = async () => {
+    if (
+      !createForm.fullname.trim() ||
+      !createForm.username.trim() ||
+      !createForm.email.trim() ||
+      !createForm.password.trim()
+    ) {
+      return;
+    }
 
     setIsCreating(true);
     setCreateError(null);
 
     try {
-      await onCreateAndLinkAccount(form);
-      setForm(EMPTY_FORM);
-      setShowForm(false);
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Lỗi không xác định.");
+      await onCreateAndLinkAccount({
+        fullname: createForm.fullname.trim(),
+        username: createForm.username.trim(),
+        email: createForm.email.trim(),
+        password: createForm.password.trim(),
+      });
+
+      await accountList.refetch();
+      handleCloseCreateDialog();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể tạo tài khoản.";
+      setCreateError(message);
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setForm(EMPTY_FORM);
-    setCreateError(null);
+  const handleBulkDelete = async () => {
+    const selectedIds = getSelectedAccountIds(
+      accountList.data.Data,
+      accountList.rowSelection,
+    );
+
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    setShowDeleteConfirm(false);
+
+    const results = await Promise.allSettled(
+      selectedIds.map((accountId) => onRemoveAccount(accountId)),
+    );
+    const summary = summarizeBulkDelete(results);
+    const failedIds = selectedIds.filter(
+      (_, index) => results[index].status === "rejected",
+    );
+
+    const refreshed = await accountList.refetch();
+    const nextData = refreshed.data?.Data ?? accountList.data.Data;
+
+    if (failedIds.length > 0) {
+      const nextSelection: Record<string, boolean> = {};
+      nextData.forEach((item, index) => {
+        if (failedIds.includes(item.Id)) {
+          nextSelection[String(index)] = true;
+        }
+      });
+      accountList.setRowSelection(nextSelection);
+    } else {
+      accountList.setRowSelection({});
+    }
+
+    if (summary.failedCount === 0) {
+      toast.success(`Đã xoá ${summary.successCount} tài khoản.`);
+      return;
+    }
+
+    toast.error(
+      `Đã xoá ${summary.successCount} tài khoản, thất bại ${summary.failedCount}.`,
+    );
+  };
+
+  const handleUpdateAccount = async (payload: {
+    accountId: string;
+    fullname: string;
+    username: string;
+    email: string;
+  }) => {
+    await onUpdateAccount(payload);
+    setEditingAccount(null);
+    await accountList.refetch();
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-800">
-            Danh sách tài khoản Chuyên gia (EXT)
-          </h3>
-          <p className="text-xs text-slate-500">
-            {accounts.length} tài khoản đã liên kết
-          </p>
-        </div>
-        {!isReadOnly && externalReviewId ? (
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-            Thêm chuyên gia
-          </Button>
-        ) : null}
-      </div>
+      <ListPageLayout
+        columns={columns}
+        data={accountList.data.Data}
+        totalRow={accountList.data.TotalRow}
+        rowSelection={accountList.rowSelection}
+        setRowSelection={accountList.setRowSelection}
+        pageRequest={accountList.pageRequest}
+        setPageRequest={accountList.setPageRequest}
+        onRefresh={() => {
+          void accountList.refetch();
+        }}
+        isLoading={accountList.isFetching}
+        searchTerm={accountList.searchTerm}
+        onSearchTermChange={accountList.setSearchTerm}
+        onResetFilters={accountList.handleResetFilters}
+        filterGridCols="md:grid-cols-2"
+        searchInputClassName="col-span-1 bg-background"
+        hideAdd={isReadOnly || !externalReviewId}
+        onAddClick={
+          isReadOnly || !externalReviewId
+            ? undefined
+            : () => setShowCreateDialog(true)
+        }
+        onDeleteClick={
+          isReadOnly || !externalReviewId
+            ? undefined
+            : () => setShowDeleteConfirm(true)
+        }
+        deleteDisabled={isReadOnly || selectedCount === 0}
+        showDeleteConfirm={showDeleteConfirm}
+        onDeleteConfirmChange={setShowDeleteConfirm}
+        onDeleteConfirm={() => void handleBulkDelete()}
+        deleteItemCount={selectedCount}
+        isDeleteLoading={isSubmitting}
+        tableContainerClassName="max-h-[420px] overflow-auto w-full relative"
+      />
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Họ tên
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Tài khoản
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Trạng thái
-              </th>
-              {!isReadOnly ? (
-                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Thao tác
-                </th>
-              ) : null}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {accounts.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={isReadOnly ? 3 : 4}
-                  className="px-4 py-8 text-center text-sm text-slate-400"
-                >
-                  Chưa có tài khoản chuyên gia nào
-                </td>
-              </tr>
-            ) : (
-              accounts.map((acc) => (
-                <tr key={acc.Id || acc.UserId} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800">
-                    {acc.Fullname ?? acc.UserId}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {acc.Username ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={[
-                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        acc.IsActived
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-slate-100 text-slate-500",
-                      ].join(" ")}
-                    >
-                      <span
-                        className={[
-                          "h-1.5 w-1.5 rounded-full",
-                          acc.IsActived ? "bg-emerald-500" : "bg-slate-400",
-                        ].join(" ")}
-                      />
-                      {acc.IsActived ? "Đang hoạt động" : "Không hoạt động"}
-                    </span>
-                  </td>
-                  {!isReadOnly ? (
-                    <td className="px-4 py-3">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => void onRemoveAccount(acc.Id)}
-                        disabled={isSubmitting}
-                        className="text-red-400 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  ) : null}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {editingAccount ? (
+        <EditAccountDialog
+          open={!!editingAccount}
+          account={editingAccount}
+          isSubmitting={isSubmitting}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingAccount(null);
+            }
+          }}
+          onSubmit={handleUpdateAccount}
+        />
+      ) : null}
 
-      <Dialog open={showForm} onOpenChange={(open) => { if (!open) handleCloseForm(); }}>
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-md">
           <DialogTitle>Thêm tài khoản Chuyên gia</DialogTitle>
 
           <div className="space-y-3 pt-1">
-            {FIELDS.map(({ key, label, type }) => (
-              <div key={key} className="space-y-1">
-                <label className="block text-xs font-medium text-slate-600">
-                  {label}
-                </label>
-                <Input
-                  type={type}
-                  value={form[key]}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  disabled={isCreating}
-                />
-              </div>
-            ))}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-slate-600">
+                Họ tên
+              </label>
+              <Input
+                value={createForm.fullname}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    fullname: e.target.value,
+                  }))
+                }
+                disabled={isCreating}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-slate-600">
+                Tài khoản
+              </label>
+              <Input
+                value={createForm.username}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    username: e.target.value,
+                  }))
+                }
+                disabled={isCreating}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-slate-600">
+                Email
+              </label>
+              <Input
+                type="email"
+                value={createForm.email}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    email: e.target.value,
+                  }))
+                }
+                disabled={isCreating}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-slate-600">
+                Mật khẩu
+              </label>
+              <Input
+                type="password"
+                value={createForm.password}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    password: e.target.value,
+                  }))
+                }
+                disabled={isCreating}
+              />
+            </div>
 
             {createError ? (
               <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
@@ -195,14 +290,14 @@ export function AccountTab({
             <div className="flex justify-end gap-2 pt-2">
               <Button
                 variant="outline"
-                onClick={handleCloseForm}
+                onClick={handleCloseCreateDialog}
                 disabled={isCreating}
               >
                 Hủy
               </Button>
               <Button
-                onClick={() => void handleCreate()}
-                disabled={isCreating || !isFormValid}
+                onClick={() => void handleCreateAccount()}
+                disabled={isCreating}
               >
                 {isCreating ? "Đang tạo..." : "Tạo tài khoản"}
               </Button>

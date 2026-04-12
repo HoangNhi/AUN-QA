@@ -453,15 +453,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 .AsNoTracking()
                 .Where(x => x.ExternalReviewId == externalReviewId)
                 .OrderBy(x => x.CreatedAt)
-                .Select(x => new ModelExtAccount
-                {
-                    Id = x.Id,
-                    ExternalReviewId = x.ExternalReviewId,
-                    UserId = x.UserId,
-                    CreatedAt = x.CreatedAt,
-                    CreatedBy = x.CreatedBy
-                })
-                .ToListAsync();
+                    .Select(x => new ModelExtAccount
+                    {
+                        Id = x.Id,
+                        ExternalReviewId = x.ExternalReviewId,
+                        UserId = x.UserId,
+                        CreatedAt = x.CreatedAt,
+                        CreatedBy = x.CreatedBy
+                    })
+                    .ToListAsync();
 
             if (accounts.Count == 0)
             {
@@ -485,6 +485,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                     {
                         account.Fullname = string.IsNullOrWhiteSpace(userInfo.Fullname) ? null : userInfo.Fullname;
                         account.Username = string.IsNullOrWhiteSpace(userInfo.Username) ? null : userInfo.Username;
+                        account.Email = string.IsNullOrWhiteSpace(userInfo.Email) ? null : userInfo.Email;
                         account.IsActived = userInfo.IsActived;
                     }
                 }
@@ -495,6 +496,75 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             }
 
             return accounts;
+        }
+
+        public async Task<GetListPagingResponse<ModelExtAccount>> GetAccountsListAsync(
+            ExternalReviewAccountGetListRequest request)
+        {
+            var review = await GetReviewOrThrowAsync(request.ExternalReviewId);
+            var pageIndex = request.PageIndex <= 0 ? 1 : request.PageIndex;
+            var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+            var accounts = await _context.ExternalReviewAccounts
+                .AsNoTracking()
+                .Where(x => x.ExternalReviewId == review.Id)
+                .OrderBy(x => x.CreatedAt)
+                .ToListAsync();
+
+            if (accounts.Count == 0)
+            {
+                return new GetListPagingResponse<ModelExtAccount>
+                {
+                    PageIndex = pageIndex,
+                    PageSize = pageSize,
+                    TotalRow = 0,
+                    Data = new List<ModelExtAccount>()
+                };
+            }
+
+            var grpcRequest = new GetUsersByIdsPagedRequest
+            {
+                TextSearch = request.TextSearch?.Trim() ?? string.Empty,
+                PageIndex = pageIndex,
+                PageSize = pageSize
+            };
+            grpcRequest.UserIds.AddRange(accounts.Select(x => x.UserId.ToString()));
+
+            var grpcResponse = await _systemClient.GetUsersByIdsPagedAsync(grpcRequest);
+            var accountByUserId = accounts.ToDictionary(x => x.UserId, x => x);
+
+            var data = grpcResponse.Users
+                .Select(user =>
+                {
+                    if (!Guid.TryParse(user.Id, out var userId) || !accountByUserId.TryGetValue(userId, out var account))
+                    {
+                        return null;
+                    }
+
+                    return new ModelExtAccount
+                    {
+                        Id = account.Id,
+                        ExternalReviewId = account.ExternalReviewId,
+                        UserId = account.UserId,
+                        CreatedAt = account.CreatedAt,
+                        CreatedBy = account.CreatedBy,
+                        Fullname = string.IsNullOrWhiteSpace(user.Fullname) ? null : user.Fullname,
+                        Username = string.IsNullOrWhiteSpace(user.Username) ? null : user.Username,
+                        Email = string.IsNullOrWhiteSpace(user.Email) ? null : user.Email,
+                        IsActived = user.IsActived
+                    };
+                })
+                .Where(x => x != null)
+                .Select(x => x!)
+                .ToList();
+
+            return new GetListPagingResponse<ModelExtAccount>
+            {
+                PageIndex = grpcResponse.PageIndex,
+                PageSize = grpcResponse.PageSize,
+                TotalRow = grpcResponse.TotalRow,
+                Data = data
+            };
         }
 
         public async Task<ModelExtAccount> AddAccountAsync(Guid externalReviewId, Guid userId)
@@ -618,6 +688,51 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             await _context.SaveChangesAsync();
 
             await SyncUsersActivationAsync(new[] { account.UserId }, false);
+        }
+
+        public async Task<ModelExtAccount> UpdateAccountAsync(ExternalReviewAccountUpdateRequest request)
+        {
+            var account = await _context.ExternalReviewAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.AccountId);
+
+            if (account == null)
+            {
+                throw new BusinessException("Không tìm thấy liên kết tài khoản.");
+            }
+
+            var review = await GetReviewOrThrowAsync(account.ExternalReviewId);
+            if (review.IsCompleted || review.Status == (int)ExternalReviewStatus.Completed)
+            {
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể cập nhật tài khoản.");
+            }
+
+            var grpcResponse = await _systemClient.UpdateUserProfileAsync(
+                new UpdateUserProfileRequest
+                {
+                    UserId = account.UserId.ToString(),
+                    Fullname = request.Fullname.Trim(),
+                    Username = request.Username.Trim(),
+                    Email = request.Email.Trim()
+                });
+
+            if (!grpcResponse.Success)
+            {
+                throw new BusinessException(grpcResponse.Message ?? "Không thể cập nhật tài khoản.");
+            }
+
+            return new ModelExtAccount
+            {
+                Id = account.Id,
+                ExternalReviewId = account.ExternalReviewId,
+                UserId = account.UserId,
+                CreatedAt = account.CreatedAt,
+                CreatedBy = account.CreatedBy,
+                Fullname = string.IsNullOrWhiteSpace(grpcResponse.User?.Fullname) ? null : grpcResponse.User.Fullname,
+                Username = string.IsNullOrWhiteSpace(grpcResponse.User?.Username) ? null : grpcResponse.User.Username,
+                Email = string.IsNullOrWhiteSpace(grpcResponse.User?.Email) ? null : grpcResponse.User.Email,
+                IsActived = grpcResponse.User?.IsActived ?? false
+            };
         }
 
         private async Task<Entities.ExternalReview> GetReviewOrThrowAsync(Guid id)

@@ -34,6 +34,10 @@ function getStatusBadgeClass(status: ExternalReviewStatus | number): string {
   return STATUS_LABELS[status]?.className ?? "bg-slate-100 text-slate-700 border-slate-200";
 }
 
+export function shouldTriggerParentRefresh(nextOpen: boolean): boolean {
+  return !nextOpen;
+}
+
 function getStatusLabel(status: ExternalReviewStatus | number): string {
   return STATUS_LABELS[status]?.label ?? "Không xác định";
 }
@@ -64,14 +68,13 @@ export default function PopupExternalReview({
 
   const handleOpenChange = (nextOpen: boolean) => {
     onOpenChange(nextOpen);
-    if (!nextOpen) {
+    if (shouldTriggerParentRefresh(nextOpen)) {
       onDataChanged();
     }
   };
 
   const handleStatusUpdate = async (status: number) => {
     await reviewQuery.updateStatus(status);
-    onDataChanged();
   };
 
   const handleWatermarkUpdate = async (payload: {
@@ -80,12 +83,10 @@ export default function PopupExternalReview({
     position: number;
   }) => {
     await reviewQuery.updateWatermark(payload);
-    onDataChanged();
   };
 
   const handleConfirmCompletion = async () => {
     await reviewQuery.confirmCompletion();
-    onDataChanged();
   };
 
   const handleCreateAndLinkAccount = async (payload: {
@@ -95,12 +96,19 @@ export default function PopupExternalReview({
     password: string;
   }) => {
     await reviewQuery.createAndLinkAccount(payload);
-    onDataChanged();
   };
 
   const handleRemoveAccount = async (accountId: string) => {
     await reviewQuery.removeAccount(accountId);
-    onDataChanged();
+  };
+
+  const handleUpdateAccount = async (payload: {
+    accountId: string;
+    fullname: string;
+    username: string;
+    email: string;
+  }) => {
+    await reviewQuery.updateAccount(payload);
   };
 
   const handleUpsertResult = async (payload: {
@@ -108,7 +116,6 @@ export default function PopupExternalReview({
     strengths?: string | null;
   }) => {
     await results.upsertResult(payload);
-    onDataChanged();
   };
 
   const handleAddFinding = async (payload: {
@@ -118,7 +125,6 @@ export default function PopupExternalReview({
     CriterionId?: string | null;
   }) => {
     await results.addFinding(payload);
-    onDataChanged();
   };
 
   const handleUpdateFinding = async (payload: {
@@ -128,12 +134,10 @@ export default function PopupExternalReview({
     CriterionId?: string | null;
   }) => {
     await results.updateFinding(payload);
-    onDataChanged();
   };
 
   const handleDeleteFinding = async (findingId: string) => {
     await results.deleteFinding(findingId);
-    onDataChanged();
   };
 
   return (
@@ -243,10 +247,10 @@ export default function PopupExternalReview({
                 <TabsContent value="account" className="mt-0">
                   <AccountTab
                     externalReviewId={review.Id}
-                    accounts={review.Accounts || []}
                     isSubmitting={reviewQuery.isMutating}
                     onCreateAndLinkAccount={handleCreateAndLinkAccount}
                     onRemoveAccount={handleRemoveAccount}
+                    onUpdateAccount={handleUpdateAccount}
                     isReadOnly={isReadOnly}
                   />
                 </TabsContent>

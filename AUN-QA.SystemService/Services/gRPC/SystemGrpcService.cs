@@ -47,7 +47,9 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                 Id = u.Id.ToString(),
                 Fullname = u.Fullname ?? string.Empty,
                 Avatar = u.Avatar ?? string.Empty,
-                IsActived = u.IsActived
+                Username = u.Username ?? string.Empty,
+                IsActived = u.IsActived,
+                Email = u.Email ?? string.Empty
             }));
             return response;
         }
@@ -64,7 +66,44 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                 Avatar = u.Avatar ?? string.Empty,
                 Username = u.Username ?? string.Empty,
                 IsActived = u.IsActived,
+                Email = u.Email ?? string.Empty
             }));
+            return response;
+        }
+
+        public override async Task<GetUsersByIdsPagedResponse> GetUsersByIdsPaged(
+            GetUsersByIdsPagedRequest request,
+            ServerCallContext context)
+        {
+            var ids = request.UserIds
+                .Select(x => Guid.TryParse(x, out var parsed) ? parsed : Guid.Empty)
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var result = await _userService.GetByIdsPaged(
+                ids,
+                request.TextSearch,
+                request.PageIndex,
+                request.PageSize);
+
+            var response = new GetUsersByIdsPagedResponse
+            {
+                PageIndex = result.PageIndex,
+                PageSize = result.PageSize,
+                TotalRow = result.TotalRow
+            };
+
+            response.Users.AddRange(result.Data.Select(u => new UserInfo
+            {
+                Id = u.Id.ToString(),
+                Fullname = u.Fullname ?? string.Empty,
+                Avatar = u.Avatar ?? string.Empty,
+                Username = u.Username ?? string.Empty,
+                IsActived = u.IsActived,
+                Email = u.Email ?? string.Empty
+            }));
+
             return response;
         }
 
@@ -145,6 +184,52 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                 Id = user.Id.ToString(),
                 Success = true
             };
+        }
+
+        public override async Task<UpdateUserProfileResponse> UpdateUserProfile(
+            UpdateUserProfileRequest request,
+            ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.UserId, out var userId))
+            {
+                return new UpdateUserProfileResponse
+                {
+                    Success = false,
+                    Message = "UserId không hợp lệ."
+                };
+            }
+
+            try
+            {
+                var user = await _userService.UpdateUserProfileById(
+                    userId,
+                    request.Fullname,
+                    request.Username,
+                    request.Email);
+
+                return new UpdateUserProfileResponse
+                {
+                    Success = true,
+                    Message = string.Empty,
+                    User = new UserInfo
+                    {
+                        Id = user.Id.ToString(),
+                        Fullname = user.Fullname ?? string.Empty,
+                        Avatar = user.Avatar ?? string.Empty,
+                        Username = user.Username ?? string.Empty,
+                        IsActived = user.IsActived,
+                        Email = user.Email ?? string.Empty
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new UpdateUserProfileResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
         }
     }
 }

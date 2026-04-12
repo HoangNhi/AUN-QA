@@ -149,6 +149,21 @@ export interface GetExternalReviewAccountsRequest {
   ExternalReviewId: string;
 }
 
+export interface ExternalReviewAccountGetListRequest
+  extends GetListPagingRequest {
+  ExternalReviewId: string;
+}
+
+export type ExternalReviewAccountGetListResponse =
+  GetListPagingResponse<ExternalReviewAccount>;
+
+export interface ExternalReviewAccountUpdateRequest {
+  AccountId: string;
+  Fullname: string;
+  Username: string;
+  Email: string;
+}
+
 export interface AddExternalReviewAccountsRequest {
   ExternalReviewId: string;
   UserIds: string[];

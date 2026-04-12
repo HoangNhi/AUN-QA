@@ -6,7 +6,10 @@ import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
 import { useCycleOptionsForExternalReview } from "@/features/business/hooks/useCycleOptionsForExternalReview";
 import { useExternalReviewList } from "./hooks/useExternalReviewList";
-import type { ExternalReviewListItem, ExternalReviewStatus } from "@/features/business/types/externalReview.types";
+import type {
+  ExternalReviewListItem,
+  ExternalReviewStatus,
+} from "@/features/business/types/externalReview.types";
 import { ExternalReviewStatus as ExternalReviewStatusEnum } from "@/features/business/types/externalReview.types";
 import PopupExternalReview from "./PopupExternalReview";
 
@@ -16,7 +19,9 @@ const STATUS_LABELS: Record<ExternalReviewStatus, string> = {
   [ExternalReviewStatusEnum.Completed]: "Đã kết thúc",
 };
 
-function parseExternalReviewStatus(value?: string): ExternalReviewStatus | undefined {
+function parseExternalReviewStatus(
+  value?: string,
+): ExternalReviewStatus | undefined {
   if (!value) {
     return undefined;
   }
@@ -64,7 +69,9 @@ export default function ExternalReviewPage() {
         header: "Chu kỳ",
         cell: ({ row }) => (
           <div className="min-w-[240px]">
-            <p className="font-medium text-slate-800">{row.original.CycleName}</p>
+            <p className="font-medium text-slate-800">
+              {row.original.CycleName}
+            </p>
             <p className="text-xs text-slate-500">Năm {row.original.Year}</p>
           </div>
         ),
@@ -88,7 +95,7 @@ export default function ExternalReviewPage() {
       },
       {
         accessorKey: "AccountCount",
-        header: () => <div className="text-center">Accounts</div>,
+        header: () => <div className="text-center">Tài khoản</div>,
         meta: { className: "text-center" },
       },
       {
@@ -101,7 +108,11 @@ export default function ExternalReviewPage() {
         header: () => <div className="text-center">Hành động</div>,
         meta: { className: "text-center" },
         cell: ({ row }) => (
-          <Button type="button" size="sm" onClick={() => openPopup(row.original)}>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => openPopup(row.original)}
+          >
             Xem
           </Button>
         ),

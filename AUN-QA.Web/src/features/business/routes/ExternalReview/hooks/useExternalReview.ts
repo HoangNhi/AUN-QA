@@ -213,9 +213,39 @@ export function useExternalReview(selectedCycleId: string | null) {
       toast.success("Đã tạo và liên kết tài khoản chuyên gia.");
       await invalidateCurrent();
     },
+  });
+
+  const updateAccountMutation = useMutation({
+    mutationFn: async (payload: {
+      accountId: string;
+      fullname: string;
+      username: string;
+      email: string;
+    }) => {
+      if (!review?.Id) {
+        throw new Error("External Review chưa được khởi tạo.");
+      }
+
+      const response = await externalReviewService.updateAccount({
+        AccountId: payload.accountId,
+        Fullname: payload.fullname,
+        Username: payload.username,
+        Email: payload.email,
+      });
+
+      if (!response.Success) {
+        throw new Error(response.Message || "Không thể cập nhật tài khoản.");
+      }
+    },
+    onSuccess: async () => {
+      toast.success("Đã cập nhật tài khoản chuyên gia.");
+      await invalidateCurrent();
+    },
     onError: (mutationError) => {
       toast.error(
-        mutationError instanceof Error ? mutationError.message : "Không thể tạo tài khoản.",
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Không thể cập nhật tài khoản.",
       );
     },
   });
@@ -235,13 +265,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       }
     },
     onSuccess: async () => {
-      toast.success("Đã gỡ tài khoản.");
       await invalidateCurrent();
-    },
-    onError: (mutationError) => {
-      toast.error(
-        mutationError instanceof Error ? mutationError.message : "Không thể gỡ tài khoản.",
-      );
     },
   });
 
@@ -252,12 +276,14 @@ export function useExternalReview(selectedCycleId: string | null) {
       confirmCompletionMutation.isPending ||
       addAccountsMutation.isPending ||
       createAndLinkAccountMutation.isPending ||
+      updateAccountMutation.isPending ||
       removeAccountMutation.isPending,
     [
       addAccountsMutation.isPending,
       createAndLinkAccountMutation.isPending,
       confirmCompletionMutation.isPending,
       removeAccountMutation.isPending,
+      updateAccountMutation.isPending,
       updateStatusMutation.isPending,
       updateWatermarkMutation.isPending,
     ],
@@ -275,6 +301,12 @@ export function useExternalReview(selectedCycleId: string | null) {
     addAccounts: (userIds: string[]) => addAccountsMutation.mutateAsync(userIds),
     createAndLinkAccount: (payload: { fullname: string; username: string; email: string; password: string }) =>
       createAndLinkAccountMutation.mutateAsync(payload),
+    updateAccount: (payload: {
+      accountId: string;
+      fullname: string;
+      username: string;
+      email: string;
+    }) => updateAccountMutation.mutateAsync(payload),
     removeAccount: (accountId: string) => removeAccountMutation.mutateAsync(accountId),
   };
 }

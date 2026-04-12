@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI Mockup — Internal Review &amp; SAR</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-300: #fcd34d; --amber-400: #fbbf24; --amber-500: #f59e0b;
+    --amber-700: #b45309; --amber-800: #92400e; --amber-950: #451a03;
+    --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-300: #93c5fd;
+    --blue-600: #2563eb; --blue-700: #1d4ed8;
+    --emerald-100: #d1fae5; --emerald-700: #047857;
+    --red-100: #fee2e2; --red-600: #dc2626; --red-700: #b91c1c;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: #f0f2f5;
+    color: var(--slate-800);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ─── Layout ─── */
+  .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .page-header {
+    margin-bottom: 48px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--slate-200);
+  }
+  .page-header h1 {
+    font-size: 22px; font-weight: 600; color: var(--slate-900);
+    letter-spacing: -0.3px;
+  }
+  .page-header p { color: var(--slate-500); margin-top: 4px; font-size: 13px; }
+
+  .section { margin-bottom: 56px; }
+  .section-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--slate-500);
+    margin-bottom: 16px;
+  }
+  .section-label span {
+    display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--slate-700); color: #fff;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .section-title {
+    font-size: 17px; font-weight: 600; color: var(--slate-900);
+    margin-bottom: 6px; letter-spacing: -0.2px;
+  }
+  .section-desc { font-size: 13px; color: var(--slate-500); margin-bottom: 24px; }
+
+  /* ─── Card shell ─── */
+  .card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  .card-header {
+    background: var(--slate-50);
+    border-bottom: 1px solid var(--slate-100);
+    padding: 10px 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--slate-400);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .badge-current {
+    background: var(--amber-100); color: var(--amber-800);
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+    letter-spacing: .04em;
+  }
+  .badge-new {
+    background: #dcfce7; color: #166534;
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+    letter-spacing: .04em;
+  }
+  .badge-option {
+    background: var(--blue-100); color: var(--blue-700);
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px;
+    letter-spacing: .04em;
+  }
+  .card-body { padding: 20px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* ─── Buttons ─── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    border: 1px solid transparent; cursor: pointer; transition: all .12s;
+    font-family: inherit; line-height: 1;
+  }
+  .btn-primary { background: var(--slate-800); color: #fff; border-color: var(--slate-800); }
+  .btn-primary:hover { background: var(--slate-700); }
+  .btn-outline { background: #fff; color: var(--slate-700); border-color: var(--slate-300); }
+  .btn-outline:hover { background: var(--slate-50); }
+  .btn-ghost { background: transparent; color: var(--slate-600); border-color: transparent; }
+  .btn-ghost:hover { background: var(--slate-100); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 5px; }
+  .btn-danger { background: var(--red-600); color: #fff; border-color: var(--red-600); }
+  .btn-disabled { opacity: .45; pointer-events: none; }
+
+  /* ─── Input / Textarea ─── */
+  input[type="text"], textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--slate-300);
+    border-radius: 6px; font-family: inherit; font-size: 13px;
+    color: var(--slate-800); background: #fff;
+    transition: border-color .12s, box-shadow .12s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none; border-color: var(--blue-600);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  /* ─────────────────────────────────────────────────
+     SECTION 1 — Comment Composer variants
+  ───────────────────────────────────────────────── */
+
+  /* Bubble menu shell */
+  .bubble-shell {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.07);
+    padding: 10px;
+    width: 288px;
+  }
+
+  /* ── Current (bad) ── */
+  .snippet-current {
+    position: relative;
+    border-radius: 6px;
+    border: 1px solid #fcd34d;
+    background: #fffbeb;
+    padding: 10px 12px;
+  }
+  .snippet-current .label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #b45309; margin-bottom: 4px;
+  }
+  .snippet-current .text {
+    max-height: 50px; overflow: hidden; font-size: 13px; line-height: 1.5;
+    color: #451a03; white-space: pre-wrap; word-break: break-word;
+    padding-right: 28px;
+  }
+  .snippet-current .dots {
+    position: absolute; bottom: 8px; right: 8px;
+    background: #fde68a; padding: 1px 5px; border-radius: 3px;
+    font-size: 10px; font-weight: 600; color: #92400e;
+  }
+
+  /* ── Option A — Quote border ── */
+  .snippet-a {
+    border-left: 3px solid var(--amber-400);
+    background: var(--amber-50);
+    padding: 8px 10px 8px 12px;
+    border-radius: 0 5px 5px 0;
+  }
+  .snippet-a .quoted-text {
+    font-size: 13px; line-height: 1.5; color: var(--amber-950);
+    font-style: italic; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* ── Option B — Chip + text ── */
+  .snippet-b {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 6px 8px;
+    background: var(--slate-50); border-radius: 5px;
+    border: 1px solid var(--slate-200);
+  }
+  .snippet-b .chip {
+    flex-shrink: 0; margin-top: 1px;
+    width: 18px; height: 18px; border-radius: 4px;
+    background: var(--amber-400);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .snippet-b .chip svg { width: 10px; height: 10px; fill: #fff; }
+  .snippet-b .chip-text {
+    font-size: 12px; color: var(--slate-600); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  /* ── Option C — Cleaned amber ── */
+  .snippet-c {
+    background: var(--amber-50);
+    border: 1px solid var(--amber-200);
+    border-radius: 5px;
+    padding: 8px 10px;
+  }
+  .snippet-c .header-row {
+    display: flex; align-items: center; gap: 5px; margin-bottom: 5px;
+  }
+  .snippet-c .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber-400); }
+  .snippet-c .cap { font-size: 11px; font-weight: 500; color: var(--amber-700); }
+  .snippet-c .text {
+    font-size: 13px; color: var(--amber-950); line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .composer-input-row { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .composer-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+  /* ─────────────────────────────────────────────────
+     SECTION 2 — Revision Dialog
+  ───────────────────────────────────────────────── */
+  .dialog-mock {
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15), 0 4px 12px rgba(0,0,0,.08);
+    background: #fff;
+    overflow: hidden;
+    max-width: 420px;
+  }
+  .dialog-header { padding: 20px 20px 0; }
+  .dialog-title { font-size: 16px; font-weight: 600; color: var(--slate-900); }
+  .dialog-desc { font-size: 13px; color: var(--slate-500); margin-top: 4px; }
+  .dialog-body { padding: 16px 20px; }
+  .dialog-footer {
+    padding: 12px 20px 16px;
+    display: flex; justify-content: flex-end; gap: 8px;
+    border-top: 1px solid var(--slate-100);
+  }
+  .char-hint { font-size: 11px; color: var(--slate-400); text-align: right; margin-top: 4px; }
+  .char-hint.warn { color: var(--red-600); }
+
+  /* ─────────────────────────────────────────────────
+     SECTION 3 — SAR Editor + Comment Panel
+  ───────────────────────────────────────────────── */
+  .editor-mockup {
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    display: flex;
+    flex-direction: column;
+    height: 560px;
+  }
+
+  /* toolbar */
+  .editor-toolbar {
+    background: #fff;
+    border-bottom: 1px solid var(--slate-200);
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .toolbar-title { font-weight: 600; font-size: 14px; color: var(--slate-900); }
+  .toolbar-meta { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+  .status-pill {
+    display: inline-flex; align-items: center; padding: 2px 10px;
+    border-radius: 99px; font-size: 11px; font-weight: 600;
+  }
+  .status-revision { background: var(--amber-100); color: var(--amber-800); border: 1px solid var(--amber-200); }
+  .toolbar-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* editor body */
+  .editor-body {
+    display: flex; flex: 1; min-height: 0; overflow: hidden;
+    background: var(--slate-100);
+  }
+
+  /* doc area */
+  .doc-area {
+    flex: 1; min-width: 0; overflow-y: auto;
+    padding: 24px 20px;
+  }
+  .doc-paper {
+    max-width: 560px; margin: 0 auto; background: #fff;
+    border-radius: 6px; border: 1px solid var(--slate-200);
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    padding: 28px 32px;
+    min-height: 400px;
+  }
+  .doc-paper h2 { font-size: 14px; font-weight: 700; color: var(--slate-900); margin-bottom: 12px; }
+  .doc-paper p { font-size: 12.5px; line-height: 1.7; color: var(--slate-700); margin-bottom: 10px; }
+  .doc-paper .highlight-active {
+    background: rgb(252 211 77);
+    box-shadow: 0 0 0 2px rgb(245 158 11);
+    border-radius: 2px; padding: 0 1px;
+  }
+  .doc-paper .highlight-normal {
+    background: rgba(253,230,138,.7);
+    border-radius: 2px; padding: 0 1px;
+  }
+  .revision-banner {
+    max-width: 560px; margin: 0 auto 16px;
+    background: var(--amber-50);
+    border: 1px solid var(--amber-300);
+    border-radius: 6px; padding: 12px 14px;
+    font-size: 12.5px; color: var(--amber-900);
+  }
+  .revision-banner strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
+  /* comment panel */
+  .review-panel {
+    width: 280px; flex-shrink: 0;
+    border-left: 1px solid var(--slate-200);
+    background: var(--slate-50);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .panel-header {
+    background: #fff;
+    border-bottom: 1px solid var(--slate-100);
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+  .panel-header h3 { font-size: 12px; font-weight: 700; color: var(--slate-800); }
+  .panel-header p { font-size: 11px; color: var(--slate-500); margin-top: 1px; }
+  .panel-header-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-body { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* comment card */
+  .review-comment-card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 7px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all .12s;
+    position: relative;
+  }
+  .review-comment-card:hover { border-color: var(--amber-300); box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+  .review-comment-card.active {
+    border-color: var(--amber-400);
+    box-shadow: 0 0 0 2px rgba(251,191,36,.2);
+  }
+  .review-comment-card.orphaned { opacity: .7; }
+
+  .comment-author {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 7px;
+  }
+  .avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .comment-name { font-size: 11px; font-weight: 600; color: var(--slate-700); }
+  .comment-time { font-size: 10px; color: var(--slate-400); margin-left: auto; }
+
+  /* quote block (HighlightedText) */
+  .comment-quote {
+    border-left: 2px solid var(--amber-300);
+    background: var(--amber-50);
+    padding: 5px 8px;
+    border-radius: 0 4px 4px 0;
+    font-size: 11.5px; color: var(--amber-900);
+    font-style: italic; line-height: 1.45;
+    margin-bottom: 7px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .comment-quote.orphaned-quote {
+    border-left-color: var(--slate-300);
+    background: var(--slate-50);
+    color: var(--slate-500);
+  }
+
+  .comment-text { font-size: 12px; color: var(--slate-700); line-height: 1.5; }
+
+  .comment-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .scroll-to-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; color: var(--amber-700);
+    background: var(--amber-100); border: none; border-radius: 4px;
+    padding: 3px 7px; cursor: pointer; font-family: inherit;
+    transition: background .1s;
+  }
+  .scroll-to-btn:hover { background: var(--amber-200); }
+
+  .orphan-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600;
+    color: var(--slate-500);
+    background: var(--slate-100); border-radius: 4px;
+    padding: 3px 7px;
+  }
+
+  /* ─── Tabs ─── */
+  .tabs { display: flex; gap: 2px; margin-bottom: 24px; padding: 3px; background: var(--slate-100); border-radius: 8px; width: fit-content; }
+  .tab-btn {
+    padding: 7px 16px; border-radius: 6px; border: none; font-family: inherit;
+    font-size: 12.5px; font-weight: 500; cursor: pointer;
+    color: var(--slate-500); background: transparent; transition: all .12s;
+  }
+  .tab-btn.active { background: #fff; color: var(--slate-900); box-shadow: 0 1px 3px rgba(0,0,0,.1); font-weight: 600; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ─── Note boxes ─── */
+  .note {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: 7px; margin-top: 16px;
+    font-size: 12.5px; line-height: 1.55;
+  }
+  .note-info { background: var(--blue-50); color: #1e3a8a; border: 1px solid var(--blue-100); }
+  .note-warn { background: var(--amber-50); color: var(--amber-800); border: 1px solid var(--amber-200); }
+  .note-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .divider { height: 1px; background: var(--slate-100); margin: 20px 0; }
+
+  /* ─── Comparison layout ─── */
+  .compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .compare-row, .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>UI Mockup Preview — Internal Review &amp; SAR Editor</h1>
+    <p>Prototype tương tác cho 3 cải tiến giao diện · AUN-QA v3.1</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 1 — Comment Composer Bubble
+  ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label"><span>1</span> Comment Composer Bubble</div>
+    <div class="section-title">Redesign vùng nhập nhận xét</div>
+    <div class="section-desc">Hiện tại: "ĐOẠN ĐÃ CHỌN" + badge "..." gây noise. Dưới đây là 3 hướng thay thế so với bản gốc.</div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('composer', 'current')">Hiện tại</button>
+      <button class="tab-btn" onclick="switchTab('composer', 'a')">Phương án A</button>
+      <button class="tab-btn" onclick="switchTab('composer', 'b')">Phương án B</button>
+      <button class="tab-btn" onclick="switchTab('composer', 'c')">Phương án C</button>
+    </div>
+
+    <!-- Current -->
+    <div id="composer-current" class="tab-content active">
+      <div class="compare-row">
+        <div>
+          <div class="card">
+            <div class="card-header">Trạng thái hiện tại <span class="badge-current">Đang dùng</span></div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-current">
+                  <div class="label">Đoạn đã chọn</div>
+                  <div class="text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                  <span class="dots">...</span>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note note-warn">
+            <span class="note-icon">⚠</span>
+            <div><strong>Vấn đề:</strong> Label "ĐOẠN ĐÃ CHỌN" chữ hoa quá nặng. Badge "..." nằm đè lên text. Hộp amber đậm chiếm quá nhiều không gian thị giác.</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;color:var(--slate-400);font-size:13px;">
+            <div style="font-size:32px;margin-bottom:8px">←</div>
+            Chọn phương án A, B hoặc C để xem đề xuất
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option A -->
+    <div id="composer-a" class="tab-content">
+      <div class="compare-row">
+        <div>
+          <div class="card">
+            <div class="card-header">Hiện tại</div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-current">
+                  <div class="label">Đoạn đã chọn</div>
+                  <div class="text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                  <span class="dots">...</span>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">Phương án A — Quote border <span class="badge-new">Khuyến nghị</span></div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-a">
+                  <div class="quoted-text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note note-info">
+            <span class="note-icon">✦</span>
+            <div><strong>Ý tưởng:</strong> Border-left amber 3px làm dấu trích dẫn tự nhiên. Không có label, không có "...". Text italic nhẹ. Giống pattern của Notion, Linear, GitHub PR comments.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option B -->
+    <div id="composer-b" class="tab-content">
+      <div class="compare-row">
+        <div>
+          <div class="card">
+            <div class="card-header">Hiện tại</div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-current">
+                  <div class="label">Đoạn đã chọn</div>
+                  <div class="text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                  <span class="dots">...</span>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">Phương án B — Chip inline <span class="badge-option">Option</span></div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-b">
+                  <div class="chip">
+                    <svg viewBox="0 0 24 24"><path d="M3 10h18M3 6h18M3 14h12"/></svg>
+                  </div>
+                  <div class="chip-text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note note-info">
+            <span class="note-icon">ℹ</span>
+            <div><strong>Ý tưởng:</strong> Compact nhất. Chip amber nhỏ + text xám. Ít chiếm không gian nhưng giảm khả năng đọc khi đoạn trích dài. Phù hợp màn hình nhỏ.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option C -->
+    <div id="composer-c" class="tab-content">
+      <div class="compare-row">
+        <div>
+          <div class="card">
+            <div class="card-header">Hiện tại</div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-current">
+                  <div class="label">Đoạn đã chọn</div>
+                  <div class="text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                  <span class="dots">...</span>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">Phương án C — Amber nhẹ hơn <span class="badge-option">Option</span></div>
+            <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+              <div class="bubble-shell">
+                <div class="snippet-c">
+                  <div class="header-row">
+                    <div class="dot"></div>
+                    <span class="cap">Đoạn trích</span>
+                  </div>
+                  <div class="text">chuẩn đầu ra của chương trình đào tạo chưa được mô tả rõ ràng</div>
+                </div>
+                <div class="composer-input-row">
+                  <input type="text" placeholder="Nhập nội dung nhận xét" />
+                  <div class="composer-actions">
+                    <button class="btn btn-ghost btn-sm">Hủy</button>
+                    <button class="btn btn-primary btn-sm">Lưu</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note note-info">
+            <span class="note-icon">ℹ</span>
+            <div><strong>Ý tưởng:</strong> Giữ amber nhưng bỏ chữ hoa và badge "...". Dùng dot indicator + label nhỏ "Đoạn trích". Thay đổi tối thiểu, ít rủi ro nhất.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 2 — Revision Dialog
+  ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label"><span>2</span> Revision Request Dialog</div>
+    <div class="section-title">Bỏ giới hạn 20 ký tự</div>
+    <div class="section-desc">Chỉ cần có nội dung là được. So sánh trước / sau.</div>
+
+    <div class="compare-row">
+      <div>
+        <div class="card">
+          <div class="card-header">Hiện tại <span class="badge-current">Đang dùng</span></div>
+          <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+            <div class="dialog-mock">
+              <div class="dialog-header">
+                <div class="dialog-title">Yêu cầu SAR chỉnh sửa</div>
+                <div class="dialog-desc">Vui lòng nhập lý do <strong>ít nhất 20 ký tự</strong>.</div>
+              </div>
+              <div class="dialog-body">
+                <textarea rows="4" placeholder="Nhập lý do yêu cầu chỉnh sửa...">Không hợp lý</textarea>
+                <div class="char-hint warn">10/20 ký tự</div>
+              </div>
+              <div class="dialog-footer">
+                <button class="btn btn-outline btn-sm">Hủy</button>
+                <button class="btn btn-primary btn-sm btn-disabled">Gửi yêu cầu</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note note-warn">
+          <span class="note-icon">⚠</span>
+          <div>Nút "Gửi yêu cầu" bị disabled dù người dùng đã nhập nội dung. Hint đếm ký tự gây áp lực không cần thiết.</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-header">Sau khi sửa <span class="badge-new">Đề xuất</span></div>
+          <div class="card-body" style="display:flex;justify-content:center;padding:28px 20px">
+            <div class="dialog-mock">
+              <div class="dialog-header">
+                <div class="dialog-title">Yêu cầu SAR chỉnh sửa</div>
+                <div class="dialog-desc">Vui lòng nhập lý do yêu cầu chỉnh sửa.</div>
+              </div>
+              <div class="dialog-body">
+                <textarea rows="4" placeholder="Nhập lý do yêu cầu chỉnh sửa...">Không hợp lý</textarea>
+              </div>
+              <div class="dialog-footer">
+                <button class="btn btn-outline btn-sm">Hủy</button>
+                <button class="btn btn-primary btn-sm">Gửi yêu cầu</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="note note-info">
+          <span class="note-icon">✦</span>
+          <div>Nút active ngay khi có ký tự. Bỏ hint đếm ký tự. Description đơn giản, không áp lực.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SECTION 3 — SAR Editor + Review Comments Panel
+  ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-label"><span>3</span> SAR Editor — Trạng thái "Yêu cầu chỉnh sửa"</div>
+    <div class="section-title">Panel nhận xét hội đồng + xử lý Orphaned comments</div>
+    <div class="section-desc">Khi SAR ở status 3, panel bên phải hiện nhận xét từ vòng review. Comments có thể linked (text còn tồn tại) hoặc orphaned (text đã bị sửa).</div>
+
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="tab-btn active" onclick="switchTab('sar', 'linked')">Comment còn liên kết</button>
+      <button class="tab-btn" onclick="switchTab('sar', 'orphaned')">Comment bị orphaned</button>
+      <button class="tab-btn" onclick="switchTab('sar', 'status')">Đổi nhãn trạng thái</button>
+    </div>
+
+    <!-- SAR: Linked comments state -->
+    <div id="sar-linked" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          SAR Editor — Panel nhận xét hội đồng (comment đang linked)
+          <span class="badge-new">Phương án A</span>
+        </div>
+        <div class="editor-mockup" style="border:none;border-radius:0;box-shadow:none">
+          <!-- toolbar -->
+          <div class="editor-toolbar">
+            <div>
+              <div class="toolbar-title">Chu kỳ Kiểm định 2024–2025</div>
+              <div class="toolbar-meta">
+                <span class="status-pill status-revision">Yêu cầu chỉnh sửa</span>
+                <span style="font-size:11px;color:var(--slate-400)">Vòng 1</span>
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-outline btn-sm">Xuất Word</button>
+              <button class="btn btn-primary btn-sm">Nộp báo cáo</button>
+            </div>
+          </div>
+          <!-- body -->
+          <div class="editor-body">
+            <!-- doc -->
+            <div class="doc-area">
+              <div class="revision-banner">
+                <strong>Lý do yêu cầu chỉnh sửa</strong>
+                Chuẩn đầu ra chưa được mô tả đủ chi tiết theo khung AUN-QA 4.0. Vui lòng bổ sung và làm rõ.
+              </div>
+              <div class="doc-paper">
+                <h2>1.1 Chuẩn đầu ra chương trình</h2>
+                <p>Chương trình đào tạo ngành Kỹ thuật Phần mềm được thiết kế nhằm trang bị cho sinh viên các kiến thức nền tảng về khoa học máy tính và kỹ thuật phần mềm.</p>
+                <p><span class="highlight-active">Chuẩn đầu ra của chương trình đào tạo</span> được xây dựng dựa trên khung năng lực CDIO, đảm bảo sự phù hợp với yêu cầu của thị trường lao động và chuẩn mực quốc tế.</p>
+                <p>Chương trình bao gồm các học phần lý thuyết và thực hành, được cập nhật định kỳ theo phản hồi của doanh nghiệp và cựu sinh viên. <span class="highlight-normal">Phương pháp giảng dạy tích hợp</span> giúp sinh viên phát triển tư duy hệ thống và kỹ năng làm việc nhóm.</p>
+              </div>
+            </div>
+            <!-- panel -->
+            <div class="review-panel">
+              <div class="panel-header">
+                <div class="panel-header-toggle">
+                  <div>
+                    <h3>Nhận xét hội đồng</h3>
+                    <p>2 nhận xét · Vòng 1</p>
+                  </div>
+                  <span style="font-size:10px;background:var(--amber-100);color:var(--amber-800);padding:2px 6px;border-radius:99px;font-weight:700">Đọc</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <!-- linked comment 1 -->
+                <div class="review-comment-card active" title="Click để scroll đến đoạn trong tài liệu">
+                  <div class="comment-author">
+                    <div class="avatar" style="background:#7c3aed">NT</div>
+                    <div>
+                      <div class="comment-name">Nguyễn Thị B</div>
+                    </div>
+                    <div class="comment-time">2 ngày trước</div>
+                  </div>
+                  <div class="comment-quote">Chuẩn đầu ra của chương trình đào tạo</div>
+                  <div class="comment-text">Cần bổ sung các tiêu chí đo lường cụ thể cho từng chuẩn đầu ra theo mô hình CDIO.</div>
+                  <div class="comment-footer">
+                    <button class="scroll-to-btn">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                      Đến vị trí
+                    </button>
+                  </div>
+                </div>
+
+                <!-- linked comment 2 -->
+                <div class="review-comment-card" title="Click để scroll đến đoạn trong tài liệu">
+                  <div class="comment-author">
+                    <div class="avatar" style="background:#0369a1">TK</div>
+                    <div>
+                      <div class="comment-name">Trần Văn K</div>
+                    </div>
+                    <div class="comment-time">1 ngày trước</div>
+                  </div>
+                  <div class="comment-quote">Phương pháp giảng dạy tích hợp</div>
+                  <div class="comment-text">Mô tả phương pháp giảng dạy còn quá chung chung, chưa gắn với chuẩn đầu ra cụ thể.</div>
+                  <div class="comment-footer">
+                    <button class="scroll-to-btn">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                      Đến vị trí
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note note-info" style="margin-top:12px">
+        <span class="note-icon">✦</span>
+        <div>Comment card <strong>active</strong> = đang highlight đoạn tương ứng trong tài liệu (highlight vàng đậm). Nút "Đến vị trí" scroll editor đến đúng đoạn text. Panel read-only, không có nút xoá.</div>
+      </div>
+    </div>
+
+    <!-- SAR: Orphaned state -->
+    <div id="sar-orphaned" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          SAR Editor — Sau khi tác giả sửa text (comment orphaned)
+          <span class="badge-option">Orphan state</span>
+        </div>
+        <div class="editor-mockup" style="border:none;border-radius:0;box-shadow:none">
+          <div class="editor-toolbar">
+            <div>
+              <div class="toolbar-title">Chu kỳ Kiểm định 2024–2025</div>
+              <div class="toolbar-meta">
+                <span class="status-pill status-revision">Yêu cầu chỉnh sửa</span>
+                <span style="font-size:11px;color:var(--slate-400)">Vòng 1</span>
+              </div>
+            </div>
+            <div class="toolbar-actions">
+              <button class="btn btn-outline btn-sm">Xuất Word</button>
+              <button class="btn btn-primary btn-sm">Nộp báo cáo</button>
+            </div>
+          </div>
+          <div class="editor-body">
+            <div class="doc-area">
+              <div class="revision-banner">
+                <strong>Lý do yêu cầu chỉnh sửa</strong>
+                Chuẩn đầu ra chưa được mô tả đủ chi tiết theo khung AUN-QA 4.0. Vui lòng bổ sung và làm rõ.
+              </div>
+              <div class="doc-paper">
+                <h2>1.1 Chuẩn đầu ra chương trình</h2>
+                <p>Chương trình đào tạo ngành Kỹ thuật Phần mềm được thiết kế nhằm trang bị cho sinh viên các kiến thức nền tảng về khoa học máy tính và kỹ thuật phần mềm.</p>
+                <p><strong>Chuẩn đầu ra (PLOs) của chương trình đào tạo</strong> được xây dựng theo 12 tiêu chí CDIO, bao gồm các năng lực kỹ thuật, kỹ năng mềm và thái độ nghề nghiệp, với hệ thống đo lường qua ma trận PLO–CLO cụ thể.</p>
+                <p style="color:var(--slate-400);font-style:italic;font-size:12px">← Tác giả đã sửa đoạn "Chuẩn đầu ra của chương trình đào tạo" thành phiên bản đầy đủ hơn → comment bị orphaned</p>
+                <p><span class="highlight-normal">Phương pháp giảng dạy tích hợp theo hướng tiếp cận CDIO</span>, kết hợp lý thuyết và thực hành trong môi trường dự án thực tế, giúp sinh viên đạt được các PLOs đề ra.</p>
+              </div>
+            </div>
+            <div class="review-panel">
+              <div class="panel-header">
+                <div class="panel-header-toggle">
+                  <div>
+                    <h3>Nhận xét hội đồng</h3>
+                    <p>2 nhận xét · Vòng 1</p>
+                  </div>
+                  <span style="font-size:10px;background:var(--amber-100);color:var(--amber-800);padding:2px 6px;border-radius:99px;font-weight:700">Đọc</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <!-- orphaned comment -->
+                <div class="review-comment-card orphaned">
+                  <div class="comment-author">
+                    <div class="avatar" style="background:#7c3aed">NT</div>
+                    <div>
+                      <div class="comment-name">Nguyễn Thị B</div>
+                    </div>
+                    <div class="comment-time">2 ngày trước</div>
+                  </div>
+                  <div class="comment-quote orphaned-quote">Chuẩn đầu ra của chương trình đào tạo</div>
+                  <div class="comment-text">Cần bổ sung các tiêu chí đo lường cụ thể cho từng chuẩn đầu ra theo mô hình CDIO.</div>
+                  <div class="comment-footer">
+                    <span class="orphan-badge">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                      Đoạn đã được chỉnh sửa
+                    </span>
+                  </div>
+                </div>
+
+                <!-- still linked -->
+                <div class="review-comment-card">
+                  <div class="comment-author">
+                    <div class="avatar" style="background:#0369a1">TK</div>
+                    <div>
+                      <div class="comment-name">Trần Văn K</div>
+                    </div>
+                    <div class="comment-time">1 ngày trước</div>
+                  </div>
+                  <div class="comment-quote">Phương pháp giảng dạy tích hợp theo hướng tiếp cận CDIO</div>
+                  <div class="comment-text">Mô tả phương pháp giảng dạy còn quá chung chung, chưa gắn với chuẩn đầu ra cụ thể.</div>
+                  <div class="comment-footer">
+                    <button class="scroll-to-btn">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                      Đến vị trí
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note note-info" style="margin-top:12px">
+        <span class="note-icon">✦</span>
+        <div>Comment orphaned: giảm opacity, quote chuyển xám, nút "Đến vị trí" thay bằng badge "Đoạn đã được chỉnh sửa". Quote gốc vẫn hiển thị để tác giả biết context. Đây là <strong>tín hiệu tích cực</strong> — nghĩa là đoạn đó đã được xử lý.</div>
+      </div>
+    </div>
+
+    <!-- SAR: Status label -->
+    <div id="sar-status" class="tab-content">
+      <div class="compare-row">
+        <div>
+          <div class="card">
+            <div class="card-header">Nhãn trạng thái hiện tại <span class="badge-current">Đang dùng</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--slate-100);color:var(--slate-700);border:1px solid var(--slate-300)">Nháp</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 1</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--blue-100);color:var(--blue-700);border:1px solid var(--blue-300)">Đã nộp</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 2</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--amber-200);border-radius:7px;background:var(--amber-50)">
+                  <span class="status-pill" style="background:var(--amber-100);color:var(--amber-800);border:1px solid var(--amber-300)">Đang hoàn thiện</span>
+                  <span style="font-size:12px;color:var(--amber-700);font-weight:500">Status = 3 ← đổi tên</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--emerald-100);color:var(--emerald-700);border:1px solid #6ee7b7">Đã phê duyệt</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">Nhãn sau khi đổi <span class="badge-new">Đề xuất</span></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--slate-100);color:var(--slate-700);border:1px solid var(--slate-300)">Nháp</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 1</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--blue-100);color:var(--blue-700);border:1px solid var(--blue-300)">Đã nộp</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 2</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--amber-200);border-radius:7px;background:var(--amber-50)">
+                  <span class="status-pill status-revision">Yêu cầu chỉnh sửa</span>
+                  <span style="font-size:12px;color:var(--amber-700);font-weight:500">Status = 3 ✓ nhất quán với IR</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--slate-200);border-radius:7px">
+                  <span class="status-pill" style="background:var(--emerald-100);color:var(--emerald-700);border:1px solid #6ee7b7">Đã phê duyệt</span>
+                  <span style="font-size:12px;color:var(--slate-500)">Status = 4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="note note-info" style="margin-top:12px">
+            <span class="note-icon">✦</span>
+            <div>Nhãn "Yêu cầu chỉnh sửa" nhất quán với trang Internal Review. Người dùng không bị nhầm lẫn giữa 2 màn hình khi nhìn cùng một trạng thái.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(group, id) {
+  // hide all
+  document.querySelectorAll(`[id^="${group}-"]`).forEach(el => {
+    el.classList.remove('active');
+  });
+  // deactivate all tab btns in this section
+  const section = document.querySelector(`#${group}-${id}`).closest('.section');
+  section.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+  // show target
+  document.getElementById(`${group}-${id}`).classList.add('active');
+
+  // find and activate the clicked button
+  section.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${id}'`)) {
+      btn.classList.add('active');
+    }
+  });
+}
+
+// Comment card click interaction for Section 3
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.review-comment-card:not(.orphaned)').forEach(card => {
+    card.addEventListener('click', () => {
+      const panel = card.closest('.panel-body');
+      if (!panel) return;
+      panel.querySelectorAll('.review-comment-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+    });
+  });
+});
+</script>
+</body>
+</html>

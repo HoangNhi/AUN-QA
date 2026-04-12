@@ -1,3 +1,5 @@
+import type { GetListPagingRequest, GetListPagingResponse } from "@/types/base/base.types";
+
 export enum ExternalReviewStatus {
   New = 0,
   InProgress = 1,
@@ -78,6 +80,23 @@ export interface ExternalReviewDetail extends ExternalReview {
   Results: ExternalReviewResult[];
 }
 
+export interface ExternalReviewListItem {
+  Id: string;
+  CycleId: string;
+  CycleName: string;
+  Year: number;
+  Status: ExternalReviewStatus | number;
+  IsCompleted: boolean;
+  AccountCount: number;
+  ResultCount: number;
+  CreatedAt?: string | null;
+}
+
+export interface ExternalReviewGetListRequest extends GetListPagingRequest {
+  Status?: ExternalReviewStatus | number | null;
+  CycleId?: string | null;
+}
+
 export interface CreateExternalReviewRequest {
   CycleId: string;
 }
@@ -143,3 +162,4 @@ export type ModelExternalReview = ExternalReview;
 export type ModelExternalReviewResult = ExternalReviewResult;
 export type ModelExternalReviewFinding = ExternalReviewFinding;
 export type ModelExtAccount = ExternalReviewAccount;
+export type ExternalReviewListResponse = GetListPagingResponse<ExternalReviewListItem>;

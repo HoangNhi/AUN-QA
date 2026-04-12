@@ -183,23 +183,24 @@ export const API_ENDPOINTS = {
         `${BUSINESS_BASE}/internal-review/comments/${id}`,
     },
     ExternalReview: {
-      CREATE: `${BUSINESS_BASE}/api/external-review`,
-      GET_BY_CYCLE: `${BUSINESS_BASE}/api/external-review/by-cycle`,
-      UPDATE_STATUS: `${BUSINESS_BASE}/api/external-review/status`,
-      UPDATE_WATERMARK: `${BUSINESS_BASE}/api/external-review/watermark`,
+      GET_LIST: `${BUSINESS_BASE}/external-review`,
+      CREATE: `${BUSINESS_BASE}/external-review`,
+      GET_BY_CYCLE: `${BUSINESS_BASE}/external-review/by-cycle`,
+      UPDATE_STATUS: `${BUSINESS_BASE}/external-review/status`,
+      UPDATE_WATERMARK: `${BUSINESS_BASE}/external-review/watermark`,
       CONFIRM_COMPLETION: (id: string) =>
-        `${BUSINESS_BASE}/api/external-review/${id}/confirm-completion`,
-      UPSERT_RESULT: `${BUSINESS_BASE}/api/external-review/results`,
-      ADD_FINDING: `${BUSINESS_BASE}/api/external-review/findings`,
-      UPDATE_FINDING: `${BUSINESS_BASE}/api/external-review/findings`,
+        `${BUSINESS_BASE}/external-review/${id}/confirm-completion`,
+      UPSERT_RESULT: `${BUSINESS_BASE}/external-review/results`,
+      ADD_FINDING: `${BUSINESS_BASE}/external-review/findings`,
+      UPDATE_FINDING: `${BUSINESS_BASE}/external-review/findings`,
       DELETE_FINDING: (id: string) =>
-        `${BUSINESS_BASE}/api/external-review/findings/${id}`,
+        `${BUSINESS_BASE}/external-review/findings/${id}`,
       GET_ACCOUNTS: (id: string) =>
-        `${BUSINESS_BASE}/api/external-review/${id}/accounts`,
+        `${BUSINESS_BASE}/external-review/${id}/accounts`,
       ADD_ACCOUNT: (id: string) =>
-        `${BUSINESS_BASE}/api/external-review/${id}/accounts`,
+        `${BUSINESS_BASE}/external-review/${id}/accounts`,
       REMOVE_ACCOUNT: (accountId: string) =>
-        `${BUSINESS_BASE}/api/external-review/accounts/${accountId}`,
+        `${BUSINESS_BASE}/external-review/accounts/${accountId}`,
     },
     Sar: {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,

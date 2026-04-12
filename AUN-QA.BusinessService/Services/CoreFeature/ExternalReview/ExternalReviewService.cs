@@ -3,6 +3,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.Shared.Exceptions;
+using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +35,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (!cycleExists)
             {
-                throw new BusinessException("Chu ky khong ton tai.");
+                throw new BusinessException("Chu kỳ không tồn tại.");
             }
 
             var reviewExists = await _context.ExternalReviews
@@ -42,7 +43,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (reviewExists)
             {
-                throw new BusinessException("Chu ky nay da co danh gia ngoai.");
+                throw new BusinessException("Chu kỳ này đã có đánh giá ngoài.");
             }
 
             var now = DateTime.UtcNow;
@@ -66,6 +67,103 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             await _context.SaveChangesAsync();
 
             return MapReview(review);
+        }
+
+        public async Task<GetListPagingResponse<ExternalReviewListItemDto>> GetListAsync(
+            ExternalReviewGetListPagingRequest request)
+        {
+            var pageIndex = request.PageIndex <= 0 ? 1 : request.PageIndex;
+            var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+            var query = from review in _context.ExternalReviews.AsNoTracking()
+                        join cycle in _context.Cycles.AsNoTracking()
+                            on review.CycleId equals cycle.Id
+                        where !review.IsDeleted
+                              && review.IsActived
+                              && !cycle.IsDeleted
+                              && cycle.IsActived
+                        select new
+                        {
+                            Review = review,
+                            Cycle = cycle
+                        };
+
+            if (!string.IsNullOrWhiteSpace(request.TextSearch))
+            {
+                var text = request.TextSearch.Trim();
+                query = query.Where(x => x.Cycle.Name.Contains(text));
+            }
+
+            if (request.Status.HasValue)
+            {
+                var status = request.Status.Value;
+                query = query.Where(x => x.Review.Status == status);
+            }
+
+            if (request.CycleId.HasValue)
+            {
+                var cycleId = request.CycleId.Value;
+                query = query.Where(x => x.Cycle.Id == cycleId);
+            }
+
+            var totalRow = await query.CountAsync();
+
+            var pageItems = await query
+                .OrderByDescending(x => x.Cycle.Year)
+                .ThenByDescending(x => x.Review.CreatedAt)
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    x.Review.Id,
+                    x.Review.CycleId,
+                    CycleName = x.Cycle.Name,
+                    x.Cycle.Year,
+                    x.Review.Status,
+                    x.Review.IsCompleted,
+                    x.Review.CreatedAt
+                })
+                .ToListAsync();
+
+            var reviewIds = pageItems.Select(x => x.Id).ToList();
+            var accountCounts = reviewIds.Count == 0
+                ? new Dictionary<Guid, int>()
+                : await _context.ExternalReviewAccounts
+                    .AsNoTracking()
+                    .Where(x => reviewIds.Contains(x.ExternalReviewId))
+                    .GroupBy(x => x.ExternalReviewId)
+                    .Select(x => new { x.Key, Count = x.Count() })
+                    .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+            var resultCounts = reviewIds.Count == 0
+                ? new Dictionary<Guid, int>()
+                : await _context.ExternalReviewResults
+                    .AsNoTracking()
+                    .Where(x => reviewIds.Contains(x.ExternalReviewId) && !x.IsDeleted && x.IsActived)
+                    .GroupBy(x => x.ExternalReviewId)
+                    .Select(x => new { x.Key, Count = x.Count() })
+                    .ToDictionaryAsync(x => x.Key, x => x.Count);
+
+            var data = pageItems.Select(x => new ExternalReviewListItemDto
+            {
+                Id = x.Id,
+                CycleId = x.CycleId,
+                CycleName = x.CycleName,
+                Year = x.Year,
+                Status = x.Status,
+                IsCompleted = x.IsCompleted,
+                AccountCount = accountCounts.TryGetValue(x.Id, out var accountCount) ? accountCount : 0,
+                ResultCount = resultCounts.TryGetValue(x.Id, out var resultCount) ? resultCount : 0,
+                CreatedAt = x.CreatedAt
+            }).ToList();
+
+            return new GetListPagingResponse<ExternalReviewListItemDto>
+            {
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                TotalRow = totalRow,
+                Data = data
+            };
         }
 
         public async Task<ModelExternalReview?> GetByCycleIdAsync(Guid cycleId)
@@ -117,12 +215,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (targetStatus == ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Trang thai Completed phai dung API confirm-completion.");
+                throw new BusinessException("Trạng thái Completed phải dùng API confirm-completion.");
             }
 
             if (review.IsCompleted || review.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the cap nhat trang thai.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể cập nhật trạng thái.");
             }
 
             var now = DateTime.UtcNow;
@@ -147,7 +245,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (review.IsCompleted || review.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the cap nhat watermark.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể cập nhật watermark.");
             }
 
             ParseWatermarkPositionOrThrow(request.WatermarkPosition);
@@ -179,7 +277,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (!hasResult)
             {
-                throw new BusinessException("Can it nhat 1 ket qua truoc khi xac nhan hoan tat.");
+                throw new BusinessException("Cần ít nhất 1 kết quả trước khi xác nhận hoàn tất.");
             }
 
             var now = DateTime.UtcNow;
@@ -202,7 +300,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (review.IsCompleted || review.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the cap nhat ket qua.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể cập nhật kết quả.");
             }
 
             var now = DateTime.UtcNow;
@@ -260,12 +358,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (result == null)
             {
-                throw new BusinessException("Khong tim thay ket qua danh gia.");
+                throw new BusinessException("Không tìm thấy kết quả đánh giá.");
             }
 
             if (result.ExternalReview.IsCompleted || result.ExternalReview.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the them finding.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể thêm phát hiện.");
             }
 
             var now = DateTime.UtcNow;
@@ -301,13 +399,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (finding == null)
             {
-                throw new BusinessException("Khong tim thay finding.");
+                throw new BusinessException("Không tìm thấy phát hiện.");
             }
 
             if (finding.ExternalReviewResult.ExternalReview.IsCompleted
                 || finding.ExternalReviewResult.ExternalReview.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the cap nhat finding.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể cập nhật phát hiện.");
             }
 
             finding.FindingType = request.FindingType;
@@ -328,13 +426,13 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (finding == null)
             {
-                throw new BusinessException("Khong tim thay finding.");
+                throw new BusinessException("Không tìm thấy phát hiện.");
             }
 
             if (finding.ExternalReviewResult.ExternalReview.IsCompleted
                 || finding.ExternalReviewResult.ExternalReview.Status == (int)ExternalReviewStatus.Completed)
             {
-                throw new BusinessException("Danh gia ngoai da hoan tat, khong the xoa finding.");
+                throw new BusinessException("Đánh giá ngoài đã hoàn tất, không thể xóa phát hiện.");
             }
 
             finding.IsDeleted = true;
@@ -401,7 +499,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         {
             if (userId == Guid.Empty)
             {
-                throw new BusinessException("UserId khong hop le.");
+                throw new BusinessException("UserId không hợp lệ.");
             }
 
             var review = await GetReviewOrThrowAsync(externalReviewId);
@@ -411,7 +509,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (exists)
             {
-                throw new BusinessException("Tai khoan da duoc lien ket vao danh gia nay.");
+                throw new BusinessException("Tài khoản đã được liên kết vào đánh giá này.");
             }
 
             var account = new Entities.ExternalReviewAccount
@@ -449,7 +547,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (account == null)
             {
-                throw new BusinessException("Khong tim thay lien ket tai khoan.");
+                throw new BusinessException("Không tìm thấy liên kết tài khoản.");
             }
 
             _context.ExternalReviewAccounts.Remove(account);
@@ -465,7 +563,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 
             if (review == null)
             {
-                throw new BusinessException("Khong tim thay danh gia ngoai.");
+                throw new BusinessException("Không tìm thấy đánh giá ngoài.");
             }
 
             return review;
@@ -503,7 +601,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             var username = _accessor.HttpContext?.User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new BusinessException("Khong xac dinh duoc nguoi dung hien tai.");
+                throw new BusinessException("Không xác định được người dùng hiện tại.");
             }
 
             return username.Trim();
@@ -513,7 +611,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         {
             if (!Enum.IsDefined(typeof(ExternalReviewStatus), status))
             {
-                throw new BusinessException("Trang thai ExternalReview khong hop le.");
+                throw new BusinessException("Trạng thái ExternalReview không hợp lệ.");
             }
 
             return (ExternalReviewStatus)status;
@@ -523,7 +621,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         {
             if (!Enum.IsDefined(typeof(FindingType), findingType))
             {
-                throw new BusinessException("FindingType khong hop le.");
+                throw new BusinessException("FindingType không hợp lệ.");
             }
         }
 
@@ -531,7 +629,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         {
             if (!Enum.IsDefined(typeof(WatermarkPosition), watermarkPosition))
             {
-                throw new BusinessException("WatermarkPosition khong hop le.");
+                throw new BusinessException("WatermarkPosition không hợp lệ.");
             }
         }
 

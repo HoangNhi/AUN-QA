@@ -31,6 +31,18 @@ namespace AUN_QA.BusinessService.Controllers
             _service = service;
         }
 
+        [HttpGet]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetList([FromQuery] ExternalReviewGetListPagingRequest request)
+        {
+            var result = await _service.GetListAsync(request);
+            return Ok(new BaseResponse<GetListPagingResponse<ExternalReviewListItemDto>>
+            {
+                Data = result,
+                Success = true
+            });
+        }
+
         [HttpPost]
         [AttributePermission(Action = ActionType.ADD)]
         public async Task<IActionResult> Create([FromBody] ExternalReviewRequest request)

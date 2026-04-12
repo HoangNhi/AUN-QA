@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { externalReviewService } from "@/features/business/api/externalReview.api";
@@ -14,8 +14,7 @@ function isMissingReviewResponse(message?: string): boolean {
   );
 }
 
-export function useExternalReview() {
-  const [selectedCycleId, setSelectedCycleId] = useState<string>("");
+export function useExternalReview(selectedCycleId: string | null) {
   const queryClient = useQueryClient();
 
   const {
@@ -27,12 +26,17 @@ export function useExternalReview() {
   } = useQuery({
     queryKey: ["external-review", "detail", selectedCycleId],
     queryFn: async (): Promise<ExternalReviewDetail | null> => {
+      if (!selectedCycleId) {
+        return null;
+      }
+
       const response = await externalReviewService.get({ CycleId: selectedCycleId });
       if (!response.Success) {
         if (isMissingReviewResponse(response.Message)) {
           return null;
         }
-        throw new Error(response.Message || "Khong the tai External Review.");
+
+        throw new Error(response.Message || "Không thể tải External Review.");
       }
 
       const detail = response.Data ?? null;
@@ -58,152 +62,157 @@ export function useExternalReview() {
       return;
     }
 
-    toast.error(error instanceof Error ? error.message : "Khong the tai External Review.");
+    toast.error(error instanceof Error ? error.message : "Không thể tải External Review.");
   }, [error, isError]);
 
   const invalidateCurrent = useCallback(async () => {
     if (!selectedCycleId) {
       return;
     }
+
     await queryClient.invalidateQueries({
       queryKey: ["external-review", "detail", selectedCycleId],
     });
   }, [queryClient, selectedCycleId]);
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const response = await externalReviewService.create({
-        CycleId: selectedCycleId,
-      });
-      if (!response.Success) {
-        throw new Error(response.Message || "Khong the khoi tao External Review.");
-      }
-      return response.Data ?? null;
-    },
-    onSuccess: async () => {
-      toast.success("Da khoi tao External Review.");
-      await invalidateCurrent();
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Khong the khoi tao External Review.",
-      );
-    },
-  });
-
   const updateStatusMutation = useMutation({
     mutationFn: async (status: number) => {
       if (!review?.Id) {
-        throw new Error("External Review chua duoc khoi tao.");
+        throw new Error("External Review chưa được khởi tạo.");
       }
+
       const response = await externalReviewService.updateStatus({
         ExternalReviewId: review.Id,
         Status: status,
       });
+
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the cap nhat trang thai.");
+        throw new Error(response.Message || "Không thể cập nhật trạng thái.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da cap nhat trang thai.");
+      toast.success("Đã cập nhật trạng thái.");
       await invalidateCurrent();
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the cap nhat trang thai.");
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Không thể cập nhật trạng thái.",
+      );
     },
   });
 
   const updateWatermarkMutation = useMutation({
     mutationFn: async (payload: { text?: string | null; opacity: number; position: number }) => {
       if (!review?.Id) {
-        throw new Error("External Review chua duoc khoi tao.");
+        throw new Error("External Review chưa được khởi tạo.");
       }
+
       const response = await externalReviewService.updateWatermark({
         ExternalReviewId: review.Id,
         WatermarkText: payload.text,
         WatermarkOpacity: payload.opacity,
         WatermarkPosition: payload.position,
       });
+
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the cap nhat watermark.");
+        throw new Error(response.Message || "Không thể cập nhật watermark.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da cap nhat watermark.");
+      toast.success("Đã cập nhật watermark.");
       await invalidateCurrent();
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the cap nhat watermark.");
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Không thể cập nhật watermark.",
+      );
     },
   });
 
   const confirmCompletionMutation = useMutation({
     mutationFn: async () => {
       if (!review?.Id) {
-        throw new Error("External Review chua duoc khoi tao.");
+        throw new Error("External Review chưa được khởi tạo.");
       }
+
       const response = await externalReviewService.confirmCompletion({
         ExternalReviewId: review.Id,
       });
+
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the xac nhan hoan tat.");
+        throw new Error(response.Message || "Không thể xác nhận hoàn tất.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da xac nhan hoan tat External Review.");
+      toast.success("Đã xác nhận hoàn tất External Review.");
       await invalidateCurrent();
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the xac nhan hoan tat.");
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Không thể xác nhận hoàn tất.",
+      );
     },
   });
 
   const addAccountsMutation = useMutation({
     mutationFn: async (userIds: string[]) => {
       if (!review?.Id) {
-        throw new Error("External Review chua duoc khoi tao.");
+        throw new Error("External Review chưa được khởi tạo.");
       }
+
       const response = await externalReviewService.addAccounts({
         ExternalReviewId: review.Id,
         UserIds: userIds,
       });
+
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the them tai khoan.");
+        throw new Error(response.Message || "Không thể thêm tài khoản.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da them tai khoan danh gia ngoai.");
+      toast.success("Đã thêm tài khoản đánh giá ngoài.");
       await invalidateCurrent();
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the them tai khoan.");
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error ? mutationError.message : "Không thể thêm tài khoản.",
+      );
     },
   });
 
   const removeAccountMutation = useMutation({
     mutationFn: async (accountId: string) => {
       if (!review?.Id) {
-        throw new Error("External Review chua duoc khoi tao.");
+        throw new Error("External Review chưa được khởi tạo.");
       }
+
       const response = await externalReviewService.removeAccount({
         AccountId: accountId,
       });
+
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the go tai khoan.");
+        throw new Error(response.Message || "Không thể gỡ tài khoản.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da go tai khoan.");
+      toast.success("Đã gỡ tài khoản.");
       await invalidateCurrent();
     },
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the go tai khoan.");
+    onError: (mutationError) => {
+      toast.error(
+        mutationError instanceof Error ? mutationError.message : "Không thể gỡ tài khoản.",
+      );
     },
   });
 
   const isMutating = useMemo(
     () =>
-      createMutation.isPending ||
       updateStatusMutation.isPending ||
       updateWatermarkMutation.isPending ||
       confirmCompletionMutation.isPending ||
@@ -212,7 +221,6 @@ export function useExternalReview() {
     [
       addAccountsMutation.isPending,
       confirmCompletionMutation.isPending,
-      createMutation.isPending,
       removeAccountMutation.isPending,
       updateStatusMutation.isPending,
       updateWatermarkMutation.isPending,
@@ -220,13 +228,10 @@ export function useExternalReview() {
   );
 
   return {
-    selectedCycleId,
-    setSelectedCycleId,
     review,
     isLoading,
     isFetching,
     isMutating,
-    createReview: () => createMutation.mutateAsync(),
     updateStatus: (status: number) => updateStatusMutation.mutateAsync(status),
     updateWatermark: (payload: { text?: string | null; opacity: number; position: number }) =>
       updateWatermarkMutation.mutateAsync(payload),

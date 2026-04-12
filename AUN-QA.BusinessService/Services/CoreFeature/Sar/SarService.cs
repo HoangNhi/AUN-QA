@@ -395,6 +395,27 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
             report.UpdatedAt = now;
             report.UpdatedBy = GetDisplayName();
 
+            var externalReviewExists = await _context.ExternalReviews.AnyAsync(x =>
+                x.CycleId == request.CycleId
+                && !x.IsDeleted);
+
+            if (!externalReviewExists)
+            {
+                _context.ExternalReviews.Add(new Entities.ExternalReview
+                {
+                    Id = Guid.NewGuid(),
+                    CycleId = request.CycleId,
+                    Status = (int)ExternalReviewStatus.New,
+                    WatermarkOpacity = 25,
+                    WatermarkPosition = (int)WatermarkPosition.Diagonal,
+                    IsCompleted = false,
+                    CreatedAt = now,
+                    CreatedBy = GetDisplayName(),
+                    IsActived = true,
+                    IsDeleted = false
+                });
+            }
+
             _context.SarReports.Update(report);
             await _context.SaveChangesAsync();
         }

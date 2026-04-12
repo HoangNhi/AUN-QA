@@ -1,11 +1,13 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests;
+using AUN_QA.Shared.DTOs.Base;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 {
     public interface IExternalReviewService
     {
         Task<ModelExternalReview> CreateAsync(ExternalReviewRequest request);
+        Task<GetListPagingResponse<ExternalReviewListItemDto>> GetListAsync(ExternalReviewGetListPagingRequest request);
         Task<ModelExternalReview?> GetByCycleIdAsync(Guid cycleId);
         Task UpdateStatusAsync(ExternalReviewStatusRequest request);
         Task UpdateWatermarkAsync(ExternalReviewWatermarkRequest request);

@@ -1,5 +1,6 @@
 import api, { type ApiResponse } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/constants";
+import type { GetListPagingResponse } from "@/types/base/base.types";
 import type {
   AddExternalReviewAccountsRequest,
   AddExternalReviewFindingRequest,
@@ -9,6 +10,8 @@ import type {
   ExternalReviewAccount,
   ExternalReviewDetail,
   ExternalReviewFinding,
+  ExternalReviewGetListRequest,
+  ExternalReviewListItem,
   ExternalReviewResult,
   GetExternalReviewAccountsRequest,
   GetExternalReviewRequest,
@@ -20,6 +23,23 @@ import type {
 } from "../types/externalReview.types";
 
 export const externalReviewService = {
+  getList: async (
+    request: ExternalReviewGetListRequest,
+  ): Promise<ApiResponse<GetListPagingResponse<ExternalReviewListItem>>> => {
+    return api.get<GetListPagingResponse<ExternalReviewListItem>>(
+      API_ENDPOINTS.Business.ExternalReview.GET_LIST,
+      {
+        params: {
+          pageIndex: request.PageIndex,
+          pageSize: request.PageSize,
+          textSearch: request.TextSearch,
+          status: request.Status,
+          cycleId: request.CycleId,
+        },
+      },
+    );
+  },
+
   create: async (
     request: CreateExternalReviewRequest,
   ): Promise<ApiResponse<ExternalReviewDetail>> => {
@@ -138,7 +158,7 @@ export const externalReviewService = {
       );
 
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the them tai khoan.");
+        throw new Error(response.Message || "Không thể thêm tài khoản.");
       }
 
       if (response.Data) {

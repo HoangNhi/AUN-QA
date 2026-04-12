@@ -8,7 +8,7 @@ import type {
 } from "@/features/business/types/externalReview.types";
 
 function buildMissingReviewError(): Error {
-  return new Error("External Review chua duoc khoi tao.");
+  return new Error("External Review chưa được khởi tạo.");
 }
 
 export function useExternalReviewResults(externalReviewId: string | null) {
@@ -36,15 +36,15 @@ export function useExternalReviewResults(externalReviewId: string | null) {
         Strengths: payload.strengths,
       });
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the luu ket qua danh gia.");
+        throw new Error(response.Message || "Không thể lưu kết quả đánh giá.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da luu ket qua danh gia.");
+      toast.success("Đã lưu kết quả đánh giá.");
       await invalidateCurrent();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the luu ket qua danh gia.");
+      toast.error(error instanceof Error ? error.message : "Không thể lưu kết quả đánh giá.");
     },
   });
 
@@ -56,15 +56,15 @@ export function useExternalReviewResults(externalReviewId: string | null) {
 
       const response = await externalReviewService.addFinding(payload);
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the them phat hien.");
+        throw new Error(response.Message || "Không thể thêm phát hiện.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da them phat hien.");
+      toast.success("Đã thêm phát hiện.");
       await invalidateCurrent();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the them phat hien.");
+      toast.error(error instanceof Error ? error.message : "Không thể thêm phát hiện.");
     },
   });
 
@@ -76,15 +76,15 @@ export function useExternalReviewResults(externalReviewId: string | null) {
 
       const response = await externalReviewService.updateFinding(payload);
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the cap nhat phat hien.");
+        throw new Error(response.Message || "Không thể cập nhật phát hiện.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da cap nhat phat hien.");
+      toast.success("Đã cập nhật phát hiện.");
       await invalidateCurrent();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the cap nhat phat hien.");
+      toast.error(error instanceof Error ? error.message : "Không thể cập nhật phát hiện.");
     },
   });
 
@@ -96,15 +96,15 @@ export function useExternalReviewResults(externalReviewId: string | null) {
 
       const response = await externalReviewService.deleteFinding({ FindingId: findingId });
       if (!response.Success) {
-        throw new Error(response.Message || "Khong the xoa phat hien.");
+        throw new Error(response.Message || "Không thể xóa phát hiện.");
       }
     },
     onSuccess: async () => {
-      toast.success("Da xoa phat hien.");
+      toast.success("Đã xóa phát hiện.");
       await invalidateCurrent();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Khong the xoa phat hien.");
+      toast.error(error instanceof Error ? error.message : "Không thể xóa phát hiện.");
     },
   });
 

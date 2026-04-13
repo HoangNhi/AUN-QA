@@ -77,7 +77,11 @@ namespace AUN_QA.FileService.Services.Grpc
 
         public override Task<PreviewFileResponse> PreviewFile(PreviewFileRequest request, ServerCallContext context)
         {
-            var result = _uploadFileService.PreviewFile(request.FileUrl);
+            var result = _uploadFileService.PreviewFile(
+                request.FileUrl,
+                string.IsNullOrWhiteSpace(request.WatermarkText) ? null : request.WatermarkText,
+                request.WatermarkOpacity,
+                request.WatermarkPosition);
 
             var response = new PreviewFileResponse
             {

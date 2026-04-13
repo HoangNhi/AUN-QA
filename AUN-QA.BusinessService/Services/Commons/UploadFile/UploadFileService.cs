@@ -62,14 +62,22 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             }
         }
 
-        public async Task<ModelFilePreview> PreviewFileAsync(string fileUrl, string mode = "internal")
+        public async Task<ModelFilePreview> PreviewFileAsync(
+            string fileUrl,
+            string mode = "internal",
+            string? watermarkText = null,
+            int watermarkOpacity = 25,
+            int watermarkPosition = 0)
         {
             try
             {
                 var response = await _fileProtoClient.PreviewFileAsync(new PreviewFileRequest
                 {
                     FileUrl = fileUrl,
-                    Mode = mode
+                    Mode = mode,
+                    WatermarkText = watermarkText ?? string.Empty,
+                    WatermarkOpacity = watermarkOpacity,
+                    WatermarkPosition = watermarkPosition
                 });
 
                 return new ModelFilePreview

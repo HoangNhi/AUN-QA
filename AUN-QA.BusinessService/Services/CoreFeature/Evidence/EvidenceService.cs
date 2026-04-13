@@ -9,6 +9,8 @@ using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
 {
@@ -61,7 +63,36 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 throw new BusinessException("Tệp đính kèm không tồn tại");
             }
 
-            return await _uploadFileService.PreviewFileAsync(attachment.FileUrl, mode);
+            string? watermarkText = null;
+            var watermarkOpacity = 25;
+            var watermarkPosition = 0;
+
+            if (string.Equals(mode, "external", StringComparison.OrdinalIgnoreCase))
+            {
+                var review = await GetExternalReviewForCurrentUserAsync();
+                var dynamicText = BuildDynamicWatermarkText();
+
+                if (review != null)
+                {
+                    var staticText = review.WatermarkText?.Trim();
+                    watermarkText = string.IsNullOrWhiteSpace(staticText)
+                        ? dynamicText
+                        : $"{staticText}\n{dynamicText}";
+                    watermarkOpacity = review.WatermarkOpacity;
+                    watermarkPosition = review.WatermarkPosition;
+                }
+                else
+                {
+                    watermarkText = dynamicText;
+                }
+            }
+
+            return await _uploadFileService.PreviewFileAsync(
+                attachment.FileUrl,
+                mode,
+                watermarkText,
+                watermarkOpacity,
+                watermarkPosition);
         }
 
         public async Task Insert(EvidenceRequest request)
@@ -326,6 +357,61 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         #endregion
 
         #region Helper
+        private async Task<Entities.ExternalReview?> GetExternalReviewForCurrentUserAsync()
+        {
+            var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Name)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return null;
+            }
+
+            var account = await _context.ExternalReviewAccounts
+                .AsNoTracking()
+                .Include(x => x.ExternalReview)
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId
+                    && x.ExternalReview.IsActived
+                    && !x.ExternalReview.IsDeleted);
+
+            return account?.ExternalReview;
+        }
+
+        private string BuildDynamicWatermarkText()
+        {
+            var email = GetCurrentEmail();
+            var ip = GetCurrentIpAddress();
+            var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
+
+            return string.Join(" | ", new[] { email, ip, timestamp }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        }
+
+        private string GetCurrentEmail()
+        {
+            var email = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email)?.Value
+                ?? _contextAccessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value
+                ?? _contextAccessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.UniqueName)?.Value
+                ?? _contextAccessor.HttpContext?.User?.Identity?.Name
+                ?? "unknown";
+
+            return email.Trim();
+        }
+
+        private string GetCurrentIpAddress()
+        {
+            var forwardedFor = _contextAccessor.HttpContext?.Request?.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(forwardedFor))
+            {
+                return forwardedFor.Split(',')[0].Trim();
+            }
+
+            return _contextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
+        }
+
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)
         {
             var attachments = await _context.EvidenceAttachments

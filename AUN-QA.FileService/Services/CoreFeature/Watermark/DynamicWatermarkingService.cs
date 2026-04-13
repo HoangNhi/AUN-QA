@@ -1,0 +1,233 @@
+using System.Numerics;
+using AUN_QA.FileService.DTOs.Base;
+using AutoDependencyRegistration.Attributes;
+using PdfSharp.Drawing;
+using PdfSharp.Fonts;
+using PdfSharp.Pdf.IO;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
+
+namespace AUN_QA.FileService.Services.CoreFeature.Watermark
+{
+    [RegisterClassAsTransient]
+    public class DynamicWatermarkingService : IDynamicWatermarkingService
+    {
+        private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp"
+        };
+
+        static DynamicWatermarkingService()
+        {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+        }
+
+        public (byte[] Content, bool HasWatermark) Apply(
+            byte[] fileContent,
+            string fileExtension,
+            WatermarkConfig config)
+        {
+            if (fileContent.Length == 0 || string.IsNullOrWhiteSpace(config.Text))
+            {
+                return (fileContent, false);
+            }
+
+            if (string.Equals(fileExtension, ".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                return ApplyPdf(fileContent, config);
+            }
+
+            if (ImageExtensions.Contains(fileExtension))
+            {
+                return ApplyImage(fileContent, fileExtension, config);
+            }
+
+            return (fileContent, false);
+        }
+
+        private static (byte[] Content, bool HasWatermark) ApplyPdf(byte[] fileContent, WatermarkConfig config)
+        {
+            using var inputStream = new MemoryStream(fileContent);
+            using var document = PdfReader.Open(inputStream, PdfDocumentOpenMode.Modify);
+
+            foreach (var page in document.Pages)
+            {
+                using var gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append);
+
+                var fontSize = Math.Max(14, Math.Min(page.Width.Point, page.Height.Point) / 12);
+                var font = new XFont("Arial", fontSize, XFontStyleEx.Bold);
+                var brush = new XSolidBrush(XColor.FromArgb(ClampOpacity(config.Opacity), 80, 80, 80));
+
+                var centerX = page.Width.Point / 2;
+                var centerY = page.Height.Point / 2;
+
+                switch (config.Position)
+                {
+                    case 1:
+                        gfx.DrawString(
+                            config.Text,
+                            font,
+                            brush,
+                            new XRect(0, 0, page.Width.Point, page.Height.Point),
+                            XStringFormats.Center);
+                        break;
+                    case 2:
+                        DrawRepeatedWatermark(gfx, page.Width.Point, page.Height.Point, config.Text, font, brush);
+                        break;
+                    default:
+                        gfx.TranslateTransform(centerX, centerY);
+                        gfx.RotateTransform(-45);
+                        gfx.DrawString(config.Text, font, brush, new XPoint(0, 0), XStringFormats.Center);
+                        break;
+                }
+            }
+
+            using var outputStream = new MemoryStream();
+            document.Save(outputStream, false);
+            return (outputStream.ToArray(), true);
+        }
+
+        private static void DrawRepeatedWatermark(
+            XGraphics gfx,
+            double pageWidth,
+            double pageHeight,
+            string text,
+            XFont font,
+            XBrush brush)
+        {
+            var stepX = Math.Max(140, pageWidth / 4);
+            var stepY = Math.Max(100, pageHeight / 5);
+
+            for (var y = -stepY; y <= pageHeight + stepY; y += stepY)
+            {
+                for (var x = -stepX; x <= pageWidth + stepX; x += stepX)
+                {
+                    gfx.DrawString(text, font, brush, new XPoint(x, y), XStringFormats.Center);
+                }
+            }
+        }
+
+        private static (byte[] Content, bool HasWatermark) ApplyImage(
+            byte[] fileContent,
+            string fileExtension,
+            WatermarkConfig config)
+        {
+            using var image = Image.Load(fileContent);
+            var font = ResolveFont(image.Height);
+            if (font == null)
+            {
+                return (fileContent, false);
+            }
+
+            var color = Color.FromRgba(90, 90, 90, ClampOpacity(config.Opacity));
+
+            image.Mutate(ctx =>
+            {
+                if (config.Position == 2)
+                {
+                    DrawRepeatedWatermarkOnImage(ctx, image.Width, image.Height, config.Text, font, color);
+                    return;
+                }
+
+                var drawingOptions = new DrawingOptions();
+
+                if (config.Position == 0)
+                {
+                    drawingOptions.Transform = Matrix3x2.CreateRotation(
+                        -MathF.PI / 4f,
+                        new Vector2(image.Width / 2f, image.Height / 2f));
+                }
+
+                ctx.DrawText(
+                    drawingOptions,
+                    config.Text,
+                    font,
+                    color,
+                    new PointF(image.Width / 2f, image.Height / 2f));
+            });
+
+            using var outputStream = new MemoryStream();
+            SaveImageWithOriginalFormat(image, fileExtension, outputStream);
+
+            return (outputStream.ToArray(), true);
+        }
+
+        private static void DrawRepeatedWatermarkOnImage(
+            IImageProcessingContext ctx,
+            int width,
+            int height,
+            string text,
+            Font font,
+            Color color)
+        {
+            var stepX = Math.Max(180, width / 4);
+            var stepY = Math.Max(120, height / 5);
+
+            for (var y = -stepY; y <= height + stepY; y += stepY)
+            {
+                for (var x = -stepX; x <= width + stepX; x += stepX)
+                {
+                    ctx.DrawText(
+                        new DrawingOptions
+                        {
+                            Transform = Matrix3x2.CreateRotation(
+                                -MathF.PI / 6f,
+                                new Vector2(x, y))
+                        },
+                        text,
+                        font,
+                        color,
+                        new PointF(x, y));
+                }
+            }
+        }
+
+        private static Font? ResolveFont(int imageHeight)
+        {
+            if (!SystemFonts.Collection.Families.Any())
+            {
+                return null;
+            }
+
+            var family = SystemFonts.Collection.Families.First();
+            var size = Math.Max(18f, imageHeight / 14f);
+            return family.CreateFont(size, FontStyle.Bold);
+        }
+
+        private static void SaveImageWithOriginalFormat(Image image, string fileExtension, Stream outputStream)
+        {
+            if (string.Equals(fileExtension, ".jpg", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(fileExtension, ".jpeg", StringComparison.OrdinalIgnoreCase))
+            {
+                image.SaveAsJpeg(outputStream);
+                return;
+            }
+
+            if (string.Equals(fileExtension, ".gif", StringComparison.OrdinalIgnoreCase))
+            {
+                image.SaveAsGif(outputStream);
+                return;
+            }
+
+            if (string.Equals(fileExtension, ".webp", StringComparison.OrdinalIgnoreCase))
+            {
+                image.SaveAsWebp(outputStream);
+                return;
+            }
+
+            image.SaveAsPng(outputStream);
+        }
+
+        private static byte ClampOpacity(int opacity)
+        {
+            var safeOpacity = Math.Clamp(opacity, 0, 100);
+            return (byte)Math.Round(255 * (safeOpacity / 100d));
+        }
+    }
+}

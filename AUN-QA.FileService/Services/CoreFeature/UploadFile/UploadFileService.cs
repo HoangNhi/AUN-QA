@@ -2,6 +2,7 @@ using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.FileService.DTOs.Base;
 using AUN_QA.FileService.DTOs.Common;
+using AUN_QA.FileService.Services.CoreFeature.Watermark;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.AspNetCore.StaticFiles;
 
@@ -12,10 +13,14 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
     public class UploadFileService : IUploadFileService
     {
         private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IDynamicWatermarkingService _watermarkingService;
 
-        public UploadFileService(IWebHostEnvironment webHostEnvironment)
+        public UploadFileService(
+            IWebHostEnvironment webHostEnvironment,
+            IDynamicWatermarkingService watermarkingService)
         {
             _webHostEnvironment = webHostEnvironment;
+            _watermarkingService = watermarkingService;
         }
 
         public async Task Insert(List<IFormFile> files, string FolderName)
@@ -186,7 +191,11 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
             return path;
         }
 
-        public ModelFilePreview PreviewFile(string fileUrl)
+        public ModelFilePreview PreviewFile(
+            string fileUrl,
+            string? watermarkText = null,
+            int watermarkOpacity = 25,
+            int watermarkPosition = 0)
         {
             if (string.IsNullOrWhiteSpace(fileUrl))
             {
@@ -214,14 +223,24 @@ namespace AUN_QA.FileService.Services.CoreFeature.UploadFile
 
             var fileContent = File.ReadAllBytes(absolutePath);
             var fileName = Path.GetFileName(absolutePath);
+            var fileExtension = Path.GetExtension(absolutePath);
             var contentType = GetContentType(absolutePath);
+            var (outputContent, hasWatermark) = _watermarkingService.Apply(
+                fileContent,
+                fileExtension,
+                new WatermarkConfig
+                {
+                    Text = watermarkText ?? string.Empty,
+                    Opacity = watermarkOpacity,
+                    Position = watermarkPosition
+                });
 
             return new ModelFilePreview
             {
-                FileContent = fileContent,
+                FileContent = outputContent,
                 ContentType = contentType,
                 FileName = fileName,
-                HasWatermark = false
+                HasWatermark = hasWatermark
             };
         }
 

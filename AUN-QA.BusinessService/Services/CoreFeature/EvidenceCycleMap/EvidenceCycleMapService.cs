@@ -32,6 +32,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
     [RegisterClassAsTransient]
     public class EvidenceCycleMapService : IEvidenceCycleMapService
     {
+        private static readonly Guid ExtRoleId = new("551d1351-008e-4910-a39c-1fcdde409fdf");
+
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -342,6 +344,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             if (request.FileTypeId.HasValue)
             {
                 query = query.Where(x => x.Evidence_FileTypeId == request.FileTypeId.Value);
+            }
+
+            var roleClaim = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "role")?.Value;
+            var isExternalReviewer = Guid.TryParse(roleClaim, out var roleGuid) && roleGuid == ExtRoleId;
+
+            if (isExternalReviewer)
+            {
+                query = query.Where(x => x.Evidence_Status == (int)EvidenceStatus.Verified);
             }
 
             // === Role-based visibility filter ===

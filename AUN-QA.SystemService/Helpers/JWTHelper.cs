@@ -19,6 +19,7 @@ namespace AUN_QA.SystemService.Helpers
             var claims = new[] {
                 new Claim(JwtRegisteredClaimNames.Name, User.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, User.Username),
+                new Claim(JwtRegisteredClaimNames.Email, User.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("role", User.RoleId.ToString()),
             };

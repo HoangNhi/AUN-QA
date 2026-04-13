@@ -67,7 +67,8 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
             string mode = "internal",
             string? watermarkText = null,
             int watermarkOpacity = 25,
-            int watermarkPosition = 0)
+            int watermarkPosition = 0,
+            Guid? fileId = null)
         {
             try
             {
@@ -77,7 +78,8 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
                     Mode = mode,
                     WatermarkText = watermarkText ?? string.Empty,
                     WatermarkOpacity = watermarkOpacity,
-                    WatermarkPosition = watermarkPosition
+                    WatermarkPosition = watermarkPosition,
+                    FileId = fileId.HasValue ? fileId.Value.ToString() : string.Empty
                 });
 
                 return new ModelFilePreview
@@ -85,7 +87,13 @@ namespace AUN_QA.BusinessService.Services.Commons.UploadFile
                     FileContent = response.FileContent.ToByteArray(),
                     ContentType = response.ContentType,
                     FileName = response.FileName,
-                    HasWatermark = response.HasWatermark
+                    HasWatermark = response.HasWatermark,
+                    OriginalContentType = string.IsNullOrWhiteSpace(response.OriginalContentType)
+                        ? null
+                        : response.OriginalContentType,
+                    ConvertedContentType = string.IsNullOrWhiteSpace(response.ConvertedContentType)
+                        ? null
+                        : response.ConvertedContentType
                 };
             }
             catch (RpcException ex)

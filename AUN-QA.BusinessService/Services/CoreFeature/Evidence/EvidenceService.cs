@@ -92,7 +92,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 mode,
                 watermarkText,
                 watermarkOpacity,
-                watermarkPosition);
+                watermarkPosition,
+                fileId: attachment.Id);
         }
 
         public async Task Insert(EvidenceRequest request)

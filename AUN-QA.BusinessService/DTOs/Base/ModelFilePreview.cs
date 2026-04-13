@@ -9,5 +9,9 @@ namespace AUN_QA.BusinessService.DTOs.Base
         public string FileName { get; set; } = "download";
 
         public bool HasWatermark { get; set; } = false;
+
+        public string? OriginalContentType { get; set; }
+
+        public string? ConvertedContentType { get; set; }
     }
 }

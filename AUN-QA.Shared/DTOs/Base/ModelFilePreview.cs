@@ -6,5 +6,7 @@ namespace AUN_QA.Shared.DTOs.Base
         public string ContentType { get; set; } = "application/octet-stream";
         public string FileName { get; set; } = "download";
         public bool HasWatermark { get; set; } = false;
+        public string? OriginalContentType { get; set; }
+        public string? ConvertedContentType { get; set; }
     }
 }

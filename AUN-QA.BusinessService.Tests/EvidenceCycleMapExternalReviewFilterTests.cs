@@ -198,7 +198,8 @@ public class EvidenceCycleMapExternalReviewFilterTests
             string mode = "internal",
             string? watermarkText = null,
             int watermarkOpacity = 25,
-            int watermarkPosition = 0)
+            int watermarkPosition = 0,
+            Guid? fileId = null)
             => Task.FromResult(new ModelFilePreview());
     }
 }

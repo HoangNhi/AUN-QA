@@ -1,4 +1,5 @@
-﻿using AUN_QA.SystemService.Protos;
+using AUN_QA.FileService.Services.CoreFeature.Watermark;
+using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration;
 using Grpc.Net.Client.Web;
 
@@ -37,6 +38,7 @@ namespace AUN_QA.FileService.Configs
 
             //ALL SERVICE
             builder.Services.AutoRegisterDependencies();
+            builder.Services.AddHostedService<PdfCacheCleanupJob>();
 
             //CORS
             builder.Services.AddCors(options =>
@@ -48,6 +50,7 @@ namespace AUN_QA.FileService.Configs
                         if (origin != null && origin.Length > 0)
                         {
                             policy.WithOrigins(origin)
+                                  .WithExposedHeaders("Content-Disposition", "X-Original-Content-Type", "X-Converted-Content-Type")
                                   .AllowAnyHeader()
                                   .AllowAnyMethod();
                         }

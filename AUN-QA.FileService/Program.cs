@@ -13,6 +13,7 @@ if (!string.IsNullOrEmpty(port))
 }
 
 builder.AddServiceDefaults();
+builder.Services.AddMemoryCache();
 
 // Add services to the container.
 
@@ -57,4 +58,3 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<FileGrpcService>();
 
 app.Run();
-

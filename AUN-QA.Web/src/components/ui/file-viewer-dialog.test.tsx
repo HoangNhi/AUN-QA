@@ -19,11 +19,19 @@ vi.mock("@/components/ui/pdf-viewer", () => ({
 }));
 
 beforeEach(() => {
-  vi.mocked(fileService.previewFile).mockResolvedValue(new Blob(["x"]));
+  vi.mocked(fileService.previewFile).mockResolvedValue({
+    blob: new Blob(["x"], { type: "application/octet-stream" }),
+    contentType: "application/octet-stream",
+  });
 });
 
 describe("FileViewerDialog layout", () => {
   it("uses non-scroll canvas for image", () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "image/jpeg" }),
+      contentType: "image/jpeg",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -46,6 +54,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("uses non-scroll canvas for pdf to avoid nested scrollbars", () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -68,6 +81,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("renders dedicated pdf scroll container", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -89,6 +107,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("keeps pdf container within dialog viewport", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -110,6 +133,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("renders canvas-based pdf viewer instead of iframe zoom layer", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -130,6 +158,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("updates pdf zoom indicator when clicking zoom buttons", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -151,6 +184,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("applies zoom value to pdf iframe source", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -176,6 +214,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("supports ctrl+wheel zoom for pdf", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -198,6 +241,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("keeps outer pdf container non-scroll to avoid double scrollbars", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType: "application/pdf",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -240,6 +288,11 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("renders image preview with viewport-safe max height", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "image/jpeg" }),
+      contentType: "image/jpeg",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -260,6 +313,14 @@ describe("FileViewerDialog layout", () => {
   });
 
   it("calls renderAsync with correct pagination options for docx files", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      }),
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+
     render(
       <FileViewerDialog
         isOpen
@@ -286,5 +347,34 @@ describe("FileViewerDialog layout", () => {
         }),
       );
     });
+  });
+
+  it("renders pdf viewer for converted docx files", async () => {
+    vi.mocked(fileService.previewFile).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "application/pdf" }),
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      originalContentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      convertedContentType: "application/pdf",
+    });
+
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 22,
+            FullFileName: "BaoCao.docx",
+            FileExtension: "docx",
+            FileUrl: "/BaoCao.docx",
+          } as any
+        }
+      />,
+    );
+
+    expect(await screen.findByTestId("pdf-canvas-viewer")).toBeInTheDocument();
+    expect(screen.getAllByText("BaoCao.docx")).toHaveLength(2);
   });
 });

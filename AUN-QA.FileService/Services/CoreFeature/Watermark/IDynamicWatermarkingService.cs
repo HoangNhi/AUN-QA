@@ -4,9 +4,12 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
 {
     public interface IDynamicWatermarkingService
     {
-        (byte[] Content, bool HasWatermark) Apply(
+        Task<(byte[] Content, string ContentType, bool HasWatermark)> ApplyAsync(
             byte[] fileContent,
             string fileExtension,
-            WatermarkConfig config);
+            Guid? fileId,
+            string absoluteFilePath,
+            WatermarkConfig config,
+            CancellationToken cancellationToken = default);
     }
 }

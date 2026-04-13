@@ -1,6 +1,8 @@
 using System.Numerics;
 using AUN_QA.FileService.DTOs.Base;
 using AutoDependencyRegistration.Attributes;
+using Microsoft.AspNetCore.StaticFiles;
+using AUN_QA.Shared.Exceptions;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf.IO;
@@ -23,32 +25,88 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             ".webp"
         };
 
+        private static readonly HashSet<string> OfficeExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx"
+        };
+
+        private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+
+        private readonly IOfficeConversionService _officeConversionService;
+
         static DynamicWatermarkingService()
         {
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
         }
 
-        public (byte[] Content, bool HasWatermark) Apply(
+        public DynamicWatermarkingService(IOfficeConversionService officeConversionService)
+        {
+            _officeConversionService = officeConversionService;
+        }
+
+        public async Task<(byte[] Content, string ContentType, bool HasWatermark)> ApplyAsync(
             byte[] fileContent,
             string fileExtension,
-            WatermarkConfig config)
+            Guid? fileId,
+            string absoluteFilePath,
+            WatermarkConfig config,
+            CancellationToken cancellationToken = default)
         {
             if (fileContent.Length == 0 || string.IsNullOrWhiteSpace(config.Text))
             {
-                return (fileContent, false);
+                return (fileContent, ResolveContentType(fileExtension), false);
             }
 
             if (string.Equals(fileExtension, ".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                return ApplyPdf(fileContent, config);
+                var (content, hasWatermark) = ApplyPdf(fileContent, config);
+                return (content, ResolveContentType(fileExtension), hasWatermark);
             }
 
             if (ImageExtensions.Contains(fileExtension))
             {
-                return ApplyImage(fileContent, fileExtension, config);
+                var (content, hasWatermark) = ApplyImage(fileContent, fileExtension, config);
+                return (content, ResolveContentType(fileExtension), hasWatermark);
             }
 
-            return (fileContent, false);
+            if (OfficeExtensions.Contains(fileExtension))
+            {
+                if (!fileId.HasValue || fileId.Value == Guid.Empty)
+                {
+                    throw new BusinessException(
+                        "Tính năng xem trước Word/Excel bắt buộc phải có FileId để tối ưu bộ nhớ đệm.");
+                }
+
+                var pdfBytes = await _officeConversionService.ConvertToPdfAsync(
+                    absoluteFilePath,
+                    fileId.Value,
+                    cancellationToken);
+
+                var (content, hasWatermark) = ApplyPdf(pdfBytes, config);
+                return (content, "application/pdf", hasWatermark);
+            }
+
+            return (fileContent, ResolveContentType(fileExtension), false);
+        }
+
+        private static string ResolveContentType(string fileExtension)
+        {
+            if (string.IsNullOrWhiteSpace(fileExtension))
+            {
+                return "application/octet-stream";
+            }
+
+            if (!fileExtension.StartsWith('.'))
+            {
+                fileExtension = "." + fileExtension;
+            }
+
+            return ContentTypeProvider.TryGetContentType("file" + fileExtension, out var contentType)
+                ? contentType
+                : "application/octet-stream";
         }
 
         private static (byte[] Content, bool HasWatermark) ApplyPdf(byte[] fileContent, WatermarkConfig config)

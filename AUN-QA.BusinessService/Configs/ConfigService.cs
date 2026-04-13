@@ -90,6 +90,7 @@ namespace AUN_QA.BusinessService.Configs
                         if (origin != null && origin.Length > 0)
                         {
                             policy.WithOrigins(origin)
+                                  .WithExposedHeaders("Content-Disposition", "X-Original-Content-Type", "X-Converted-Content-Type")
                                   .AllowAnyHeader()
                                   .AllowAnyMethod();
                         }

@@ -12,6 +12,42 @@ public static class HttpContextExtensions
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        {
+            var firstIp = forwardedFor.Split(',')[0].Trim();
+            if (IPAddress.TryParse(firstIp, out var fwdIp))
+            {
+                if (fwdIp.IsIPv4MappedToIPv6)
+                {
+                    return fwdIp.MapToIPv4().ToString();
+                }
+
+                if (fwdIp.Equals(IPAddress.IPv6Loopback))
+                {
+                    return IPAddress.Loopback.ToString();
+                }
+
+                return fwdIp.ToString();
+            }
+        }
+
+        var xRealIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(xRealIp) && IPAddress.TryParse(xRealIp, out var realIp))
+        {
+            if (realIp.IsIPv4MappedToIPv6)
+            {
+                return realIp.MapToIPv4().ToString();
+            }
+
+            if (realIp.Equals(IPAddress.IPv6Loopback))
+            {
+                return IPAddress.Loopback.ToString();
+            }
+
+            return realIp.ToString();
+        }
+
         var remoteIp = context.Connection.RemoteIpAddress;
         if (remoteIp is null)
         {

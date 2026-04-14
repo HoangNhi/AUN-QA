@@ -47,6 +47,64 @@ public class HttpContextExtensionsTests
     }
 
     [Fact]
+    public void GetClientIp_ReturnsFirstXffValue_WhenXffHasMultipleIps()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Request.Headers["X-Forwarded-For"] = "103.156.2.49, 44.192.18.132";
+        ctx.Connection.RemoteIpAddress = IPAddress.Loopback;
+
+        Assert.Equal("103.156.2.49", ctx.GetClientIp());
+    }
+
+    [Fact]
+    public void GetClientIp_PrefersXffOverRemoteIpAddress()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Request.Headers["X-Forwarded-For"] = "103.156.2.49";
+        ctx.Connection.RemoteIpAddress = IPAddress.Parse("44.192.18.132");
+
+        Assert.Equal("103.156.2.49", ctx.GetClientIp());
+    }
+
+    [Fact]
+    public void GetClientIp_ReturnsXRealIp_WhenXffIsAbsent()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Request.Headers["X-Real-IP"] = "103.156.2.49";
+        ctx.Connection.RemoteIpAddress = IPAddress.Parse("44.192.18.132");
+
+        Assert.Equal("103.156.2.49", ctx.GetClientIp());
+    }
+
+    [Fact]
+    public void GetClientIp_FallsBackToRemoteIp_WhenNoXffOrXRealIp()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Connection.RemoteIpAddress = IPAddress.Parse("203.113.1.1");
+
+        Assert.Equal("203.113.1.1", ctx.GetClientIp());
+    }
+
+    [Fact]
+    public void GetClientIp_MapsXffIpv4MappedIpv6ToIpv4()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Request.Headers["X-Forwarded-For"] = "::ffff:103.156.2.49";
+
+        Assert.Equal("103.156.2.49", ctx.GetClientIp());
+    }
+
+    [Fact]
+    public void GetClientIp_FallsBackToRemoteIp_WhenXffIsInvalidIp()
+    {
+        var ctx = new DefaultHttpContext();
+        ctx.Request.Headers["X-Forwarded-For"] = "not-an-ip, also-bad";
+        ctx.Connection.RemoteIpAddress = IPAddress.Parse("203.113.1.1");
+
+        Assert.Equal("203.113.1.1", ctx.GetClientIp());
+    }
+
+    [Fact]
     public void AddTrustedForwardedHeaders_SetsForwardLimit()
     {
         var services = new ServiceCollection();

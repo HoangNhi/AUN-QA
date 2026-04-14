@@ -5,9 +5,12 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvaluationSchedule.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using AUN_QA.CatalogService.Protos;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -19,15 +22,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ICatalogIntegrationService _catalogService;
 
         public CycleService(
             BusinessContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            ICatalogIntegrationService catalogService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _catalogService = catalogService;
         }
 
         #region Chức năng chính
@@ -548,7 +554,87 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
             cycle.UpdatedAt = DateTime.UtcNow;
 
             _context.Cycles.Update(cycle);
+
+            if (cycle.Status == (int)CycleStatus.Do)
+            {
+                var username = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                await EnsureSarReportInCycleAsync(cycle, username);
+                await SeedCriterionEvaluationsAsync(cycle, username);
+            }
+
             await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureSarReportInCycleAsync(Entities.Cycle cycle, string username)
+        {
+            var exists = await _context.SarReports
+                .AnyAsync(x => x.CycleId == cycle.Id && !x.IsDeleted && x.IsActived);
+
+            if (exists)
+            {
+                return;
+            }
+
+            _context.SarReports.Add(new Entities.SarReport
+            {
+                Id = Guid.NewGuid(),
+                CycleId = cycle.Id,
+                Status = (int)SarStatus.Draft,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = username,
+                IsActived = true,
+                IsDeleted = false
+            });
+        }
+
+        private async Task SeedCriterionEvaluationsAsync(Entities.Cycle cycle, string username)
+        {
+            var grpcRequest = new GetStandardsWithCriteriaStreamRequest
+            {
+                StandardSetId = cycle.StandardSetId.ToString()
+            };
+
+            var criteriaRows = new List<StandardWithCriteriaDto>();
+            await foreach (var row in _catalogService.GetStandardsWithCriteriaStreamAsync(grpcRequest))
+            {
+                criteriaRows.Add(row);
+            }
+
+            if (!criteriaRows.Any())
+            {
+                return;
+            }
+
+            var existingCriterionIds = (await _context.CriterionEvaluations
+                .AsNoTracking()
+                .Where(x => x.CycleId == cycle.Id && !x.IsDeleted)
+                .Select(x => x.CriterionId)
+                .ToListAsync())
+                .ToHashSet();
+
+            var now = DateTime.UtcNow;
+            var newEvaluations = criteriaRows
+                .GroupBy(x => x.CriterionId)
+                .Select(g => g.First())
+                .Where(x => !existingCriterionIds.Contains(x.CriterionId))
+                .Select(c => new Entities.CriterionEvaluation
+                {
+                    Id = Guid.NewGuid(),
+                    CycleId = cycle.Id,
+                    CriterionId = c.CriterionId,
+                    StandardId = c.StandardId,
+                    Status = (int)CriterionEvaluationStatus.Empty,
+                    CreatedAt = now,
+                    CreatedBy = username,
+                    IsActived = true,
+                    IsDeleted = false
+                })
+                .ToList();
+
+            if (newEvaluations.Any())
+            {
+                await _context.CriterionEvaluations.AddRangeAsync(newEvaluations);
+            }
         }
         #endregion
 

@@ -143,7 +143,9 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
                             XStringFormats.Center);
                         break;
                     case 2:
-                        DrawRepeatedWatermark(gfx, page.Width.Point, page.Height.Point, config.Text, font, brush);
+                        var repeatFontSize = Math.Max(10, Math.Min(page.Width.Point, page.Height.Point) / 24.0);
+                        var repeatFont = new XFont("Times New Roman", repeatFontSize, XFontStyleEx.Bold);
+                        DrawRepeatedWatermark(gfx, page.Width.Point, page.Height.Point, config.Text, repeatFont, brush);
                         break;
                     default:
                         gfx.TranslateTransform(centerX, centerY);
@@ -166,14 +168,18 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             XFont font,
             XBrush brush)
         {
-            var stepX = Math.Max(140, pageWidth / 4);
-            var stepY = Math.Max(100, pageHeight / 5);
+            var stepX = Math.Max(160, pageWidth / 2.5);
+            var stepY = Math.Max(120, pageHeight / 3.0);
 
             for (var y = -stepY; y <= pageHeight + stepY; y += stepY)
             {
                 for (var x = -stepX; x <= pageWidth + stepX; x += stepX)
                 {
-                    gfx.DrawString(text, font, brush, new XPoint(x, y), XStringFormats.Center);
+                    var state = gfx.Save();
+                    gfx.TranslateTransform(x, y);
+                    gfx.RotateTransform(-30);
+                    gfx.DrawString(text, font, brush, new XPoint(0, 0), XStringFormats.Center);
+                    gfx.Restore(state);
                 }
             }
         }
@@ -231,8 +237,8 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             Font font,
             Color color)
         {
-            var stepX = Math.Max(180, width / 4);
-            var stepY = Math.Max(120, height / 5);
+            var stepX = Math.Max(200, width / 2.5f);
+            var stepY = Math.Max(150, height / 3f);
 
             for (var y = -stepY; y <= height + stepY; y += stepY)
             {
@@ -261,7 +267,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             }
 
             var family = SystemFonts.Collection.Families.First();
-            var size = Math.Max(18f, imageHeight / 14f);
+            var size = Math.Max(18f, imageHeight / 22f);
             return family.CreateFont(size, FontStyle.Bold);
         }
 

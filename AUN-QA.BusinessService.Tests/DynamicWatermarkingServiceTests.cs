@@ -90,6 +90,53 @@ public class DynamicWatermarkingServiceTests
     }
 
     [Fact]
+    public async Task ApplyAsync_Pdf_WithRepeatPosition_ReturnsStampedBytes()
+    {
+        var pdfBytes = CreateMinimalPdf();
+        var config = new WatermarkConfig
+        {
+            Text = "CONFIDENTIAL",
+            Opacity = 25,
+            Position = 2
+        };
+
+        var (content, contentType, hasWatermark) = await _sut.ApplyAsync(
+            pdfBytes,
+            ".pdf",
+            Guid.NewGuid(),
+            "/tmp/sample.pdf",
+            config);
+
+        Assert.True(hasWatermark);
+        Assert.Equal("application/pdf", contentType);
+        Assert.NotEmpty(content);
+        Assert.NotEqual(pdfBytes, content);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_Png_WithRepeatPosition_ReturnsStampedBytes()
+    {
+        var imageBytes = CreateMinimalPng();
+        var config = new WatermarkConfig
+        {
+            Text = "CONFIDENTIAL",
+            Opacity = 25,
+            Position = 2
+        };
+
+        var (content, contentType, hasWatermark) = await _sut.ApplyAsync(
+            imageBytes,
+            ".png",
+            Guid.NewGuid(),
+            "/tmp/sample.png",
+            config);
+
+        Assert.True(hasWatermark);
+        Assert.Equal("image/png", contentType);
+        Assert.NotEmpty(content);
+    }
+
+    [Fact]
     public async Task ApplyAsync_OfficeDoc_UsesOfficeConversionService()
     {
         var fileId = Guid.NewGuid();

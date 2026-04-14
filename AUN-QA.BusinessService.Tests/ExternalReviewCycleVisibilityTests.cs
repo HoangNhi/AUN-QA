@@ -3,8 +3,10 @@ using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.CoreFeature.Cycle;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 
 namespace AUN_QA.BusinessService.Tests;
 
@@ -94,11 +96,15 @@ public class ExternalReviewCycleVisibilityTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(
                     new[] { new Claim("name", userId.ToString()) },
-                    authenticationType: "TestAuth"))
+                authenticationType: "TestAuth"))
             }
         };
 
-        return new CycleService(context, null!, accessor);
+        return new CycleService(
+            context,
+            null!,
+            accessor,
+            Substitute.For<ICatalogIntegrationService>());
     }
 
     private static void SeedCycle(BusinessContext context, Guid cycleId, string name, int year)

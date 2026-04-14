@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.HttpOverrides" Version="2.2.0" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="PdfSharp" Version="6.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
@@ -26,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AUN-QA.BusinessService\AUN-QA.BusinessService.csproj" />
     <ProjectReference Include="..\AUN-QA.FileService\AUN-QA.FileService.csproj" />
+    <ProjectReference Include="..\AUN-QA.Shared\AUN-QA.Shared.csproj" />
   </ItemGroup>
 
 </Project>

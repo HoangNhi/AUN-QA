@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -80,7 +81,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             EntityId = GetEntityId(entries.First()),
             OldValues = oldValuesGroup.Count > 0 ? JsonSerializer.Serialize(oldValuesGroup) : null,
             NewValues = newValuesGroup.Count > 0 ? JsonSerializer.Serialize(newValuesGroup) : null,
-            IpAddress = GetIpAddress(httpContext),
+            IpAddress = httpContext?.GetClientIp(),
             ServiceName = "SystemService",
             IsSuccess = true,
             ErrorMessage = null,
@@ -136,19 +137,6 @@ public class AuditInterceptor : SaveChangesInterceptor
     private static string GetUserName(HttpContext? httpContext)
     {
         return httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "System";
-    }
-
-    private static string? GetIpAddress(HttpContext? httpContext)
-    {
-        if (httpContext == null) return null;
-        var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwarded))
-            return forwarded.Split(',').FirstOrDefault()?.Trim();
-        var remoteIp = httpContext.Connection.RemoteIpAddress;
-        if (remoteIp == null) return null;
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
     }
 
     private static string? GetEntityId(EntityEntry entry)

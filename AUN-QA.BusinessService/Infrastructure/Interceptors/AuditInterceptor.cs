@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Protos;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
@@ -89,7 +90,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             EntityId = GetEntityId(entries.First()),
             OldValues = oldValuesGroup.Count > 0 ? JsonSerializer.Serialize(oldValuesGroup) : "",
             NewValues = newValuesGroup.Count > 0 ? JsonSerializer.Serialize(newValuesGroup) : "",
-            IpAddress = GetIpAddress(httpContext),
+            IpAddress = httpContext?.GetClientIp() ?? "",
             ServiceName = "BusinessService",
             IsSuccess = true,
             ErrorMessage = ""
@@ -201,18 +202,6 @@ public class AuditInterceptor : SaveChangesInterceptor
         var keys = entry.Metadata.FindPrimaryKey()?.Properties;
         if (keys == null) return "";
         return string.Join(",", keys.Select(p => entry.Property(p.Name).CurrentValue?.ToString() ?? ""));
-    }
-
-    private static string GetIpAddress(HttpContext? ctx)
-    {
-        if (ctx == null) return "";
-        var fwd = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(fwd)) return fwd.Split(',').FirstOrDefault()?.Trim() ?? "";
-        var remoteIp = ctx.Connection.RemoteIpAddress;
-        if (remoteIp == null) return "";
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
     }
 
     private static Dictionary<string, object?> SerializeEntryValues(PropertyValues values)

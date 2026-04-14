@@ -2,6 +2,7 @@ using AUN_QA.CatalogService.Configs;
 using AUN_QA.CatalogService.Middlewares;
 using AUN_QA.CatalogService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using AUN_QA.Shared.Common;
 using Grpc.AspNetCore.Web;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
@@ -32,10 +33,12 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();
+builder.Services.AddTrustedForwardedHeaders(forwardLimit: 2);
 
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandler>();
+app.UseTrustedForwardedHeaders();
 
 app.MapDefaultEndpoints();
 

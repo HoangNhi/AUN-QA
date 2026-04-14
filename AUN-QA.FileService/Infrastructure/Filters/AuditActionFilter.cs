@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Protos;
 using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
@@ -64,7 +65,7 @@ public class AuditActionFilter : IAsyncActionFilter
                 EntityId = "",
                 OldValues = "",
                 NewValues = "",
-                IpAddress = GetIpAddress(httpContext),
+                IpAddress = httpContext.GetClientIp(),
                 ServiceName = "FileService",
                 IsSuccess = false,
                 ErrorMessage = ExtractErrorMessage(executedContext) ?? "Unknown error"
@@ -107,7 +108,7 @@ public class AuditActionFilter : IAsyncActionFilter
                 EntityId = "",
                 OldValues = "",
                 NewValues = "",
-                IpAddress = GetIpAddress(httpContext),
+                IpAddress = httpContext.GetClientIp(),
                 ServiceName = "FileService",
                 IsSuccess = true,
                 ErrorMessage = ""
@@ -184,14 +185,4 @@ public class AuditActionFilter : IAsyncActionFilter
             .OfType<RouteAttribute>().FirstOrDefault()?.Template ?? d?.ActionName ?? "";
     }
 
-    private static string GetIpAddress(HttpContext ctx)
-    {
-        var f = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(f)) return f.Split(',').FirstOrDefault()?.Trim() ?? "";
-        var remoteIp = ctx.Connection.RemoteIpAddress;
-        if (remoteIp == null) return "";
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
-    }
 }

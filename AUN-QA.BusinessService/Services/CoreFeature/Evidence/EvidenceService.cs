@@ -1,4 +1,5 @@
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Common;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Evidence.Dtos;
@@ -382,7 +383,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
         private string BuildDynamicWatermarkText()
         {
             var email = GetCurrentEmail();
-            var ip = GetCurrentIpAddress();
+            var ip = _contextAccessor.HttpContext?.GetClientIp() ?? "unknown";
             var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
 
             return string.Join(" | ", new[] { email, ip, timestamp }.Where(x => !string.IsNullOrWhiteSpace(x)));
@@ -400,17 +401,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Evidence
                 ?? "unknown";
 
             return email.Trim();
-        }
-
-        private string GetCurrentIpAddress()
-        {
-            var forwardedFor = _contextAccessor.HttpContext?.Request?.Headers["X-Forwarded-For"].FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(forwardedFor))
-            {
-                return forwardedFor.Split(',')[0].Trim();
-            }
-
-            return _contextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
         }
 
         private async Task<List<ModelAttachment>> GetAllAttachmentAsync(Guid Id)

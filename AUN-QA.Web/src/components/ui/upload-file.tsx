@@ -161,7 +161,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         {listAttachment.length > 0 && (
           <div className="mb-3 border rounded-lg bg-white overflow-hidden shadow-sm">
             <div className="bg-gray-50 px-3 py-2 border-b flex items-center gap-2 font-semibold text-gray-700">
-              <Paperclip size={14} className="text-blue-500" /> TỆP ĐàTẢI LÊN
+              <Paperclip size={14} className="text-blue-500" /> TỆP ĐÃ TẢI LÊN
             </div>
             <div className="divide-y">
               {listAttachment.map((file) => (

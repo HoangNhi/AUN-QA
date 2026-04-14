@@ -1,5 +1,6 @@
 using System.Numerics;
 using AUN_QA.FileService.DTOs.Base;
+using AUN_QA.FileService.Services.CoreFeature.Watermark.Fonts;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.AspNetCore.StaticFiles;
 using AUN_QA.Shared.Exceptions;
@@ -39,6 +40,12 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
 
         static DynamicWatermarkingService()
         {
+            if (OperatingSystem.IsLinux())
+            {
+                PdfSharpFontResolverBootstrapper.EnsureConfigured();
+                return;
+            }
+
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
         }
 
@@ -119,7 +126,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
                 using var gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append);
 
                 var fontSize = Math.Max(14, Math.Min(page.Width.Point, page.Height.Point) / 12);
-                var font = new XFont("Arial", fontSize, XFontStyleEx.Bold);
+                var font = new XFont("Times New Roman", fontSize, XFontStyleEx.Bold);
                 var brush = new XSolidBrush(XColor.FromArgb(ClampOpacity(config.Opacity), 80, 80, 80));
 
                 var centerX = page.Width.Point / 2;

@@ -43,6 +43,30 @@ public class DynamicWatermarkingServiceTests
     }
 
     [Fact]
+    public async Task ApplyAsync_Pdf_WithVietnameseWatermarkText_ReturnsStampedBytes()
+    {
+        var pdfBytes = CreateMinimalPdf();
+        var config = new WatermarkConfig
+        {
+            Text = "Đánh giá ngoài - Trường đại học chất lượng cao (Tiếng Việt có dấu)",
+            Opacity = 30,
+            Position = 0
+        };
+
+        var (content, contentType, hasWatermark) = await _sut.ApplyAsync(
+            pdfBytes,
+            ".pdf",
+            Guid.NewGuid(),
+            "/tmp/sample.pdf",
+            config);
+
+        Assert.True(hasWatermark);
+        Assert.Equal("application/pdf", contentType);
+        Assert.NotEmpty(content);
+        Assert.NotEqual(pdfBytes, content);
+    }
+
+    [Fact]
     public async Task ApplyAsync_Png_ReturnsStampedBytes()
     {
         var imageBytes = CreateMinimalPng();

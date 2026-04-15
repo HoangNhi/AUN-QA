@@ -232,7 +232,7 @@ export const PopupSession = ({
 
           <DialogFooter className="p-4 border-t shrink-0 bg-white">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Đóng
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>

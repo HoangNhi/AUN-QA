@@ -145,6 +145,12 @@ export const getColumns = (
       ),
   });
 
+  if (isReadOnly) {
+    return columns.filter(
+      (col) => !("accessorKey" in col) || col.accessorKey !== "Status",
+    );
+  }
+
   return columns;
 };
 

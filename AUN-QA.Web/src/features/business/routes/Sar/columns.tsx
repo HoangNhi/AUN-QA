@@ -38,79 +38,90 @@ function getStatusMeta(status: SarStatus | null | undefined) {
 export const getColumns = (
   openEditor: (item: SarGetListItem) => void,
   isReadOnly: boolean = false,
-): ColumnDef<SarGetListItem>[] => [
-  {
-    accessorKey: "CycleName",
-    header: "Chu kỳ",
-    cell: ({ row }) =>
-      isReadOnly ? (
-        <span>{row.original.CycleName}</span>
-      ) : (
-        <button
-          type="button"
-          className="text-left text-primary hover:underline"
-          onClick={() => openEditor(row.original)}
-        >
-          {row.original.CycleName}
-        </button>
-      ),
-  },
-  {
-    accessorKey: "Year",
-    header: () => <div className="text-center">Năm</div>,
-    meta: {
-      className: "text-center",
-    },
-  },
-  {
-    accessorKey: "Status",
-    header: () => <div className="text-center">Trạng thái SAR</div>,
-    meta: {
-      className: "text-center",
-    },
-    cell: ({ row }) => {
-      const meta = getStatusMeta(row.original.Status);
-      return (
-        <div className="flex justify-center">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.className}`}
+  showCycleColumn: boolean = true,
+): ColumnDef<SarGetListItem>[] => {
+  const columns: ColumnDef<SarGetListItem>[] = [
+    {
+      accessorKey: "CycleName",
+      header: "Chu kỳ",
+      cell: ({ row }) =>
+        isReadOnly ? (
+          <span>{row.original.CycleName}</span>
+        ) : (
+          <button
+            type="button"
+            className="text-left text-primary hover:underline"
+            onClick={() => openEditor(row.original)}
           >
-            {meta.label}
-          </span>
-        </div>
-      );
+            {row.original.CycleName}
+          </button>
+        ),
     },
-  },
-  {
-    accessorKey: "LastSavedAt",
-    header: () => <div className="text-center">Lưu lần cuối</div>,
-    meta: {
-      className: "text-center",
+    {
+      accessorKey: "Year",
+      header: () => <div className="text-center">Năm</div>,
+      meta: {
+        className: "text-center",
+      },
     },
-    cell: ({ row }) => {
-      const value = row.original.LastSavedAt;
-      if (!value) {
-        return <div className="text-center text-muted-foreground">--</div>;
-      }
+    {
+      accessorKey: "Status",
+      header: () => <div className="text-center">Trạng thái SAR</div>,
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => {
+        const meta = getStatusMeta(row.original.Status);
+        return (
+          <div className="flex justify-center">
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.className}`}
+            >
+              {meta.label}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "LastSavedAt",
+      header: () => <div className="text-center">Lưu lần cuối</div>,
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => {
+        const value = row.original.LastSavedAt;
+        if (!value) {
+          return <div className="text-center text-muted-foreground">--</div>;
+        }
 
-      return <div className="text-center">{format(new Date(value), "dd/MM/yyyy HH:mm")}</div>;
+        return <div className="text-center">{format(new Date(value), "dd/MM/yyyy HH:mm")}</div>;
+      },
     },
-  },
-  {
-    accessorKey: "UpdatedBy",
-    header: "Người cập nhật",
-    cell: ({ row }) => row.original.UpdatedBy || "--",
-  },
-  {
-    id: "actions",
-    header: () => <div className="text-center">Thao tác</div>,
-    meta: {
-      className: "text-center",
+    {
+      accessorKey: "UpdatedBy",
+      header: "Người cập nhật",
+      cell: ({ row }) => row.original.UpdatedBy || "--",
     },
-    cell: ({ row }) => (
-      <Button size="sm" onClick={() => openEditor(row.original)}>
-        Xem
-      </Button>
-    ),
-  },
-];
+    {
+      id: "actions",
+      header: () => <div className="text-center">Thao tác</div>,
+      meta: {
+        className: "text-center",
+      },
+      cell: ({ row }) => (
+        <Button size="sm" onClick={() => openEditor(row.original)}>
+          Xem
+        </Button>
+      ),
+    },
+  ];
+
+  if (!showCycleColumn) {
+    return columns.filter(
+      (col) => !("accessorKey" in col) || col.accessorKey !== "CycleName",
+    );
+  }
+
+  return columns;
+};

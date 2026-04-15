@@ -168,8 +168,8 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             XFont font,
             XBrush brush)
         {
-            var stepX = Math.Max(160, pageWidth / 2.5);
-            var stepY = Math.Max(120, pageHeight / 3.0);
+            var stepX = Math.Max(200, pageWidth / 1.5);
+            var stepY = Math.Max(160, pageHeight / 2.0);
 
             for (var y = -stepY; y <= pageHeight + stepY; y += stepY)
             {
@@ -237,8 +237,8 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             Font font,
             Color color)
         {
-            var stepX = Math.Max(200, width / 2.5f);
-            var stepY = Math.Max(150, height / 3f);
+            var stepX = Math.Max(250, width / 1.5f);
+            var stepY = Math.Max(200, height / 2.0f);
 
             for (var y = -stepY; y <= height + stepY; y += stepY)
             {

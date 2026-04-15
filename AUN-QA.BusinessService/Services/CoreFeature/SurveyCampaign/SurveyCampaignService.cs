@@ -27,6 +27,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
     [RegisterClassAsTransient]
     public class SurveyCampaignService : ISurveyCampaignService
     {
+        private const string ExtRoleId = "551d1351-008e-4910-a39c-1fcdde409fdf";
+
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -524,6 +526,16 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 {
                     var userCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId);
                     query = query.Where(x => userCycleIds.Contains(x.CycleId));
+
+                    var roleClaim = _contextAccessor.HttpContext?.User?.Claims
+                        .FirstOrDefault(x => x.Type == "role")?.Value;
+                    var isExternalReviewer = Guid.TryParse(roleClaim, out var roleGuid)
+                        && roleGuid == new Guid(ExtRoleId);
+
+                    if (isExternalReviewer)
+                    {
+                        query = query.Where(x => x.Status == (int)SurveyCampaignStatus.Completed);
+                    }
                 }
                 else
                 {
@@ -568,7 +580,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 PageIndex = request.PageIndex,
                 PageSize = request.PageSize,
                 TotalRow = totalRow,
-                Data = data
+                Data = result
             };
         }
 

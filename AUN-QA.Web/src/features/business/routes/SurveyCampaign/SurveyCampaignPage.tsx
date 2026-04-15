@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Combobox } from "@/components/ui/combobox";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
@@ -36,10 +36,10 @@ const SurveyCampaignPage = () => {
     name: string;
   } | null>(null);
 
-  const showPopupSession = (id: string, name: string) => {
+  const showPopupSession = useCallback((id: string, name: string) => {
     setSelectedCampaign({ id, name });
     setIsPopupSessionOpen(true);
-  };
+  }, []);
 
   const columns = useMemo(
     () =>
@@ -72,11 +72,18 @@ const SurveyCampaignPage = () => {
   const { options: cycleOptions, isLoading: isCycleLoading } =
     useCycleOptions();
 
+  const displayData = useMemo(() => {
+    if (!isExternalReviewer) return data;
+
+    const filtered = data.Data.filter((c) => c.Status === 3);
+    return { ...data, Data: filtered, TotalRow: data.TotalRow };
+  }, [data, isExternalReviewer]);
+
   return (
-    <ListPageLayout
+      <ListPageLayout
       columns={columns}
-      data={data.Data}
-      totalRow={data.TotalRow}
+      data={displayData.Data}
+      totalRow={displayData.TotalRow}
       rowSelection={rowSelection}
       setRowSelection={setRowSelection}
       pageRequest={pageRequest}
@@ -86,24 +93,31 @@ const SurveyCampaignPage = () => {
       searchTerm={listPage.searchTerm}
       onSearchTermChange={listPage.setSearchTerm}
       onResetFilters={listPage.handleResetFilters}
-      searchInputClassName="col-span-1 bg-background md:col-span-2"
+      filterGridCols={isExternalReviewer ? "md:grid-cols-3" : "md:grid-cols-4"}
+      searchInputClassName={
+        isExternalReviewer
+          ? "col-span-2 bg-background"
+          : "col-span-1 bg-background md:col-span-2"
+      }
       filterContent={
         <>
-          <Combobox
-            options={cycleOptions}
-            loading={isCycleLoading}
-            value={pageRequest.CycleId}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                CycleId: val,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm kiếm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
-          />
+          {!isExternalReviewer && (
+            <Combobox
+              options={cycleOptions}
+              loading={isCycleLoading}
+              value={pageRequest.CycleId}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  CycleId: val,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả chu kỳ"
+              searchPlaceholder="Tìm kiếm chu kỳ..."
+              emptyText="Không tìm thấy chu kỳ."
+            />
+          )}
 
           <Combobox
             options={STAKEHOLDER_TYPES}

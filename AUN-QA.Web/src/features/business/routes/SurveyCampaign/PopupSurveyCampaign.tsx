@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Loader2, Edit3, Eye, ArrowLeft, BarChart3 } from "lucide-react";
+import { Loader2, Edit3, Eye, ArrowLeft, BarChart3, Info } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -34,6 +34,8 @@ import { cycleService } from "@/features/business/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
+import { useCycleOptionsForExternalReview } from "../../hooks/useCycleOptionsForExternalReview";
+import { useCycleOptions } from "../../hooks/useCycleOptions";
 import { toast } from "sonner";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { CAMPAIGN_STATUS_OPTIONS } from "@/constants/business.constants";
@@ -86,8 +88,13 @@ const PopupSurveyCampaign = ({
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
-  const [mode, setMode] = useState<"edit" | "preview" | "results">(
-    readOnly ? "preview" : "edit",
+  const { options: cycleOptions } = useCycleOptions(!readOnly);
+  const { options: externalCycleOptions } = useCycleOptionsForExternalReview(
+    !!readOnly,
+  );
+
+  const [mode, setMode] = useState<"edit" | "info" | "preview" | "results">(
+    readOnly ? "info" : "edit",
   );
 
   const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
@@ -134,7 +141,7 @@ const PopupSurveyCampaign = ({
 
   useEffect(() => {
     if (isOpen) {
-      setMode(readOnly ? "preview" : "edit");
+      setMode(readOnly ? "info" : "edit");
     }
   }, [isOpen, readOnly, surveyCampaign?.Id]);
 
@@ -213,12 +220,25 @@ const PopupSurveyCampaign = ({
                   <Tabs
                     value={mode}
                     onValueChange={(v) =>
-                      setMode(v as "edit" | "preview" | "results")
+                      setMode(v as "edit" | "info" | "preview" | "results")
                     }
                   >
                     <TabsList
-                      className={`grid w-full ${readOnly ? (showResultsTab ? "grid-cols-2" : "grid-cols-1") : showResultsTab ? "grid-cols-3" : "grid-cols-2"}`}
+                      className={`grid w-full ${
+                        readOnly
+                          ? showResultsTab
+                            ? "grid-cols-3"
+                            : "grid-cols-2"
+                          : showResultsTab
+                            ? "grid-cols-3"
+                            : "grid-cols-2"
+                      }`}
                     >
+                      {readOnly && (
+                        <TabsTrigger value="info">
+                          <Info size={16} className="mr-2" /> Thông tin chung
+                        </TabsTrigger>
+                      )}
                       {!readOnly && (
                         <TabsTrigger value="edit">
                           <Edit3 size={16} className="mr-2" /> Soạn thảo
@@ -238,6 +258,98 @@ const PopupSurveyCampaign = ({
                 </div>
               </DialogTitle>
             </DialogHeader>
+
+            {/* Info Mode Content - read-only display for external reviewers */}
+            {mode === "info" && readOnly && (
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0">
+                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Thông tin khảo sát
+                    </p>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Tên khảo sát
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {surveyCampaign?.Name || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Chu kỳ đánh giá
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {(
+                          externalCycleOptions.length > 0
+                            ? externalCycleOptions
+                            : cycleOptions
+                        ).find((o) => o.Value === surveyCampaign?.CycleId)
+                          ?.Text || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Loại đối tượng
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {STAKEHOLDER_TYPES.find(
+                          (s) =>
+                            s.Value ===
+                            surveyCampaign?.StakeholderType?.toString(),
+                        )?.Text || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Trạng thái
+                      </span>
+                      <span className="flex-1">
+                        {(() => {
+                          const statusConfig: Record<
+                            number,
+                            { text: string; className: string }
+                          > = {
+                            1: {
+                              text: "Chưa bắt đầu",
+                              className: "bg-gray-100 text-gray-800",
+                            },
+                            2: {
+                              text: "Đang diễn ra",
+                              className: "bg-blue-100 text-blue-800",
+                            },
+                            3: {
+                              text: "Đã kết thúc",
+                              className: "bg-green-100 text-green-800",
+                            },
+                          };
+
+                          const cfg = surveyCampaign?.Status
+                            ? (statusConfig[surveyCampaign.Status] ?? {
+                                text: "--",
+                                className: "bg-gray-100 text-gray-500",
+                              })
+                            : {
+                                text: "--",
+                                className: "bg-gray-100 text-gray-500",
+                              };
+
+                          return (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.className}`}
+                            >
+                              {cfg.text}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Edit Mode Content - Keep mounted but hide when in preview */}
             <div

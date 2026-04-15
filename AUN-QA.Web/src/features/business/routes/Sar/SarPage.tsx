@@ -59,7 +59,7 @@ export default function SarPage() {
 
   const cycleOptions = useCycleOptions();
   const columns = useMemo(
-    () => getColumns(showPopupDetail, !isExternalReviewer),
+    () => getColumns(showPopupDetail, !isExternalReviewer, !isExternalReviewer),
     [isExternalReviewer, showPopupDetail],
   );
 
@@ -79,7 +79,7 @@ export default function SarPage() {
   });
 
   return (
-    <ListPageLayout
+      <ListPageLayout
       columns={columns}
       data={data.Data}
       totalRow={data.TotalRow}
@@ -94,7 +94,7 @@ export default function SarPage() {
       onResetFilters={listPage.handleResetFilters}
       hideAdd
       searchInputClassName="col-span-1 bg-background"
-      filterGridCols="md:grid-cols-3"
+      filterGridCols={isExternalReviewer ? "md:grid-cols-2" : "md:grid-cols-3"}
       filterContent={
         <>
           <Combobox
@@ -111,20 +111,22 @@ export default function SarPage() {
             searchPlaceholder="Tìm trạng thái..."
             emptyText="Không tìm thấy trạng thái."
           />
-          <Combobox
-            options={cycleOptions.options ?? []}
-            value={pageRequest.CycleId ?? undefined}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                CycleId: val || undefined,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
-          />
+          {!isExternalReviewer && (
+            <Combobox
+              options={cycleOptions.options ?? []}
+              value={pageRequest.CycleId ?? undefined}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  CycleId: val || undefined,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả chu kỳ"
+              searchPlaceholder="Tìm chu kỳ..."
+              emptyText="Không tìm thấy chu kỳ."
+            />
+          )}
         </>
       }
     >
@@ -148,4 +150,3 @@ export default function SarPage() {
     </ListPageLayout>
   );
 }
-

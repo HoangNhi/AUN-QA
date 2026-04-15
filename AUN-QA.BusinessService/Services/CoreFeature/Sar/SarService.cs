@@ -26,6 +26,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
     [RegisterClassAsTransient]
     public class SarService : ISarService
     {
+        private const string ExtRoleId = "551d1351-008e-4910-a39c-1fcdde409fdf";
+
         private readonly BusinessContext _context;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly ICycleService _cycleService;
@@ -78,21 +80,34 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                     };
                 }
 
-                var allowedRoles = Roles(
-                    CouncilRole.HeadOfCouncil,
-                    CouncilRole.ViceChairman,
-                    CouncilRole.Secretary,
-                    CouncilRole.Evaluator,
-                    CouncilRole.EvidenceProvider);
+                var roleClaim = _contextAccessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == "role")?.Value;
+                var isExternalReviewer = Guid.TryParse(roleClaim, out var roleGuid)
+                    && roleGuid == new Guid(ExtRoleId);
 
-                var cycleIdsByPermission = _context.Councils
-                    .Where(x => x.UserId == userId.Value
-                        && !x.IsDeleted
-                        && x.IsActived
-                        && allowedRoles.Contains(x.RoleId))
-                    .Select(x => x.CycleId);
+                if (isExternalReviewer)
+                {
+                    var accessibleCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId.Value);
+                    cycleQuery = cycleQuery.Where(x => accessibleCycleIds.Contains(x.Id));
+                }
+                else
+                {
+                    var allowedRoles = Roles(
+                        CouncilRole.HeadOfCouncil,
+                        CouncilRole.ViceChairman,
+                        CouncilRole.Secretary,
+                        CouncilRole.Evaluator,
+                        CouncilRole.EvidenceProvider);
 
-                cycleQuery = cycleQuery.Where(x => cycleIdsByPermission.Contains(x.Id));
+                    var cycleIdsByPermission = _context.Councils
+                        .Where(x => x.UserId == userId.Value
+                            && !x.IsDeleted
+                            && x.IsActived
+                            && allowedRoles.Contains(x.RoleId))
+                        .Select(x => x.CycleId);
+
+                    cycleQuery = cycleQuery.Where(x => cycleIdsByPermission.Contains(x.Id));
+                }
             }
 
             if (request.Status.HasValue)

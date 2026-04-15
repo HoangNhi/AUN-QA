@@ -1398,14 +1398,6 @@ export default function PopupSarEditor({
             <div className="flex flex-1 min-w-0 overflow-hidden bg-slate-100">
               {/* EDITOR AREA */}
               <div className="flex-1 min-w-0 overflow-y-auto py-8 px-6 relative">
-                {isExternalReviewer && (
-                  <SarWatermarkOverlay
-                    watermarkText={sarWatermark.watermarkText}
-                    opacity={sarWatermark.opacity}
-                    position={sarWatermark.position}
-                    userEmail={user?.Email ?? ""}
-                  />
-                )}
                 {showRevisionReasonBanner && (
                   <div className="mx-auto mb-4 max-w-[760px] rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <p className="font-semibold">Lý do yêu cầu chỉnh sửa</p>
@@ -1417,7 +1409,15 @@ export default function PopupSarEditor({
                     <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
                   </div>
                 ) : (
-                  <div className="max-w-[760px] mx-auto bg-white shadow-lg rounded border border-slate-200 min-h-[900px] p-16">
+                  <div className="relative overflow-hidden max-w-[760px] mx-auto bg-white shadow-lg rounded border border-slate-200 min-h-[900px] p-16">
+                    {isExternalReviewer && (
+                      <SarWatermarkOverlay
+                        watermarkText={sarWatermark.watermarkText}
+                        opacity={sarWatermark.opacity}
+                        position={sarWatermark.position}
+                        userEmail={user?.Email ?? ""}
+                      />
+                    )}
                     {/* BubbleMenu */}
                     {editor && (
                       <BubbleMenu

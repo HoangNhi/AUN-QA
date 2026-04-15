@@ -39,6 +39,7 @@ export const getColumns = (
   openEditor: (item: SarGetListItem) => void,
   isReadOnly: boolean = false,
   showCycleColumn: boolean = true,
+  showStatusColumn: boolean = true,
 ): ColumnDef<SarGetListItem>[] => {
   const columns: ColumnDef<SarGetListItem>[] = [
     {
@@ -117,11 +118,19 @@ export const getColumns = (
     },
   ];
 
+  let result = columns;
+
   if (!showCycleColumn) {
-    return columns.filter(
+    result = result.filter(
       (col) => !("accessorKey" in col) || col.accessorKey !== "CycleName",
     );
   }
 
-  return columns;
+  if (!showStatusColumn) {
+    result = result.filter(
+      (col) => !("accessorKey" in col) || col.accessorKey !== "Status",
+    );
+  }
+
+  return result;
 };

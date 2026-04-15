@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2 } from "lucide-react";
 import { useCriterionEvaluation } from "../../hooks/useCriterionEvaluation";
@@ -73,6 +74,26 @@ export function CriterionEvaluationPage() {
 
   const { options: cycleOptions, isLoading: isCycleLoading } =
     useCycleOptions();
+
+  useEffect(() => {
+    if (
+      isExternalReviewer &&
+      !selectedCycleId &&
+      !isCycleLoading &&
+      cycleOptions.length > 0
+    ) {
+      const firstCycleId = cycleOptions[0].Value;
+      if (firstCycleId) {
+        setSelectedCycleId(firstCycleId);
+      }
+    }
+  }, [
+    isExternalReviewer,
+    selectedCycleId,
+    isCycleLoading,
+    cycleOptions,
+    setSelectedCycleId,
+  ]);
 
   const { data: standardSetData } = useQuery({
     queryKey: ["standardSet-detail", standardSetId],

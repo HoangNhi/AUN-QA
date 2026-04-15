@@ -59,7 +59,13 @@ export default function SarPage() {
 
   const cycleOptions = useCycleOptions();
   const columns = useMemo(
-    () => getColumns(showPopupDetail, !isExternalReviewer, !isExternalReviewer),
+    () =>
+      getColumns(
+        showPopupDetail,
+        true,
+        true,
+        !isExternalReviewer,
+      ),
     [isExternalReviewer, showPopupDetail],
   );
 

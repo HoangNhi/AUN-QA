@@ -88,7 +88,7 @@ const PopupSurveyCampaign = ({
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
-  const { options: cycleOptions } = useCycleOptions(!readOnly);
+  const { options: cycleOptions } = useCycleOptions(true);
   const { options: externalCycleOptions } = useCycleOptionsForExternalReview(
     !!readOnly,
   );
@@ -227,8 +227,8 @@ const PopupSurveyCampaign = ({
                       className={`grid w-full ${
                         readOnly
                           ? showResultsTab
-                            ? "grid-cols-3"
-                            : "grid-cols-2"
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
                           : showResultsTab
                             ? "grid-cols-3"
                             : "grid-cols-2"
@@ -244,10 +244,11 @@ const PopupSurveyCampaign = ({
                           <Edit3 size={16} className="mr-2" /> Soạn thảo
                         </TabsTrigger>
                       )}
-                      <TabsTrigger value="preview">
-                        <Eye size={16} className="mr-2" />{" "}
-                        {readOnly ? "Xem" : "Xem trước"}
-                      </TabsTrigger>
+                      {!readOnly && (
+                        <TabsTrigger value="preview">
+                          <Eye size={16} className="mr-2" /> Xem trước
+                        </TabsTrigger>
+                      )}
                       {showResultsTab && (
                         <TabsTrigger value="results">
                           <BarChart3 size={16} className="mr-2" /> Kết quả
@@ -282,11 +283,9 @@ const PopupSurveyCampaign = ({
                         Chu kỳ đánh giá
                       </span>
                       <span className="flex-1 font-medium text-slate-800 text-sm">
-                        {(
-                          externalCycleOptions.length > 0
-                            ? externalCycleOptions
-                            : cycleOptions
-                        ).find((o) => o.Value === surveyCampaign?.CycleId)
+                        {[...externalCycleOptions, ...cycleOptions].find(
+                          (o) => o.Value === surveyCampaign?.CycleId,
+                        )
                           ?.Text || "--"}
                       </span>
                     </div>

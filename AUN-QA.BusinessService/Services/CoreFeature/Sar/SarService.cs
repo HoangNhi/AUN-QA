@@ -218,6 +218,38 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
 
         public async Task<SarDraftDto?> GetByCycle(GetSarByCycleRequest request)
         {
+            if (!IsAdmin())
+            {
+                var userId = GetCurrentUserIdOrNull();
+                var roleClaim = _contextAccessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == "role")?.Value;
+                var isExternalReviewer = userId != null
+                    && Guid.TryParse(roleClaim, out var roleGuid)
+                    && roleGuid == new Guid(ExtRoleId);
+
+                if (isExternalReviewer)
+                {
+                    var accessibleCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId.Value);
+                    if (!accessibleCycleIds.Contains(request.CycleId))
+                    {
+                        throw new BusinessException("Bạn không có quyền xem báo cáo SAR của chu kỳ này");
+                    }
+
+                    var sarReport = await FindSarReportAsync(request.CycleId);
+                    if (sarReport == null)
+                    {
+                        return null;
+                    }
+
+                    return ToDto(
+                        sarReport,
+                        currentUserCouncilRoleId: null,
+                        canSubmitByRole: false,
+                        canEditByRole: false,
+                        canApproveByRole: false);
+                }
+            }
+
             var allowedRoles = Roles(
                 CouncilRole.HeadOfCouncil,
                 CouncilRole.ViceChairman,

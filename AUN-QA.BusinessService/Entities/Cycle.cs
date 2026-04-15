@@ -35,5 +35,7 @@ public partial class Cycle
 
     public bool IsDeleted { get; set; }
 
+    public virtual ICollection<ActionPlan> ActionPlans { get; set; } = new List<ActionPlan>();
+
     public virtual ICollection<ExternalReview> ExternalReviews { get; set; } = new List<ExternalReview>();
 }

@@ -9,7 +9,11 @@ import { cn } from "@/lib/utils";
 import { useStandardsByCycle } from "@/features/business/hooks/useStandardsByCycle";
 import { useExternalReviewResults } from "./hooks/useExternalReviewResults";
 import { useExternalReview } from "./hooks/useExternalReview";
-import type { ExternalReviewListItem, ExternalReviewStatus } from "@/features/business/types/externalReview.types";
+import type {
+  ExternalReviewListItem,
+  ExternalReviewResult,
+  ExternalReviewStatus,
+} from "@/features/business/types/externalReview.types";
 import { AccountTab } from "./tabs/AccountTab";
 import { WatermarkTab } from "./tabs/WatermarkTab";
 import { ResultsTab } from "./tabs/ResultsTab";
@@ -121,8 +125,8 @@ export default function PopupExternalReview({
   const handleUpsertResult = async (payload: {
     standardId: string;
     strengths?: string | null;
-  }) => {
-    await results.upsertResult(payload);
+  }): Promise<ExternalReviewResult> => {
+    return results.upsertResult(payload);
   };
 
   const handleAddFinding = async (payload: {

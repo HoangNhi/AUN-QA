@@ -12,6 +12,14 @@ public partial class BusinessContext : DbContext
     {
     }
 
+    public virtual DbSet<ActionPlan> ActionPlans { get; set; }
+
+    public virtual DbSet<ActionPlanAssignee> ActionPlanAssignees { get; set; }
+
+    public virtual DbSet<ActionTask> ActionTasks { get; set; }
+
+    public virtual DbSet<ActionTaskAttachment> ActionTaskAttachments { get; set; }
+
     public virtual DbSet<Council> Councils { get; set; }
 
     public virtual DbSet<CriterionEvaluation> CriterionEvaluations { get; set; }
@@ -60,6 +68,154 @@ public partial class BusinessContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ActionPlan>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ActionPlan_pk");
+
+            entity.ToTable("ActionPlan");
+
+            entity.HasIndex(e => new { e.CycleId, e.Deadline }, "IX_ActionPlan_CycleId_Deadline");
+
+            entity.HasIndex(e => new { e.CycleId, e.Status }, "IX_ActionPlan_CycleId_Status");
+
+            entity.HasIndex(e => e.SourceFindingId, "IX_ActionPlan_SourceFindingId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
+            entity.Property(e => e.ApprovedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.AssignedAt).HasColumnType("datetime");
+            entity.Property(e => e.AssignedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.Deadline).HasColumnType("datetime");
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.Kpi).HasMaxLength(2000);
+            entity.Property(e => e.Priority).HasDefaultValue(2);
+            entity.Property(e => e.RevisionReason).HasMaxLength(1000);
+            entity.Property(e => e.RevisionRequestedAt).HasColumnType("datetime");
+            entity.Property(e => e.RevisionRequestedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.Status).HasDefaultValue(1);
+            entity.Property(e => e.SubmittedAt).HasColumnType("datetime");
+            entity.Property(e => e.SubmittedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.Title).HasMaxLength(500);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.ActionPlans)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ActionPlan_Cycle_fk");
+
+            entity.HasOne(d => d.SourceFinding).WithMany(p => p.ActionPlans)
+                .HasForeignKey(d => d.SourceFindingId)
+                .HasConstraintName("ActionPlan_SourceFinding_fk");
+        });
+
+        modelBuilder.Entity<ActionPlanAssignee>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ActionPlanAssignee_pk");
+
+            entity.ToTable("ActionPlanAssignee");
+
+            entity.HasIndex(e => new { e.ActionPlanId, e.UserId }, "IX_ActionPlanAssignee_ActionPlanId_UserId_Active")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.AssignedAt).HasColumnType("datetime");
+            entity.Property(e => e.AssignedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ActionPlan).WithMany(p => p.ActionPlanAssignees)
+                .HasForeignKey(d => d.ActionPlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ActionPlanAssignee_ActionPlan_fk");
+        });
+
+        modelBuilder.Entity<ActionTask>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ActionTask_pk");
+
+            entity.ToTable("ActionTask");
+
+            entity.HasIndex(e => new { e.ActionPlanId, e.TaskStatus }, "IX_ActionTask_ActionPlanId_TaskStatus");
+
+            entity.HasIndex(e => e.DueDate, "IX_ActionTask_DueDate");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.DueDate).HasColumnType("datetime");
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.TaskStatus).HasDefaultValue(1);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ActionPlan).WithMany(p => p.ActionTasks)
+                .HasForeignKey(d => d.ActionPlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ActionTask_ActionPlan_fk");
+        });
+
+        modelBuilder.Entity<ActionTaskAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ActionTaskAttachment_pk");
+
+            entity.ToTable("ActionTaskAttachment");
+
+            entity.HasIndex(e => e.ActionTaskId, "IX_ActionTaskAttachment_ActionTaskId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.FileName).HasMaxLength(500);
+            entity.Property(e => e.FileUrl).HasMaxLength(2000);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+            entity.Property(e => e.UploadedAt).HasColumnType("datetime");
+            entity.Property(e => e.UploadedBy)
+                .HasMaxLength(256)
+                .IsUnicode(false);
+
+            entity.HasOne(d => d.ActionTask).WithMany(p => p.ActionTaskAttachments)
+                .HasForeignKey(d => d.ActionTaskId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ActionTaskAttachment_ActionTask_fk");
+        });
+
         modelBuilder.Entity<Council>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Council_pk");

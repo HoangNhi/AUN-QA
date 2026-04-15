@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { externalReviewService } from "@/features/business/api/externalReview.api";
 import type {
   AddExternalReviewFindingRequest,
+  ExternalReviewResult,
   UpdateExternalReviewFindingRequest,
 } from "@/features/business/types/externalReview.types";
 
@@ -25,7 +26,10 @@ export function useExternalReviewResults(externalReviewId: string | null) {
   }, [externalReviewId, queryClient]);
 
   const upsertResultMutation = useMutation({
-    mutationFn: async (payload: { standardId: string; strengths?: string | null }) => {
+    mutationFn: async (payload: {
+      standardId: string;
+      strengths?: string | null;
+    }): Promise<ExternalReviewResult> => {
       if (!externalReviewId) {
         throw buildMissingReviewError();
       }
@@ -35,9 +39,16 @@ export function useExternalReviewResults(externalReviewId: string | null) {
         StandardId: payload.standardId,
         Strengths: payload.strengths,
       });
+
       if (!response.Success) {
         throw new Error(response.Message || "Không thể lưu kết quả đánh giá.");
       }
+
+      if (!response.Data) {
+        throw new Error("Không thể lưu kết quả đánh giá.");
+      }
+
+      return response.Data;
     },
     onSuccess: async () => {
       toast.success("Đã lưu kết quả đánh giá.");

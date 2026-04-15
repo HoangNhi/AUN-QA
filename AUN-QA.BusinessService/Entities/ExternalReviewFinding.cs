@@ -27,5 +27,7 @@ public partial class ExternalReviewFinding
 
     public bool IsDeleted { get; set; }
 
+    public virtual ICollection<ActionPlan> ActionPlans { get; set; } = new List<ActionPlan>();
+
     public virtual ExternalReviewResult ExternalReviewResult { get; set; } = null!;
 }

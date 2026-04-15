@@ -3,7 +3,12 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   FindingType,
   type AddExternalReviewFindingRequest,
@@ -21,7 +26,7 @@ interface ResultsTabProps {
   onUpsertResult: (payload: {
     standardId: string;
     strengths?: string | null;
-  }) => Promise<void>;
+  }) => Promise<ExternalReviewResult>;
   onAddFinding: (payload: AddExternalReviewFindingRequest) => Promise<void>;
   onUpdateFinding: (payload: UpdateExternalReviewFindingRequest) => Promise<void>;
   onDeleteFinding: (findingId: string) => Promise<void>;
@@ -92,6 +97,28 @@ export function ResultsTab({
       delete next[standardId];
       return next;
     });
+  };
+
+  const handleStartAddFinding = async (
+    standardId: string,
+    resultId: string | undefined,
+    findingType: "0" | "1",
+  ) => {
+    if (resultId) {
+      openAddModal(resultId, findingType);
+      return;
+    }
+
+    const upserted = await onUpsertResult({
+      standardId,
+      strengths: null,
+    });
+
+    if (!upserted?.Id) {
+      return;
+    }
+
+    openAddModal(upserted.Id, findingType);
   };
 
   const openAddModal = (resultId: string, findingType: "0" | "1") => {
@@ -302,34 +329,30 @@ export function ResultsTab({
 
                     {!isReadOnly ? (
                       <div className="flex flex-wrap gap-2">
-                        {!result?.Id ? (
-                          <p className="text-xs text-muted-foreground">
-                            Cần lưu kết quả trước khi thêm phát hiện.
-                          </p>
-                        ) : (
-                          <>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openAddModal(result.Id, "0")}
-                              disabled={isSubmitting}
-                              className="border-red-200 text-red-700 hover:bg-red-50"
-                            >
-                              + Thêm Cần cải tiến
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openAddModal(result.Id, "1")}
-                              disabled={isSubmitting}
-                              className="border-yellow-200 text-yellow-700 hover:bg-yellow-50"
-                            >
-                              + Thêm Kiến nghị
-                            </Button>
-                          </>
-                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            void handleStartAddFinding(stdId, result?.Id, "0")
+                          }
+                          disabled={isSubmitting}
+                          className="border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          + Thêm Cần cải tiến
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            void handleStartAddFinding(stdId, result?.Id, "1")
+                          }
+                          disabled={isSubmitting}
+                          className="border-yellow-200 text-yellow-700 hover:bg-yellow-50"
+                        >
+                          + Thêm Kiến nghị
+                        </Button>
                       </div>
                     ) : null}
                   </div>
@@ -348,6 +371,9 @@ export function ResultsTab({
           <DialogTitle>
             {modal.mode === "add" ? "Thêm phát hiện" : "Chỉnh sửa phát hiện"}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Biểu mẫu nhập nội dung và loại phát hiện cho kết quả đánh giá ngoài.
+          </DialogDescription>
 
           <div className="space-y-4 pt-1">
             <div className="space-y-1.5">

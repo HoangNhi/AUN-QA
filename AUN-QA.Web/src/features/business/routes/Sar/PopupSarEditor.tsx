@@ -41,6 +41,7 @@ import { cn, getFileUrl } from "@/lib/utils";
 import { fileService } from "@/features/file/api/uploadfile.api";
 import { sarService } from "@/features/business/api/sar.api";
 import { useInternalReviewComments } from "@/features/business/hooks/useInternalReviewComments";
+import { useSarWatermark } from "@/features/business/hooks/useSarWatermark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -61,6 +62,7 @@ import {
   decodeEvidenceTagTransfer,
   encodeEvidenceTagTransfer,
 } from "./extensions/EvidenceTag";
+import { SarWatermarkOverlay } from "./SarWatermarkOverlay";
 import type { TocItem } from "./sarEditorExtensions";
 import { isLocalSarAutosaveOrigin } from "./autosave-origin";
 import SarReviewCommentsPanel from "./SarReviewCommentsPanel";
@@ -408,7 +410,7 @@ export default function PopupSarEditor({
     setActiveCommentId(markId);
   }, []);
 
-  const { user } = useAuth();
+  const { user, isExternalReviewer } = useAuth();
   const userFullnameRef = useRef(user?.Fullname ?? "Ẩn danh");
 
   useEffect(() => {
@@ -436,6 +438,10 @@ export default function PopupSarEditor({
   const showRevisionReasonBanner = shouldShowSarRevisionReasonBanner(
     currentStatus,
     draft?.RevisionReason,
+  );
+  const sarWatermark = useSarWatermark(
+    cycle?.CycleId,
+    isExternalReviewer && open,
   );
   const rightPanelTabs = getSarRightPanelTabs(currentStatus);
   const { comments: reviewComments, isLoading: isReviewCommentsLoading } =
@@ -1293,20 +1299,22 @@ export default function PopupSarEditor({
                 </Button>
               )}
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
-                disabled={isExporting}
-                onClick={handleExportDocx}
-              >
-                {isExporting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FileDown className="mr-2 h-4 w-4 text-blue-600" />
-                )}
-                Xuất báo cáo
-              </Button>
+              {!isExternalReviewer && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 border-slate-300 text-slate-700 hover:bg-slate-50"
+                  disabled={isExporting}
+                  onClick={handleExportDocx}
+                >
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileDown className="mr-2 h-4 w-4 text-blue-600" />
+                  )}
+                  Xuất báo cáo
+                </Button>
+              )}
 
               {(currentStatus === 1 || currentStatus === 3) && (
                 <Button
@@ -1389,7 +1397,15 @@ export default function PopupSarEditor({
 
             <div className="flex flex-1 min-w-0 overflow-hidden bg-slate-100">
               {/* EDITOR AREA */}
-              <div className="flex-1 min-w-0 overflow-y-auto py-8 px-6">
+              <div className="flex-1 min-w-0 overflow-y-auto py-8 px-6 relative">
+                {isExternalReviewer && (
+                  <SarWatermarkOverlay
+                    watermarkText={sarWatermark.watermarkText}
+                    opacity={sarWatermark.opacity}
+                    position={sarWatermark.position}
+                    userEmail={user?.Email ?? ""}
+                  />
+                )}
                 {showRevisionReasonBanner && (
                   <div className="mx-auto mb-4 max-w-[760px] rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <p className="font-semibold">Lý do yêu cầu chỉnh sửa</p>

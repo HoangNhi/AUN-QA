@@ -34,8 +34,6 @@ import { cycleService } from "@/features/business/api/cycle.api";
 import { surveyTemplateService } from "../../api/survey-template.api";
 import { TopicListEditor } from "../../components/TopicListEditor";
 import { useSurveyTopics } from "../../hooks/useSurveyTopics";
-import { useCycleOptionsForExternalReview } from "../../hooks/useCycleOptionsForExternalReview";
-import { useCycleOptions } from "../../hooks/useCycleOptions";
 import { toast } from "sonner";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { CAMPAIGN_STATUS_OPTIONS } from "@/constants/business.constants";
@@ -87,11 +85,6 @@ const PopupSurveyCampaign = ({
 
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
-
-  const { options: cycleOptions } = useCycleOptions(true);
-  const { options: externalCycleOptions } = useCycleOptionsForExternalReview(
-    !!readOnly,
-  );
 
   const [mode, setMode] = useState<"edit" | "info" | "preview" | "results">(
     readOnly ? "info" : "edit",
@@ -283,10 +276,7 @@ const PopupSurveyCampaign = ({
                         Chu kỳ đánh giá
                       </span>
                       <span className="flex-1 font-medium text-slate-800 text-sm">
-                        {[...externalCycleOptions, ...cycleOptions].find(
-                          (o) => o.Value === surveyCampaign?.CycleId,
-                        )
-                          ?.Text || "--"}
+                        {surveyCampaign?.CycleName || "--"}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 px-4 py-2.5">

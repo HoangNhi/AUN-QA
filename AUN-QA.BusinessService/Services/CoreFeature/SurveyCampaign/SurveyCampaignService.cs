@@ -71,6 +71,22 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
 
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 
+            try
+            {
+                if (data.CycleId != Guid.Empty)
+                {
+                    var cycle = await _cycleService.GetById(new GetByIdRequest
+                    {
+                        Id = data.CycleId,
+                    });
+                    result.CycleName = cycle?.Name;
+                }
+            }
+            catch
+            {
+                result.CycleName = null;
+            }
+
             #region Chủ đề khảo sát và nhóm câu hỏi
             // 1. Get raw data
             var topics = await _context.TemplateTopics

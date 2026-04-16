@@ -1,0 +1,159 @@
+import type { GetListPagingRequest, GetListPagingResponse } from "@/types/base/base.types";
+
+export enum ActionPlanStatus {
+  Draft = 1,
+  Submitted = 2,
+  RevisionRequested = 3,
+  Approved = 4,
+  Assigned = 5,
+}
+
+export enum ActionPriority {
+  High = 1,
+  Medium = 2,
+  Low = 3,
+}
+
+export enum ActionTaskStatus {
+  Todo = 1,
+  InProgress = 2,
+  Done = 3,
+}
+
+export interface ActionPlanAssignee {
+  Id: string;
+  ActionPlanId: string;
+  UserId: string;
+  AssignedAt: string;
+  AssignedBy: string;
+  Fullname?: string | null;
+  Username?: string | null;
+}
+
+export interface ActionTaskAttachment {
+  Id: string;
+  ActionTaskId: string;
+  AttachmentId?: string | null;
+  FileName: string;
+  FileUrl?: string | null;
+  UploadedAt: string;
+  UploadedBy: string;
+}
+
+export interface ActionTask {
+  Id: string;
+  ActionPlanId: string;
+  Description: string;
+  Note?: string | null;
+  TaskStatus: ActionTaskStatus | number;
+  DueDate?: string | null;
+  CompletedAt?: string | null;
+  Attachments: ActionTaskAttachment[];
+}
+
+export interface ActionPlanDetail {
+  Id: string;
+  CycleId: string;
+  Title: string;
+  Description?: string | null;
+  StandardId?: string | null;
+  CriterionId?: string | null;
+  Priority: ActionPriority | number;
+  Deadline: string;
+  Kpi: string;
+  Status: ActionPlanStatus | number;
+  SourceFindingId?: string | null;
+  SubmittedAt?: string | null;
+  SubmittedBy?: string | null;
+  ApprovedAt?: string | null;
+  ApprovedBy?: string | null;
+  RevisionRequestedAt?: string | null;
+  RevisionRequestedBy?: string | null;
+  RevisionReason?: string | null;
+  AssignedAt?: string | null;
+  AssignedBy?: string | null;
+  Assignees: ActionPlanAssignee[];
+  Tasks: ActionTask[];
+}
+
+export interface ActionPlanListItem {
+  Id: string;
+  CycleId: string;
+  CycleName: string;
+  Year: number;
+  Title: string;
+  Description?: string | null;
+  StandardId?: string | null;
+  CriterionId?: string | null;
+  Priority: ActionPriority | number;
+  Deadline: string;
+  Kpi: string;
+  Status: ActionPlanStatus | number;
+  AssigneeCount: number;
+  TotalTaskCount: number;
+  DoneTaskCount: number;
+  StatusName?: string | null;
+  PriorityName?: string | null;
+}
+
+export interface ExternalFindingOption {
+  Id: string;
+  ExternalReviewResultId: string;
+  CriterionId?: string | null;
+  StandardId?: string | null;
+  Content: string;
+  Summary?: string | null;
+}
+
+export interface ActionPlanGetListRequest extends GetListPagingRequest {
+  CycleId?: string | null;
+  StandardId?: string | null;
+  CriterionId?: string | null;
+  SourceFindingId?: string | null;
+  Status?: ActionPlanStatus | number | null;
+  Priority?: ActionPriority | number | null;
+}
+
+export interface ActionPlanUpsertRequest {
+  Id: string;
+  CycleId: string;
+  Title: string;
+  Description?: string | null;
+  StandardId?: string | null;
+  CriterionId?: string | null;
+  Priority: ActionPriority | number;
+  Deadline: string;
+  Kpi: string;
+  SourceFindingId?: string | null;
+  AssignedTo?: string[];
+  IsActived?: boolean;
+}
+
+export interface ActionPlanAssignRequest {
+  Id: string;
+  AssignedTo: string[];
+}
+
+export interface ActionPlanDeleteListRequest {
+  Ids: string[];
+}
+
+export interface ActionPlanSubmitRequest {
+  Id: string;
+}
+
+export interface ActionPlanApproveRequest {
+  Id: string;
+}
+
+export interface ActionPlanRequestRevisionRequest {
+  Id: string;
+  Reason: string;
+}
+
+export interface ActionPlanExternalFindingRequest {
+  CycleId?: string | null;
+  TextSearch?: string | null;
+}
+
+export type ActionPlanListResponse = GetListPagingResponse<ActionPlanListItem>;

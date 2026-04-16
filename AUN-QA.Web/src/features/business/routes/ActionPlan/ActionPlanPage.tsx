@@ -1,0 +1,104 @@
+import { useMemo } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import { useActionPlanList } from "./hooks/useActionPlanList";
+import { useActionPlan } from "./hooks/useActionPlan";
+import { getActionPlanColumns } from "./columns";
+import PopupActionPlan from "./PopupActionPlan";
+import type { ActionPlanListItem } from "@/features/business/types/actionPlan.types";
+
+export default function ActionPlanPage() {
+  const {
+    data,
+    rowSelection,
+    setRowSelection,
+    pageRequest,
+    setPageRequest,
+    isFetching,
+    refreshList,
+    isOpen,
+    selectedItem,
+    openPopup,
+    openNew,
+    onOpenChange,
+  } = useActionPlanList();
+  const cycleOptions = useCycleOptions();
+  const { deleteList, isMutating } = useActionPlan();
+
+  const columns = useMemo<ColumnDef<ActionPlanListItem>[]>(() => getActionPlanColumns(openPopup), [openPopup]);
+
+  const listPage = useListPage({
+    data,
+    rowSelection,
+    pageRequest,
+    setPageRequest,
+    deleteList: async (ids: string[]) => {
+      await deleteList({ Ids: ids });
+      refreshList();
+    },
+    setRowSelection,
+    defaultPageRequest: { CycleId: undefined, Status: undefined },
+  });
+
+  return (
+    <ListPageLayout
+      columns={columns}
+      data={data.Data}
+      totalRow={data.TotalRow}
+      rowSelection={rowSelection}
+      setRowSelection={setRowSelection}
+      pageRequest={pageRequest}
+      setPageRequest={setPageRequest}
+      onRefresh={refreshList}
+      isLoading={isFetching}
+      searchTerm={listPage.searchTerm}
+      onSearchTermChange={listPage.setSearchTerm}
+      onResetFilters={listPage.handleResetFilters}
+      filterGridCols="md:grid-cols-3"
+      searchInputClassName="col-span-1 bg-background"
+      filterContent={
+        <Combobox
+          options={cycleOptions.options ?? []}
+          loading={cycleOptions.isLoading}
+          value={pageRequest.CycleId ?? undefined}
+          onValueChange={(value) =>
+            setPageRequest((prev) => ({
+              ...prev,
+              CycleId: value || undefined,
+              PageIndex: 1,
+            }))
+          }
+          placeholder="Tất cả chu kỳ"
+          searchPlaceholder="Tìm chu kỳ..."
+          emptyText="Không tìm thấy chu kỳ."
+        />
+      }
+      onAddClick={openNew}
+      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      deleteDisabled={listPage.selectedIds.length === 0}
+      showDeleteConfirm={listPage.showDeleteConfirm}
+      onDeleteConfirmChange={listPage.setShowDeleteConfirm}
+      onDeleteConfirm={listPage.handleDelete}
+      deleteItemCount={listPage.selectedIds.length}
+      isDeleteLoading={isMutating}
+      extraActions={
+        <Button size="sm" variant="secondary" onClick={refreshList}>
+          Làm mới
+        </Button>
+      }
+    >
+      {isOpen && selectedItem ? (
+        <PopupActionPlan
+          open={isOpen}
+          item={selectedItem}
+          onOpenChange={onOpenChange}
+          onChanged={refreshList}
+        />
+      ) : null}
+    </ListPageLayout>
+  );
+}

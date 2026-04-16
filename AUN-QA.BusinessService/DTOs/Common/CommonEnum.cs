@@ -83,4 +83,27 @@ namespace AUN_QA.BusinessService.DTOs.Common
         Center = 1,
         Repeat = 2
     }
+
+    public enum ActionPlanStatus
+    {
+        Draft = 1,
+        Submitted = 2,
+        RevisionRequested = 3,
+        Approved = 4,
+        Assigned = 5
+    }
+
+    public enum ActionPriority
+    {
+        High = 1,
+        Medium = 2,
+        Low = 3
+    }
+
+    public enum ActionTaskStatus
+    {
+        Todo = 1,
+        InProgress = 2,
+        Done = 3
+    }
 }

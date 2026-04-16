@@ -45,6 +45,14 @@ public class AuditActionFilter : IAsyncActionFilter
         { "delete-list-session", "DELETE_SESSION" },
         { "send-survey-invitation", "SEND_INVITATION" },
         { "submit-survey", "SUBMIT_SURVEY" },
+        { "submit", "SUBMIT" },
+        { "request-revision", "REQUEST_REVISION" },
+        { "assign", "ASSIGN" },
+        { "insert-task", "CREATE" },
+        { "update-task", "UPDATE" },
+        { "delete-task", "DELETE" },
+        { "upload-task-attachment", "UPLOAD_ATTACHMENT" },
+        { "delete-task-attachment", "DELETE_ATTACHMENT" },
     };
 
     public AuditActionFilter(AuditProto.AuditProtoClient auditClient, ILogger<AuditActionFilter> logger)

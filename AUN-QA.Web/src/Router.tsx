@@ -24,6 +24,8 @@ import { CriterionEvaluationPage } from "./features/business/routes/CriterionEva
 import SarPage from "./features/business/routes/Sar/SarPage";
 import InternalReviewPage from "./features/business/routes/InternalReview/InternalReviewPage";
 import ExternalReviewPage from "./features/business/routes/ExternalReview/ExternalReviewPage";
+import ActionPlanPage from "./features/business/routes/ActionPlan/ActionPlanPage";
+import TaskExecutionPage from "./features/business/routes/TaskExecution/TaskExecutionPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -63,6 +65,8 @@ const Router: FC = () => {
           <Route path="/sar" element={<SarPage />} />
           <Route path="/internalreview" element={<InternalReviewPage />} />
           <Route path="/externalreview" element={<ExternalReviewPage />} />
+          <Route path="/actionplan" element={<ActionPlanPage />} />
+          <Route path="/taskexecution" element={<TaskExecutionPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

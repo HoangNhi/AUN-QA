@@ -30,7 +30,9 @@ export function useExternalReview(selectedCycleId: string | null) {
         return null;
       }
 
-      const response = await externalReviewService.get({ CycleId: selectedCycleId });
+      const response = await externalReviewService.get({
+        CycleId: selectedCycleId,
+      });
       if (!response.Success) {
         if (isMissingReviewResponse(response.Message)) {
           return null;
@@ -58,7 +60,9 @@ export function useExternalReview(selectedCycleId: string | null) {
       return;
     }
 
-    toast.error(error instanceof Error ? error.message : "Không thể tải External Review.");
+    toast.error(
+      error instanceof Error ? error.message : "Không thể tải External Review.",
+    );
   }, [error, isError]);
 
   const invalidateCurrent = useCallback(async () => {
@@ -100,7 +104,11 @@ export function useExternalReview(selectedCycleId: string | null) {
   });
 
   const updateWatermarkMutation = useMutation({
-    mutationFn: async (payload: { text?: string | null; opacity: number; position: number }) => {
+    mutationFn: async (payload: {
+      text?: string | null;
+      opacity: number;
+      position: number;
+    }) => {
       if (!review?.Id) {
         throw new Error("External Review chưa được khởi tạo.");
       }
@@ -144,7 +152,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       }
     },
     onSuccess: async () => {
-      toast.success("Đã xác nhận hoàn tất External Review.");
+      toast.success("Đã xác nhận hoàn tất đánh giá ngoài.");
       await invalidateCurrent();
     },
     onError: (mutationError) => {
@@ -159,7 +167,7 @@ export function useExternalReview(selectedCycleId: string | null) {
   const addAccountsMutation = useMutation({
     mutationFn: async (userIds: string[]) => {
       if (!review?.Id) {
-        throw new Error("External Review chưa được khởi tạo.");
+        throw new Error("Đợt đánh giá ngoài chưa được khởi tạo.");
       }
 
       const response = await externalReviewService.addAccounts({
@@ -177,7 +185,9 @@ export function useExternalReview(selectedCycleId: string | null) {
     },
     onError: (mutationError) => {
       toast.error(
-        mutationError instanceof Error ? mutationError.message : "Không thể thêm tài khoản.",
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Không thể thêm tài khoản.",
       );
     },
   });
@@ -190,7 +200,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       password: string;
     }) => {
       if (!review?.Id) {
-        throw new Error("External Review chưa được khởi tạo.");
+        throw new Error("Đợt đánh giá ngoài chưa được khởi tạo.");
       }
 
       const response = await externalReviewService.createAndLinkAccount({
@@ -202,7 +212,9 @@ export function useExternalReview(selectedCycleId: string | null) {
       });
 
       if (!response.Success) {
-        throw new Error(response.Message || "Không thể tạo tài khoản chuyên gia.");
+        throw new Error(
+          response.Message || "Không thể tạo tài khoản chuyên gia.",
+        );
       }
     },
     onSuccess: async () => {
@@ -220,7 +232,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       password?: string;
     }) => {
       if (!review?.Id) {
-        throw new Error("External Review chưa được khởi tạo.");
+        throw new Error("Đợt đánh giá ngoài chưa được khởi tạo.");
       }
 
       const response = await externalReviewService.updateAccount({
@@ -251,7 +263,7 @@ export function useExternalReview(selectedCycleId: string | null) {
   const removeAccountMutation = useMutation({
     mutationFn: async (accountId: string) => {
       if (!review?.Id) {
-        throw new Error("External Review chưa được khởi tạo.");
+        throw new Error("Đợt đánh giá ngoài chưa được khởi tạo.");
       }
 
       const response = await externalReviewService.removeAccount({
@@ -290,12 +302,20 @@ export function useExternalReview(selectedCycleId: string | null) {
     isFetching,
     isMutating,
     updateStatus: (status: number) => updateStatusMutation.mutateAsync(status),
-    updateWatermark: (payload: { text?: string | null; opacity: number; position: number }) =>
-      updateWatermarkMutation.mutateAsync(payload),
+    updateWatermark: (payload: {
+      text?: string | null;
+      opacity: number;
+      position: number;
+    }) => updateWatermarkMutation.mutateAsync(payload),
     confirmCompletion: () => confirmCompletionMutation.mutateAsync(),
-    addAccounts: (userIds: string[]) => addAccountsMutation.mutateAsync(userIds),
-    createAndLinkAccount: (payload: { fullname: string; username: string; email: string; password: string }) =>
-      createAndLinkAccountMutation.mutateAsync(payload),
+    addAccounts: (userIds: string[]) =>
+      addAccountsMutation.mutateAsync(userIds),
+    createAndLinkAccount: (payload: {
+      fullname: string;
+      username: string;
+      email: string;
+      password: string;
+    }) => createAndLinkAccountMutation.mutateAsync(payload),
     updateAccount: (payload: {
       accountId: string;
       fullname: string;
@@ -304,6 +324,7 @@ export function useExternalReview(selectedCycleId: string | null) {
       isActived: boolean;
       password?: string;
     }) => updateAccountMutation.mutateAsync(payload),
-    removeAccount: (accountId: string) => removeAccountMutation.mutateAsync(accountId),
+    removeAccount: (accountId: string) =>
+      removeAccountMutation.mutateAsync(accountId),
   };
 }

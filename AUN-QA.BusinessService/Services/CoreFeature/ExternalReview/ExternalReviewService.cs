@@ -288,6 +288,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             review.UpdatedAt = now;
             review.UpdatedBy = username;
 
+            var cycle = await _context.Cycles.FirstOrDefaultAsync(x => x.Id == review.CycleId);
+            if (cycle != null)
+            {
+                cycle.Status = (int)CycleStatus.Act;
+                cycle.UpdatedAt = now;
+                cycle.UpdatedBy = username;
+            }
+
             await _context.SaveChangesAsync();
         }
 

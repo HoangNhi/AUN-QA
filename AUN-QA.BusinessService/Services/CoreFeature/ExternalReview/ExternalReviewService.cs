@@ -179,6 +179,25 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 return null;
             }
 
+            var isAdmin = IsAdmin();
+            int? currentUserCouncilRoleId = null;
+            if (!isAdmin)
+            {
+                var userId = GetCurrentUserIdOrNull();
+                if (userId != null)
+                {
+                    var council = await _context.Councils
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x =>
+                            x.CycleId == cycleId
+                            && x.UserId == userId.Value
+                            && !x.IsDeleted
+                            && x.IsActived);
+
+                    currentUserCouncilRoleId = council?.RoleId;
+                }
+            }
+
             var results = await _context.ExternalReviewResults
                 .AsNoTracking()
                 .Where(x => x.ExternalReviewId == review.Id && !x.IsDeleted && x.IsActived)
@@ -198,7 +217,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 .GroupBy(x => x.ExternalReviewResultId)
                 .ToDictionary(x => x.Key, x => x.ToList());
 
-            var model = MapReview(review);
+            var model = MapReview(review, currentUserCouncilRoleId, isAdmin);
             model.Results = results
                 .Select(x => MapResult(
                     x,
@@ -214,6 +233,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         {
             var review = await GetReviewOrThrowAsync(request.Id);
             var targetStatus = ParseStatusOrThrow(request.Status);
+
+            await RequireCouncilRoleAsync(
+                review.CycleId,
+                new List<int> { (int)CouncilRole.HeadOfCouncil, (int)CouncilRole.ViceChairman });
 
             if (targetStatus == ExternalReviewStatus.Completed)
             {
@@ -264,6 +287,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
         public async Task ConfirmCompletionAsync(Guid id)
         {
             var review = await GetReviewOrThrowAsync(id);
+
+            await RequireCouncilRoleAsync(
+                review.CycleId,
+                new List<int> { (int)CouncilRole.HeadOfCouncil, (int)CouncilRole.ViceChairman });
 
             if (review.IsCompleted && review.Status == (int)ExternalReviewStatus.Completed)
             {
@@ -765,6 +792,39 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             await _systemClient.SetUsersActivedAsync(request);
         }
 
+        private async Task<Entities.Council?> RequireCouncilRoleAsync(Guid cycleId, List<int>? allowedRoles = null)
+        {
+            if (IsAdmin())
+            {
+                return null;
+            }
+
+            var userId = GetCurrentUserIdOrNull();
+            if (userId == null)
+            {
+                throw new BusinessException("Không thể xác định người dùng hiện tại");
+            }
+
+            var council = await _context.Councils.AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.CycleId == cycleId
+                    && x.UserId == userId.Value
+                    && !x.IsDeleted
+                    && x.IsActived);
+
+            if (council == null)
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
+            }
+
+            if (allowedRoles != null && allowedRoles.Count > 0 && !allowedRoles.Contains(council.RoleId))
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA này");
+            }
+
+            return council;
+        }
+
         private string GetCurrentUsernameOrThrow()
         {
             var username = _accessor.HttpContext?.User?.Identity?.Name;
@@ -774,6 +834,25 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             }
 
             return username.Trim();
+        }
+
+        private bool IsAdmin()
+        {
+            var username = _accessor.HttpContext?.User?.Identity?.Name;
+            return string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private Guid? GetCurrentUserIdOrNull()
+        {
+            var userId = _accessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (Guid.TryParse(userId, out var parsed))
+            {
+                return parsed;
+            }
+
+            return null;
         }
 
         private static ExternalReviewStatus ParseStatusOrThrow(int status)
@@ -802,7 +881,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             }
         }
 
-        private static ModelExternalReview MapReview(Entities.ExternalReview review)
+        private static ModelExternalReview MapReview(
+            Entities.ExternalReview review,
+            int? currentUserCouncilRoleId = null,
+            bool isAdmin = false)
         {
             return new ModelExternalReview
             {
@@ -818,7 +900,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                 CreatedAt = review.CreatedAt,
                 CreatedBy = review.CreatedBy,
                 UpdatedAt = review.UpdatedAt,
-                UpdatedBy = review.UpdatedBy
+                UpdatedBy = review.UpdatedBy,
+                CurrentUserCouncilRoleId = currentUserCouncilRoleId,
+                IsAdmin = isAdmin
             };
         }
 

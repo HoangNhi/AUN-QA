@@ -16,5 +16,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public List<ModelExternalReviewResult> Results { get; set; } = new();
+        public int? CurrentUserCouncilRoleId { get; set; }
+        public bool IsAdmin { get; set; }
     }
 }

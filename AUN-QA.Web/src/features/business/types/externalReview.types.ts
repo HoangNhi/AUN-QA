@@ -32,6 +32,8 @@ export interface ExternalReview {
   CreatedBy?: string | null;
   UpdatedAt?: string | null;
   UpdatedBy?: string | null;
+  CurrentUserCouncilRoleId?: number | null;
+  IsAdmin?: boolean;
 }
 
 export interface ExternalReviewAccount {

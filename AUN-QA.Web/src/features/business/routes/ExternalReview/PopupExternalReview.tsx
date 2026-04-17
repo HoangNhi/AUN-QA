@@ -46,6 +46,23 @@ function getStatusLabel(status: ExternalReviewStatus | number): string {
   return STATUS_LABELS[status]?.label ?? "Không xác định";
 }
 
+const COUNCIL_ROLES_CAN_CHANGE_STATUS = [1, 2];
+
+type ExternalReviewStatusAccess = {
+  IsAdmin?: boolean;
+  CurrentUserCouncilRoleId?: number | null;
+};
+
+export function canChangeExternalReviewStatus(
+  review?: ExternalReviewStatusAccess | null,
+): boolean {
+  return (
+    review?.IsAdmin === true ||
+    (review?.CurrentUserCouncilRoleId != null &&
+      COUNCIL_ROLES_CAN_CHANGE_STATUS.includes(review.CurrentUserCouncilRoleId))
+  );
+}
+
 export default function PopupExternalReview({
   open,
   item,
@@ -64,6 +81,7 @@ export default function PopupExternalReview({
   );
 
   const isReadOnly = isExternalReviewer || review?.IsCompleted === true;
+  const canChangeStatus = canChangeExternalReviewStatus(review);
   const [headerStatus, setHeaderStatus] = useState<string>(String(currentStatus));
   const [liveAccountCount, setLiveAccountCount] = useState<number>(item?.AccountCount ?? 0);
 
@@ -190,7 +208,8 @@ export default function PopupExternalReview({
                     <select
                       value={headerStatus}
                       onChange={(e) => setHeaderStatus(e.target.value)}
-                      className="rounded border-0 bg-transparent px-2 py-1 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300"
+                      disabled={!canChangeStatus || reviewQuery.isMutating}
+                      className="rounded border-0 bg-transparent px-2 py-1 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="0">Mới tạo</option>
                       <option value="1">Đang thực hiện</option>
@@ -200,7 +219,7 @@ export default function PopupExternalReview({
                       variant="secondary"
                       size="sm"
                       onClick={() => void handleStatusUpdate(Number(headerStatus))}
-                      disabled={reviewQuery.isMutating}
+                      disabled={!canChangeStatus || reviewQuery.isMutating}
                       className="h-7 px-3 text-xs"
                     >
                       Cập nhật
@@ -210,7 +229,7 @@ export default function PopupExternalReview({
                     type="button"
                     size="sm"
                     onClick={() => void handleConfirmCompletion()}
-                    disabled={reviewQuery.isMutating || review.IsCompleted}
+                    disabled={!canChangeStatus || reviewQuery.isMutating || review.IsCompleted}
                     className="h-8"
                   >
                     {review.IsCompleted ? "Đã hoàn tất" : "Xác nhận hoàn tất"}

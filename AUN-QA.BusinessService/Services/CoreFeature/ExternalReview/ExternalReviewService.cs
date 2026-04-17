@@ -2,11 +2,14 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Requests;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.Shared.Common;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
 {
@@ -225,6 +228,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
                         ? resultFindings
                         : new List<Entities.ExternalReviewFinding>()))
                 .ToList();
+            model.DynamicWatermarkText = BuildDynamicWatermarkText();
 
             return model;
         }
@@ -879,6 +883,24 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ExternalReview
             {
                 throw new BusinessException("WatermarkPosition không hợp lệ.");
             }
+        }
+
+        private string BuildDynamicWatermarkText()
+        {
+            var email = _accessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Email)?.Value
+                ?? _accessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value
+                ?? _accessor.HttpContext?.User?.Claims
+                    .FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.UniqueName)?.Value
+                ?? _accessor.HttpContext?.User?.Identity?.Name
+                ?? "unknown";
+
+            var ip = _accessor.HttpContext?.GetClientIp() ?? "unknown";
+            var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss 'UTC'");
+
+            return string.Join(" | ", new[] { email.Trim(), ip.Trim(), timestamp }
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
         private static ModelExternalReview MapReview(

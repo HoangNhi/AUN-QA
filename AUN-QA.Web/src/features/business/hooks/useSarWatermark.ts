@@ -5,6 +5,7 @@ export interface SarWatermarkConfig {
   watermarkText: string | null | undefined;
   opacity: number;
   position: number;
+  dynamicWatermarkText: string | null | undefined;
 }
 
 export function useSarWatermark(
@@ -22,5 +23,6 @@ export function useSarWatermark(
     watermarkText: data?.Data?.WatermarkText ?? null,
     opacity: data?.Data?.WatermarkOpacity ?? 25,
     position: data?.Data?.WatermarkPosition ?? 0,
+    dynamicWatermarkText: data?.Data?.DynamicWatermarkText ?? null,
   };
 }

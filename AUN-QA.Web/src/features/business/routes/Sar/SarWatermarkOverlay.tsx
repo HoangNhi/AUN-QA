@@ -4,18 +4,17 @@ interface SarWatermarkOverlayProps {
   watermarkText: string | null | undefined;
   opacity: number;
   position: number;
-  userEmail: string;
+  dynamicText: string;
 }
 
 export function SarWatermarkOverlay({
   watermarkText,
   opacity,
   position,
-  userEmail,
+  dynamicText,
 }: SarWatermarkOverlayProps) {
   const patternId = useId().replace(/:/g, "");
   const staticText = watermarkText?.trim() || "";
-  const dynamicText = userEmail.trim();
   const lines = [staticText, dynamicText].filter(Boolean);
 
   if (!lines.length) {

@@ -25,6 +25,7 @@ export interface ExternalReview {
   WatermarkText?: string | null;
   WatermarkOpacity: number;
   WatermarkPosition: WatermarkPosition | number;
+  DynamicWatermarkText?: string | null;
   IsCompleted: boolean;
   CompletedAt?: string | null;
   CompletedBy?: string | null;

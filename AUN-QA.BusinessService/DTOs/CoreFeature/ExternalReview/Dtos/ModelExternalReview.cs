@@ -8,6 +8,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.ExternalReview.Dtos
         public string? WatermarkText { get; set; }
         public int WatermarkOpacity { get; set; }
         public int WatermarkPosition { get; set; }
+        public string? DynamicWatermarkText { get; set; }
         public bool IsCompleted { get; set; }
         public DateTime? CompletedAt { get; set; }
         public string? CompletedBy { get; set; }

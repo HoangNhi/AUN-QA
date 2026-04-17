@@ -1410,14 +1410,6 @@ export default function PopupSarEditor({
                   </div>
                 ) : (
                   <div className="relative overflow-hidden max-w-[760px] mx-auto bg-white shadow-lg rounded border border-slate-200 min-h-[900px] p-16">
-                    {isExternalReviewer && (
-                      <SarWatermarkOverlay
-                        watermarkText={sarWatermark.watermarkText}
-                        opacity={sarWatermark.opacity}
-                        position={sarWatermark.position}
-                        userEmail={user?.Email ?? ""}
-                      />
-                    )}
                     {/* BubbleMenu */}
                     {editor && (
                       <BubbleMenu
@@ -1537,6 +1529,16 @@ export default function PopupSarEditor({
                       editor={editor}
                       className="prose prose-sm prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg max-w-none focus:outline-none [&_img]:cursor-pointer [&_img.ProseMirror-selectednode]:outline [&_img.ProseMirror-selectednode]:outline-2 [&_img.ProseMirror-selectednode]:outline-blue-500 [&_img.ProseMirror-selectednode]:rounded-sm"
                     />
+                    {/* Watermark overlay must be last child to avoid React insertBefore error
+                        when transitioning from null to real DOM alongside BubbleMenu portals */}
+                    {isExternalReviewer && (
+                      <SarWatermarkOverlay
+                        watermarkText={sarWatermark.watermarkText}
+                        opacity={sarWatermark.opacity}
+                        position={sarWatermark.position}
+                        dynamicText={sarWatermark.dynamicWatermarkText ?? ""}
+                      />
+                    )}
                   </div>
                 )}
               </div>

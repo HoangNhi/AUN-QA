@@ -115,14 +115,14 @@ export default function ActionPlanPage() {
       onDeleteConfirm={listPage.handleDelete}
       deleteItemCount={listPage.selectedIds.length}
       isDeleteLoading={isMutating}
-      extraActions={
-        <Button size="sm" variant="secondary" onClick={refreshList}>
-          Làm mới
-        </Button>
-      }
     >
       {isOpen && selectedItem ? (
-        <PopupActionPlan open={isOpen} item={selectedItem} onOpenChange={onOpenChange} onChanged={refreshList} />
+        <PopupActionPlan
+          open={isOpen}
+          item={selectedItem}
+          onOpenChange={onOpenChange}
+          onChanged={refreshList}
+        />
       ) : null}
     </ListPageLayout>
   );

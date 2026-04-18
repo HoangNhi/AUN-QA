@@ -297,41 +297,38 @@ public class ActionPlanService : IActionPlanService
         var assignedTo = request.AssignedTo?.Distinct().ToList() ?? new List<Guid>();
         var attachmentIds = request.AttachmentIds?.Distinct().ToHashSet() ?? new HashSet<Guid>();
 
-        if (request.Status == (int)ActionPlanStatus.InProgress || plan.Status == (int)ActionPlanStatus.InProgress)
+        var currentAssignees = await _context.ActionPlanAssignees
+               .Where(x => x.ActionPlanId == plan.Id && !x.IsDeleted && x.IsActived)
+               .ToListAsync();
+
+        foreach (var assignee in currentAssignees)
         {
-            var currentAssignees = await _context.ActionPlanAssignees
-                .Where(x => x.ActionPlanId == plan.Id && !x.IsDeleted && x.IsActived)
-                .ToListAsync();
+            assignee.IsDeleted = true;
+            assignee.IsActived = false;
+            assignee.UpdatedAt = now;
+            assignee.UpdatedBy = username;
+        }
 
-            foreach (var assignee in currentAssignees)
+        foreach (var userId in assignedTo)
+        {
+            await _context.ActionPlanAssignees.AddAsync(new ActionPlanAssigneeEntity
             {
-                assignee.IsDeleted = true;
-                assignee.IsActived = false;
-                assignee.UpdatedAt = now;
-                assignee.UpdatedBy = username;
-            }
+                Id = Guid.NewGuid(),
+                ActionPlanId = plan.Id,
+                UserId = userId,
+                AssignedAt = now,
+                AssignedBy = username,
+                CreatedAt = now,
+                CreatedBy = username,
+                IsActived = true,
+                IsDeleted = false
+            });
+        }
 
-            foreach (var userId in assignedTo)
-            {
-                await _context.ActionPlanAssignees.AddAsync(new ActionPlanAssigneeEntity
-                {
-                    Id = Guid.NewGuid(),
-                    ActionPlanId = plan.Id,
-                    UserId = userId,
-                    AssignedAt = now,
-                    AssignedBy = username,
-                    CreatedAt = now,
-                    CreatedBy = username,
-                    IsActived = true,
-                    IsDeleted = false
-                });
-            }
-
-            if (plan.Status != (int)ActionPlanStatus.InProgress && request.Status == (int)ActionPlanStatus.InProgress)
-            {
-                plan.AssignedAt = now;
-                plan.AssignedBy = username;
-            }
+        if (plan.Status != (int)ActionPlanStatus.InProgress && request.Status == (int)ActionPlanStatus.InProgress)
+        {
+            plan.AssignedAt = now;
+            plan.AssignedBy = username;
         }
 
         if (request.Status == (int)ActionPlanStatus.Completed && plan.Status != (int)ActionPlanStatus.Completed)

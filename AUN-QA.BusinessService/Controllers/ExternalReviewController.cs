@@ -46,7 +46,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost]
-        [AttributePermission(Action = ActionType.ADD)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> Create([FromBody] ExternalReviewRequest request)
         {
             var result = await _service.CreateAsync(request);
@@ -70,7 +70,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPut(WatermarkRoute)]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> UpdateWatermark([FromBody] ExternalReviewWatermarkRequest request)
         {
             await _service.UpdateWatermarkAsync(request);
@@ -138,7 +138,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost(AccountsByExternalReviewRoute)]
-        [AttributePermission(Action = ActionType.ADD)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> AddAccount(Guid id, [FromBody] ExternalReviewAddAccountRequest request)
         {
             var result = await _service.AddAccountAsync(id, request.UserId);
@@ -146,7 +146,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPost(CreateAndLinkAccountRoute)]
-        [AttributePermission(Action = ActionType.ADD)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> CreateAndLinkAccount(Guid id, [FromBody] ExternalReviewCreateAccountRequest request)
         {
             var result = await _service.CreateAndLinkAccountAsync(id, request);
@@ -154,7 +154,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpDelete(AccountByIdRoute)]
-        [AttributePermission(Action = ActionType.DELETE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> RemoveAccount(Guid accountId)
         {
             await _service.RemoveAccountAsync(accountId);
@@ -162,7 +162,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpPut(AccountByIdRoute)]
-        [AttributePermission(Action = ActionType.UPDATE)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> UpdateAccount(
             Guid accountId,
             [FromBody] ExternalReviewAccountUpdateRequest request)

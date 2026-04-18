@@ -1,4 +1,5 @@
-import type { ColumnDef } from "@tanstack/react-table";
+﻿import type { ColumnDef } from "@tanstack/react-table";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TaskExecutionPlanListItem } from "@/features/business/types/taskExecution.types";
 import { getActionPlanStatusLabel } from "../ActionPlan/actionPlan.utils";
@@ -35,6 +36,7 @@ function getStatusBadgeClass(status: number): string {
 
 export function getTaskExecutionColumns(
   onOpen: (item: TaskExecutionPlanListItem) => void,
+  loadingItemId: string | null,
 ): ColumnDef<TaskExecutionPlanListItem>[] {
   return [
     {
@@ -44,9 +46,7 @@ export function getTaskExecutionColumns(
         <div className="min-w-[240px]">
           <p className="font-medium text-slate-900">{row.original.Title}</p>
           {row.original.AssignedToNames ? (
-            <p className="line-clamp-2 text-xs text-slate-500">
-              {row.original.AssignedToNames}
-            </p>
+            <p className="line-clamp-2 text-xs text-slate-500">{row.original.AssignedToNames}</p>
           ) : null}
         </div>
       ),
@@ -98,13 +98,21 @@ export function getTaskExecutionColumns(
       id: "actions",
       header: () => <div className="text-center">Hành động</div>,
       meta: { className: "text-center" },
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Button size="sm" variant="secondary" onClick={() => onOpen(row.original)}>
-            Mở
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isThisLoading = loadingItemId === row.original.Id;
+        return (
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onOpen(row.original)}
+              disabled={loadingItemId !== null}
+            >
+              {isThisLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mở"}
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 }

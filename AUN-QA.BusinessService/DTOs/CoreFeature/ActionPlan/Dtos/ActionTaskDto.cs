@@ -16,5 +16,7 @@ public class ActionTaskDto
 
     public DateTime? CompletedAt { get; set; }
 
+    public string CreatedBy { get; set; } = string.Empty;
+
     public List<ActionTaskAttachmentDto> Attachments { get; set; } = new();
 }

@@ -1,6 +1,5 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
@@ -21,14 +20,15 @@ export default function TaskExecutionPage() {
     refreshList,
     isOpen,
     selectedItem,
+    loadingItemId,
     openPopup,
     onOpenChange,
   } = useTaskExecutionPlans();
   const cycleOptions = useCycleOptions();
 
   const columns = useMemo<ColumnDef<TaskExecutionPlanListItem>[]>(
-    () => getTaskExecutionColumns(openPopup),
-    [openPopup],
+    () => getTaskExecutionColumns(openPopup, loadingItemId),
+    [loadingItemId, openPopup],
   );
 
   const listPage = useListPage({

@@ -756,6 +756,7 @@ public class ActionPlanService : IActionPlanService
                     TaskStatus = x.TaskStatus,
                     DueDate = x.DueDate,
                     CompletedAt = x.CompletedAt,
+                    CreatedBy = x.CreatedBy,
                     Attachments = (xAttachments ?? new List<ActionTaskAttachment>()).Select(a => new ActionTaskAttachmentDto
                     {
                         Id = a.Id,

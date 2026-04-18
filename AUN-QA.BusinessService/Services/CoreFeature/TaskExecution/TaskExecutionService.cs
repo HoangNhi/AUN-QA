@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Dtos;
@@ -77,6 +77,7 @@ public class TaskExecutionService : ITaskExecutionService
                 TaskStatus = x.TaskStatus,
                 DueDate = x.DueDate,
                 CompletedAt = x.CompletedAt,
+                CreatedBy = x.CreatedBy,
                 Attachments = x.Attachments
                     .Select(a => new TaskExecutionAttachmentDto
                     {
@@ -128,10 +129,16 @@ public class TaskExecutionService : ITaskExecutionService
 
         if (task == null)
         {
-            throw new BusinessException("Không tìm thấy công việc");
+            throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
         }
 
         await GetEditablePlanAsync(task.ActionPlanId);
+
+        var username = GetCurrentUsernameOrFallback();
+        if (!IsAdmin() && !string.Equals(task.CreatedBy, username, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException("Bạn không có quyền cập nhật công việc của người khác");
+        }
 
         task.Description = request.Description.Trim();
         task.Note = NormalizeText(request.Note);
@@ -179,14 +186,20 @@ public class TaskExecutionService : ITaskExecutionService
 
         if (task == null)
         {
-            throw new BusinessException("Không tìm thấy công việc");
+            throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
         }
 
         await GetEditablePlanAsync(task.ActionPlanId);
 
+        var username = GetCurrentUsernameOrFallback();
+        if (!IsAdmin() && !string.Equals(task.CreatedBy, username, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException("Bạn không có quyền xóa công việc của người khác");
+        }
+
         if (task.TaskStatus != (int)ActionTaskStatus.Todo)
         {
-            throw new BusinessException("Chỉ được xóa công việc ở trạng thái chờ thực hiện");
+            throw new BusinessException("Chá»‰ Ä‘Æ°á»£c xÃ³a cÃ´ng viá»‡c á»Ÿ tráº¡ng thÃ¡i chá» thá»±c hiá»‡n");
         }
 
         task.IsDeleted = true;
@@ -202,7 +215,7 @@ public class TaskExecutionService : ITaskExecutionService
     {
         var task = await _context.ActionTasks
             .FirstOrDefaultAsync(x => x.Id == request.TaskId && !x.IsDeleted && x.IsActived)
-            ?? throw new BusinessException("Không tìm thấy công việc");
+            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
 
         await GetEditablePlanAsync(task.ActionPlanId);
 
@@ -256,12 +269,12 @@ public class TaskExecutionService : ITaskExecutionService
 
         if (attachment == null)
         {
-            throw new BusinessException("Không tìm thấy tệp đính kèm");
+            throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y tá»‡p Ä‘Ã­nh kÃ¨m");
         }
 
         var task = await _context.ActionTasks
             .FirstOrDefaultAsync(x => x.Id == attachment.ActionTaskId && !x.IsDeleted && x.IsActived)
-            ?? throw new BusinessException("Không tìm thấy công việc");
+            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
 
         await GetEditablePlanAsync(task.ActionPlanId);
 
@@ -391,11 +404,11 @@ public class TaskExecutionService : ITaskExecutionService
     {
         var plan = await _context.ActionPlans
             .FirstOrDefaultAsync(x => x.Id == actionPlanId && !x.IsDeleted && x.IsActived)
-            ?? throw new BusinessException("Không tìm thấy kế hoạch hành động");
+            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y káº¿ hoáº¡ch hÃ nh Ä‘á»™ng");
 
         if (plan.Status != (int)ActionPlanStatus.InProgress)
         {
-            throw new BusinessException("Chỉ được thao tác công việc khi kế hoạch đang thực hiện");
+            throw new BusinessException("Chá»‰ Ä‘Æ°á»£c thao tÃ¡c cÃ´ng viá»‡c khi káº¿ hoáº¡ch Ä‘ang thá»±c hiá»‡n");
         }
 
         await EnsurePlanAccessAsync(plan);
@@ -412,7 +425,7 @@ public class TaskExecutionService : ITaskExecutionService
         var userId = GetCurrentUserIdOrNull();
         if (userId == null)
         {
-            throw new BusinessException("Không xác định được người dùng hiện tại");
+            throw new BusinessException("KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ngÆ°á»i dÃ¹ng hiá»‡n táº¡i");
         }
 
         var canAccess = await _context.ActionPlanAssignees.AnyAsync(x =>
@@ -428,7 +441,7 @@ public class TaskExecutionService : ITaskExecutionService
 
         if (!canAccess)
         {
-            throw new BusinessException("Bạn không có quyền thao tác trên kế hoạch này");
+            throw new BusinessException("Báº¡n khÃ´ng cÃ³ quyá»n thao tÃ¡c trÃªn káº¿ hoáº¡ch nÃ y");
         }
     }
 
@@ -463,6 +476,7 @@ public class TaskExecutionService : ITaskExecutionService
             TaskStatus = task.TaskStatus,
             DueDate = task.DueDate,
             CompletedAt = task.CompletedAt,
+            CreatedBy = task.CreatedBy,
             Attachments = attachments
         };
     }
@@ -536,11 +550,11 @@ public class TaskExecutionService : ITaskExecutionService
     {
         return status switch
         {
-            (int)ActionPlanStatus.Draft => "Nháp",
-            (int)ActionPlanStatus.InProgress => "Đang thực hiện",
-            (int)ActionPlanStatus.PendingReview => "Chờ xác nhận",
-            (int)ActionPlanStatus.Completed => "Hoàn thành",
-            _ => "Không xác định"
+            (int)ActionPlanStatus.Draft => "NhÃ¡p",
+            (int)ActionPlanStatus.InProgress => "Äang thá»±c hiá»‡n",
+            (int)ActionPlanStatus.PendingReview => "Chá» xÃ¡c nháº­n",
+            (int)ActionPlanStatus.Completed => "HoÃ n thÃ nh",
+            _ => "KhÃ´ng xÃ¡c Ä‘á»‹nh"
         };
     }
 
@@ -555,3 +569,4 @@ public class TaskExecutionService : ITaskExecutionService
         };
     }
 }
+

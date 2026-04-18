@@ -47,6 +47,7 @@ export interface ActionTask {
   TaskStatus: ActionTaskStatus | number;
   DueDate?: string | null;
   CompletedAt?: string | null;
+  CreatedBy: string;
   Attachments: ActionTaskAttachment[];
 }
 

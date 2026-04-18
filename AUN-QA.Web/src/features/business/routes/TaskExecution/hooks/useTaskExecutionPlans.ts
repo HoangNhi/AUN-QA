@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RowSelectionState } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { taskExecutionService } from "@/features/business/api/taskExecution.api";
 import type {
   TaskExecutionGetPlansRequest,
+  TaskExecutionPlanDetail,
   TaskExecutionPlanListItem,
   TaskExecutionPlanListResponse,
 } from "@/features/business/types/taskExecution.types";
@@ -17,8 +18,10 @@ const EMPTY_LIST: TaskExecutionPlanListResponse = {
 };
 
 export function useTaskExecutionPlans() {
+  const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TaskExecutionPlanListItem | null>(null);
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [pageRequest, setPageRequest] = useState<TaskExecutionGetPlansRequest>({
     PageIndex: 1,
@@ -56,10 +59,33 @@ export function useTaskExecutionPlans() {
 
   const data = useMemo(() => listResponse ?? EMPTY_LIST, [listResponse]);
 
-  const openPopup = useCallback((item: TaskExecutionPlanListItem) => {
-    setSelectedItem(item);
-    setIsOpen(true);
-  }, []);
+  const openPopup = useCallback(
+    async (item: TaskExecutionPlanListItem) => {
+      setLoadingItemId(item.Id);
+      try {
+        await queryClient.fetchQuery({
+          queryKey: ["task-execution", "plan-detail", item.Id],
+          queryFn: async (): Promise<TaskExecutionPlanDetail> => {
+            const response = await taskExecutionService.getPlanDetail(item.Id);
+
+            if (!response.Success || !response.Data) {
+              throw new Error(response.Message || "Không thể tải chi tiết kế hoạch.");
+            }
+
+            return response.Data;
+          },
+        });
+
+        setSelectedItem(item);
+        setIsOpen(true);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Không thể tải chi tiết kế hoạch.");
+      } finally {
+        setLoadingItemId(null);
+      }
+    },
+    [queryClient],
+  );
 
   const onOpenChange = useCallback(
     (open: boolean) => {
@@ -86,6 +112,7 @@ export function useTaskExecutionPlans() {
     refreshList,
     isOpen,
     selectedItem,
+    loadingItemId,
     openPopup,
     onOpenChange,
   };

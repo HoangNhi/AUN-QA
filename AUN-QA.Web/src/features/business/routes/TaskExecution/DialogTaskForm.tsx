@@ -17,9 +17,9 @@ import { ActionTaskStatus } from "@/features/business/types/actionPlan.types";
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 const TASK_STATUS_OPTIONS = [
-  { Value: String(ActionTaskStatus.Todo), Text: "Chờ thực hiện" },
   { Value: String(ActionTaskStatus.InProgress), Text: "Đang thực hiện" },
   { Value: String(ActionTaskStatus.Done), Text: "Hoàn thành" },
+  { Value: String(ActionTaskStatus.HasError), Text: "Có lỗi/cần kiểm tra lại" },
 ];
 
 interface TaskDraft {
@@ -61,7 +61,7 @@ function buildDraft(task: TaskExecutionTask | null): TaskDraft {
       Id: EMPTY_GUID,
       Description: "",
       Note: "",
-      TaskStatus: String(ActionTaskStatus.Todo),
+      TaskStatus: String(ActionTaskStatus.InProgress),
       DueDate: undefined,
       FolderUpload: uuidv4(),
     };
@@ -71,7 +71,11 @@ function buildDraft(task: TaskExecutionTask | null): TaskDraft {
     Id: task.Id,
     Description: task.Description ?? "",
     Note: task.Note ?? "",
-    TaskStatus: String(task.TaskStatus ?? ActionTaskStatus.Todo),
+    TaskStatus: String(
+      task.TaskStatus === ActionTaskStatus.Todo
+        ? ActionTaskStatus.InProgress
+        : task.TaskStatus ?? ActionTaskStatus.InProgress,
+    ),
     DueDate: parseDateToLocal(task.DueDate),
     FolderUpload: task.Id,
   };
@@ -209,7 +213,7 @@ export default function DialogTaskForm({
                 </div>
 
                 <div className="grid gap-2">
-                  <Label>Hạn hoàn thành</Label>
+                  <Label>Thời gian hoàn thành</Label>
                   <DatePicker
                     className="w-full"
                     optionLabel="Chọn thời hạn"
@@ -254,6 +258,7 @@ export default function DialogTaskForm({
                     readonly={isMutating}
                     allowDownload
                     viewerMode="internal"
+                    previewContext="taskAttachment"
                   />
                 </div>
               ) : null}

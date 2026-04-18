@@ -1,6 +1,7 @@
 import type { GetListPagingRequest, GetListPagingResponse } from "@/types/base/base.types";
 import type {
-  ActionPlanDetail,
+  ActionPlanAssignee,
+  ActionPlanAttachmentItem,
   ActionPlanStatus,
   ActionPriority,
   ActionTask,
@@ -24,12 +25,40 @@ export interface TaskExecutionPlanListItem {
   DoneTaskCount: number;
 }
 
+export interface TaskExecutionPlanDetail {
+  Id: string;
+  CycleId: string;
+  Title: string;
+  Description?: string | null;
+  StandardId?: string | null;
+  CriterionId?: string | null;
+  Priority: ActionPriority | number;
+  Deadline: string;
+  Status: ActionPlanStatus | number;
+  SourceFindingId?: string | null;
+  CompletedAt?: string | null;
+  CompletedBy?: string | null;
+  Assignees: ActionPlanAssignee[];
+  Attachments: ActionPlanAttachmentItem[];
+}
+
 export interface TaskExecutionGetPlansRequest extends GetListPagingRequest {
   CycleId?: string | null;
 }
 
 export interface TaskExecutionGetTaskListRequest {
   ActionPlanId: string;
+  PageIndex: number;
+  PageSize: number;
+  TextSearch?: string | null;
+}
+
+export interface TaskExecutionTaskListResponse {
+  PageIndex: number;
+  PageSize: number;
+  TotalRow: number;
+  DoneCount: number;
+  Data: TaskExecutionTask[];
 }
 
 export interface TaskExecutionUpsertTaskRequest {
@@ -59,5 +88,4 @@ export type TaskExecutionAttachment = ActionTaskAttachment;
 
 export type TaskExecutionTask = ActionTask;
 
-export type TaskExecutionPlanDetail = ActionPlanDetail;
 export type TaskExecutionPlanListResponse = GetListPagingResponse<TaskExecutionPlanListItem>;

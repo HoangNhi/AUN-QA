@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, MoreHorizontal, Plus, X } from "lucide-react";
@@ -34,12 +34,13 @@ import { taskExecutionService } from "@/features/business/api/taskExecution.api"
 import { useActionTask } from "./hooks/useActionTask";
 import DialogTaskForm from "./DialogTaskForm";
 import type {
+  TaskExecutionGetTaskListRequest,
   TaskExecutionPlanDetail,
   TaskExecutionPlanListItem,
   TaskExecutionTask,
 } from "@/features/business/types/taskExecution.types";
-import { ActionPlanStatus, ActionTaskStatus } from "@/features/business/types/actionPlan.types";
-import { canDeleteTask, getTaskStatusLabel } from "./taskExecution.utils";
+import { ActionPlanStatus } from "@/features/business/types/actionPlan.types";
+import { getTaskStatusLabel } from "./taskExecution.utils";
 import { getActionPlanStatusLabel } from "../ActionPlan/actionPlan.utils";
 import { getActionPlanStatusComboboxOptions } from "../ActionPlan/popupActionPlan.helpers";
 
@@ -79,12 +80,12 @@ function parseLocalDate(value: string | undefined | null): Date | undefined {
 
 function getTaskStatusBadgeClass(status: number): string {
   switch (status) {
-    case 1:
-      return "bg-amber-100 text-amber-700";
     case 2:
       return "bg-blue-100 text-blue-700";
     case 3:
       return "bg-emerald-100 text-emerald-700";
+    case 4:
+      return "bg-red-100 text-red-700";
     default:
       return "bg-slate-100 text-slate-600";
   }
@@ -102,19 +103,31 @@ export default function PopupTaskExecution({
   const [activeTab, setActiveTab] = useState("general");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskExecutionTask | null>(null);
+  const [taskPageRequest, setTaskPageRequest] = useState<TaskExecutionGetTaskListRequest>({
+    ActionPlanId: item.Id,
+    PageIndex: 1,
+    PageSize: 10,
+  });
 
   const { deleteTask, isMutating } = useActionTask();
 
   useEffect(() => {
     if (open) {
       setActiveTab("general");
+      setTaskDialogOpen(false);
+      setSelectedTask(null);
+      setTaskPageRequest({
+        ActionPlanId: item.Id,
+        PageIndex: 1,
+        PageSize: 10,
+      });
       return;
     }
 
     setActiveTab("general");
     setTaskDialogOpen(false);
     setSelectedTask(null);
-  }, [open]);
+  }, [open, item.Id]);
 
   const planDetailQuery = useQuery({
     queryKey: ["task-execution", "plan-detail", item.Id],
@@ -128,6 +141,21 @@ export default function PopupTaskExecution({
     enabled: open && Boolean(item.Id),
   });
 
+  const taskListQuery = useQuery({
+    queryKey: ["task-execution", "task-list", planDetailQuery.data?.Id ?? item.Id, taskPageRequest],
+    queryFn: async () => {
+      const response = await taskExecutionService.getTaskList({
+        ...taskPageRequest,
+        ActionPlanId: planDetailQuery.data?.Id ?? item.Id,
+      });
+      if (!response.Success || !response.Data) {
+        throw new Error(response.Message || "Không thể tải danh sách công việc.");
+      }
+      return response.Data;
+    },
+    enabled: open && Boolean(planDetailQuery.data?.Id ?? item.Id),
+  });
+
   const planDetail = planDetailQuery.data ?? null;
   const planId = planDetail?.Id ?? item.Id;
   const cycleId = planDetail?.CycleId ?? item.CycleId;
@@ -135,14 +163,10 @@ export default function PopupTaskExecution({
   const criterionId = planDetail?.CriterionId ?? item.CriterionId ?? "";
   const currentStatus = Number(planDetail?.Status ?? item.Status ?? ActionPlanStatus.Draft);
   const currentPriority = Number(planDetail?.Priority ?? item.Priority ?? 2);
-  const tasks = useMemo(() => planDetail?.Tasks ?? [], [planDetail?.Tasks]);
-  const assignees = planDetail?.Assignees ?? [];
-  const attachments = planDetail?.Attachments ?? [];
-  const doneTasks = useMemo(
-    () => tasks.filter((task) => Number(task.TaskStatus) === Number(ActionTaskStatus.Done)).length,
-    [tasks],
-  );
-  const totalTasks = tasks.length;
+  const tasks = taskListQuery.data?.Data ?? [];
+  const taskTotalRow = taskListQuery.data?.TotalRow ?? 0;
+  const doneTasks = taskListQuery.data?.DoneCount ?? 0;
+  const totalTasks = taskTotalRow;
   const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const canEdit = currentStatus === ActionPlanStatus.InProgress;
   const statusOptions = useMemo(() => getActionPlanStatusComboboxOptions(), []);
@@ -160,9 +184,9 @@ export default function PopupTaskExecution({
   );
 
   const refreshPlan = useCallback(async () => {
-    await planDetailQuery.refetch();
+    await Promise.all([planDetailQuery.refetch(), taskListQuery.refetch()]);
     onChanged();
-  }, [onChanged, planDetailQuery]);
+  }, [onChanged, planDetailQuery, taskListQuery]);
 
   const handleOpenNewTask = useCallback(() => {
     setSelectedTask(null);
@@ -176,7 +200,7 @@ export default function PopupTaskExecution({
 
   const handleDeleteTask = useCallback(
     async (task: TaskExecutionTask) => {
-      if (!canEdit || !isTaskOwner(task) || !canDeleteTask(Number(task.TaskStatus))) {
+      if (!canEdit || !isTaskOwner(task)) {
         return;
       }
 
@@ -230,7 +254,7 @@ export default function PopupTaskExecution({
       },
       {
         accessorKey: "DueDate",
-        header: "Hạn hoàn thành",
+        header: "Thời gian hoàn thành",
         cell: ({ row }) =>
           row.original.DueDate ? (
             new Date(row.original.DueDate).toLocaleDateString("vi-VN")
@@ -241,7 +265,11 @@ export default function PopupTaskExecution({
       {
         accessorKey: "CreatedBy",
         header: "Người tạo",
-        cell: ({ row }) => <span className="text-sm text-slate-600">{row.original.CreatedBy}</span>,
+        cell: ({ row }) => (
+          <span className="text-sm text-slate-600">
+            {row.original.CreatedByFullname ?? row.original.CreatedBy}
+          </span>
+        ),
       },
       {
         id: "actions",
@@ -250,7 +278,6 @@ export default function PopupTaskExecution({
         cell: ({ row }) => {
           const task = row.original;
           const isOwner = isTaskOwner(task);
-          const canDeleteThisTask = isOwner && canEdit && canDeleteTask(Number(task.TaskStatus));
 
           return (
             <div className="flex justify-center">
@@ -268,7 +295,6 @@ export default function PopupTaskExecution({
                     <DropdownMenuItem
                       className="text-red-600 focus:text-red-600"
                       onClick={() => void handleDeleteTask(task)}
-                      disabled={!canDeleteThisTask}
                     >
                       Xóa
                     </DropdownMenuItem>
@@ -296,13 +322,27 @@ export default function PopupTaskExecution({
 
           <div className="flex max-h-[94vh] min-h-0 flex-col overflow-hidden bg-white">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-semibold text-slate-900">
                   {planDetail?.Title || item.Title}
                 </h2>
                 <p className="text-sm text-slate-500">
                   Trạng thái: {getActionPlanStatusLabel(currentStatus)}
                 </p>
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <span>
+                      {doneTasks}/{totalTasks} việc hoàn thành
+                    </span>
+                    <span className="font-medium">{progressPercent}%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-slate-200">
+                    <div
+                      className="h-1.5 rounded-full bg-blue-500 transition-all"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
               </div>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
                 <X className="h-4 w-4" />
@@ -389,7 +429,7 @@ export default function PopupTaskExecution({
                       </div>
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div className="grid gap-2">
                         <Label>Ưu tiên</Label>
                         <Select value={String(currentPriority)} onValueChange={() => {}}>
@@ -403,7 +443,7 @@ export default function PopupTaskExecution({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="grid gap-2 md:col-span-2">
+                      <div className="grid gap-2">
                         <Label>Hạn hoàn thành</Label>
                         <DatePicker
                           className="w-full"
@@ -439,8 +479,8 @@ export default function PopupTaskExecution({
                     <div className="grid gap-2">
                       <Label>Người thực hiện</Label>
                       <div className="flex flex-wrap gap-2">
-                        {assignees.length > 0 ? (
-                          assignees.map((assignee) => (
+                        {planDetail?.Assignees.length ? (
+                          planDetail.Assignees.map((assignee) => (
                             <span
                               key={assignee.UserId}
                               className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
@@ -458,44 +498,27 @@ export default function PopupTaskExecution({
                       <Label>Tài liệu đính kèm</Label>
                       <UploadFile
                         folderUpload={planId}
-                        listAttachment={attachments as Attachment[]}
+                        listAttachment={planDetail?.Attachments as Attachment[]}
                         setListAttachment={() => {}}
                         readonly
                         multiFile
+                        previewContext="taskAttachment"
                       />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label>Tiến độ công việc</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <span>
-                            {doneTasks}/{totalTasks} việc hoàn thành
-                          </span>
-                          <span className="font-medium">{progressPercent}%</span>
-                        </div>
-                        <div className="h-2 w-full rounded-full bg-slate-200">
-                          <div
-                            className="h-2 rounded-full bg-blue-500 transition-all"
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="tasks" className="mt-0 flex-1 overflow-y-auto px-5 py-5">
-                {planDetailQuery.isLoading ? (
+                {taskListQuery.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tải chi tiết kế hoạch...
+                    Đang tải danh sách công việc...
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-slate-500">{tasks.length} công việc</p>
+                      <p className="text-sm text-slate-500">{taskTotalRow} công việc</p>
                       {canEdit ? (
                         <Button type="button" size="sm" onClick={handleOpenNewTask} disabled={isMutating}>
                           <Plus className="mr-1 h-3 w-3" />
@@ -513,7 +536,12 @@ export default function PopupTaskExecution({
                     <DataTable
                       columns={taskColumns}
                       data={tasks}
-                      containerClassName="max-h-[400px] overflow-auto w-full relative"
+                      totalRow={taskTotalRow}
+                      pageRequest={taskPageRequest}
+                      setPageRequest={setTaskPageRequest}
+                      onRefresh={() => void taskListQuery.refetch()}
+                      containerClassName="w-full relative"
+                      isLoading={taskListQuery.isFetching}
                     />
                   </div>
                 )}

@@ -184,6 +184,10 @@ export const API_ENDPOINTS = {
       DELETE_TASK: `${BUSINESS_BASE}/TaskExecution/delete-task`,
       UPLOAD_TASK_ATTACHMENT: `${BUSINESS_BASE}/TaskExecution/upload-task-attachment`,
       DELETE_TASK_ATTACHMENT: `${BUSINESS_BASE}/TaskExecution/delete-task-attachment`,
+      PREVIEW_TASK_ATTACHMENT: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) => `${BUSINESS_BASE}/TaskExecution/preview-task-attachment/${attachmentId}?mode=${mode}`,
     },
     CriterionEvaluation: {
       GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,

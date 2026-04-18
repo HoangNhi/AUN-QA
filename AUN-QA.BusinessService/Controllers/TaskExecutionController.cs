@@ -1,5 +1,4 @@
 using AUN_QA.BusinessService.DTOs.Base;
-using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Requests;
 using AUN_QA.BusinessService.Helpers;
@@ -34,7 +33,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     public async Task<IActionResult> GetPlanDetail([FromQuery] GetByIdRequest request)
     {
         var result = await _service.GetPlanDetail(request.Id!.Value);
-        return Ok(new BaseResponse<ActionPlanDetailDto> { Data = result, Success = true });
+        return Ok(new BaseResponse<TaskExecutionPlanDetailDto> { Data = result, Success = true });
     }
 
     [HttpPost("get-task-list")]
@@ -42,7 +41,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     public async Task<IActionResult> GetTaskList([FromBody] TaskExecutionGetTaskListRequest request)
     {
         var result = await _service.GetTaskList(request);
-        return Ok(new BaseResponse<List<TaskExecutionTaskDto>> { Data = result, Success = true });
+        return Ok(new BaseResponse<TaskExecutionTaskListResponseDto> { Data = result, Success = true });
     }
 
     [HttpPost("insert-task")]
@@ -83,5 +82,17 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     {
         await _service.DeleteAttachment(request);
         return Ok(new BaseResponse(true, 200));
+    }
+
+    [HttpGet("preview-task-attachment/{attachmentId}")]
+    [AttributePermission(Action = ActionType.NONE)]
+    public async Task<IActionResult> PreviewTaskAttachment(
+        [FromRoute] Guid attachmentId,
+        [FromQuery] string mode = "internal")
+    {
+        var result = await _service.PreviewTaskAttachment(attachmentId, mode);
+        Response.Headers["X-Original-Content-Type"] = result.OriginalContentType ?? string.Empty;
+        Response.Headers["X-Converted-Content-Type"] = result.ConvertedContentType ?? string.Empty;
+        return File(result.FileContent, result.ContentType, result.FileName);
     }
 }

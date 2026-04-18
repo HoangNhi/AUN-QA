@@ -19,5 +19,6 @@ public class ActionPlanStatusContractTests
         Assert.Equal(1, (int)ActionTaskStatus.Todo);
         Assert.Equal(2, (int)ActionTaskStatus.InProgress);
         Assert.Equal(3, (int)ActionTaskStatus.Done);
+        Assert.Equal(4, (int)ActionTaskStatus.HasError);
     }
 }

@@ -9,6 +9,7 @@ import type {
   TaskExecutionPlanDetail,
   TaskExecutionPlanListResponse,
   TaskExecutionTask,
+  TaskExecutionTaskListResponse,
   TaskExecutionUpsertTaskRequest,
   TaskExecutionUploadAttachmentRequest,
 } from "../types/taskExecution.types";
@@ -33,8 +34,8 @@ export const taskExecutionService = {
 
   getTaskList: (
     request: TaskExecutionGetTaskListRequest,
-  ): Promise<ApiResponse<TaskExecutionTask[]>> =>
-    api.post<TaskExecutionTask[]>(
+  ): Promise<ApiResponse<TaskExecutionTaskListResponse>> =>
+    api.post<TaskExecutionTaskListResponse>(
       API_ENDPOINTS.Business.TaskExecution.GET_TASK_LIST,
       request,
     ),

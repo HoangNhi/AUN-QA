@@ -18,5 +18,7 @@ public class TaskExecutionTaskDto
 
     public string CreatedBy { get; set; } = string.Empty;
 
+    public string? CreatedByFullname { get; set; }
+
     public List<TaskExecutionAttachmentDto> Attachments { get; set; } = new();
 }

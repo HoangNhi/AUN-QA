@@ -33,6 +33,7 @@ interface FileViewerDialogProps {
   file: Attachment | null;
   mode?: "internal" | "external";
   allowDownload?: boolean;
+  previewContext?: "evidence" | "taskAttachment";
 }
 
 function getFileIcon(type: string, className = "size-5") {
@@ -78,6 +79,7 @@ const FileViewerDialog = ({
   file,
   mode = "internal",
   allowDownload = true,
+  previewContext = "evidence",
 }: FileViewerDialogProps) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [officeBlob, setOfficeBlob] = useState<Blob | null>(null);
@@ -120,6 +122,10 @@ const FileViewerDialog = ({
     () => getFileViewerType(fileExt || ""),
     [fileExt],
   );
+  const previewFile =
+    previewContext === "taskAttachment"
+      ? fileService.previewTaskAttachment
+      : fileService.previewFile;
   const viewerType = useMemo(
     () => previewViewerType ?? defaultViewerType,
     [defaultViewerType, previewViewerType],
@@ -173,7 +179,7 @@ const FileViewerDialog = ({
       setBlobUrl(null);
 
       try {
-        if (viewerType === "video") {
+        if (defaultViewerType === "video") {
           const directUrl = getFileUrl(file.FileUrl);
           if (!directUrl) {
             throw new Error("Invalid file url");
@@ -184,7 +190,7 @@ const FileViewerDialog = ({
           return;
         }
 
-        const preview = await fileService.previewFile(file.Id, mode);
+        const preview = await previewFile(file.Id, mode);
         if (isCancelled) return;
 
         const effectiveContentType =
@@ -222,7 +228,7 @@ const FileViewerDialog = ({
         objectUrlRef.current = null;
       }
     };
-  }, [file, isOpen, mode, defaultViewerType]);
+  }, [file, isOpen, mode, defaultViewerType, previewFile]);
 
   useEffect(() => {
     if (viewerType === "office" && officeBlob) {
@@ -372,7 +378,7 @@ const FileViewerDialog = ({
         return;
       }
 
-      const preview = await fileService.previewFile(file.Id, mode);
+      const preview = await previewFile(file.Id, mode);
       const downloadUrl = window.URL.createObjectURL(preview.blob);
       const link = document.createElement("a");
       link.href = downloadUrl;

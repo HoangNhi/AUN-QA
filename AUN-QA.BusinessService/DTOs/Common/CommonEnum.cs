@@ -103,6 +103,7 @@ namespace AUN_QA.BusinessService.DTOs.Common
     {
         Todo = 1,
         InProgress = 2,
-        Done = 3
+        Done = 3,
+        HasError = 4
     }
 }

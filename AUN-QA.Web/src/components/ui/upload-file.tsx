@@ -34,6 +34,7 @@ export interface UploadFileProps {
   onSuccess?: () => void;
   hasError?: boolean;
   viewerMode?: "internal" | "external";
+  previewContext?: "evidence" | "taskAttachment";
 }
 
 export interface UploadFileRef {
@@ -57,6 +58,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       onSuccess,
       hasError = false,
       viewerMode = "internal",
+      previewContext = "evidence",
     },
     ref,
   ) => {
@@ -276,6 +278,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
           file={viewerFile}
           mode={viewerMode}
           allowDownload={allowDownload}
+          previewContext={previewContext}
         />
       </div>
     );

@@ -59,39 +59,108 @@ public class TaskExecutionService : ITaskExecutionService
         return await BuildPlanListResponseAsync(query, request);
     }
 
-    public Task<ActionPlanDetailDto> GetPlanDetail(Guid actionPlanId)
+    public async Task<TaskExecutionPlanDetailDto> GetPlanDetail(Guid actionPlanId)
     {
-        return _actionPlanService.GetById(actionPlanId);
+        var detail = await _actionPlanService.GetById(actionPlanId);
+
+        return new TaskExecutionPlanDetailDto
+        {
+            Id = detail.Id,
+            CycleId = detail.CycleId,
+            Title = detail.Title,
+            Description = detail.Description,
+            StandardId = detail.StandardId,
+            CriterionId = detail.CriterionId,
+            Priority = detail.Priority,
+            Deadline = detail.Deadline,
+            Status = detail.Status,
+            SourceFindingId = detail.SourceFindingId,
+            CompletedAt = detail.CompletedAt,
+            CompletedBy = detail.CompletedBy,
+            Assignees = detail.Assignees,
+            Attachments = detail.Attachments
+        };
     }
 
-    public async Task<List<TaskExecutionTaskDto>> GetTaskList(TaskExecutionGetTaskListRequest request)
+    public async Task<TaskExecutionTaskListResponseDto> GetTaskList(TaskExecutionGetTaskListRequest request)
     {
-        var detail = await _actionPlanService.GetById(request.ActionPlanId);
-        return detail.Tasks
-            .Select(x => new TaskExecutionTaskDto
+        var pageIndex = request.PageIndex <= 0 ? 1 : request.PageIndex;
+        var pageSize = request.PageSize <= 0 ? 10 : request.PageSize;
+
+        var query = _context.ActionTasks
+            .AsNoTracking()
+            .Where(x => x.ActionPlanId == request.ActionPlanId && !x.IsDeleted && x.IsActived);
+
+        if (!string.IsNullOrWhiteSpace(request.TextSearch))
+        {
+            var text = request.TextSearch.Trim();
+            query = query.Where(x =>
+                x.Description.Contains(text)
+                || (x.Note != null && x.Note.Contains(text)));
+        }
+
+        var totalRow = await query.CountAsync();
+        var doneCount = await query.CountAsync(x => x.TaskStatus == (int)ActionTaskStatus.Done);
+
+        var tasks = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var taskIds = tasks.Select(x => x.Id).ToList();
+        var attachmentRows = taskIds.Count == 0
+            ? new List<ActionTaskAttachmentEntity>()
+            : await _context.ActionTaskAttachments
+                .AsNoTracking()
+                .Where(x => taskIds.Contains(x.ActionTaskId) && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+
+        var attachmentMap = attachmentRows
+            .GroupBy(x => x.ActionTaskId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(a => new TaskExecutionAttachmentDto
+                {
+                    Id = a.Id,
+                    ActionTaskId = a.ActionTaskId,
+                    AttachmentId = a.AttachmentId,
+                    FileName = a.FileName,
+                    FileUrl = a.FileUrl,
+                    UploadedAt = a.UploadedAt,
+                    UploadedBy = a.UploadedBy
+                }).ToList());
+
+        var fullnameMap = await LoadFullnamesByUsernamesAsync(tasks.Select(x => x.CreatedBy));
+
+        var data = tasks.Select(task =>
+        {
+            attachmentMap.TryGetValue(task.Id, out var attachments);
+            fullnameMap.TryGetValue(task.CreatedBy, out var fullname);
+
+            return new TaskExecutionTaskDto
             {
-                Id = x.Id,
-                ActionPlanId = x.ActionPlanId,
-                Description = x.Description,
-                Note = x.Note,
-                TaskStatus = x.TaskStatus,
-                DueDate = x.DueDate,
-                CompletedAt = x.CompletedAt,
-                CreatedBy = x.CreatedBy,
-                Attachments = x.Attachments
-                    .Select(a => new TaskExecutionAttachmentDto
-                    {
-                        Id = a.Id,
-                        ActionTaskId = a.ActionTaskId,
-                        AttachmentId = a.AttachmentId,
-                        FileName = a.FileName,
-                        FileUrl = a.FileUrl,
-                        UploadedAt = a.UploadedAt,
-                        UploadedBy = a.UploadedBy
-                    })
-                    .ToList()
-            })
-            .ToList();
+                Id = task.Id,
+                ActionPlanId = task.ActionPlanId,
+                Description = task.Description,
+                Note = task.Note,
+                TaskStatus = task.TaskStatus,
+                DueDate = task.DueDate,
+                CompletedAt = task.CompletedAt,
+                CreatedBy = task.CreatedBy,
+                CreatedByFullname = fullname,
+                Attachments = attachments ?? new List<TaskExecutionAttachmentDto>()
+            };
+        }).ToList();
+
+        return new TaskExecutionTaskListResponseDto
+        {
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            TotalRow = totalRow,
+            DoneCount = doneCount,
+            Data = data
+        };
     }
 
     public async Task<TaskExecutionTaskDto> InsertTask(TaskExecutionUpsertTaskRequest request)
@@ -197,11 +266,6 @@ public class TaskExecutionService : ITaskExecutionService
             throw new BusinessException("Bạn không có quyền xóa công việc của người khác");
         }
 
-        if (task.TaskStatus != (int)ActionTaskStatus.Todo)
-        {
-            throw new BusinessException("Chá»‰ Ä‘Æ°á»£c xÃ³a cÃ´ng viá»‡c á»Ÿ tráº¡ng thÃ¡i chá» thá»±c hiá»‡n");
-        }
-
         task.IsDeleted = true;
         task.IsActived = false;
         task.UpdatedAt = DateTime.UtcNow;
@@ -291,6 +355,21 @@ public class TaskExecutionService : ITaskExecutionService
         }
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<ModelFilePreview> PreviewTaskAttachment(Guid attachmentId, string mode)
+    {
+        var attachment = await _context.ActionTaskAttachments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == attachmentId && !x.IsDeleted && x.IsActived)
+            ?? throw new BusinessException("Không tìm thấy tệp đính kèm");
+
+        if (string.IsNullOrWhiteSpace(attachment.FileUrl))
+        {
+            throw new BusinessException("Tệp đính kèm không có đường dẫn hợp lệ");
+        }
+
+        return await _uploadFileService.PreviewFileAsync(attachment.FileUrl, mode, fileId: attachment.Id);
     }
 
     private IQueryable<ActionPlanEntity> BuildAssignedPlanQuery()
@@ -509,6 +588,37 @@ public class TaskExecutionService : ITaskExecutionService
         }
     }
 
+    private async Task<Dictionary<string, string>> LoadFullnamesByUsernamesAsync(IEnumerable<string> usernames)
+    {
+        var distinct = usernames
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+
+        if (distinct.Count == 0)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        try
+        {
+            var request = new GetUsersByUsernamesRequest();
+            request.Usernames.AddRange(distinct);
+            var response = await _systemClient.GetUsersByUsernamesAsync(request);
+
+            return response.Users
+                .Where(x => !string.IsNullOrWhiteSpace(x.Username))
+                .ToDictionary(
+                    x => x.Username,
+                    x => string.IsNullOrWhiteSpace(x.Fullname) ? x.Username : x.Fullname,
+                    StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
     private Guid? GetCurrentUserIdOrNull()
     {
         var userId = _contextAccessor.HttpContext?.User?.Claims
@@ -542,7 +652,8 @@ public class TaskExecutionService : ITaskExecutionService
             (int)ActionTaskStatus.Todo => (int)ActionTaskStatus.Todo,
             (int)ActionTaskStatus.InProgress => (int)ActionTaskStatus.InProgress,
             (int)ActionTaskStatus.Done => (int)ActionTaskStatus.Done,
-            _ => (int)ActionTaskStatus.Todo
+            (int)ActionTaskStatus.HasError => (int)ActionTaskStatus.HasError,
+            _ => (int)ActionTaskStatus.InProgress
         };
     }
 

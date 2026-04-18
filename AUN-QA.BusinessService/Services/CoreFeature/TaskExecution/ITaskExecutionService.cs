@@ -1,4 +1,3 @@
-using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Requests;
 using AUN_QA.Shared.DTOs.Base;
@@ -9,9 +8,9 @@ public interface ITaskExecutionService
 {
     Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> GetMyPlans(TaskExecutionGetPlansRequest request);
 
-    Task<ActionPlanDetailDto> GetPlanDetail(Guid actionPlanId);
+    Task<TaskExecutionPlanDetailDto> GetPlanDetail(Guid actionPlanId);
 
-    Task<List<TaskExecutionTaskDto>> GetTaskList(TaskExecutionGetTaskListRequest request);
+    Task<TaskExecutionTaskListResponseDto> GetTaskList(TaskExecutionGetTaskListRequest request);
 
     Task<TaskExecutionTaskDto> InsertTask(TaskExecutionUpsertTaskRequest request);
 
@@ -22,4 +21,6 @@ public interface ITaskExecutionService
     Task<List<TaskExecutionAttachmentDto>> UploadAttachment(TaskExecutionUploadAttachmentRequest request);
 
     Task DeleteAttachment(TaskExecutionDeleteAttachmentRequest request);
+
+    Task<ModelFilePreview> PreviewTaskAttachment(Guid attachmentId, string mode);
 }

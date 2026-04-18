@@ -17,6 +17,7 @@ export enum ActionTaskStatus {
   Todo = 1,
   InProgress = 2,
   Done = 3,
+  HasError = 4,
 }
 
 export interface ActionPlanAssignee {
@@ -48,6 +49,7 @@ export interface ActionTask {
   DueDate?: string | null;
   CompletedAt?: string | null;
   CreatedBy: string;
+  CreatedByFullname?: string | null;
   Attachments: ActionTaskAttachment[];
 }
 

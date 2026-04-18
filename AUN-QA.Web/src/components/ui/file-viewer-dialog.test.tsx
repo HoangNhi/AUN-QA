@@ -9,7 +9,7 @@ vi.mock("docx-preview", () => ({
 }));
 
 vi.mock("@/features/file/api/uploadfile.api", () => ({
-  fileService: { previewFile: vi.fn() },
+  fileService: { previewFile: vi.fn(), previewTaskAttachment: vi.fn() },
 }));
 
 vi.mock("@/components/ui/pdf-viewer", () => ({
@@ -19,7 +19,12 @@ vi.mock("@/components/ui/pdf-viewer", () => ({
 }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(fileService.previewFile).mockResolvedValue({
+    blob: new Blob(["x"], { type: "application/octet-stream" }),
+    contentType: "application/octet-stream",
+  });
+  vi.mocked(fileService.previewTaskAttachment).mockResolvedValue({
     blob: new Blob(["x"], { type: "application/octet-stream" }),
     contentType: "application/octet-stream",
   });
@@ -51,6 +56,33 @@ describe("FileViewerDialog layout", () => {
     expect(screen.getByTestId("preview-canvas")).not.toHaveClass(
       "overflow-auto",
     );
+  });
+
+  it("uses task attachment preview endpoint when previewContext is taskAttachment", async () => {
+    vi.mocked(fileService.previewTaskAttachment).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "image/jpeg" }),
+      contentType: "image/jpeg",
+    });
+
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 20,
+            FullFileName: "task.jpg",
+            FileExtension: "jpg",
+            FileUrl: "/task.jpg",
+          } as any
+        }
+        previewContext="taskAttachment"
+      />,
+    );
+
+    expect(await screen.findByTestId("image-preview")).toBeInTheDocument();
+    expect(fileService.previewTaskAttachment).toHaveBeenCalledWith(20, "internal");
+    expect(fileService.previewFile).not.toHaveBeenCalled();
   });
 
   it("uses non-scroll canvas for pdf to avoid nested scrollbars", () => {

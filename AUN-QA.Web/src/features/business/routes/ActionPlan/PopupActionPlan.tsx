@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Loader2, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/datepicker";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import MultipleSelector, { type Option } from "@/components/ui/multi-select";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
@@ -52,6 +61,20 @@ function parseDateInput(value: string | undefined | null): string {
   }
 
   return date.toISOString().slice(0, 10);
+}
+
+function parseLocalDate(value: string | undefined | null): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 export default function PopupActionPlan({
@@ -398,37 +421,45 @@ export default function PopupActionPlan({
 
                   <div className="grid gap-2">
                     <Label>Ưu tiên</Label>
-                    <select
-                      className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                    <Select
                       value={form.Priority}
-                      disabled={!canEditFields && !isNew}
-                      onChange={(e) =>
+                      onValueChange={(value) =>
                         setForm((prev) => ({
                           ...prev,
-                          Priority: e.target.value,
+                          Priority: value,
                         }))
                       }
                     >
-                      <option value="1">Cao</option>
-                      <option value="2">Trung bình</option>
-                      <option value="3">Thấp</option>
-                    </select>
+                      <SelectTrigger
+                        className="w-full"
+                        disabled={!canEditFields && !isNew}
+                      >
+                        <SelectValue placeholder="Chọn ưu tiên..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Cao</SelectItem>
+                        <SelectItem value="2">Trung bình</SelectItem>
+                        <SelectItem value="3">Thấp</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid gap-2">
                     <Label>
                       Thời hạn <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      type="date"
-                      value={form.Deadline}
-                      readOnly={!canEditFields && !isNew}
-                      onChange={(e) =>
+                    <DatePicker
+                      className="w-full"
+                      optionLabel="Chọn thời hạn"
+                      value={parseLocalDate(form.Deadline)}
+                      onChange={(date) =>
                         setForm((prev) => ({
                           ...prev,
-                          Deadline: e.target.value,
+                          Deadline: date ? format(date, "yyyy-MM-dd") : "",
                         }))
                       }
+                      disabled={!canEditFields && !isNew}
+                      required
                     />
                   </div>
                 </div>

@@ -7,12 +7,15 @@ using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.BusinessService.Services.CoreFeature.ActionPlan;
 using AUN_QA.BusinessService.Services.CoreFeature.TaskExecution;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.Protos;
 using AutoMapper;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace AUN_QA.BusinessService.Tests;
@@ -125,6 +128,7 @@ public class ActionPlanWorkflowTests
     {
         var options = new DbContextOptionsBuilder<BusinessContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new BusinessContext(options);
@@ -164,14 +168,15 @@ public class ActionPlanWorkflowTests
         uploadService.DeleteDataAsync(Arg.Any<List<string>>())
             .Returns(Task.FromResult(true));
 
-        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new ActionPlanProfile())));
+        var mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new ActionPlanProfile()), NullLoggerFactory.Instance));
 
         return new ActionPlanService(
             context,
             accessor,
             new SystemProto.SystemProtoClient(new FakeCallInvoker()),
             uploadService,
-            mapper);
+            mapper,
+            Substitute.For<ICatalogIntegrationService>());
     }
 
     private static TaskExecutionService CreateTaskExecutionService(BusinessContext context, Guid? userId, string username)

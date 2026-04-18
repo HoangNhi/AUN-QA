@@ -13,4 +13,12 @@ public class ExternalFindingOptionDto
     public string Content { get; set; } = string.Empty;
 
     public string? Summary { get; set; }
+
+    public string? StandardCode { get; set; }
+
+    public string? StandardName { get; set; }
+
+    public string? CriterionCode { get; set; }
+
+    public string? CriterionName { get; set; }
 }

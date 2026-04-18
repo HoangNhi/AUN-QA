@@ -39,8 +39,8 @@ export function canChangeStatus(councilRoleId: number): boolean {
 }
 
 export const ACTION_PLAN_STATUS_OPTIONS = [
-  { value: ActionPlanStatus.Draft, label: "📝 Nháp" },
-  { value: ActionPlanStatus.InProgress, label: "⚙️ Đang thực hiện" },
-  { value: ActionPlanStatus.PendingReview, label: "🔔 Chờ xác nhận" },
-  { value: ActionPlanStatus.Completed, label: "✅ Hoàn thành" },
+  { value: ActionPlanStatus.Draft, label: "Nháp" },
+  { value: ActionPlanStatus.InProgress, label: "Đang thực hiện" },
+  { value: ActionPlanStatus.PendingReview, label: "Chờ xác nhận" },
+  { value: ActionPlanStatus.Completed, label: "Hoàn thành" },
 ];

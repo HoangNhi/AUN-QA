@@ -25,12 +25,16 @@ import type {
   ExternalFindingOption,
 } from "@/features/business/types/actionPlan.types";
 import {
-  ACTION_PLAN_STATUS_OPTIONS,
   canChangeStatus,
   canEditActionPlan,
-  getActionPlanStatusColor,
   getActionPlanStatusLabel,
 } from "./actionPlan.utils";
+import {
+  getActionPlanStatusComboboxOptions,
+  getFindingCriterionDisplay,
+  getFindingStandardDisplay,
+  resolveCriterionSelection,
+} from "./popupActionPlan.helpers";
 
 interface PopupActionPlanProps {
   open: boolean;
@@ -79,6 +83,7 @@ export default function PopupActionPlan({
   const [assignedTo, setAssignedTo] = useState<string[]>(item?.Assignees?.map((a) => a.UserId) ?? []);
   const [folderUpload, setFolderUpload] = useState<string>(uuidv4());
   const [listAttachment, setListAttachment] = useState<Attachment[]>([]);
+  const [pendingFindingCriterionId, setPendingFindingCriterionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -138,10 +143,25 @@ export default function PopupActionPlan({
   });
 
   const findings = useMemo(() => findingsQuery.data ?? [], [findingsQuery.data]);
+  const statusOptions = useMemo(() => getActionPlanStatusComboboxOptions(), []);
   const selectedFinding = useMemo(
     () => findings.find((finding) => finding.Id === form.SourceFindingId) ?? null,
     [findings, form.SourceFindingId],
   );
+
+  useEffect(() => {
+    if (!pendingFindingCriterionId || criteria.isLoading) {
+      return;
+    }
+
+    const resolvedCriterionId = resolveCriterionSelection(
+      pendingFindingCriterionId,
+      criteria.options ?? [],
+    );
+
+    setForm((prev) => ({ ...prev, CriterionId: resolvedCriterionId }));
+    setPendingFindingCriterionId(null);
+  }, [criteria.isLoading, criteria.options, pendingFindingCriterionId]);
 
   const currentStatus = Number(form.Status) as ActionPlanStatus;
   const isNew = !item?.Id || item.Id === EMPTY_GUID;
@@ -154,11 +174,13 @@ export default function PopupActionPlan({
     setForm((prev) => ({
       ...prev,
       SourceFindingId: finding.Id,
-      StandardId: finding.StandardId ?? prev.StandardId,
-      CriterionId: finding.CriterionId ?? prev.CriterionId,
+      StandardId: finding.StandardId ?? "",
+      CriterionId: "",
       Title: prev.Title || "Cải tiến từ phát hiện",
       Description: finding.Content,
     }));
+
+    setPendingFindingCriterionId(finding.CriterionId ?? null);
   };
 
   const handleSave = async () => {
@@ -197,10 +219,13 @@ export default function PopupActionPlan({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-[1200px] overflow-hidden p-0">
+      <DialogContent
+        className="max-h-[94vh] w-[96vw] max-w-[96vw] overflow-hidden p-0 sm:max-w-[1420px]"
+        showCloseButton={false}
+      >
         <DialogTitle className="sr-only">Kế hoạch cải tiến</DialogTitle>
 
-        <div className="grid max-h-[92vh] grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid max-h-[94vh] grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[1.15fr_0.85fr]">
           <div className="flex min-h-0 flex-col overflow-hidden border-r bg-white">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4">
               <div>
@@ -218,34 +243,6 @@ export default function PopupActionPlan({
 
             <div className="flex-1 overflow-y-auto p-5">
               <div className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label>Trạng thái</Label>
-                  {isStatusChangeable ? (
-                    <select
-                      className={`h-10 w-full rounded-md border px-3 text-sm font-medium ${getActionPlanStatusColor(currentStatus)}`}
-                      value={form.Status}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, Status: Number(e.target.value) }))
-                      }
-                    >
-                      {ACTION_PLAN_STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getActionPlanStatusColor(currentStatus)}`}
-                      >
-                        {getActionPlanStatusLabel(currentStatus)}
-                      </span>
-                      <span className="text-xs text-slate-400">Chỉ CTH/PCT được thay đổi trạng thái</span>
-                    </div>
-                  )}
-                </div>
-
                 {currentStatus === 3 && (
                   <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
                     Tất cả công việc đã hoàn thành. CTH/PCT có thể xác nhận hoặc yêu cầu thực hiện lại.
@@ -281,14 +278,15 @@ export default function PopupActionPlan({
                     options={cycleOptions.options ?? []}
                     loading={cycleOptions.isLoading}
                     value={form.CycleId || undefined}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setForm((prev) => ({
                         ...prev,
                         CycleId: value || "",
                         StandardId: "",
                         CriterionId: "",
-                      }))
-                    }
+                      }));
+                      setPendingFindingCriterionId(null);
+                    }}
                     placeholder="Chọn chu kỳ"
                     searchPlaceholder="Tìm chu kỳ..."
                     emptyText="Không tìm thấy chu kỳ."
@@ -306,13 +304,14 @@ export default function PopupActionPlan({
                       }))}
                       loading={standards.isLoading}
                       value={form.StandardId || undefined}
-                      onValueChange={(value) =>
+                      onValueChange={(value) => {
                         setForm((prev) => ({
                           ...prev,
                           StandardId: value || "",
                           CriterionId: "",
-                        }))
-                      }
+                        }));
+                        setPendingFindingCriterionId(null);
+                      }}
                       placeholder="Chọn tiêu chuẩn..."
                       emptyText="Không có tiêu chuẩn."
                       disabled={(!canEditFields && !isNew) || !form.CycleId}
@@ -337,7 +336,29 @@ export default function PopupActionPlan({
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-2">
+                    <Label>Trạng thái</Label>
+                    <Combobox
+                      options={statusOptions}
+                      value={String(form.Status)}
+                      onValueChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          Status: Number(value || prev.Status),
+                        }))
+                      }
+                      placeholder="Chọn trạng thái..."
+                      emptyText="Không có trạng thái."
+                      readonly={!isStatusChangeable}
+                    />
+                    {!isStatusChangeable ? (
+                      <span className="text-xs text-slate-400">
+                        Chỉ CTH/PCT được thay đổi trạng thái
+                      </span>
+                    ) : null}
+                  </div>
+
                   <div className="grid gap-2">
                     <Label>Ưu tiên</Label>
                     <select
@@ -353,6 +374,7 @@ export default function PopupActionPlan({
                       <option value="3">Thấp</option>
                     </select>
                   </div>
+
                   <div className="grid gap-2">
                     <Label>
                       Thời hạn <span className="text-red-500">*</span>
@@ -551,7 +573,10 @@ export default function PopupActionPlan({
                       {finding.Summary ?? finding.Content}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {finding.CriterionId ? `Tiêu chí: ${finding.CriterionId}` : "Không có tiêu chí"}
+                      Tiêu chuẩn: {getFindingStandardDisplay(finding)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Tiêu chí: {getFindingCriterionDisplay(finding)}
                     </p>
                   </button>
                 ))}

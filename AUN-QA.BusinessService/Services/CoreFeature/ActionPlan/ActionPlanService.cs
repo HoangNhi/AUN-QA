@@ -7,6 +7,8 @@ using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Exceptions;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
+using AUN_QA.CatalogService.Protos;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
@@ -25,19 +27,22 @@ public class ActionPlanService : IActionPlanService
     private readonly SystemProto.SystemProtoClient _systemClient;
     private readonly IUploadFileService _uploadFileService;
     private readonly IMapper _mapper;
+    private readonly ICatalogIntegrationService _catalogService;
 
     public ActionPlanService(
         BusinessContext context,
         IHttpContextAccessor contextAccessor,
         SystemProto.SystemProtoClient systemClient,
         IUploadFileService uploadFileService,
-        IMapper mapper)
+        IMapper mapper,
+        ICatalogIntegrationService catalogService)
     {
         _context = context;
         _contextAccessor = contextAccessor;
         _systemClient = systemClient;
         _uploadFileService = uploadFileService;
         _mapper = mapper;
+        _catalogService = catalogService;
     }
 
     public async Task<GetListPagingResponse<ActionPlanListItemDto>> GetList(ActionPlanGetListPagingRequest request)
@@ -418,36 +423,75 @@ public class ActionPlanService : IActionPlanService
                         on finding.ExternalReviewResultId equals result.Id
                     join review in _context.ExternalReviews.AsNoTracking()
                         on result.ExternalReviewId equals review.Id
+                    join cycle in _context.Cycles.AsNoTracking()
+                        on review.CycleId equals cycle.Id
                     where !finding.IsDeleted && finding.IsActived
                           && !result.IsDeleted && result.IsActived
                           && !review.IsDeleted && review.IsActived
-                    select new { finding, result, review };
+                          && !cycle.IsDeleted && cycle.IsActived
+                    select new
+                    {
+                        Finding = finding,
+                        StandardId = result.StandardId,
+                        CycleId = review.CycleId,
+                        CycleStandardSetId = cycle.StandardSetId
+                    };
 
         if (request.CycleId.HasValue)
         {
-            query = query.Where(x => x.review.CycleId == request.CycleId.Value);
+            query = query.Where(x => x.CycleId == request.CycleId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(request.TextSearch))
         {
             var text = request.TextSearch.Trim();
-            query = query.Where(x => x.finding.Content.Contains(text));
+            query = query.Where(x => x.Finding.Content.Contains(text));
         }
 
-        return await query
-            .OrderByDescending(x => x.finding.CreatedAt)
-            .Select(x => new ExternalFindingOptionDto
-            {
-                Id = x.finding.Id,
-                ExternalReviewResultId = x.finding.ExternalReviewResultId,
-                CriterionId = x.finding.CriterionId,
-                StandardId = x.result.StandardId,
-                Content = x.finding.Content,
-                Summary = x.finding.Content.Length > 120
-                    ? x.finding.Content.Substring(0, 120) + "..."
-                    : x.finding.Content
-            })
+        var rows = await query
+            .OrderByDescending(x => x.Finding.CreatedAt)
             .ToListAsync();
+
+        if (rows.Count == 0)
+        {
+            return new List<ExternalFindingOptionDto>();
+        }
+
+        var metadataByStandardSet = await BuildMetadataByStandardSetAsync(
+            rows.Select(x => x.CycleStandardSetId).Distinct().ToList());
+
+        return rows.Select(row =>
+        {
+            var dto = new ExternalFindingOptionDto
+            {
+                Id = row.Finding.Id,
+                ExternalReviewResultId = row.Finding.ExternalReviewResultId,
+                CriterionId = row.Finding.CriterionId,
+                StandardId = row.StandardId,
+                Content = row.Finding.Content,
+                Summary = row.Finding.Content.Length > 120
+                    ? row.Finding.Content.Substring(0, 120) + "..."
+                    : row.Finding.Content
+            };
+
+            if (metadataByStandardSet.TryGetValue(row.CycleStandardSetId, out var bundle))
+            {
+                if (bundle.Standards.TryGetValue(row.StandardId, out var standardMeta))
+                {
+                    dto.StandardCode = standardMeta.Code;
+                    dto.StandardName = standardMeta.Name;
+                }
+
+                if (row.Finding.CriterionId.HasValue
+                    && bundle.Criteria.TryGetValue(row.Finding.CriterionId.Value, out var criterionMeta))
+                {
+                    dto.CriterionCode = criterionMeta.Code;
+                    dto.CriterionName = criterionMeta.Name;
+                }
+            }
+
+            return dto;
+        }).ToList();
     }
 
     public async Task<List<AssignableMemberDto>> GetAssignableMembers(Guid cycleId)
@@ -751,6 +795,41 @@ public class ActionPlanService : IActionPlanService
         return string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase);
     }
 
+    private async Task<Dictionary<Guid, MetadataBundle>> BuildMetadataByStandardSetAsync(IEnumerable<Guid> standardSetIds)
+    {
+        var result = new Dictionary<Guid, MetadataBundle>();
+
+        foreach (var standardSetId in standardSetIds.Distinct())
+        {
+            try
+            {
+                var standards = new Dictionary<Guid, (string Code, string Name)>();
+                var criteria = new Dictionary<Guid, (string Code, string Name)>();
+
+                await foreach (var row in _catalogService.GetStandardsWithCriteriaStreamAsync(
+                    new GetStandardsWithCriteriaStreamRequest
+                    {
+                        StandardSetId = standardSetId.ToString()
+                    }))
+                {
+                    standards[row.StandardId] = (row.StandardCode, row.StandardName);
+                    criteria[row.CriterionId] = (row.CriterionCode, row.CriterionName);
+                }
+
+                result[standardSetId] = new MetadataBundle(standards, criteria);
+            }
+            catch (BusinessException)
+            {
+                // Giữ API sẵn sàng ngay cả khi CatalogService tạm thời không thể enrich metadata.
+                result[standardSetId] = new MetadataBundle(
+                    new Dictionary<Guid, (string Code, string Name)>(),
+                    new Dictionary<Guid, (string Code, string Name)>());
+            }
+        }
+
+        return result;
+    }
+
     private static string? NormalizeText(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -787,4 +866,8 @@ public class ActionPlanService : IActionPlanService
             Data = new List<T>()
         };
     }
+
+    private sealed record MetadataBundle(
+        Dictionary<Guid, (string Code, string Name)> Standards,
+        Dictionary<Guid, (string Code, string Name)> Criteria);
 }

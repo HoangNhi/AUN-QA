@@ -55,9 +55,9 @@ export interface TaskExecutionDeleteAttachmentRequest {
   AttachmentId: string;
 }
 
-export interface TaskExecutionAttachment extends ActionTaskAttachment {}
+export type TaskExecutionAttachment = ActionTaskAttachment;
 
-export interface TaskExecutionTask extends ActionTask {}
+export type TaskExecutionTask = ActionTask;
 
 export type TaskExecutionPlanDetail = ActionPlanDetail;
 export type TaskExecutionPlanListResponse = GetListPagingResponse<TaskExecutionPlanListItem>;

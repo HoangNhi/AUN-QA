@@ -113,6 +113,10 @@ export interface ExternalFindingOption {
   StandardId?: string | null;
   Content: string;
   Summary?: string | null;
+  StandardCode?: string | null;
+  StandardName?: string | null;
+  CriterionCode?: string | null;
+  CriterionName?: string | null;
 }
 
 export interface ActionPlanGetListRequest extends GetListPagingRequest {

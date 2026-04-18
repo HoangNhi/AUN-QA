@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { flexRender } from "@tanstack/react-table";
 import { describe, expect, it, vi } from "vitest";
 import {
   ActionPlanStatus,
@@ -26,26 +27,35 @@ function makeItem(
   };
 }
 
+function renderActionsCell(item: ActionPlanListItem) {
+  const columns = getActionPlanColumns(vi.fn(), vi.fn());
+  const actions = columns.find((column) => column.id === "actions");
+
+  if (!actions?.cell) {
+    throw new Error("Actions cell template is not configured");
+  }
+
+  const cell = flexRender(actions.cell, {
+    row: { original: item },
+  } as never);
+
+  render(<>{cell}</>);
+}
+
 describe("ActionPlan columns actions", () => {
   it("renders overflow menu trigger instead of direct open button", () => {
-    const columns = getActionPlanColumns(vi.fn(), vi.fn());
-    const actions = columns.find((column) => column.id === "actions");
-    const cell = actions?.cell?.({ row: { original: makeItem() } } as never);
+    renderActionsCell(makeItem());
 
-    render(<>{cell}</>);
-
-    expect(screen.getByRole("button", { name: /open menu/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Mở" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /open menu/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Mở" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows delete option for Draft status", () => {
-    const columns = getActionPlanColumns(vi.fn(), vi.fn());
-    const actions = columns.find((column) => column.id === "actions");
-    const cell = actions?.cell?.({
-      row: { original: makeItem({ Status: ActionPlanStatus.Draft }) },
-    } as never);
-
-    render(<>{cell}</>);
+    renderActionsCell(makeItem({ Status: ActionPlanStatus.Draft }));
     const trigger = screen.getByRole("button", { name: /open menu/i });
     fireEvent.pointerDown(trigger);
     fireEvent.click(trigger);
@@ -54,13 +64,7 @@ describe("ActionPlan columns actions", () => {
   });
 
   it("hides delete option for non-Draft status", () => {
-    const columns = getActionPlanColumns(vi.fn(), vi.fn());
-    const actions = columns.find((column) => column.id === "actions");
-    const cell = actions?.cell?.({
-      row: { original: makeItem({ Status: ActionPlanStatus.InProgress }) },
-    } as never);
-
-    render(<>{cell}</>);
+    renderActionsCell(makeItem({ Status: ActionPlanStatus.InProgress }));
     const trigger = screen.getByRole("button", { name: /open menu/i });
     fireEvent.pointerDown(trigger);
     fireEvent.click(trigger);

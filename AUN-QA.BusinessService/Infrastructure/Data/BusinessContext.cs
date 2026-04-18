@@ -16,6 +16,8 @@ public partial class BusinessContext : DbContext
 
     public virtual DbSet<ActionPlanAssignee> ActionPlanAssignees { get; set; }
 
+    public virtual DbSet<ActionPlanAttachment> ActionPlanAttachments { get; set; }
+
     public virtual DbSet<ActionTask> ActionTasks { get; set; }
 
     public virtual DbSet<ActionTaskAttachment> ActionTaskAttachments { get; set; }
@@ -81,32 +83,19 @@ public partial class BusinessContext : DbContext
             entity.HasIndex(e => e.SourceFindingId, "IX_ActionPlan_SourceFindingId");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
-            entity.Property(e => e.ApprovedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
             entity.Property(e => e.AssignedAt).HasColumnType("datetime");
             entity.Property(e => e.AssignedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.CompletedBy).HasMaxLength(36);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.Deadline).HasColumnType("datetime");
             entity.Property(e => e.IsActived).HasDefaultValue(true);
-            entity.Property(e => e.Kpi).HasMaxLength(2000);
             entity.Property(e => e.Priority).HasDefaultValue(2);
-            entity.Property(e => e.RevisionReason).HasMaxLength(1000);
-            entity.Property(e => e.RevisionRequestedAt).HasColumnType("datetime");
-            entity.Property(e => e.RevisionRequestedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
             entity.Property(e => e.Status).HasDefaultValue(1);
-            entity.Property(e => e.SubmittedAt).HasColumnType("datetime");
-            entity.Property(e => e.SubmittedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
             entity.Property(e => e.Title).HasMaxLength(500);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
@@ -152,6 +141,18 @@ public partial class BusinessContext : DbContext
                 .HasForeignKey(d => d.ActionPlanId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ActionPlanAssignee_ActionPlan_fk");
+        });
+
+        modelBuilder.Entity<ActionPlanAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("ActionPlanAttachment_pk");
+
+            entity.ToTable("ActionPlanAttachments");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.CreatedBy).HasMaxLength(200);
+            entity.Property(e => e.IsActived).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedBy).HasMaxLength(200);
         });
 
         modelBuilder.Entity<ActionTask>(entity =>

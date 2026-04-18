@@ -2,10 +2,9 @@ import type { GetListPagingRequest, GetListPagingResponse } from "@/types/base/b
 
 export enum ActionPlanStatus {
   Draft = 1,
-  Submitted = 2,
-  RevisionRequested = 3,
-  Approved = 4,
-  Assigned = 5,
+  InProgress = 2,
+  PendingReview = 3,
+  Completed = 4,
 }
 
 export enum ActionPriority {
@@ -51,6 +50,17 @@ export interface ActionTask {
   Attachments: ActionTaskAttachment[];
 }
 
+export interface ActionPlanAttachmentItem {
+  Id: string;
+  ReferenceType: number;
+  RelatedId: string;
+  FileName: string;
+  FileExtension: string;
+  FileSize?: number | null;
+  FileUrl: string;
+  FullFileName?: string | null;
+}
+
 export interface ActionPlanDetail {
   Id: string;
   CycleId: string;
@@ -60,19 +70,14 @@ export interface ActionPlanDetail {
   CriterionId?: string | null;
   Priority: ActionPriority | number;
   Deadline: string;
-  Kpi: string;
   Status: ActionPlanStatus | number;
   SourceFindingId?: string | null;
-  SubmittedAt?: string | null;
-  SubmittedBy?: string | null;
-  ApprovedAt?: string | null;
-  ApprovedBy?: string | null;
-  RevisionRequestedAt?: string | null;
-  RevisionRequestedBy?: string | null;
-  RevisionReason?: string | null;
+  CompletedAt?: string | null;
+  CompletedBy?: string | null;
   AssignedAt?: string | null;
   AssignedBy?: string | null;
   Assignees: ActionPlanAssignee[];
+  Attachments: ActionPlanAttachmentItem[];
   Tasks: ActionTask[];
 }
 
@@ -87,13 +92,18 @@ export interface ActionPlanListItem {
   CriterionId?: string | null;
   Priority: ActionPriority | number;
   Deadline: string;
-  Kpi: string;
   Status: ActionPlanStatus | number;
   AssigneeCount: number;
   TotalTaskCount: number;
   DoneTaskCount: number;
   StatusName?: string | null;
   PriorityName?: string | null;
+}
+
+export interface AssignableMember {
+  UserId: string;
+  Fullname: string;
+  Username?: string | null;
 }
 
 export interface ExternalFindingOption {
@@ -123,32 +133,16 @@ export interface ActionPlanUpsertRequest {
   CriterionId?: string | null;
   Priority: ActionPriority | number;
   Deadline: string;
-  Kpi: string;
   SourceFindingId?: string | null;
-  AssignedTo?: string[];
-  IsActived?: boolean;
-}
-
-export interface ActionPlanAssignRequest {
-  Id: string;
   AssignedTo: string[];
+  Status: ActionPlanStatus | number;
+  AttachmentIds: string[];
+  IsActived?: boolean;
+  FolderUpload?: string | null;
 }
 
 export interface ActionPlanDeleteListRequest {
   Ids: string[];
-}
-
-export interface ActionPlanSubmitRequest {
-  Id: string;
-}
-
-export interface ActionPlanApproveRequest {
-  Id: string;
-}
-
-export interface ActionPlanRequestRevisionRequest {
-  Id: string;
-  Reason: string;
 }
 
 export interface ActionPlanExternalFindingRequest {

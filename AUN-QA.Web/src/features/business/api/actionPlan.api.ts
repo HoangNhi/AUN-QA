@@ -2,16 +2,13 @@ import api, { type ApiResponse } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import type {
-  ActionPlanApproveRequest,
-  ActionPlanAssignRequest,
   ActionPlanDeleteListRequest,
   ActionPlanDetail,
   ActionPlanExternalFindingRequest,
   ActionPlanGetListRequest,
   ActionPlanListItem,
-  ActionPlanRequestRevisionRequest,
-  ActionPlanSubmitRequest,
   ActionPlanUpsertRequest,
+  AssignableMember,
   ExternalFindingOption,
 } from "../types/actionPlan.types";
 
@@ -31,18 +28,6 @@ export const actionPlanService = {
   deleteList: (request: ActionPlanDeleteListRequest): Promise<ApiResponse<null>> =>
     api.delete<null>(API_ENDPOINTS.Business.ActionPlan.DELETE_LIST, { data: request }),
 
-  submit: (request: ActionPlanSubmitRequest): Promise<ApiResponse<null>> =>
-    api.post<null>(API_ENDPOINTS.Business.ActionPlan.SUBMIT, request),
-
-  approve: (request: ActionPlanApproveRequest): Promise<ApiResponse<null>> =>
-    api.post<null>(API_ENDPOINTS.Business.ActionPlan.APPROVE, request),
-
-  requestRevision: (request: ActionPlanRequestRevisionRequest): Promise<ApiResponse<null>> =>
-    api.post<null>(API_ENDPOINTS.Business.ActionPlan.REQUEST_REVISION, request),
-
-  assign: (request: ActionPlanAssignRequest): Promise<ApiResponse<null>> =>
-    api.post<null>(API_ENDPOINTS.Business.ActionPlan.ASSIGN, request),
-
   getExternalReviewFindings: (
     request: ActionPlanExternalFindingRequest,
   ): Promise<ApiResponse<ExternalFindingOption[]>> =>
@@ -50,4 +35,14 @@ export const actionPlanService = {
       API_ENDPOINTS.Business.ActionPlan.GET_EXTERNAL_REVIEW_FINDINGS,
       request,
     ),
+
+  getAssignableMembers: (cycleId: string): Promise<ApiResponse<AssignableMember[]>> =>
+    api.get<AssignableMember[]>(API_ENDPOINTS.Business.ActionPlan.GET_ASSIGNABLE_MEMBERS, {
+      params: { cycleId },
+    }),
+
+  getMyCouncilRole: (cycleId: string): Promise<ApiResponse<number>> =>
+    api.get<number>(API_ENDPOINTS.Business.ActionPlan.GET_MY_COUNCIL_ROLE, {
+      params: { cycleId },
+    }),
 };

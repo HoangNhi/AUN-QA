@@ -174,6 +174,29 @@ public class TaskExecutionService : ITaskExecutionService
         _context.ActionTasks.Update(task);
         await _context.SaveChangesAsync();
 
+        if (task.TaskStatus == (int)ActionTaskStatus.Done)
+        {
+            var hasIncomplete = await _context.ActionTasks
+                .AnyAsync(t => t.ActionPlanId == task.ActionPlanId
+                    && !t.IsDeleted
+                    && t.IsActived
+                    && t.TaskStatus != (int)ActionTaskStatus.Done);
+
+            if (!hasIncomplete)
+            {
+                var plan = await _context.ActionPlans
+                    .FirstOrDefaultAsync(p => p.Id == task.ActionPlanId && !p.IsDeleted && p.IsActived);
+
+                if (plan != null && plan.Status == (int)ActionPlanStatus.InProgress)
+                {
+                    plan.Status = (int)ActionPlanStatus.PendingReview;
+                    plan.UpdatedAt = DateTime.UtcNow;
+                    plan.UpdatedBy = GetCurrentUsernameOrFallback();
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
         return await MapTaskDtoAsync(task.Id);
     }
 
@@ -289,7 +312,7 @@ public class TaskExecutionService : ITaskExecutionService
     {
         return _context.ActionPlans
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && x.IsActived && x.Status == (int)ActionPlanStatus.Assigned);
+            .Where(x => !x.IsDeleted && x.IsActived && x.Status == (int)ActionPlanStatus.InProgress);
     }
 
     private async Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> BuildPlanListResponseAsync(
@@ -306,8 +329,7 @@ public class TaskExecutionService : ITaskExecutionService
             var text = request.TextSearch.Trim();
             query = query.Where(x =>
                 x.Title.Contains(text)
-                || (x.Description ?? string.Empty).Contains(text)
-                || x.Kpi.Contains(text));
+                || (x.Description ?? string.Empty).Contains(text));
         }
 
         var totalRow = await query.CountAsync();
@@ -378,7 +400,7 @@ public class TaskExecutionService : ITaskExecutionService
                 Deadline = plan.Deadline,
                 Status = plan.Status,
                 AssignedToNames = names,
-                StatusName = "Đã giao",
+                StatusName = GetStatusName(plan.Status),
                 TotalTaskCount = taskCount?.Total ?? 0,
                 DoneTaskCount = taskCount?.Done ?? 0
             };
@@ -399,9 +421,9 @@ public class TaskExecutionService : ITaskExecutionService
             .FirstOrDefaultAsync(x => x.Id == actionPlanId && !x.IsDeleted && x.IsActived)
             ?? throw new BusinessException("Không tìm thấy kế hoạch hành động");
 
-        if (plan.Status != (int)ActionPlanStatus.Assigned)
+        if (plan.Status != (int)ActionPlanStatus.InProgress)
         {
-            throw new BusinessException("Chỉ được thao tác công việc khi kế hoạch ở trạng thái đã giao");
+            throw new BusinessException("Chỉ được thao tác công việc khi kế hoạch đang thực hiện");
         }
 
         await EnsurePlanAccessAsync(plan);
@@ -535,6 +557,18 @@ public class TaskExecutionService : ITaskExecutionService
             (int)ActionTaskStatus.InProgress => (int)ActionTaskStatus.InProgress,
             (int)ActionTaskStatus.Done => (int)ActionTaskStatus.Done,
             _ => (int)ActionTaskStatus.Todo
+        };
+    }
+
+    private static string GetStatusName(int status)
+    {
+        return status switch
+        {
+            (int)ActionPlanStatus.Draft => "Nháp",
+            (int)ActionPlanStatus.InProgress => "Đang thực hiện",
+            (int)ActionPlanStatus.PendingReview => "Chờ xác nhận",
+            (int)ActionPlanStatus.Completed => "Hoàn thành",
+            _ => "Không xác định"
         };
     }
 

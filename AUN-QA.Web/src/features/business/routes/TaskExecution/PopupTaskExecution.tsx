@@ -103,7 +103,7 @@ export default function PopupTaskExecution({
 
   const planDetail = planDetailQuery.data ?? null;
   const tasks = useMemo(() => planDetail?.Tasks ?? [], [planDetail?.Tasks]);
-  const canEdit = Number(planDetail?.Status ?? item.Status) === ActionPlanStatus.Assigned;
+  const canEdit = Number(planDetail?.Status ?? item.Status) === ActionPlanStatus.InProgress;
 
   useEffect(() => {
     if (!open) {
@@ -240,10 +240,6 @@ export default function PopupTaskExecution({
                         {planDetail?.Description || "Không có mô tả."}
                       </p>
                     </div>
-                    <div>
-                      <Label className="text-slate-500">KPI</Label>
-                      <p className="text-slate-700">{planDetail?.Kpi || "Không có KPI."}</p>
-                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-slate-500">Ưu tiên</Label>
@@ -283,7 +279,7 @@ export default function PopupTaskExecution({
 
                   {!canEdit ? (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                      Kế hoạch này chưa ở trạng thái đã giao nên chưa thể chỉnh sửa công việc.
+                      Kế hoạch này chưa ở trạng thái đang thực hiện nên chưa thể chỉnh sửa công việc.
                     </div>
                   ) : null}
 

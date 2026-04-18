@@ -60,43 +60,27 @@ public class ActionPlanController : BaseController<ActionPlanController>
         return Ok(new BaseResponse(true, 200));
     }
 
-    [HttpPost("submit")]
-    [AttributePermission(Action = ActionType.APPROVE)]
-    public async Task<IActionResult> Submit([FromBody] ActionPlanSubmitRequest request)
-    {
-        await _service.Submit(request);
-        return Ok(new BaseResponse(true, 200));
-    }
-
-    [HttpPost("approve")]
-    [AttributePermission(Action = ActionType.APPROVE)]
-    public async Task<IActionResult> Approve([FromBody] ActionPlanApproveRequest request)
-    {
-        await _service.Approve(request);
-        return Ok(new BaseResponse(true, 200));
-    }
-
-    [HttpPost("request-revision")]
-    [AttributePermission(Action = ActionType.APPROVE)]
-    public async Task<IActionResult> RequestRevision([FromBody] ActionPlanRequestRevisionRequest request)
-    {
-        await _service.RequestRevision(request);
-        return Ok(new BaseResponse(true, 200));
-    }
-
-    [HttpPost("assign")]
-    [AttributePermission(Action = ActionType.APPROVE)]
-    public async Task<IActionResult> Assign([FromBody] ActionPlanAssignRequest request)
-    {
-        await _service.Assign(request);
-        return Ok(new BaseResponse(true, 200));
-    }
-
     [HttpPost("get-external-review-findings")]
     [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> GetExternalReviewFindings([FromBody] ActionPlanExternalFindingRequest request)
     {
         var result = await _service.GetExternalReviewFindings(request);
         return Ok(new BaseResponse<List<ExternalFindingOptionDto>> { Data = result, Success = true });
+    }
+
+    [HttpGet("assignable-members")]
+    [AttributePermission(Action = ActionType.VIEW)]
+    public async Task<IActionResult> GetAssignableMembers([FromQuery] Guid cycleId)
+    {
+        var result = await _service.GetAssignableMembers(cycleId);
+        return Ok(new BaseResponse<List<AssignableMemberDto>> { Data = result, Success = true });
+    }
+
+    [HttpGet("my-council-role")]
+    [AttributePermission(Action = ActionType.NONE)]
+    public async Task<IActionResult> GetMyCouncilRole([FromQuery] Guid cycleId)
+    {
+        var roleId = await _service.GetMyCouncilRoleId(cycleId);
+        return Ok(new BaseResponse<int> { Data = roleId, Success = true });
     }
 }

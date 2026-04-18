@@ -10,6 +10,7 @@ import { useActionPlan } from "./hooks/useActionPlan";
 import { getActionPlanColumns } from "./columns";
 import PopupActionPlan from "./PopupActionPlan";
 import type { ActionPlanListItem } from "@/features/business/types/actionPlan.types";
+import { ACTION_PLAN_STATUS_OPTIONS } from "./actionPlan.utils";
 
 export default function ActionPlanPage() {
   const {
@@ -61,21 +62,39 @@ export default function ActionPlanPage() {
       filterGridCols="md:grid-cols-3"
       searchInputClassName="col-span-1 bg-background"
       filterContent={
-        <Combobox
-          options={cycleOptions.options ?? []}
-          loading={cycleOptions.isLoading}
-          value={pageRequest.CycleId ?? undefined}
-          onValueChange={(value) =>
-            setPageRequest((prev) => ({
-              ...prev,
-              CycleId: value || undefined,
-              PageIndex: 1,
-            }))
-          }
-          placeholder="Tất cả chu kỳ"
-          searchPlaceholder="Tìm chu kỳ..."
-          emptyText="Không tìm thấy chu kỳ."
-        />
+        <>
+          <Combobox
+            options={cycleOptions.options ?? []}
+            loading={cycleOptions.isLoading}
+            value={pageRequest.CycleId ?? undefined}
+            onValueChange={(value) =>
+              setPageRequest((prev) => ({
+                ...prev,
+                CycleId: value || undefined,
+                PageIndex: 1,
+              }))
+            }
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
+          />
+          <Combobox
+            options={ACTION_PLAN_STATUS_OPTIONS.map((option) => ({
+              Value: String(option.value),
+              Text: option.label,
+            }))}
+            value={pageRequest.Status?.toString()}
+            onValueChange={(value) =>
+              setPageRequest((prev) => ({
+                ...prev,
+                Status: value ? Number(value) : undefined,
+                PageIndex: 1,
+              }))
+            }
+            placeholder="Tất cả trạng thái"
+            emptyText="Không tìm thấy trạng thái."
+          />
+        </>
       }
       onAddClick={openNew}
       onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
@@ -92,12 +111,7 @@ export default function ActionPlanPage() {
       }
     >
       {isOpen && selectedItem ? (
-        <PopupActionPlan
-          open={isOpen}
-          item={selectedItem}
-          onOpenChange={onOpenChange}
-          onChanged={refreshList}
-        />
+        <PopupActionPlan open={isOpen} item={selectedItem} onOpenChange={onOpenChange} onChanged={refreshList} />
       ) : null}
     </ListPageLayout>
   );

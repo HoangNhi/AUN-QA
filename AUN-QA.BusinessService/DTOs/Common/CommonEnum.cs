@@ -87,10 +87,9 @@ namespace AUN_QA.BusinessService.DTOs.Common
     public enum ActionPlanStatus
     {
         Draft = 1,
-        Submitted = 2,
-        RevisionRequested = 3,
-        Approved = 4,
-        Assigned = 5
+        InProgress = 2,
+        PendingReview = 3,
+        Completed = 4
     }
 
     public enum ActionPriority

@@ -170,11 +170,9 @@ export const API_ENDPOINTS = {
       INSERT: `${BUSINESS_BASE}/ActionPlan/insert`,
       UPDATE: `${BUSINESS_BASE}/ActionPlan/update`,
       DELETE_LIST: `${BUSINESS_BASE}/ActionPlan/delete-list`,
-      SUBMIT: `${BUSINESS_BASE}/ActionPlan/submit`,
-      APPROVE: `${BUSINESS_BASE}/ActionPlan/approve`,
-      REQUEST_REVISION: `${BUSINESS_BASE}/ActionPlan/request-revision`,
-      ASSIGN: `${BUSINESS_BASE}/ActionPlan/assign`,
       GET_EXTERNAL_REVIEW_FINDINGS: `${BUSINESS_BASE}/ActionPlan/get-external-review-findings`,
+      GET_ASSIGNABLE_MEMBERS: `${BUSINESS_BASE}/ActionPlan/assignable-members`,
+      GET_MY_COUNCIL_ROLE: `${BUSINESS_BASE}/ActionPlan/my-council-role`,
     },
     TaskExecution: {
       GET_MY_PLANS: `${BUSINESS_BASE}/TaskExecution/get-my-plans`,

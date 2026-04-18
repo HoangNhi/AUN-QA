@@ -1,7 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import type { ActionPlanListItem } from "@/features/business/types/actionPlan.types";
-import { getActionPlanStatusLabel } from "./actionPlan.utils";
+import { getActionPlanStatusColor, getActionPlanStatusLabel } from "./actionPlan.utils";
 
 function getPriorityLabel(priority: number): string {
   switch (priority) {
@@ -27,9 +27,7 @@ export function getActionPlanColumns(
         <div className="min-w-[240px]">
           <p className="font-medium text-slate-900">{row.original.Title}</p>
           {row.original.Description ? (
-            <p className="line-clamp-2 text-xs text-slate-500">
-              {row.original.Description}
-            </p>
+            <p className="line-clamp-2 text-xs text-slate-500">{row.original.Description}</p>
           ) : null}
         </div>
       ),
@@ -70,7 +68,16 @@ export function getActionPlanColumns(
       accessorKey: "Status",
       header: () => <div className="text-center">Trạng thái</div>,
       meta: { className: "text-center" },
-      cell: ({ row }) => getActionPlanStatusLabel(Number(row.original.Status)),
+      cell: ({ row }) => {
+        const status = Number(row.original.Status);
+        return (
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getActionPlanStatusColor(status)}`}
+          >
+            {getActionPlanStatusLabel(status)}
+          </span>
+        );
+      },
     },
     {
       id: "actions",

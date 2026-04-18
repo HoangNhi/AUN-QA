@@ -8,10 +8,9 @@ public class ActionPlanStatusContractTests
     public void ActionPlanStatus_must_match_design_contract()
     {
         Assert.Equal(1, (int)ActionPlanStatus.Draft);
-        Assert.Equal(2, (int)ActionPlanStatus.Submitted);
-        Assert.Equal(3, (int)ActionPlanStatus.RevisionRequested);
-        Assert.Equal(4, (int)ActionPlanStatus.Approved);
-        Assert.Equal(5, (int)ActionPlanStatus.Assigned);
+        Assert.Equal(2, (int)ActionPlanStatus.InProgress);
+        Assert.Equal(3, (int)ActionPlanStatus.PendingReview);
+        Assert.Equal(4, (int)ActionPlanStatus.Completed);
     }
 
     [Fact]

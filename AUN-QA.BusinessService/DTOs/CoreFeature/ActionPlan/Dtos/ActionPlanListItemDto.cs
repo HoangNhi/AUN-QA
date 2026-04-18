@@ -22,8 +22,6 @@ public class ActionPlanListItemDto
 
     public DateTime Deadline { get; set; }
 
-    public string Kpi { get; set; } = string.Empty;
-
     public int Status { get; set; }
 
     public int AssigneeCount { get; set; }

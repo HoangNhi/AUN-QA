@@ -21,25 +21,9 @@ public partial class ActionPlan
 
     public DateTime Deadline { get; set; }
 
-    public string Kpi { get; set; } = null!;
-
     public int Status { get; set; }
 
     public Guid? SourceFindingId { get; set; }
-
-    public DateTime? SubmittedAt { get; set; }
-
-    public string? SubmittedBy { get; set; }
-
-    public DateTime? ApprovedAt { get; set; }
-
-    public string? ApprovedBy { get; set; }
-
-    public DateTime? RevisionRequestedAt { get; set; }
-
-    public string? RevisionRequestedBy { get; set; }
-
-    public string? RevisionReason { get; set; }
 
     public DateTime? AssignedAt { get; set; }
 
@@ -56,6 +40,10 @@ public partial class ActionPlan
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public DateTime? CompletedAt { get; set; }
+
+    public string? CompletedBy { get; set; }
 
     public virtual ICollection<ActionPlanAssignee> ActionPlanAssignees { get; set; } = new List<ActionPlanAssignee>();
 

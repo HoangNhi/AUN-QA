@@ -100,8 +100,7 @@ public class TaskExecutionServiceTests
             Title = "Kế hoạch",
             Priority = (int)ActionPriority.Medium,
             Deadline = DateTime.UtcNow.AddDays(7),
-            Kpi = "KPI",
-            Status = (int)ActionPlanStatus.Assigned,
+            Status = (int)ActionPlanStatus.InProgress,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "admin",
             IsActived = true,
@@ -163,13 +162,12 @@ public class TaskExecutionServiceTests
         actionPlanService.GetById(Arg.Any<Guid>())
             .Returns(Task.FromResult(new AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos.ActionPlanDetailDto
             {
-                Id = Guid.NewGuid(),
-                CycleId = Guid.NewGuid(),
-                Title = "Test",
-                Deadline = DateTime.UtcNow,
-                Kpi = "KPI",
-                Status = (int)ActionPlanStatus.Assigned
-            }));
+            Id = Guid.NewGuid(),
+            CycleId = Guid.NewGuid(),
+            Title = "Test",
+            Deadline = DateTime.UtcNow,
+            Status = (int)ActionPlanStatus.InProgress
+        }));
 
         return new TaskExecutionService(
             context,

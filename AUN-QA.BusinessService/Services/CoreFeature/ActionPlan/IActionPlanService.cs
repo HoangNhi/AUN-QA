@@ -16,13 +16,9 @@ public interface IActionPlanService
 
     Task DeleteList(ActionPlanDeleteListRequest request);
 
-    Task Submit(ActionPlanSubmitRequest request);
-
-    Task Approve(ActionPlanApproveRequest request);
-
-    Task RequestRevision(ActionPlanRequestRevisionRequest request);
-
-    Task Assign(ActionPlanAssignRequest request);
-
     Task<List<ExternalFindingOptionDto>> GetExternalReviewFindings(ActionPlanExternalFindingRequest request);
+
+    Task<List<AssignableMemberDto>> GetAssignableMembers(Guid cycleId);
+
+    Task<int> GetMyCouncilRoleId(Guid cycleId);
 }

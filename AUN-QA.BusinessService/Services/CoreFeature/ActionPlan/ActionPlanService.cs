@@ -4,15 +4,16 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Requests;
 using AUN_QA.BusinessService.Entities;
 using AUN_QA.BusinessService.Infrastructure.Data;
-using AUN_QA.Shared.Exceptions;
+using AUN_QA.BusinessService.Services.Commons.UploadFile;
 using AUN_QA.Shared.DTOs.Base;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using ActionPlanEntity = AUN_QA.BusinessService.Entities.ActionPlan;
 using ActionPlanAssigneeEntity = AUN_QA.BusinessService.Entities.ActionPlanAssignee;
-using ActionTaskEntity = AUN_QA.BusinessService.Entities.ActionTask;
-using ActionTaskAttachmentEntity = AUN_QA.BusinessService.Entities.ActionTaskAttachment;
+using ActionPlanAttachmentEntity = AUN_QA.BusinessService.Entities.ActionPlanAttachment;
 
 namespace AUN_QA.BusinessService.Services.CoreFeature.ActionPlan;
 
@@ -22,15 +23,21 @@ public class ActionPlanService : IActionPlanService
     private readonly BusinessContext _context;
     private readonly IHttpContextAccessor _contextAccessor;
     private readonly SystemProto.SystemProtoClient _systemClient;
+    private readonly IUploadFileService _uploadFileService;
+    private readonly IMapper _mapper;
 
     public ActionPlanService(
         BusinessContext context,
         IHttpContextAccessor contextAccessor,
-        SystemProto.SystemProtoClient systemClient)
+        SystemProto.SystemProtoClient systemClient,
+        IUploadFileService uploadFileService,
+        IMapper mapper)
     {
         _context = context;
         _contextAccessor = contextAccessor;
         _systemClient = systemClient;
+        _uploadFileService = uploadFileService;
+        _mapper = mapper;
     }
 
     public async Task<GetListPagingResponse<ActionPlanListItemDto>> GetList(ActionPlanGetListPagingRequest request)
@@ -74,8 +81,7 @@ public class ActionPlanService : IActionPlanService
             var text = request.TextSearch.Trim();
             query = query.Where(x =>
                 x.Title.Contains(text)
-                || (x.Description ?? string.Empty).Contains(text)
-                || x.Kpi.Contains(text));
+                || (x.Description ?? string.Empty).Contains(text));
         }
 
         if (!IsAdmin())
@@ -86,18 +92,19 @@ public class ActionPlanService : IActionPlanService
                 return EmptyList<ActionPlanListItemDto>(request);
             }
 
+            var currentUsername = GetCurrentUsernameOrFallback();
             query = query.Where(x =>
                 _context.Councils.Any(c =>
-                    c.CycleId == x.CycleId &&
-                    c.UserId == userId.Value &&
-                    !c.IsDeleted &&
-                    c.IsActived)
+                    c.CycleId == x.CycleId
+                    && c.UserId == userId.Value
+                    && !c.IsDeleted
+                    && c.IsActived)
                 || _context.ActionPlanAssignees.Any(a =>
-                    a.ActionPlanId == x.Id &&
-                    a.UserId == userId.Value &&
-                    !a.IsDeleted &&
-                    a.IsActived)
-                || x.CreatedBy == GetCurrentUsernameOrFallback());
+                    a.ActionPlanId == x.Id
+                    && a.UserId == userId.Value
+                    && !a.IsDeleted
+                    && a.IsActived)
+                || x.CreatedBy == currentUsername);
         }
 
         var totalRow = await query.CountAsync();
@@ -111,6 +118,7 @@ public class ActionPlanService : IActionPlanService
             .ToListAsync();
 
         var planIds = pageItems.Select(x => x.Id).ToList();
+
         var assigneeCounts = await _context.ActionPlanAssignees
             .AsNoTracking()
             .Where(x => planIds.Contains(x.ActionPlanId) && !x.IsDeleted && x.IsActived)
@@ -147,7 +155,7 @@ public class ActionPlanService : IActionPlanService
             {
                 Id = x.Id,
                 CycleId = x.CycleId,
-                CycleName = cycleInfo.Name,
+                CycleName = cycleInfo.Name ?? string.Empty,
                 Year = cycleInfo.Year,
                 Title = x.Title,
                 Description = x.Description,
@@ -155,7 +163,6 @@ public class ActionPlanService : IActionPlanService
                 CriterionId = x.CriterionId,
                 Priority = x.Priority,
                 Deadline = x.Deadline,
-                Kpi = x.Kpi,
                 Status = x.Status,
                 AssigneeCount = assigneeCount,
                 TotalTaskCount = taskCount?.Total ?? 0,
@@ -192,6 +199,12 @@ public class ActionPlanService : IActionPlanService
     public async Task<ActionPlanDetailDto> Insert(ActionPlanUpsertRequest request)
     {
         await EnsureActCycleAsync(request.CycleId);
+        ValidateStatusTransition((int)ActionPlanStatus.Draft, request.Status);
+
+        if (request.Status == (int)ActionPlanStatus.InProgress && (request.AssignedTo?.Count ?? 0) == 0)
+        {
+            throw new BusinessException("Vui lòng chọn ít nhất một người thực hiện");
+        }
 
         var now = DateTime.UtcNow;
         var username = GetCurrentUsernameOrFallback();
@@ -206,17 +219,50 @@ public class ActionPlanService : IActionPlanService
             CriterionId = request.CriterionId,
             Priority = request.Priority <= 0 ? (int)ActionPriority.Medium : request.Priority,
             Deadline = request.Deadline,
-            Kpi = request.Kpi.Trim(),
-            Status = (int)ActionPlanStatus.Draft,
+            Status = request.Status,
             SourceFindingId = request.SourceFindingId,
+            CompletedAt = request.Status == (int)ActionPlanStatus.Completed ? now : null,
+            CompletedBy = request.Status == (int)ActionPlanStatus.Completed ? username : null,
+            AssignedAt = request.Status == (int)ActionPlanStatus.InProgress ? now : null,
+            AssignedBy = request.Status == (int)ActionPlanStatus.InProgress ? username : null,
             CreatedAt = now,
             CreatedBy = username,
             IsActived = request.IsActived,
             IsDeleted = false
         };
 
-        await _context.ActionPlans.AddAsync(plan);
-        await _context.SaveChangesAsync();
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            await _context.ActionPlans.AddAsync(plan);
+            await _context.SaveChangesAsync();
+
+            var attachments = await _uploadFileService.UploadDataAsync(
+                plan.Id.ToString(),
+                "ActionPlan",
+                request.FolderUpload);
+
+            foreach (var attachment in attachments)
+            {
+                var addAttachment = _mapper.Map<ActionPlanAttachmentEntity>(attachment);
+                addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+                addAttachment.RelatedId = plan.Id;
+                addAttachment.CreatedBy = username;
+                addAttachment.CreatedAt = now;
+                addAttachment.IsActived = true;
+                addAttachment.IsDeleted = false;
+
+                await _context.ActionPlanAttachments.AddAsync(addAttachment);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
 
         return await GetById(plan.Id);
     }
@@ -230,7 +276,61 @@ public class ActionPlanService : IActionPlanService
         }
 
         await EnsureActCycleAsync(plan.CycleId);
-        EnsureEditablePlan(plan);
+        await EnsureCanManageAsync(plan);
+        ValidateStatusTransition(plan.Status, request.Status);
+
+        if (request.Status == (int)ActionPlanStatus.InProgress && (request.AssignedTo?.Count ?? 0) == 0)
+        {
+            throw new BusinessException("Vui lòng chọn ít nhất một người thực hiện");
+        }
+
+        var now = DateTime.UtcNow;
+        var username = GetCurrentUsernameOrFallback();
+        var assignedTo = request.AssignedTo?.Distinct().ToList() ?? new List<Guid>();
+        var attachmentIds = request.AttachmentIds?.Distinct().ToHashSet() ?? new HashSet<Guid>();
+
+        if (request.Status == (int)ActionPlanStatus.InProgress || plan.Status == (int)ActionPlanStatus.InProgress)
+        {
+            var currentAssignees = await _context.ActionPlanAssignees
+                .Where(x => x.ActionPlanId == plan.Id && !x.IsDeleted && x.IsActived)
+                .ToListAsync();
+
+            foreach (var assignee in currentAssignees)
+            {
+                assignee.IsDeleted = true;
+                assignee.IsActived = false;
+                assignee.UpdatedAt = now;
+                assignee.UpdatedBy = username;
+            }
+
+            foreach (var userId in assignedTo)
+            {
+                await _context.ActionPlanAssignees.AddAsync(new ActionPlanAssigneeEntity
+                {
+                    Id = Guid.NewGuid(),
+                    ActionPlanId = plan.Id,
+                    UserId = userId,
+                    AssignedAt = now,
+                    AssignedBy = username,
+                    CreatedAt = now,
+                    CreatedBy = username,
+                    IsActived = true,
+                    IsDeleted = false
+                });
+            }
+
+            if (plan.Status != (int)ActionPlanStatus.InProgress && request.Status == (int)ActionPlanStatus.InProgress)
+            {
+                plan.AssignedAt = now;
+                plan.AssignedBy = username;
+            }
+        }
+
+        if (request.Status == (int)ActionPlanStatus.Completed && plan.Status != (int)ActionPlanStatus.Completed)
+        {
+            plan.CompletedAt = now;
+            plan.CompletedBy = username;
+        }
 
         plan.Title = request.Title.Trim();
         plan.Description = NormalizeText(request.Description);
@@ -238,11 +338,40 @@ public class ActionPlanService : IActionPlanService
         plan.CriterionId = request.CriterionId;
         plan.Priority = request.Priority <= 0 ? (int)ActionPriority.Medium : request.Priority;
         plan.Deadline = request.Deadline;
-        plan.Kpi = request.Kpi.Trim();
         plan.SourceFindingId = request.SourceFindingId;
-        plan.UpdatedAt = DateTime.UtcNow;
-        plan.UpdatedBy = GetCurrentUsernameOrFallback();
-        plan.IsActived = request.IsActived;
+        plan.Status = request.Status;
+        plan.UpdatedAt = now;
+        plan.UpdatedBy = username;
+
+        var attachmentsToRemove = await _context.ActionPlanAttachments
+            .Where(x => x.RelatedId == plan.Id && !x.IsDeleted && !attachmentIds.Contains(x.Id))
+            .ToListAsync();
+
+        if (attachmentsToRemove.Count > 0)
+        {
+            await _uploadFileService.DeleteDataAsync(attachmentsToRemove.Select(x => x.FileUrl).ToList());
+            foreach (var attachment in attachmentsToRemove)
+            {
+                attachment.IsDeleted = true;
+                attachment.IsActived = false;
+                attachment.UpdatedAt = now;
+                attachment.UpdatedBy = username;
+                _context.ActionPlanAttachments.Update(attachment);
+            }
+        }
+
+        var newAttachments = await _uploadFileService.UploadDataAsync(plan.Id.ToString(), "ActionPlan", request.FolderUpload);
+        foreach (var attachment in newAttachments)
+        {
+            var addAttachment = _mapper.Map<ActionPlanAttachmentEntity>(attachment);
+            addAttachment.Id = attachment.Id == Guid.Empty ? Guid.NewGuid() : attachment.Id;
+            addAttachment.RelatedId = plan.Id;
+            addAttachment.CreatedBy = username;
+            addAttachment.CreatedAt = now;
+            addAttachment.IsActived = true;
+            addAttachment.IsDeleted = false;
+            await _context.ActionPlanAttachments.AddAsync(addAttachment);
+        }
 
         _context.ActionPlans.Update(plan);
         await _context.SaveChangesAsync();
@@ -268,121 +397,16 @@ public class ActionPlanService : IActionPlanService
 
         foreach (var plan in plans)
         {
-            EnsureDraftOnly(plan);
+            if (plan.Status != (int)ActionPlanStatus.Draft)
+            {
+                throw new BusinessException("Chỉ được xóa kế hoạch ở trạng thái nháp");
+            }
+
             plan.IsDeleted = true;
             plan.IsActived = false;
             plan.UpdatedAt = DateTime.UtcNow;
             plan.UpdatedBy = GetCurrentUsernameOrFallback();
         }
-
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task Submit(ActionPlanSubmitRequest request)
-    {
-        var plan = await GetManagedPlanAsync(request.Id);
-
-        if (plan.Status != (int)ActionPlanStatus.Draft && plan.Status != (int)ActionPlanStatus.RevisionRequested)
-        {
-            throw new BusinessException("Chỉ được gửi kế hoạch ở trạng thái nháp hoặc yêu cầu chỉnh sửa");
-        }
-
-        plan.Status = (int)ActionPlanStatus.Submitted;
-        plan.SubmittedAt = DateTime.UtcNow;
-        plan.SubmittedBy = GetCurrentUsernameOrFallback();
-        plan.UpdatedAt = DateTime.UtcNow;
-        plan.UpdatedBy = plan.SubmittedBy;
-
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task Approve(ActionPlanApproveRequest request)
-    {
-        var plan = await GetManagedPlanAsync(request.Id);
-
-        if (plan.Status != (int)ActionPlanStatus.Submitted)
-        {
-            throw new BusinessException("Chỉ được duyệt kế hoạch đang ở trạng thái chờ duyệt");
-        }
-
-        plan.Status = (int)ActionPlanStatus.Approved;
-        plan.ApprovedAt = DateTime.UtcNow;
-        plan.ApprovedBy = GetCurrentUsernameOrFallback();
-        plan.UpdatedAt = DateTime.UtcNow;
-        plan.UpdatedBy = plan.ApprovedBy;
-
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task RequestRevision(ActionPlanRequestRevisionRequest request)
-    {
-        var plan = await GetManagedPlanAsync(request.Id);
-
-        if (plan.Status != (int)ActionPlanStatus.Submitted)
-        {
-            throw new BusinessException("Chỉ được yêu cầu chỉnh sửa khi kế hoạch đang ở trạng thái chờ duyệt");
-        }
-
-        plan.Status = (int)ActionPlanStatus.RevisionRequested;
-        plan.RevisionRequestedAt = DateTime.UtcNow;
-        plan.RevisionRequestedBy = GetCurrentUsernameOrFallback();
-        plan.RevisionReason = request.Reason.Trim();
-        plan.UpdatedAt = DateTime.UtcNow;
-        plan.UpdatedBy = plan.RevisionRequestedBy;
-
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task Assign(ActionPlanAssignRequest request)
-    {
-        var plan = await GetManagedPlanAsync(request.Id);
-
-        if (plan.Status != (int)ActionPlanStatus.Approved)
-        {
-            throw new BusinessException("Chỉ được giao kế hoạch đã được phê duyệt");
-        }
-
-        if (request.AssignedTo.Count == 0)
-        {
-            throw new BusinessException("Danh sách người thực hiện không được để trống");
-        }
-
-        var now = DateTime.UtcNow;
-        var username = GetCurrentUsernameOrFallback();
-
-        var currentAssignees = await _context.ActionPlanAssignees
-            .Where(x => x.ActionPlanId == plan.Id && !x.IsDeleted && x.IsActived)
-            .ToListAsync();
-
-        foreach (var assignee in currentAssignees)
-        {
-            assignee.IsDeleted = true;
-            assignee.IsActived = false;
-            assignee.UpdatedAt = now;
-            assignee.UpdatedBy = username;
-        }
-
-        foreach (var userId in request.AssignedTo.Distinct())
-        {
-            await _context.ActionPlanAssignees.AddAsync(new ActionPlanAssigneeEntity
-            {
-                Id = Guid.NewGuid(),
-                ActionPlanId = plan.Id,
-                UserId = userId,
-                AssignedAt = now,
-                AssignedBy = username,
-                CreatedAt = now,
-                CreatedBy = username,
-                IsActived = true,
-                IsDeleted = false
-            });
-        }
-
-        plan.Status = (int)ActionPlanStatus.Assigned;
-        plan.AssignedAt = now;
-        plan.AssignedBy = username;
-        plan.UpdatedAt = now;
-        plan.UpdatedBy = username;
 
         await _context.SaveChangesAsync();
     }
@@ -410,7 +434,7 @@ public class ActionPlanService : IActionPlanService
             query = query.Where(x => x.finding.Content.Contains(text));
         }
 
-        var items = await query
+        return await query
             .OrderByDescending(x => x.finding.CreatedAt)
             .Select(x => new ExternalFindingOptionDto
             {
@@ -424,8 +448,80 @@ public class ActionPlanService : IActionPlanService
                     : x.finding.Content
             })
             .ToListAsync();
+    }
 
-        return items;
+    public async Task<List<AssignableMemberDto>> GetAssignableMembers(Guid cycleId)
+    {
+        var councilMembers = await _context.Councils
+            .AsNoTracking()
+            .Where(x => x.CycleId == cycleId
+                && x.RoleId >= (int)CouncilRole.Evaluator
+                && !x.IsDeleted
+                && x.IsActived)
+            .ToListAsync();
+
+        if (councilMembers.Count == 0)
+        {
+            return new List<AssignableMemberDto>();
+        }
+
+        var users = await LoadUsersAsync(councilMembers.Select(x => x.UserId));
+
+        return councilMembers.Select(x =>
+        {
+            users.TryGetValue(x.UserId, out var userInfo);
+            return new AssignableMemberDto
+            {
+                UserId = x.UserId,
+                Fullname = string.IsNullOrWhiteSpace(userInfo.Fullname) ? x.UserId.ToString() : userInfo.Fullname,
+                Username = userInfo.Username
+            };
+        }).ToList();
+    }
+
+    public async Task<int> GetMyCouncilRoleId(Guid cycleId)
+    {
+        if (IsAdmin())
+        {
+            return (int)CouncilRole.HeadOfCouncil;
+        }
+
+        var userId = GetCurrentUserIdOrNull();
+        if (userId == null)
+        {
+            return 0;
+        }
+
+        var council = await _context.Councils
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.CycleId == cycleId
+                && x.UserId == userId.Value
+                && !x.IsDeleted
+                && x.IsActived);
+
+        return council?.RoleId ?? 0;
+    }
+
+    private static void ValidateStatusTransition(int current, int requested)
+    {
+        if (current == requested)
+        {
+            return;
+        }
+
+        var allowed = current switch
+        {
+            (int)ActionPlanStatus.Draft => new[] { (int)ActionPlanStatus.Draft, (int)ActionPlanStatus.InProgress },
+            (int)ActionPlanStatus.InProgress => new[] { (int)ActionPlanStatus.Draft, (int)ActionPlanStatus.InProgress, (int)ActionPlanStatus.PendingReview },
+            (int)ActionPlanStatus.PendingReview => new[] { (int)ActionPlanStatus.InProgress, (int)ActionPlanStatus.PendingReview, (int)ActionPlanStatus.Completed },
+            (int)ActionPlanStatus.Completed => new[] { (int)ActionPlanStatus.InProgress, (int)ActionPlanStatus.Completed },
+            _ => Array.Empty<int>()
+        };
+
+        if (!allowed.Contains(requested))
+        {
+            throw new BusinessException($"Không thể chuyển trạng thái từ {GetStatusName(current)} sang {GetStatusName(requested)}");
+        }
     }
 
     private async Task EnsureActCycleAsync(Guid cycleId)
@@ -438,18 +534,6 @@ public class ActionPlanService : IActionPlanService
         {
             throw new BusinessException("Chỉ được thao tác kế hoạch cải tiến trong pha ACT");
         }
-    }
-
-    private async Task<ActionPlanEntity> GetManagedPlanAsync(Guid planId)
-    {
-        var plan = await _context.ActionPlans.FirstOrDefaultAsync(x => x.Id == planId && !x.IsDeleted && x.IsActived);
-        if (plan == null)
-        {
-            throw new BusinessException("Không tìm thấy kế hoạch hành động");
-        }
-
-        await EnsureCanManageAsync(plan);
-        return plan;
     }
 
     private async Task EnsureCanViewPlanAsync(ActionPlanEntity plan)
@@ -466,15 +550,15 @@ public class ActionPlanService : IActionPlanService
         }
 
         var canView = await _context.Councils.AnyAsync(x =>
-            x.CycleId == plan.CycleId &&
-            x.UserId == userId.Value &&
-            !x.IsDeleted &&
-            x.IsActived)
+                x.CycleId == plan.CycleId
+                && x.UserId == userId.Value
+                && !x.IsDeleted
+                && x.IsActived)
             || await _context.ActionPlanAssignees.AnyAsync(x =>
-                x.ActionPlanId == plan.Id &&
-                x.UserId == userId.Value &&
-                !x.IsDeleted &&
-                x.IsActived)
+                x.ActionPlanId == plan.Id
+                && x.UserId == userId.Value
+                && !x.IsDeleted
+                && x.IsActived)
             || string.Equals(plan.CreatedBy, GetCurrentUsernameOrFallback(), StringComparison.OrdinalIgnoreCase);
 
         if (!canView)
@@ -493,46 +577,32 @@ public class ActionPlanService : IActionPlanService
         }
 
         var username = GetCurrentUsernameOrFallback();
-        if (!string.Equals(plan.CreatedBy, username, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(plan.CreatedBy, username, StringComparison.OrdinalIgnoreCase))
         {
-            var userId = GetCurrentUserIdOrNull();
-            if (userId == null)
-            {
-                throw new BusinessException("Bạn không có quyền thao tác trên kế hoạch hành động này");
-            }
-
-            var isAssignee = await _context.ActionPlanAssignees.AnyAsync(x =>
-                x.ActionPlanId == plan.Id &&
-                x.UserId == userId.Value &&
-                !x.IsDeleted &&
-                x.IsActived);
-
-            var isCouncilMember = await _context.Councils.AnyAsync(x =>
-                x.CycleId == plan.CycleId &&
-                x.UserId == userId.Value &&
-                !x.IsDeleted &&
-                x.IsActived);
-
-            if (!isAssignee && !isCouncilMember)
-            {
-                throw new BusinessException("Bạn không có quyền thao tác trên kế hoạch hành động này");
-            }
+            return;
         }
-    }
 
-    private void EnsureEditablePlan(ActionPlanEntity plan)
-    {
-        if (plan.Status != (int)ActionPlanStatus.Draft && plan.Status != (int)ActionPlanStatus.RevisionRequested)
+        var userId = GetCurrentUserIdOrNull();
+        if (userId == null)
         {
-            throw new BusinessException("Chỉ được chỉnh sửa kế hoạch ở trạng thái nháp hoặc yêu cầu chỉnh sửa");
+            throw new BusinessException("Bạn không có quyền thao tác trên kế hoạch hành động này");
         }
-    }
 
-    private void EnsureDraftOnly(ActionPlanEntity plan)
-    {
-        if (plan.Status != (int)ActionPlanStatus.Draft)
+        var isAssignee = await _context.ActionPlanAssignees.AnyAsync(x =>
+            x.ActionPlanId == plan.Id
+            && x.UserId == userId.Value
+            && !x.IsDeleted
+            && x.IsActived);
+
+        var isCouncilMember = await _context.Councils.AnyAsync(x =>
+            x.CycleId == plan.CycleId
+            && x.UserId == userId.Value
+            && !x.IsDeleted
+            && x.IsActived);
+
+        if (!isAssignee && !isCouncilMember)
         {
-            throw new BusinessException("Chỉ được xóa kế hoạch ở trạng thái nháp");
+            throw new BusinessException("Bạn không có quyền thao tác trên kế hoạch hành động này");
         }
     }
 
@@ -544,6 +614,12 @@ public class ActionPlanService : IActionPlanService
             .OrderBy(x => x.CreatedAt)
             .ToListAsync();
 
+        var planAttachments = await _context.ActionPlanAttachments
+            .AsNoTracking()
+            .Where(x => x.RelatedId == plan.Id && !x.IsDeleted && x.IsActived)
+            .OrderBy(x => x.CreatedAt)
+            .ToListAsync();
+
         var tasks = await _context.ActionTasks
             .AsNoTracking()
             .Where(x => x.ActionPlanId == plan.Id && !x.IsDeleted && x.IsActived)
@@ -552,14 +628,18 @@ public class ActionPlanService : IActionPlanService
 
         var assigneeUsers = await LoadUsersAsync(assignees.Select(x => x.UserId));
         var taskIds = tasks.Select(x => x.Id).ToList();
-        var attachments = taskIds.Count == 0
-            ? new List<ActionTaskAttachmentEntity>()
+
+        var taskAttachmentList = taskIds.Count == 0
+            ? new List<ActionTaskAttachment>()
             : await _context.ActionTaskAttachments
                 .AsNoTracking()
                 .Where(x => taskIds.Contains(x.ActionTaskId) && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
-        var attachmentGroups = attachments.GroupBy(x => x.ActionTaskId).ToDictionary(x => x.Key, x => x.ToList());
+
+        var taskAttachmentGroups = taskAttachmentList
+            .GroupBy(x => x.ActionTaskId)
+            .ToDictionary(x => x.Key, x => x.ToList());
 
         return new ActionPlanDetailDto
         {
@@ -571,16 +651,10 @@ public class ActionPlanService : IActionPlanService
             CriterionId = plan.CriterionId,
             Priority = plan.Priority,
             Deadline = plan.Deadline,
-            Kpi = plan.Kpi,
             Status = plan.Status,
             SourceFindingId = plan.SourceFindingId,
-            SubmittedAt = plan.SubmittedAt,
-            SubmittedBy = plan.SubmittedBy,
-            ApprovedAt = plan.ApprovedAt,
-            ApprovedBy = plan.ApprovedBy,
-            RevisionRequestedAt = plan.RevisionRequestedAt,
-            RevisionRequestedBy = plan.RevisionRequestedBy,
-            RevisionReason = plan.RevisionReason,
+            CompletedAt = plan.CompletedAt,
+            CompletedBy = plan.CompletedBy,
             AssignedAt = plan.AssignedAt,
             AssignedBy = plan.AssignedBy,
             Assignees = assignees.Select(x =>
@@ -597,9 +671,10 @@ public class ActionPlanService : IActionPlanService
                     Username = userInfo.Username
                 };
             }).ToList(),
+            Attachments = planAttachments.Select(x => _mapper.Map<ModelAttachment>(x)).ToList(),
             Tasks = tasks.Select(x =>
             {
-                attachmentGroups.TryGetValue(x.Id, out var taskAttachments);
+                taskAttachmentGroups.TryGetValue(x.Id, out var xAttachments);
                 return new ActionTaskDto
                 {
                     Id = x.Id,
@@ -609,17 +684,16 @@ public class ActionPlanService : IActionPlanService
                     TaskStatus = x.TaskStatus,
                     DueDate = x.DueDate,
                     CompletedAt = x.CompletedAt,
-                    Attachments = (taskAttachments ?? new List<ActionTaskAttachmentEntity>())
-                        .Select(a => new ActionTaskAttachmentDto
-                        {
-                            Id = a.Id,
-                            ActionTaskId = a.ActionTaskId,
-                            AttachmentId = a.AttachmentId,
-                            FileName = a.FileName,
-                            FileUrl = a.FileUrl,
-                            UploadedAt = a.UploadedAt,
-                            UploadedBy = a.UploadedBy
-                        }).ToList()
+                    Attachments = (xAttachments ?? new List<ActionTaskAttachment>()).Select(a => new ActionTaskAttachmentDto
+                    {
+                        Id = a.Id,
+                        ActionTaskId = a.ActionTaskId,
+                        AttachmentId = a.AttachmentId,
+                        FileName = a.FileName,
+                        FileUrl = a.FileUrl,
+                        UploadedAt = a.UploadedAt,
+                        UploadedBy = a.UploadedBy
+                    }).ToList()
                 };
             }).ToList()
         };
@@ -685,10 +759,9 @@ public class ActionPlanService : IActionPlanService
         return status switch
         {
             (int)ActionPlanStatus.Draft => "Nháp",
-            (int)ActionPlanStatus.Submitted => "Chờ duyệt",
-            (int)ActionPlanStatus.RevisionRequested => "Yêu cầu chỉnh sửa",
-            (int)ActionPlanStatus.Approved => "Đã duyệt",
-            (int)ActionPlanStatus.Assigned => "Đã giao",
+            (int)ActionPlanStatus.InProgress => "Đang thực hiện",
+            (int)ActionPlanStatus.PendingReview => "Chờ xác nhận",
+            (int)ActionPlanStatus.Completed => "Hoàn thành",
             _ => "Không xác định"
         };
     }

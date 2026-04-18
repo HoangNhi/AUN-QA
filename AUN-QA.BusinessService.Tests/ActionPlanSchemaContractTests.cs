@@ -13,6 +13,7 @@ public class ActionPlanSchemaContractTests
 
         Assert.NotNull(context.Model.FindEntityType(typeof(ActionPlan)));
         Assert.NotNull(context.Model.FindEntityType(typeof(ActionPlanAssignee)));
+        Assert.NotNull(context.Model.FindEntityType(typeof(ActionPlanAttachment)));
         Assert.NotNull(context.Model.FindEntityType(typeof(ActionTask)));
         Assert.NotNull(context.Model.FindEntityType(typeof(ActionTaskAttachment)));
     }

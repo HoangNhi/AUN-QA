@@ -9,8 +9,6 @@ public interface ITaskExecutionService
 {
     Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> GetMyPlans(TaskExecutionGetPlansRequest request);
 
-    Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> GetAllPlans(TaskExecutionGetPlansRequest request);
-
     Task<ActionPlanDetailDto> GetPlanDetail(Guid actionPlanId);
 
     Task<List<TaskExecutionTaskDto>> GetTaskList(TaskExecutionGetTaskListRequest request);

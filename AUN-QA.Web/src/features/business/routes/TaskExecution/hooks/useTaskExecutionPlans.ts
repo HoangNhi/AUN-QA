@@ -16,7 +16,7 @@ const EMPTY_LIST: TaskExecutionPlanListResponse = {
   PageSize: 10,
 };
 
-export function useTaskExecutionPlans(mode: "my" | "all" = "my") {
+export function useTaskExecutionPlans() {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TaskExecutionPlanListItem | null>(null);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -26,8 +26,6 @@ export function useTaskExecutionPlans(mode: "my" | "all" = "my") {
     TextSearch: "",
   });
 
-  const queryKey = mode === "my" ? ["task-execution", "my-plans"] : ["task-execution", "all-plans"];
-
   const {
     data: listResponse,
     isFetching,
@@ -35,12 +33,9 @@ export function useTaskExecutionPlans(mode: "my" | "all" = "my") {
     isError,
     error,
   } = useQuery({
-    queryKey: [...queryKey, pageRequest],
+    queryKey: ["task-execution", "my-plans", pageRequest],
     queryFn: async (): Promise<TaskExecutionPlanListResponse> => {
-      const response =
-        mode === "my"
-          ? await taskExecutionService.getMyPlans(pageRequest)
-          : await taskExecutionService.getAllPlans(pageRequest);
+      const response = await taskExecutionService.getMyPlans(pageRequest);
 
       if (!response.Success || !response.Data) {
         throw new Error(response.Message || "Không thể tải danh sách kế hoạch thực hiện.");

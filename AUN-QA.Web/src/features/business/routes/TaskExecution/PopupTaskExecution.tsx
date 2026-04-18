@@ -3,12 +3,25 @@ import { useQuery } from "@tanstack/react-query";
 import { Loader2, Paperclip, Plus, RotateCw, Trash2, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/datepicker";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
+import type { Attachment } from "@/features/file/types/uploadfile.types";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import { useStandardsByCycle } from "@/features/business/hooks/useStandardsByCycle";
+import { useCriteriaByStandard } from "@/features/business/hooks/useCriteriaByStandard";
 import { taskExecutionService } from "@/features/business/api/taskExecution.api";
 import { useActionTask } from "./hooks/useActionTask";
 import type {
@@ -19,6 +32,7 @@ import type {
 import { ActionPlanStatus, ActionTaskStatus } from "@/features/business/types/actionPlan.types";
 import { canDeleteTask, getTaskStatusLabel } from "./taskExecution.utils";
 import { getActionPlanStatusLabel } from "../ActionPlan/actionPlan.utils";
+import { getActionPlanStatusComboboxOptions } from "../ActionPlan/popupActionPlan.helpers";
 import { getFileUrl, formatDate } from "@/lib/utils";
 
 interface TaskDraft {
@@ -37,9 +51,11 @@ interface PopupTaskExecutionProps {
   onChanged: () => void;
 }
 
+const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+
 function createEmptyDraft(actionPlanId: string): TaskDraft {
   return {
-    Id: "00000000-0000-0000-0000-000000000000",
+    Id: EMPTY_GUID,
     Description: "",
     Note: "",
     TaskStatus: String(ActionTaskStatus.Todo),
@@ -59,6 +75,20 @@ function parseDateInput(value?: string | null): string {
   }
 
   return date.toISOString().slice(0, 10);
+}
+
+function parseLocalDate(value: string | undefined | null): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 function hydrateDraft(task: TaskExecutionTask | null | undefined): TaskDraft {
@@ -102,8 +132,27 @@ export default function PopupTaskExecution({
   });
 
   const planDetail = planDetailQuery.data ?? null;
+  const planId = planDetail?.Id ?? item.Id;
+  const cycleId = planDetail?.CycleId ?? item.CycleId;
+  const standardId = planDetail?.StandardId ?? item.StandardId ?? "";
+  const criterionId = planDetail?.CriterionId ?? item.CriterionId ?? "";
+  const currentStatus = Number(planDetail?.Status ?? item.Status ?? ActionPlanStatus.Draft);
+  const currentPriority = Number(planDetail?.Priority ?? item.Priority ?? 2);
   const tasks = useMemo(() => planDetail?.Tasks ?? [], [planDetail?.Tasks]);
-  const canEdit = Number(planDetail?.Status ?? item.Status) === ActionPlanStatus.InProgress;
+  const assignees = planDetail?.Assignees ?? [];
+  const attachments = planDetail?.Attachments ?? [];
+  const doneTasks = useMemo(
+    () => tasks.filter((task) => Number(task.TaskStatus) === Number(ActionTaskStatus.Done)).length,
+    [tasks],
+  );
+  const totalTasks = tasks.length;
+  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const canEdit = currentStatus === ActionPlanStatus.InProgress;
+  const statusOptions = useMemo(() => getActionPlanStatusComboboxOptions(), []);
+
+  const cycleOptions = useCycleOptions(open);
+  const standards = useStandardsByCycle(cycleId || undefined);
+  const criteria = useCriteriaByStandard(standardId || undefined);
 
   useEffect(() => {
     if (!open) {
@@ -115,12 +164,11 @@ export default function PopupTaskExecution({
   }, [item.Id, open]);
 
   const resetDraft = () => {
-    setDraft(createEmptyDraft(planDetail?.Id ?? item.Id));
-    uploadRef.current?.getPendingFiles();
+    setDraft(createEmptyDraft(planId));
   };
 
   const openNewTask = () => {
-    setDraft(createEmptyDraft(planDetail?.Id ?? item.Id));
+    setDraft(createEmptyDraft(planId));
     setActiveTab("tasks");
   };
 
@@ -135,14 +183,14 @@ export default function PopupTaskExecution({
   };
 
   const handleSaveTask = async () => {
-    if (!planDetail?.Id && !item.Id) {
+    if (!planId) {
       return;
     }
 
     const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
     const savedTask = await saveTask({
       Id: draft.Id,
-      ActionPlanId: planDetail?.Id ?? item.Id,
+      ActionPlanId: planId,
       Description: draft.Description.trim(),
       Note: draft.Note.trim() || null,
       TaskStatus: Number(draft.TaskStatus),
@@ -160,7 +208,7 @@ export default function PopupTaskExecution({
       }
     }
 
-    setDraft(createEmptyDraft(planDetail?.Id ?? item.Id));
+    setDraft(createEmptyDraft(planId));
     await refreshPlan();
     setActiveTab("tasks");
   };
@@ -194,113 +242,221 @@ export default function PopupTaskExecution({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-[1280px] overflow-hidden p-0" showCloseButton={false}>
+      <DialogContent
+        className="max-h-[94vh] w-[96vw] max-w-[96vw] overflow-hidden p-0 sm:max-w-[1420px]"
+        showCloseButton={false}
+      >
         <DialogTitle className="sr-only">Task Execution</DialogTitle>
 
-        <div className="grid max-h-[92vh] grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="border-r bg-white p-6">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-semibold text-slate-900">
-                  {planDetail?.Title || item.Title}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  Trạng thái:{" "}
-                  {getActionPlanStatusLabel(Number(planDetail?.Status ?? item.Status))}
-                </p>
-              </div>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+        <div className="flex max-h-[94vh] min-h-0 flex-col overflow-hidden bg-white">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4">
+            <div className="min-w-0">
+              <h2 className="truncate text-lg font-semibold text-slate-900">
+                {planDetail?.Title || item.Title}
+              </h2>
+              <p className="text-sm text-slate-500">
+                Trạng thái: {getActionPlanStatusLabel(currentStatus)}
+              </p>
+            </div>
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="shrink-0 border-b px-5 pt-3">
+              <TabsList className="grid w-full max-w-sm grid-cols-2">
+                <TabsTrigger value="general">Thông tin chung</TabsTrigger>
+                <TabsTrigger value="tasks">Công việc</TabsTrigger>
+              </TabsList>
             </div>
 
-            {planDetailQuery.isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải chi tiết kế hoạch...
-              </div>
-            ) : (
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="min-h-0">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="general">Thông tin chung</TabsTrigger>
-                  <TabsTrigger value="tasks">Công việc</TabsTrigger>
-                </TabsList>
+            <TabsContent value="general" className="mt-0 flex-1 overflow-y-auto px-5 py-5">
+              {planDetailQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang tải chi tiết kế hoạch...
+                </div>
+              ) : planDetailQuery.isError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  Không thể tải chi tiết kế hoạch. Vui lòng thử lại.
+                </div>
+              ) : (
+                <div className="grid gap-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2 md:col-span-2">
+                      <Label>Tên kế hoạch</Label>
+                      <Input value={planDetail?.Title ?? item.Title} readOnly />
+                    </div>
 
-                <TabsContent value="general" className="mt-4 space-y-4">
-                  <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
-                    <div>
-                      <Label className="text-slate-500">Chu kỳ</Label>
-                      <p className="font-medium text-slate-900">
-                        {item.CycleName} ({item.Year})
-                      </p>
+                    <div className="grid gap-2">
+                      <Label>Chu kỳ</Label>
+                      <Combobox
+                        options={cycleOptions.options ?? []}
+                        loading={cycleOptions.isLoading}
+                        value={cycleId || undefined}
+                        onValueChange={() => {}}
+                        placeholder="Chọn chu kỳ"
+                        searchPlaceholder="Tìm chu kỳ..."
+                        emptyText="Không tìm thấy chu kỳ."
+                        disabled
+                      />
                     </div>
-                    <div>
-                      <Label className="text-slate-500">Mô tả</Label>
-                      <p className="text-slate-700">
-                        {planDetail?.Description || "Không có mô tả."}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-slate-500">Ưu tiên</Label>
-                        <p className="text-slate-700">
-                          {planDetail?.Priority === 1
-                            ? "Cao"
-                            : planDetail?.Priority === 3
-                              ? "Thấp"
-                              : "Trung bình"}
-                        </p>
-                      </div>
-                      <div>
-                        <Label className="text-slate-500">Hạn</Label>
-                        <p className="text-slate-700">
-                          {planDetail?.Deadline
-                            ? new Date(planDetail.Deadline).toLocaleDateString("vi-VN")
-                            : new Date(item.Deadline).toLocaleDateString("vi-VN")}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <Label className="text-slate-500">Người thực hiện</Label>
-                      <p className="text-slate-700">
-                        {planDetail?.Assignees?.length
-                          ? planDetail.Assignees.map((assignee) => assignee.Fullname || assignee.Username || assignee.UserId).join(", ")
-                          : item.AssignedToNames || "Chưa có người thực hiện."}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-slate-500">Tiến độ</Label>
-                      <p className="text-slate-700">
-                        {planDetail?.Tasks?.filter((task) => Number(task.TaskStatus) === Number(ActionTaskStatus.Done)).length || 0}
-                        /{planDetail?.Tasks?.length || item.TotalTaskCount}
-                      </p>
+
+                    <div className="grid gap-2">
+                      <Label>Trạng thái</Label>
+                      <Combobox
+                        options={statusOptions}
+                        value={String(currentStatus)}
+                        onValueChange={() => {}}
+                        placeholder="Chọn trạng thái"
+                        emptyText="Không có trạng thái."
+                        disabled
+                      />
                     </div>
                   </div>
 
-                  {!canEdit ? (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                      Kế hoạch này chưa ở trạng thái đang thực hiện nên chưa thể chỉnh sửa công việc.
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label>Tiêu chuẩn</Label>
+                      <Combobox
+                        options={standards.options ?? []}
+                        loading={standards.isLoading}
+                        value={standardId || undefined}
+                        onValueChange={() => {}}
+                        placeholder="Không có tiêu chuẩn"
+                        searchPlaceholder="Tìm tiêu chuẩn..."
+                        emptyText="Không có tiêu chuẩn."
+                        disabled
+                      />
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label>Tiêu chí</Label>
+                      <Combobox
+                        options={criteria.options ?? []}
+                        loading={criteria.isLoading}
+                        value={criterionId || undefined}
+                        onValueChange={() => {}}
+                        placeholder="Không có tiêu chí"
+                        searchPlaceholder="Tìm tiêu chí..."
+                        emptyText="Không có tiêu chí."
+                        disabled
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-2">
+                      <Label>Ưu tiên</Label>
+                      <Select value={String(currentPriority)} onValueChange={() => {}}>
+                        <SelectTrigger className="w-full" disabled>
+                          <SelectValue placeholder="Chọn ưu tiên" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Cao</SelectItem>
+                          <SelectItem value="2">Trung bình</SelectItem>
+                          <SelectItem value="3">Thấp</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-2 md:col-span-2">
+                      <Label>Hạn hoàn thành</Label>
+                      <DatePicker
+                        className="w-full"
+                        optionLabel="Chọn thời hạn"
+                        value={parseLocalDate(parseDateInput(planDetail?.Deadline ?? item.Deadline))}
+                        onChange={() => {}}
+                        disabled
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Mô tả</Label>
+                    <Textarea
+                      value={planDetail?.Description ?? ""}
+                      readOnly
+                      rows={4}
+                      placeholder="Không có mô tả."
+                    />
+                  </div>
+
+                  {planDetail?.SourceFindingId ? (
+                    <div className="grid gap-2">
+                      <Label>Kiến nghị từ CHECK</Label>
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-sm text-amber-800">
+                          Kế hoạch này được tạo từ một kiến nghị bên ngoài.
+                        </p>
+                      </div>
                     </div>
                   ) : null}
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" onClick={openNewTask} disabled={!canEdit || isMutating}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Thêm công việc
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={refreshPlan} disabled={isMutating}>
-                      <RotateCw className="mr-2 h-4 w-4" />
-                      Làm mới
-                    </Button>
+                  <div className="grid gap-2">
+                    <Label>Người thực hiện</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {assignees.length > 0 ? (
+                        assignees.map((assignee) => (
+                          <span
+                            key={assignee.UserId}
+                            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
+                          >
+                            {assignee.Fullname ?? assignee.Username ?? assignee.UserId}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-sm italic text-slate-400">Chưa có người thực hiện</p>
+                      )}
+                    </div>
                   </div>
-                </TabsContent>
 
-                <TabsContent value="tasks" className="mt-4 space-y-4">
+                  <div className="grid gap-2">
+                    <Label>Tài liệu đính kèm</Label>
+                    <UploadFile
+                      folderUpload={planId}
+                      listAttachment={attachments as Attachment[]}
+                      setListAttachment={() => {}}
+                      readonly
+                      multiFile
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label>Tiến độ công việc</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <span>
+                          {doneTasks}/{totalTasks} việc hoàn thành
+                        </span>
+                        <span className="font-medium">{progressPercent}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-slate-200">
+                        <div
+                          className="h-2 rounded-full bg-blue-500 transition-all"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="tasks" className="mt-0 flex-1 overflow-y-auto px-5 py-5">
+              {planDetailQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang tải chi tiết kế hoạch...
+                </div>
+              ) : (
+                <div className="space-y-4">
                   <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <h3 className="text-base font-semibold text-slate-900">
-                          {draft.Id && draft.Id !== "00000000-0000-0000-0000-000000000000"
+                          {draft.Id && draft.Id !== EMPTY_GUID
                             ? "Chỉnh sửa công việc"
                             : "Thêm công việc mới"}
                         </h3>
@@ -390,10 +546,12 @@ export default function PopupTaskExecution({
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <Button type="button" onClick={() => void handleSaveTask()} disabled={!canEdit || isMutating || !draft.Description.trim()}>
-                          {isMutating ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : null}
+                        <Button
+                          type="button"
+                          onClick={() => void handleSaveTask()}
+                          disabled={!canEdit || isMutating || !draft.Description.trim()}
+                        >
+                          {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                           Lưu công việc
                         </Button>
                         <Button
@@ -409,10 +567,39 @@ export default function PopupTaskExecution({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-base font-semibold text-slate-900">Danh sách công việc</h3>
-                      <p className="text-sm text-slate-500">{tasks.length} công việc</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-base font-semibold text-slate-900">Danh sách công việc</h3>
+                        <p className="text-sm text-slate-500">{tasks.length} công việc</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={refreshPlan}
+                          disabled={isMutating}
+                        >
+                          <RotateCw className="mr-1 h-3 w-3" />
+                          Làm mới
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={openNewTask}
+                          disabled={!canEdit || isMutating}
+                        >
+                          <Plus className="mr-1 h-3 w-3" />
+                          Thêm công việc
+                        </Button>
+                      </div>
                     </div>
+
+                    {!canEdit ? (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                        Kế hoạch này chưa ở trạng thái đang thực hiện nên chưa thể chỉnh sửa công việc.
+                      </div>
+                    ) : null}
 
                     {tasks.length > 0 ? (
                       tasks.map((task) => (
@@ -453,7 +640,9 @@ export default function PopupTaskExecution({
                           </div>
 
                           {task.Note ? (
-                            <p className="mt-3 whitespace-pre-line text-sm text-slate-600">{task.Note}</p>
+                            <p className="mt-3 whitespace-pre-line text-sm text-slate-600">
+                              {task.Note}
+                            </p>
                           ) : null}
 
                           <div className="mt-4 space-y-2">
@@ -509,10 +698,10 @@ export default function PopupTaskExecution({
                       </div>
                     )}
                   </div>
-                </TabsContent>
-              </Tabs>
-            )}
-          </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>

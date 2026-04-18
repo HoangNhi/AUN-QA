@@ -29,14 +29,6 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
         return Ok(new BaseResponse<GetListPagingResponse<TaskExecutionPlanListItemDto>> { Data = result, Success = true });
     }
 
-    [HttpGet("get-all-plans")]
-    [AttributePermission(Action = ActionType.VIEW)]
-    public async Task<IActionResult> GetAllPlans([FromQuery] TaskExecutionGetPlansRequest request)
-    {
-        var result = await _service.GetAllPlans(request);
-        return Ok(new BaseResponse<GetListPagingResponse<TaskExecutionPlanListItemDto>> { Data = result, Success = true });
-    }
-
     [HttpGet("get-plan-detail")]
     [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> GetPlanDetail([FromQuery] GetByIdRequest request)
@@ -54,7 +46,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     }
 
     [HttpPost("insert-task")]
-    [AttributePermission(Action = ActionType.ADD)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> InsertTask([FromBody] TaskExecutionUpsertTaskRequest request)
     {
         var result = await _service.InsertTask(request);
@@ -62,7 +54,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     }
 
     [HttpPut("update-task")]
-    [AttributePermission(Action = ActionType.UPDATE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> UpdateTask([FromBody] TaskExecutionUpsertTaskRequest request)
     {
         var result = await _service.UpdateTask(request);
@@ -70,7 +62,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     }
 
     [HttpDelete("delete-task")]
-    [AttributePermission(Action = ActionType.DELETE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> DeleteTask([FromBody] TaskExecutionDeleteTaskRequest request)
     {
         await _service.DeleteTask(request);
@@ -78,7 +70,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     }
 
     [HttpPost("upload-task-attachment")]
-    [AttributePermission(Action = ActionType.UPDATE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> UploadTaskAttachment([FromBody] TaskExecutionUploadAttachmentRequest request)
     {
         var result = await _service.UploadAttachment(request);
@@ -86,7 +78,7 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
     }
 
     [HttpDelete("delete-task-attachment")]
-    [AttributePermission(Action = ActionType.DELETE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> DeleteTaskAttachment([FromBody] TaskExecutionDeleteAttachmentRequest request)
     {
         await _service.DeleteAttachment(request);

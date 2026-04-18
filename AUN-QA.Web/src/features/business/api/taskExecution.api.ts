@@ -26,18 +26,6 @@ export const taskExecutionService = {
       },
     }),
 
-  getAllPlans: (
-    request: TaskExecutionGetPlansRequest,
-  ): Promise<ApiResponse<TaskExecutionPlanListResponse>> =>
-    api.get<TaskExecutionPlanListResponse>(API_ENDPOINTS.Business.TaskExecution.GET_ALL_PLANS, {
-      params: {
-        pageIndex: request.PageIndex,
-        pageSize: request.PageSize,
-        textSearch: request.TextSearch,
-        cycleId: request.CycleId,
-      },
-    }),
-
   getPlanDetail: (id: string): Promise<ApiResponse<TaskExecutionPlanDetail>> =>
     api.get<TaskExecutionPlanDetail>(API_ENDPOINTS.Business.TaskExecution.GET_PLAN_DETAIL, {
       params: { id },

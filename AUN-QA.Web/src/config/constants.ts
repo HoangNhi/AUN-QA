@@ -177,7 +177,6 @@ export const API_ENDPOINTS = {
       },
     TaskExecution: {
       GET_MY_PLANS: `${BUSINESS_BASE}/TaskExecution/get-my-plans`,
-      GET_ALL_PLANS: `${BUSINESS_BASE}/TaskExecution/get-all-plans`,
       GET_PLAN_DETAIL: `${BUSINESS_BASE}/TaskExecution/get-plan-detail`,
       GET_TASK_LIST: `${BUSINESS_BASE}/TaskExecution/get-task-list`,
       INSERT_TASK: `${BUSINESS_BASE}/TaskExecution/insert-task`,

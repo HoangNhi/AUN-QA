@@ -59,34 +59,6 @@ public class TaskExecutionService : ITaskExecutionService
         return await BuildPlanListResponseAsync(query, request);
     }
 
-    public async Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> GetAllPlans(TaskExecutionGetPlansRequest request)
-    {
-        if (!IsAdmin())
-        {
-            var userId = GetCurrentUserIdOrNull();
-            if (userId == null)
-            {
-                return EmptyList(request);
-            }
-
-            var query = BuildAssignedPlanQuery().Where(x =>
-                _context.Councils.Any(c =>
-                    c.CycleId == x.CycleId &&
-                    c.UserId == userId.Value &&
-                    !c.IsDeleted &&
-                    c.IsActived)
-                || _context.ActionPlanAssignees.Any(a =>
-                    a.ActionPlanId == x.Id &&
-                    a.UserId == userId.Value &&
-                    !a.IsDeleted &&
-                    a.IsActived));
-
-            return await BuildPlanListResponseAsync(query, request);
-        }
-
-        return await BuildPlanListResponseAsync(BuildAssignedPlanQuery(), request);
-    }
-
     public Task<ActionPlanDetailDto> GetPlanDetail(Guid actionPlanId)
     {
         return _actionPlanService.GetById(actionPlanId);

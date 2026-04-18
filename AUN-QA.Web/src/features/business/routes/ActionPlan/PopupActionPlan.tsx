@@ -28,7 +28,6 @@ import type {
 import { canChangeStatus, canEditActionPlan } from "./actionPlan.utils";
 import {
   getActionPlanStatusComboboxOptions,
-  getFindingCriterionDisplay,
   getFindingStandardDisplay,
   resolveCriterionSelection,
 } from "./popupActionPlan.helpers";
@@ -64,6 +63,8 @@ export default function PopupActionPlan({
   const { savePlan, isMutating } = useActionPlan();
   const cycleOptions = useCycleOptions(open);
   const uploadRef = useRef<UploadFileRef>(null);
+  const [formScrollContainer, setFormScrollContainer] =
+    useState<HTMLDivElement | null>(null);
 
   const [form, setForm] = useState({
     Id: item?.Id ?? EMPTY_GUID,
@@ -272,7 +273,10 @@ export default function PopupActionPlan({
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
+            <div
+              ref={setFormScrollContainer}
+              className="relative flex-1 overflow-y-auto p-5"
+            >
               <div className="grid gap-4">
                 {currentStatus === 3 && (
                   <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
@@ -446,7 +450,7 @@ export default function PopupActionPlan({
                 </div>
 
                 <div className="grid gap-2">
-                  <Label>Phát hiện ĐGN gốc</Label>
+                  <Label>Kiến nghị từ CHECK</Label>
                   {selectedFinding ? (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
                       <p className="text-sm text-amber-900">
@@ -469,7 +473,7 @@ export default function PopupActionPlan({
                     </div>
                   ) : (
                     <p className="text-sm italic text-slate-400">
-                      Chọn phát hiện từ panel bên phải để tự điền
+                      Chọn kiến nghị từ phần bên phải để tự điền
                     </p>
                   )}
                 </div>
@@ -486,6 +490,7 @@ export default function PopupActionPlan({
                         }
                         placeholder="Thêm người thực hiện..."
                         hidePlaceholderWhenSelected
+                        portalContainer={formScrollContainer}
                       />
                       <div className="hidden">
                         <Combobox

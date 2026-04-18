@@ -20,5 +20,7 @@ public interface IActionPlanService
 
     Task<List<AssignableMemberDto>> GetAssignableMembers(Guid cycleId);
 
+    Task<List<AssignableMemberDto>> GetAssignableUsersCombobox();
+
     Task<int> GetMyCouncilRoleId(Guid cycleId);
 }

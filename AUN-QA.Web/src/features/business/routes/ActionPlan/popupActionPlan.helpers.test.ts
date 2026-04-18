@@ -26,8 +26,10 @@ describe("finding display helpers", () => {
     ).toBe("STD-01 - Tiêu chuẩn 01");
   });
 
-  it("falls back to 'Không có tiêu chí' when criterion metadata is missing", () => {
-    expect(getFindingCriterionDisplay({} as any)).toBe("Không có tiêu chí");
+  it("falls back to 'Chưa gắn tiêu chí ở đánh giá ngoài' when criterion metadata is missing", () => {
+    expect(getFindingCriterionDisplay({} as any)).toBe(
+      "Chưa gắn tiêu chí ở đánh giá ngoài",
+    );
   });
 });
 

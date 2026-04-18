@@ -13,6 +13,7 @@ service SystemProto {
   rpc GetUsersByIdsPaged (GetUsersByIdsPagedRequest) returns (GetUsersByIdsPagedResponse);
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
   rpc DeleteExternalUser (DeleteExternalUserRequest) returns (DeleteExternalUserResponse);
+  rpc GetActiveUsersExceptRole (GetActiveUsersExceptRoleRequest) returns (GetActiveUsersExceptRoleResponse);
 }
 
 message CheckPermissionRequest {
@@ -108,4 +109,12 @@ message DeleteExternalUserRequest {
 message DeleteExternalUserResponse {
   bool success = 1;
   string message = 2;
+}
+
+message GetActiveUsersExceptRoleRequest {
+  string excluded_role_id = 1;
+}
+
+message GetActiveUsersExceptRoleResponse {
+  repeated UserInfo users = 1;
 }

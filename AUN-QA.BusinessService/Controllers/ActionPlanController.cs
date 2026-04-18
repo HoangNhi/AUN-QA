@@ -76,6 +76,14 @@ public class ActionPlanController : BaseController<ActionPlanController>
         return Ok(new BaseResponse<List<AssignableMemberDto>> { Data = result, Success = true });
     }
 
+    [HttpGet("assignable-users-combobox")]
+    [AttributePermission(Action = ActionType.VIEW)]
+    public async Task<IActionResult> GetAssignableUsersCombobox()
+    {
+        var result = await _service.GetAssignableUsersCombobox();
+        return Ok(new BaseResponse<List<AssignableMemberDto>> { Data = result, Success = true });
+    }
+
     [HttpGet("my-council-role")]
     [AttributePermission(Action = ActionType.NONE)]
     public async Task<IActionResult> GetMyCouncilRole([FromQuery] Guid cycleId)

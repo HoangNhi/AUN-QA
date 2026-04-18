@@ -107,6 +107,36 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
             return response;
         }
 
+        public override async Task<GetActiveUsersExceptRoleResponse> GetActiveUsersExceptRole(
+            GetActiveUsersExceptRoleRequest request,
+            ServerCallContext context)
+        {
+            if (!Guid.TryParse(request.ExcludedRoleId, out var excludedRoleId))
+            {
+                return new GetActiveUsersExceptRoleResponse();
+            }
+
+            var users = await _context.Users
+                .AsNoTracking()
+                .Where(u => !u.IsDeleted && u.IsActived && u.RoleId != excludedRoleId)
+                .OrderBy(u => u.Fullname)
+                .ThenBy(u => u.Username)
+                .Select(u => new UserInfo
+                {
+                    Id = u.Id.ToString(),
+                    Fullname = u.Fullname ?? string.Empty,
+                    Avatar = u.Avatar ?? string.Empty,
+                    Username = u.Username ?? string.Empty,
+                    IsActived = u.IsActived,
+                    Email = u.Email ?? string.Empty
+                })
+                .ToListAsync();
+
+            var response = new GetActiveUsersExceptRoleResponse();
+            response.Users.AddRange(users);
+            return response;
+        }
+
         public override async Task<SetUsersActivedResponse> SetUsersActived(SetUsersActivedRequest request, ServerCallContext context)
         {
             var userIds = request.UserIds

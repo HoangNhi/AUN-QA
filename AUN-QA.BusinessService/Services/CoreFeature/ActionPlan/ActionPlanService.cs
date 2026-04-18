@@ -12,6 +12,7 @@ using AUN_QA.CatalogService.Protos;
 using AUN_QA.SystemService.Protos;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using ActionPlanEntity = AUN_QA.BusinessService.Entities.ActionPlan;
 using ActionPlanAssigneeEntity = AUN_QA.BusinessService.Entities.ActionPlanAssignee;
@@ -22,6 +23,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.ActionPlan;
 [RegisterClassAsTransient]
 public class ActionPlanService : IActionPlanService
 {
+    private static readonly Guid ExternalReviewerRoleId = new("551d1351-008e-4910-a39c-1fcdde409fdf");
+
     private readonly BusinessContext _context;
     private readonly IHttpContextAccessor _contextAccessor;
     private readonly SystemProto.SystemProtoClient _systemClient;
@@ -521,6 +524,34 @@ public class ActionPlanService : IActionPlanService
                 Username = userInfo.Username
             };
         }).ToList();
+    }
+
+    public async Task<List<AssignableMemberDto>> GetAssignableUsersCombobox()
+    {
+        try
+        {
+            var response = await _systemClient.GetActiveUsersExceptRoleAsync(
+                new GetActiveUsersExceptRoleRequest
+                {
+                    ExcludedRoleId = ExternalReviewerRoleId.ToString()
+                });
+
+            return response.Users
+                .Where(x => Guid.TryParse(x.Id, out _))
+                .Select(x => new AssignableMemberDto
+                {
+                    UserId = Guid.Parse(x.Id),
+                    Fullname = string.IsNullOrWhiteSpace(x.Fullname) ? x.Username : x.Fullname,
+                    Username = string.IsNullOrWhiteSpace(x.Username) ? null : x.Username
+                })
+                .OrderBy(x => x.Fullname)
+                .ThenBy(x => x.Username)
+                .ToList();
+        }
+        catch (RpcException ex)
+        {
+            throw new BusinessException($"Lỗi kết nối đến SystemService. {ex.Status.Detail}", ex);
+        }
     }
 
     public async Task<int> GetMyCouncilRoleId(Guid cycleId)

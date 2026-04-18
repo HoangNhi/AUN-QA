@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import MultipleSelector, { type Option } from "@/components/ui/multi-select";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
@@ -16,7 +17,7 @@ import { useStandardsByCycle } from "@/features/business/hooks/useStandardsByCyc
 import { useCriteriaByStandard } from "@/features/business/hooks/useCriteriaByStandard";
 import { actionPlanService } from "@/features/business/api/actionPlan.api";
 import { useActionPlan } from "./hooks/useActionPlan";
-import { useCouncilMemberOptions } from "./hooks/useCouncilMemberOptions";
+import { useAssignableUsersOptions } from "./hooks/useAssignableUsersOptions";
 import type {
   ActionPlanDetail,
   ActionPlanStatus,
@@ -24,11 +25,7 @@ import type {
   AssignableMember,
   ExternalFindingOption,
 } from "@/features/business/types/actionPlan.types";
-import {
-  canChangeStatus,
-  canEditActionPlan,
-  getActionPlanStatusLabel,
-} from "./actionPlan.utils";
+import { canChangeStatus, canEditActionPlan } from "./actionPlan.utils";
 import {
   getActionPlanStatusComboboxOptions,
   getFindingCriterionDisplay,
@@ -80,10 +77,14 @@ export default function PopupActionPlan({
     SourceFindingId: item?.SourceFindingId ?? "",
     Status: Number(item?.Status ?? 1),
   });
-  const [assignedTo, setAssignedTo] = useState<string[]>(item?.Assignees?.map((a) => a.UserId) ?? []);
+  const [assignedTo, setAssignedTo] = useState<string[]>(
+    item?.Assignees?.map((a) => a.UserId) ?? [],
+  );
   const [folderUpload, setFolderUpload] = useState<string>(uuidv4());
   const [listAttachment, setListAttachment] = useState<Attachment[]>([]);
-  const [pendingFindingCriterionId, setPendingFindingCriterionId] = useState<string | null>(null);
+  const [pendingFindingCriterionId, setPendingFindingCriterionId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!open) {
@@ -126,7 +127,7 @@ export default function PopupActionPlan({
 
   const standards = useStandardsByCycle(form.CycleId || undefined);
   const criteria = useCriteriaByStandard(form.StandardId || undefined);
-  const { members: assignableMembers } = useCouncilMemberOptions(form.CycleId || undefined, open);
+  const { members: assignableMembers } = useAssignableUsersOptions(open);
 
   const findingsQuery = useQuery({
     queryKey: ["action-plan", "findings", form.CycleId],
@@ -142,11 +143,33 @@ export default function PopupActionPlan({
     enabled: open && Boolean(form.CycleId),
   });
 
-  const findings = useMemo(() => findingsQuery.data ?? [], [findingsQuery.data]);
+  const findings = useMemo(
+    () => findingsQuery.data ?? [],
+    [findingsQuery.data],
+  );
   const statusOptions = useMemo(() => getActionPlanStatusComboboxOptions(), []);
   const selectedFinding = useMemo(
-    () => findings.find((finding) => finding.Id === form.SourceFindingId) ?? null,
+    () =>
+      findings.find((finding) => finding.Id === form.SourceFindingId) ?? null,
     [findings, form.SourceFindingId],
+  );
+  const assignableMemberLabel = (member: AssignableMember) =>
+    member.Fullname || member.Username || member.UserId;
+  const assigneeOptions = useMemo<Option[]>(
+    () =>
+      assignableMembers.map((member) => ({
+        value: member.UserId,
+        label: assignableMemberLabel(member),
+      })),
+    [assignableMembers],
+  );
+  const selectedAssigneeOptions = useMemo<Option[]>(
+    () =>
+      assignedTo.map((userId) => {
+        const option = assigneeOptions.find((item) => item.value === userId);
+        return option ?? { value: userId, label: userId };
+      }),
+    [assignedTo, assigneeOptions],
   );
 
   useEffect(() => {
@@ -184,8 +207,14 @@ export default function PopupActionPlan({
   };
 
   const handleSave = async () => {
-    if (isStatusChangeable && Number(form.Status) === 2 && assignedTo.length === 0) {
-      toast.error("Vui lòng chọn ít nhất một người thực hiện trước khi chuyển sang Đang thực hiện.");
+    if (
+      isStatusChangeable &&
+      Number(form.Status) === 2 &&
+      assignedTo.length === 0
+    ) {
+      toast.error(
+        "Vui lòng chọn ít nhất một người thực hiện trước khi chuyển sang Đang thực hiện.",
+      );
       return;
     }
 
@@ -202,7 +231,9 @@ export default function PopupActionPlan({
       StandardId: form.StandardId || null,
       CriterionId: form.CriterionId || null,
       Priority: Number(form.Priority) as ActionPriority,
-      Deadline: form.Deadline ? new Date(form.Deadline).toISOString() : new Date().toISOString(),
+      Deadline: form.Deadline
+        ? new Date(form.Deadline).toISOString()
+        : new Date().toISOString(),
       SourceFindingId: form.SourceFindingId || null,
       AssignedTo: assignedTo,
       Status: Number(form.Status),
@@ -214,8 +245,6 @@ export default function PopupActionPlan({
     onChanged();
     onOpenChange(false);
   };
-
-  const assignableMemberLabel = (member: AssignableMember) => member.Fullname || member.Username || member.UserId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -232,11 +261,13 @@ export default function PopupActionPlan({
                 <h2 className="text-lg font-semibold text-slate-900">
                   {isNew ? "Tạo kế hoạch cải tiến" : item?.Title}
                 </h2>
-                <p className="text-sm text-slate-500">
-                  {item ? `Trạng thái: ${getActionPlanStatusLabel(Number(item.Status))}` : ""}
-                </p>
               </div>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onOpenChange(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -245,7 +276,8 @@ export default function PopupActionPlan({
               <div className="grid gap-4">
                 {currentStatus === 3 && (
                   <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
-                    Tất cả công việc đã hoàn thành. CTH/PCT có thể xác nhận hoặc yêu cầu thực hiện lại.
+                    Tất cả công việc đã hoàn thành. CTH/PCT có thể xác nhận hoặc
+                    yêu cầu thực hiện lại.
                   </div>
                 )}
 
@@ -253,7 +285,8 @@ export default function PopupActionPlan({
                   <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
                     <p className="font-medium">Đã hoàn thành</p>
                     <p className="mt-1 text-xs text-green-600">
-                      Bởi {item.CompletedBy} - {new Date(item.CompletedAt).toLocaleDateString("vi-VN")}
+                      Bởi {item.CompletedBy} -{" "}
+                      {new Date(item.CompletedAt).toLocaleDateString("vi-VN")}
                     </p>
                   </div>
                 )}
@@ -265,7 +298,9 @@ export default function PopupActionPlan({
                   <Input
                     value={form.Title}
                     readOnly={!canEditFields && !isNew}
-                    onChange={(e) => setForm((prev) => ({ ...prev, Title: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, Title: e.target.value }))
+                    }
                     placeholder="Nhập tên kế hoạch cải tiến..."
                   />
                 </div>
@@ -327,7 +362,10 @@ export default function PopupActionPlan({
                       loading={criteria.isLoading}
                       value={form.CriterionId || undefined}
                       onValueChange={(value) =>
-                        setForm((prev) => ({ ...prev, CriterionId: value || "" }))
+                        setForm((prev) => ({
+                          ...prev,
+                          CriterionId: value || "",
+                        }))
                       }
                       placeholder="Chọn tiêu chí..."
                       emptyText="Không có tiêu chí."
@@ -352,11 +390,6 @@ export default function PopupActionPlan({
                       emptyText="Không có trạng thái."
                       readonly={!isStatusChangeable}
                     />
-                    {!isStatusChangeable ? (
-                      <span className="text-xs text-slate-400">
-                        Chỉ CTH/PCT được thay đổi trạng thái
-                      </span>
-                    ) : null}
                   </div>
 
                   <div className="grid gap-2">
@@ -366,7 +399,10 @@ export default function PopupActionPlan({
                       value={form.Priority}
                       disabled={!canEditFields && !isNew}
                       onChange={(e) =>
-                        setForm((prev) => ({ ...prev, Priority: e.target.value }))
+                        setForm((prev) => ({
+                          ...prev,
+                          Priority: e.target.value,
+                        }))
                       }
                     >
                       <option value="1">Cao</option>
@@ -383,7 +419,12 @@ export default function PopupActionPlan({
                       type="date"
                       value={form.Deadline}
                       readOnly={!canEditFields && !isNew}
-                      onChange={(e) => setForm((prev) => ({ ...prev, Deadline: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          Deadline: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
@@ -394,7 +435,10 @@ export default function PopupActionPlan({
                     value={form.Description ?? ""}
                     readOnly={!canEditFields && !isNew}
                     onChange={(e) =>
-                      setForm((prev) => ({ ...prev, Description: e.target.value }))
+                      setForm((prev) => ({
+                        ...prev,
+                        Description: e.target.value,
+                      }))
                     }
                     rows={4}
                     placeholder="Mô tả kế hoạch cải tiến..."
@@ -405,11 +449,18 @@ export default function PopupActionPlan({
                   <Label>Phát hiện ĐGN gốc</Label>
                   {selectedFinding ? (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-                      <p className="text-sm text-amber-900">{selectedFinding.Content}</p>
+                      <p className="text-sm text-amber-900">
+                        {selectedFinding.Content}
+                      </p>
                       {(canEditFields || isNew) && (
                         <button
                           type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, SourceFindingId: "" }))}
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              SourceFindingId: "",
+                            }))
+                          }
                           className="mt-2 text-xs text-amber-600 hover:text-amber-800"
                         >
                           ✕ Bỏ chọn
@@ -420,6 +471,88 @@ export default function PopupActionPlan({
                     <p className="text-sm italic text-slate-400">
                       Chọn phát hiện từ panel bên phải để tự điền
                     </p>
+                  )}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Người thực hiện</Label>
+                  {canEditAssignees ? (
+                    <>
+                      <MultipleSelector
+                        value={selectedAssigneeOptions}
+                        options={assigneeOptions}
+                        onChange={(options) =>
+                          setAssignedTo(options.map((option) => option.value))
+                        }
+                        placeholder="Thêm người thực hiện..."
+                        hidePlaceholderWhenSelected
+                      />
+                      <div className="hidden">
+                        <Combobox
+                          options={assignableMembers.map((member) => ({
+                            Value: member.UserId,
+                            Text: assignableMemberLabel(member),
+                          }))}
+                          value={undefined}
+                          onValueChange={(value) => {
+                            if (value && !assignedTo.includes(value)) {
+                              setAssignedTo((prev) => [...prev, value]);
+                            }
+                          }}
+                          placeholder="Thêm người thực hiện..."
+                          emptyText="Không có thành viên phù hợp."
+                        />
+                        {assignedTo.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {assignedTo.map((userId) => {
+                              const member = assignableMembers.find(
+                                (item) => item.UserId === userId,
+                              );
+                              return (
+                                <span
+                                  key={userId}
+                                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
+                                >
+                                  {member
+                                    ? assignableMemberLabel(member)
+                                    : userId}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAssignedTo((prev) =>
+                                        prev.filter((id) => id !== userId),
+                                      )
+                                    }
+                                    className="ml-1 text-blue-500 hover:text-blue-800"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {item?.Assignees?.length ? (
+                        item.Assignees.map((assignee) => (
+                          <span
+                            key={assignee.UserId}
+                            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
+                          >
+                            {assignee.Fullname ??
+                              assignee.Username ??
+                              assignee.UserId}
+                          </span>
+                        ))
+                      ) : (
+                        <p className="text-sm italic text-slate-400">
+                          Chưa có người thực hiện
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -435,75 +568,17 @@ export default function PopupActionPlan({
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <Label>Người thực hiện</Label>
-                  {canEditAssignees ? (
-                    <div className="space-y-2">
-                      <Combobox
-                        options={assignableMembers.map((member) => ({
-                          Value: member.UserId,
-                          Text: assignableMemberLabel(member),
-                        }))}
-                        value={undefined}
-                        onValueChange={(value) => {
-                          if (value && !assignedTo.includes(value)) {
-                            setAssignedTo((prev) => [...prev, value]);
-                          }
-                        }}
-                        placeholder="Thêm người thực hiện..."
-                        emptyText="Không có thành viên phù hợp."
-                      />
-                      {assignedTo.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {assignedTo.map((userId) => {
-                            const member = assignableMembers.find((item) => item.UserId === userId);
-                            return (
-                              <span
-                                key={userId}
-                                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
-                              >
-                                {member ? assignableMemberLabel(member) : userId}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setAssignedTo((prev) => prev.filter((id) => id !== userId))
-                                  }
-                                  className="ml-1 text-blue-500 hover:text-blue-800"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {item?.Assignees?.length ? (
-                        item.Assignees.map((assignee) => (
-                          <span
-                            key={assignee.UserId}
-                            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
-                          >
-                            {assignee.Fullname ?? assignee.Username ?? assignee.UserId}
-                          </span>
-                        ))
-                      ) : (
-                        <p className="text-sm italic text-slate-400">Chưa có người thực hiện</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
                 {!isNew && item?.Tasks && item.Tasks.length > 0 && (
                   <div className="grid gap-2">
                     <Label>Tiến độ công việc</Label>
                     <div className="space-y-2">
                       {(() => {
-                        const done = item.Tasks.filter((task) => Number(task.TaskStatus) === 3).length;
+                        const done = item.Tasks.filter(
+                          (task) => Number(task.TaskStatus) === 3,
+                        ).length;
                         const total = item.Tasks.length;
-                        const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+                        const percent =
+                          total > 0 ? Math.round((done / total) * 100) : 0;
                         return (
                           <>
                             <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -528,16 +603,24 @@ export default function PopupActionPlan({
             </div>
 
             <div className="flex shrink-0 justify-end gap-2 border-t bg-white p-4">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+              >
                 {isCompleted && !isStatusChangeable ? "Đóng" : "Hủy"}
               </Button>
               {(isStatusChangeable || canEditFields || isNew) && (
                 <Button
                   type="button"
                   onClick={() => void handleSave()}
-                  disabled={isMutating || !form.Title || !form.CycleId || !form.Deadline}
+                  disabled={
+                    isMutating || !form.Title || !form.CycleId || !form.Deadline
+                  }
                 >
-                  {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isMutating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   Lưu
                 </Button>
               )}
@@ -546,8 +629,12 @@ export default function PopupActionPlan({
 
           <div className="min-h-0 overflow-auto bg-slate-50 p-5">
             <div className="mb-3">
-              <h3 className="text-base font-semibold text-slate-900">Phát hiện gốc</h3>
-              <p className="text-xs text-slate-500">Chọn để điền nhanh vào biểu mẫu.</p>
+              <h3 className="text-base font-semibold text-slate-900">
+                Kiến nghị từ CHECK
+              </h3>
+              <p className="text-xs text-slate-500">
+                Chọn để điền nhanh vào biểu mẫu.
+              </p>
             </div>
 
             {!form.CycleId ? (
@@ -565,7 +652,9 @@ export default function PopupActionPlan({
                   <button
                     key={finding.Id}
                     type="button"
-                    onClick={() => (canEditFields || isNew) && handleChangeFinding(finding)}
+                    onClick={() =>
+                      (canEditFields || isNew) && handleChangeFinding(finding)
+                    }
                     disabled={!canEditFields && !isNew}
                     className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-sky-300 hover:bg-sky-50/40 disabled:cursor-default disabled:opacity-60"
                   >
@@ -574,9 +663,6 @@ export default function PopupActionPlan({
                     </p>
                     <p className="mt-1 text-xs text-slate-500">
                       Tiêu chuẩn: {getFindingStandardDisplay(finding)}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Tiêu chí: {getFindingCriterionDisplay(finding)}
                     </p>
                   </button>
                 ))}

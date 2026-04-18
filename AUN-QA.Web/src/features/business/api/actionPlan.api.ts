@@ -41,6 +41,11 @@ export const actionPlanService = {
       params: { cycleId },
     }),
 
+  getAssignableUsersCombobox: (): Promise<ApiResponse<AssignableMember[]>> =>
+    api.get<AssignableMember[]>(
+      API_ENDPOINTS.Business.ActionPlan.GET_ASSIGNABLE_USERS_COMBOBOX,
+    ),
+
   getMyCouncilRole: (cycleId: string): Promise<ApiResponse<number>> =>
     api.get<number>(API_ENDPOINTS.Business.ActionPlan.GET_MY_COUNCIL_ROLE, {
       params: { cycleId },

@@ -29,7 +29,11 @@ export function getFindingCriterionDisplay(
     return `${finding.CriterionCode} - ${finding.CriterionName}`;
   }
 
-  return finding.CriterionCode || finding.CriterionName || "Không có tiêu chí";
+  return (
+    finding.CriterionCode ||
+    finding.CriterionName ||
+    "Chưa gắn tiêu chí ở đánh giá ngoài"
+  );
 }
 
 export function resolveCriterionSelection(

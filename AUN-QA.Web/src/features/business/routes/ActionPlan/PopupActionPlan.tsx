@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, X } from "lucide-react";
@@ -34,7 +34,12 @@ import type {
   AssignableMember,
   ExternalFindingOption,
 } from "@/features/business/types/actionPlan.types";
-import { canChangeStatus, canEditActionPlan } from "./actionPlan.utils";
+import {
+  canChangeStatus,
+  canEditActionPlan,
+  normalizeActionPlanStatusForSave,
+  shouldShowAssigneeSection,
+} from "./actionPlan.utils";
 import {
   getActionPlanStatusComboboxOptions,
   getFindingStandardDisplay,
@@ -75,6 +80,14 @@ function parseLocalDate(value: string | undefined | null): Date | undefined {
 
   const date = new Date(year, month - 1, day);
   return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+export function isAssigneeSectionVisible(isNew: boolean): boolean {
+  return shouldShowAssigneeSection(isNew);
+}
+
+export function getPopupSaveStatus(status: number, isNew: boolean): number {
+  return normalizeActionPlanStatusForSave(status, isNew);
 }
 
 export default function PopupActionPlan({
@@ -231,9 +244,11 @@ export default function PopupActionPlan({
   };
 
   const handleSave = async () => {
+    const saveStatus = getPopupSaveStatus(Number(form.Status), isNew);
+
     if (
       isStatusChangeable &&
-      Number(form.Status) === 2 &&
+      saveStatus === 2 &&
       assignedTo.length === 0
     ) {
       toast.error(
@@ -259,8 +274,8 @@ export default function PopupActionPlan({
         ? new Date(form.Deadline).toISOString()
         : new Date().toISOString(),
       SourceFindingId: form.SourceFindingId || null,
-      AssignedTo: assignedTo,
-      Status: Number(form.Status),
+      AssignedTo: isNew ? [] : assignedTo,
+      Status: saveStatus,
       AttachmentIds: listAttachment.map((attachment) => attachment.Id),
       FolderUpload: folderUpload,
       IsActived: true,
@@ -415,7 +430,7 @@ export default function PopupActionPlan({
                       }
                       placeholder="Chọn trạng thái..."
                       emptyText="Không có trạng thái."
-                      readonly={!isStatusChangeable}
+                      readonly={isNew || !isStatusChangeable}
                     />
                   </div>
 
@@ -509,9 +524,10 @@ export default function PopupActionPlan({
                   )}
                 </div>
 
-                <div className="grid gap-2">
-                  <Label>Người thực hiện</Label>
-                  {canEditAssignees ? (
+                {isAssigneeSectionVisible(isNew) && (
+                  <div className="grid gap-2">
+                    <Label>Người thực hiện</Label>
+                    {canEditAssignees ? (
                     <>
                       <MultipleSelector
                         value={selectedAssigneeOptions}
@@ -570,27 +586,28 @@ export default function PopupActionPlan({
                         )}
                       </div>
                     </>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {item?.Assignees?.length ? (
-                        item.Assignees.map((assignee) => (
-                          <span
-                            key={assignee.UserId}
-                            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
-                          >
-                            {assignee.Fullname ??
-                              assignee.Username ??
-                              assignee.UserId}
-                          </span>
-                        ))
-                      ) : (
-                        <p className="text-sm italic text-slate-400">
-                          Chưa có người thực hiện
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {item?.Assignees?.length ? (
+                          item.Assignees.map((assignee) => (
+                            <span
+                              key={assignee.UserId}
+                              className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
+                            >
+                              {assignee.Fullname ??
+                                assignee.Username ??
+                                assignee.UserId}
+                            </span>
+                          ))
+                        ) : (
+                          <p className="text-sm italic text-slate-400">
+                            Chưa có người thực hiện
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid gap-2">
                   <Label>Tài liệu đính kèm</Label>
@@ -714,3 +731,4 @@ export default function PopupActionPlan({
     </Dialog>
   );
 }
+

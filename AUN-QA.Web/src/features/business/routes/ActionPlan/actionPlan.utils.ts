@@ -31,11 +31,33 @@ export function getActionPlanStatusColor(status: number): string {
 }
 
 export function canEditActionPlan(status: number): boolean {
-  return status === ActionPlanStatus.Draft || status === ActionPlanStatus.PendingReview;
+  return (
+    status === ActionPlanStatus.Draft ||
+    status === ActionPlanStatus.PendingReview
+  );
 }
 
 export function canChangeStatus(councilRoleId: number): boolean {
   return councilRoleId === 1 || councilRoleId === 2;
+}
+
+export function normalizeActionPlanStatusForSave(
+  status: number,
+  isNew: boolean,
+): number {
+  if (isNew) {
+    return ActionPlanStatus.Draft;
+  }
+
+  return status;
+}
+
+export function shouldShowAssigneeSection(isNew: boolean): boolean {
+  return !isNew;
+}
+
+export function canDeleteActionPlan(status: number): boolean {
+  return status === ActionPlanStatus.Draft;
 }
 
 export const ACTION_PLAN_STATUS_OPTIONS = [

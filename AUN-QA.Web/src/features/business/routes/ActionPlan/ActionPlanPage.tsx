@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -30,7 +30,18 @@ export default function ActionPlanPage() {
   const cycleOptions = useCycleOptions();
   const { deleteList, isMutating } = useActionPlan();
 
-  const columns = useMemo<ColumnDef<ActionPlanListItem>[]>(() => getActionPlanColumns(openPopup), [openPopup]);
+  const handleDeleteOne = useCallback(
+    async (item: ActionPlanListItem) => {
+      await deleteList({ Ids: [item.Id] });
+      refreshList();
+    },
+    [deleteList, refreshList],
+  );
+
+  const columns = useMemo<ColumnDef<ActionPlanListItem>[]>(
+    () => getActionPlanColumns(openPopup, handleDeleteOne),
+    [handleDeleteOne, openPopup],
+  );
 
   const listPage = useListPage({
     data,

@@ -1,7 +1,29 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import { type ColumnDef, type Row } from "@tanstack/react-table";
+import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { ActionPlanListItem } from "@/features/business/types/actionPlan.types";
-import { getActionPlanStatusColor, getActionPlanStatusLabel } from "./actionPlan.utils";
+import {
+  canDeleteActionPlan,
+  getActionPlanStatusColor,
+  getActionPlanStatusLabel,
+} from "./actionPlan.utils";
 
 function getPriorityLabel(priority: number): string {
   switch (priority) {
@@ -18,6 +40,7 @@ function getPriorityLabel(priority: number): string {
 
 export function getActionPlanColumns(
   onEdit: (item: ActionPlanListItem) => void,
+  onDelete: (item: ActionPlanListItem) => void,
 ): ColumnDef<ActionPlanListItem>[] {
   return [
     {
@@ -27,7 +50,9 @@ export function getActionPlanColumns(
         <div className="min-w-[240px]">
           <p className="font-medium text-slate-900">{row.original.Title}</p>
           {row.original.Description ? (
-            <p className="line-clamp-2 text-xs text-slate-500">{row.original.Description}</p>
+            <p className="line-clamp-2 text-xs text-slate-500">
+              {row.original.Description}
+            </p>
           ) : null}
         </div>
       ),
@@ -83,13 +108,71 @@ export function getActionPlanColumns(
       id: "actions",
       header: () => <div className="text-center">Hành động</div>,
       meta: { className: "text-center" },
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Button size="sm" variant="secondary" onClick={() => onEdit(row.original)}>
-            Mở
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} onDelete={onDelete} />,
     },
   ];
 }
+
+const ActionCell = ({
+  row,
+  onEdit,
+  onDelete,
+}: {
+  row: Row<ActionPlanListItem>;
+  onEdit: (item: ActionPlanListItem) => void;
+  onDelete: (item: ActionPlanListItem) => void;
+}) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const status = Number(row.original.Status);
+  const canDelete = canDeleteActionPlan(status);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Chức năng</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onEdit(row.original)}>
+            Cập nhật
+          </DropdownMenuItem>
+          {canDelete ? (
+            <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)}>
+              Xóa
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa bản ghi này không? Hành động này không thể
+              hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Hủy</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete(row.original);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};

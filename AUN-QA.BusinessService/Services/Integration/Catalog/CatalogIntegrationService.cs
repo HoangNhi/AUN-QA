@@ -187,6 +187,25 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
             }
         }
 
+        public async Task<StandardSetInfoDto> GetStandardSetInfoAsync(string standardSetId)
+        {
+            try
+            {
+                var request = new GetStandardSetEvaluationModeRequest { StandardSetId = standardSetId };
+                var response = await _grpcClient.GetStandardSetEvaluationModeAsync(request);
+                return new StandardSetInfoDto
+                {
+                    EvaluationMode = response.EvaluationMode,
+                    ChartType = response.ChartType,
+                    Name = response.Name
+                };
+            }
+            catch (RpcException)
+            {
+                throw new BusinessException("Lỗi kết nối đến CatalogService. Vui lòng thử lại sau.");
+            }
+        }
+
         public async IAsyncEnumerable<CriterionRequirementRow> GetRequirementsByStandardSetStreamAsync(GetRequirementsByStandardSetStreamRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var lst = new List<CriterionRequirementRow>();

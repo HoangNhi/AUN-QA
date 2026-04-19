@@ -110,12 +110,14 @@ namespace AUN_QA.CatalogService.Services.gRPC
             var standardSet = await _context.StandardSets
                 .AsNoTracking()
                 .Where(x => x.Id == id && !x.IsDeleted && x.IsActived)
-                .Select(x => new { x.EvaluationMode })
+                .Select(x => new { x.EvaluationMode, x.ChartType, x.Name })
                 .FirstOrDefaultAsync(context.CancellationToken);
 
             return new GetStandardSetEvaluationModeResponse
             {
-                EvaluationMode = standardSet?.EvaluationMode ?? 1
+                EvaluationMode = standardSet?.EvaluationMode ?? 1,
+                ChartType = standardSet?.ChartType ?? 0,
+                Name = standardSet?.Name ?? string.Empty
             };
         }
 

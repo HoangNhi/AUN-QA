@@ -26,4 +26,9 @@ public partial class StandardSet
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// 0 = SpiderChart, 1 = BarChart
+    /// </summary>
+    public int ChartType { get; set; }
 }

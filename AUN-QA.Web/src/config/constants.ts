@@ -112,6 +112,9 @@ export const API_ENDPOINTS = {
       GET_COMBOBOX_FOR_EXTERNAL_REVIEW: `${BUSINESS_BASE}/Cycle/get-combobox-for-external-review`,
       CHANGE_STATUS: `${BUSINESS_BASE}/Cycle/change-status`,
     },
+    Dashboard: {
+      GET_CYCLES_SUMMARY: `${BUSINESS_BASE}/Dashboard/cycles-summary`,
+    },
     Evidence: {
       GET_LIST: `${BUSINESS_BASE}/Evidence/get-list`,
       GET_BY_ID: `${BUSINESS_BASE}/Evidence/get-by-id`,

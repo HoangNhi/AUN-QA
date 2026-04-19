@@ -35,6 +35,19 @@ export const CYCLE_SCOPE_OPTIONS: ModelCombobox[] = [
   { Value: "2", Text: "Cấp cơ sở" },
 ];
 
+export const CHART_TYPE_OPTIONS: ModelCombobox[] = [
+  { Value: "0", Text: "Spider Chart (Radar)" },
+  { Value: "1", Text: "Bar Chart" },
+];
+
+export const CYCLE_STATUS_LABEL: Record<number, { label: string; className: string }> = {
+  1: { label: "PLAN", className: "bg-slate-100 text-slate-700" },
+  2: { label: "DO", className: "bg-blue-100 text-blue-700" },
+  3: { label: "CHECK", className: "bg-green-100 text-green-700" },
+  4: { label: "ACT", className: "bg-yellow-100 text-yellow-700" },
+  5: { label: "FINISH", className: "bg-gray-100 text-gray-500" },
+};
+
 // Council roles — matches CouncilRole enum in BE (RBAC §5.1)
 export const COUNCIL_ROLES: ModelCombobox[] = [
   { Value: "1", Text: "Chủ tịch HĐ" },

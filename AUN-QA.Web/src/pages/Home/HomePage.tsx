@@ -1,213 +1,162 @@
+import { AlertTriangle, RefreshCw, ShieldCheck, TrendingUp } from "lucide-react";
 import {
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  ShieldCheck,
-} from "lucide-react";
-
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
-import { MOCK_KPIS, MOCK_RADAR_DATA } from "./constants";
+  Carousel,
+  CarouselContent,
+  CarouselDots,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { useDashboardCycles } from "@/features/business/routes/Dashboard/hooks/useDashboardCycles";
+import CycleChartSlide from "@/features/business/routes/Dashboard/components/CycleChartSlide";
+import { useEffect, useState } from "react";
 
 const HomePage = () => {
+  const { data: cycles = [], isLoading, isError } = useDashboardCycles();
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const syncNow = () => setNow(Date.now());
+    syncNow();
+
+    const timer = window.setInterval(syncNow, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const totalEvidence = cycles.reduce((sum, cycle) => sum + cycle.Stats.EvidenceCount, 0);
+  const averageProgress =
+    cycles.length > 0
+      ? Math.round(
+          cycles.reduce((sum, cycle) => sum + cycle.Stats.ProgressPercent, 0) /
+            cycles.length,
+        )
+      : 0;
+  const totalWarnings = cycles.filter((cycle) => {
+    if (!cycle.Deadline || !now) {
+      return false;
+    }
+
+    const daysLeft = Math.ceil((new Date(cycle.Deadline).getTime() - now) / 86400000);
+
+    return daysLeft >= 0 && daysLeft <= 30;
+  }).length;
+
   return (
     <div className="space-y-6">
-      {/* Top Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-500 font-medium">
-                Kho minh chứng Hợp nhất
-              </p>
-              <h3 className="text-2xl font-bold text-slate-800">1,248</h3>
+              <p className="text-sm font-medium text-slate-500">Chu kỳ active</p>
+              <h3 className="text-2xl font-bold text-slate-800">
+                {isLoading ? "—" : cycles.length}
+              </h3>
             </div>
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+            <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
               <ShieldCheck size={20} />
             </div>
           </div>
-          <p className="text-xs text-green-600 mt-2">
-            Dữ liệu Single Source of Truth
-          </p>
+          <p className="mt-2 text-xs text-slate-400">Đang tham gia</p>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-500 font-medium">AUN-QA Score</p>
-              <h3 className="text-2xl font-bold text-slate-800">5.2/7.0</h3>
+              <p className="text-sm font-medium text-slate-500">Kho minh chứng</p>
+              <h3 className="text-2xl font-bold text-slate-800">
+                {isLoading ? "—" : totalEvidence.toLocaleString()}
+              </h3>
             </div>
-            <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-              <CheckCircle size={20} />
-            </div>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Đạt mức "Adequate" (Thang 1-7)
-          </p>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-500 font-medium">
-                Tiến độ MOET 01/2024
-              </p>
-              <h3 className="text-2xl font-bold text-emerald-600">82%</h3>
-            </div>
-            <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
               <TrendingUp size={20} />
             </div>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Đạt 21/25 tiêu chí định lượng
-          </p>
+          <p className="mt-2 text-xs text-slate-400">Single Source of Truth</p>
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-500 font-medium">
-                Cảnh báo Hết hạn
-              </p>
-              <h3 className="text-2xl font-bold text-amber-600">5</h3>
+              <p className="text-sm font-medium text-slate-500">Tiến độ TB</p>
+              <h3 className="text-2xl font-bold text-emerald-600">
+                {isLoading || cycles.length === 0 ? "—" : `${averageProgress}%`}
+              </h3>
             </div>
-            <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+            <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+              <TrendingUp size={20} />
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-slate-400">Trung bình tất cả chu kỳ</p>
+        </div>
+
+        <div className="rounded-2xl border border-l-4 border-amber-500 bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Deadline sắp tới</p>
+              <h3 className="text-2xl font-bold text-amber-600">
+                {isLoading ? "—" : totalWarnings}
+              </h3>
+            </div>
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
               <AlertTriangle size={20} />
             </div>
           </div>
-          <p className="text-xs text-rose-500 mt-2 font-bold">
-            Cần rà soát PDCA ngay
+          <p className="mt-2 text-xs font-medium text-rose-500">Trong vòng 30 ngày</p>
+        </div>
+      </div>
+
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-cyan-50 shadow-sm">
+        <div className="border-b border-slate-200/80 px-5 py-4">
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">
+            Chu kỳ đang tham gia
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Mỗi slide hiển thị đúng kiểu biểu đồ được cấu hình cho StandardSet.
           </p>
         </div>
-      </div>
 
-      {/* Dual Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AUN Radar Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <div className="mb-4 flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
-                Giao diện AUN-QA (Spider Chart)
-              </h3>
-              <p className="text-sm text-slate-500">
-                Đánh giá 8 nhóm tiêu chuẩn (Thang 1-7)
-              </p>
+        <div className="p-5">
+          {isLoading && (
+            <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/70">
+              <RefreshCw size={20} className="animate-spin text-slate-400" />
             </div>
-            <div className="bg-brand-50 text-brand-700 px-3 py-1 rounded-full text-xs font-bold border border-brand-100 uppercase">
-              Chế độ AUN
+          )}
+
+          {isError && (
+            <div className="flex h-56 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-sm text-red-500">
+              Không thể tải dữ liệu. Vui lòng thử lại.
             </div>
-          </div>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart
-                cx="50%"
-                cy="50%"
-                outerRadius="80%"
-                data={MOCK_RADAR_DATA}
-              >
-                <PolarGrid />
-                <PolarAngleAxis dataKey="subject" />
-                <PolarRadiusAxis angle={30} domain={[0, 7]} />
-                <Radar
-                  name="Thực tế"
-                  dataKey="A"
-                  stroke="#0ea5e9"
-                  fill="#0ea5e9"
-                  fillOpacity={0.4}
-                />
-                <Tooltip />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+          )}
+
+          {!isLoading && !isError && cycles.length === 0 && (
+            <div className="flex h-56 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">
+              Bạn chưa tham gia chu kỳ đánh giá nào đang hoạt động.
+            </div>
+          )}
+
+          {!isLoading && !isError && cycles.length > 0 && (
+            <>
+              <Carousel opts={{ align: "start" }} className="w-full">
+                <CarouselContent>
+                  {cycles.map((cycle) => (
+                    <CarouselItem key={cycle.CycleId}>
+                      <CycleChartSlide cycle={cycle} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {cycles.length > 1 && (
+                  <>
+                    <CarouselPrevious className="-left-2" />
+                    <CarouselNext className="-right-2" />
+                  </>
+                )}
+              </Carousel>
+
+              {cycles.length > 1 && <CarouselDots className="mt-4" />}
+            </>
+          )}
         </div>
-
-        {/* MOET Pass/Fail & KPIs */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-          <div className="mb-4 flex justify-between items-start">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">
-                Giao diện MOET (Đạt/Không Đạt)
-              </h3>
-              <p className="text-sm text-slate-500">
-                Chỉ số định lượng theo Thông tư 01/2024
-              </p>
-            </div>
-            <div className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100 uppercase">
-              Chế độ MOET
-            </div>
-          </div>
-          <div className="space-y-4">
-            {MOCK_KPIS.map((kpi) => {
-              const percentage = Math.min((kpi.value / kpi.target) * 100, 100);
-              const isPassing = kpi.value >= kpi.target;
-
-              return (
-                <div key={kpi.id}>
-                  <div className="flex justify-between items-end mb-1">
-                    <span className="text-sm font-medium text-slate-700">
-                      {kpi.label}
-                    </span>
-                    <span className="text-sm font-bold text-slate-900">
-                      {kpi.value} / {kpi.target}{" "}
-                      <span className="text-xs text-slate-500 font-normal">
-                        {kpi.unit}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full transition-all duration-1000 ${
-                        isPassing ? "bg-emerald-500" : "bg-amber-500"
-                      }`}
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between mt-1">
-                    <p
-                      className={`text-[10px] font-bold uppercase ${
-                        isPassing ? "text-emerald-600" : "text-amber-600"
-                      }`}
-                    >
-                      {isPassing ? "Đạt chỉ tiêu" : "Dưới ngưỡng rủi ro"}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Tiêu chuẩn 5 - MOET
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">
-                  Site Visit Online
-                </p>
-                <p className="text-xs font-bold text-brand-600 mt-1">
-                  Expert Account Active
-                </p>
-              </div>
-              <div className="flex-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">
-                  Tự động báo cáo
-                </p>
-                <button className="text-[10px] font-bold text-emerald-600 mt-1 hover:underline">
-                  Xuất bản nháp SAR
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 };

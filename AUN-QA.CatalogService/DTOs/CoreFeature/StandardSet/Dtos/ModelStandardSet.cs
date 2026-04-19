@@ -14,5 +14,7 @@ namespace AUN_QA.CatalogService.DTOs.CoreFeature.StandardSet.Dtos
         /// 2. PASS_FAIL: Áp dụng cho MOET
         /// </summary>
         public int EvaluationMode { get; set; } = ((int)StandardSet_EvaluationMode.SCORING_7);
+
+        public int ChartType { get; set; } = ((int)DashboardChartType.SpiderChart);
     }
 }

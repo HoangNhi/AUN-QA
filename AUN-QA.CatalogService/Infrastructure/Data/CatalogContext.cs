@@ -144,6 +144,7 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("StandardSet");
 
+            entity.Property(e => e.ChartType).HasComment("0 = SpiderChart, 1 = BarChart");
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);

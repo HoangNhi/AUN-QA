@@ -99,4 +99,6 @@ message GetStandardSetEvaluationModeRequest {
 
 message GetStandardSetEvaluationModeResponse {
   int32 evaluation_mode = 1; // 1: SCORING_7 (AUN), 2: PASS_FAIL (MOET)
+  int32 chart_type = 2;      // 0: SpiderChart, 1: BarChart
+  string name = 3;           // Tên StandardSet
 }

@@ -480,8 +480,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
                                     Value = cycle.Id.ToString()
                                 };
 
+            var taskAssigneeQuery =
+                from assignee in _context.ActionPlanAssignees
+                join plan in _context.ActionPlans on assignee.ActionPlanId equals plan.Id
+                join cycle in _context.Cycles on plan.CycleId equals cycle.Id
+                where assignee.UserId == userId
+                   && !assignee.IsDeleted && assignee.IsActived
+                   && !plan.IsDeleted && plan.IsActived
+                   && !cycle.IsDeleted && cycle.IsActived
+                select new ModelCombobox
+                {
+                    Text = cycle.Name,
+                    Value = cycle.Id.ToString()
+                };
+
             return await councilQuery
                 .Union(externalQuery)
+                .Union(taskAssigneeQuery)
                 .Distinct()
                 .OrderBy(x => x.Text)
                 .ToListAsync();

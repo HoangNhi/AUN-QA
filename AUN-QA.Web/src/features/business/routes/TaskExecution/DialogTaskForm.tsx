@@ -9,8 +9,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
-import { getFileUrl } from "@/lib/utils";
 import { useActionTask } from "./hooks/useActionTask";
+import type { Attachment } from "@/features/file/types/uploadfile.types";
 import type {
   TaskExecutionTask,
   TaskExecutionUpsertTaskRequest,
@@ -85,6 +85,18 @@ function buildDraft(task: TaskExecutionTask | null): TaskDraft {
   };
 }
 
+function mapToAttachment(a: TaskExecutionTask["Attachments"][number]): Attachment {
+  return {
+    Id: a.Id,
+    ReferenceType: 0,
+    RelatedId: a.ActionTaskId,
+    FileName: a.FileName,
+    FileExtension: "",
+    FileUrl: a.FileUrl ?? "",
+    FullFileName: a.FileName,
+  };
+}
+
 export default function DialogTaskForm({
   open,
   onOpenChange,
@@ -95,8 +107,12 @@ export default function DialogTaskForm({
   onSave,
 }: DialogTaskFormProps) {
   const uploadRef = useRef<UploadFileRef>(null);
-  const { saveTask, uploadAttachment, isMutating } = useActionTask();
+  const { saveTask, uploadAttachment, deleteAttachment, isMutating } =
+    useActionTask();
   const [draft, setDraft] = useState<TaskDraft>(() => buildDraft(task));
+  const [listAttachment, setListAttachment] = useState<Attachment[]>(
+    () => (task?.Attachments ?? []).map(mapToAttachment),
+  );
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -105,9 +121,8 @@ export default function DialogTaskForm({
     }
 
     setDraft(buildDraft(task));
+    setListAttachment((task?.Attachments ?? []).map(mapToAttachment));
   }, [open, task]);
-
-  const existingAttachments = task?.Attachments ?? [];
   const isBusy = isMutating || isSaving;
   const title = !isOwner
     ? "Xem công việc"
@@ -132,6 +147,16 @@ export default function DialogTaskForm({
 
     setIsSaving(true);
     try {
+      const originalIds = (task?.Attachments ?? []).map((attachment) => attachment.Id);
+      const currentIds = new Set(listAttachment.map((attachment) => attachment.Id));
+      const removedIds = originalIds.filter((id) => !currentIds.has(id));
+
+      if (removedIds.length > 0) {
+        await Promise.all(
+          removedIds.map((AttachmentId) => deleteAttachment({ AttachmentId })),
+        );
+      }
+
       const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
       const savedTask = onSave ? await onSave(request) : await saveTask(request);
 
@@ -238,44 +263,21 @@ export default function DialogTaskForm({
                 </div>
               </div>
 
-              {existingAttachments.length > 0 ? (
-                <div className="grid gap-2">
-                  <Label>Tệp hiện có</Label>
-                  <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    {existingAttachments.map((attachment) => {
-                      const fileUrl = getFileUrl(attachment.FileUrl) || "#";
-
-                      return (
-                        <a
-                          key={attachment.Id}
-                          href={fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm text-sky-700 shadow-sm hover:underline"
-                        >
-                          <span className="min-w-0 truncate">{attachment.FileName}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {isOwner ? (
-                <div className="grid gap-2">
-                  <Label>Tệp đính kèm mới</Label>
-                  <UploadFile
-                    key={draft.FolderUpload}
-                    ref={uploadRef}
-                    folderUpload={draft.FolderUpload}
-                    fileSizeLimit={100}
-                    readonly={isBusy}
-                    allowDownload
-                    viewerMode="internal"
-                    previewContext="taskAttachment"
-                  />
-                </div>
-              ) : null}
+              <div className="grid gap-2">
+                <Label>Tệp đính kèm</Label>
+                <UploadFile
+                  key={draft.FolderUpload}
+                  ref={uploadRef}
+                  folderUpload={draft.FolderUpload}
+                  listAttachment={listAttachment}
+                  setListAttachment={isOwner ? setListAttachment : undefined}
+                  fileSizeLimit={100}
+                  readonly={!isOwner || isBusy}
+                  allowDownload
+                  viewerMode="internal"
+                  previewContext="taskAttachment"
+                />
+              </div>
             </div>
           </div>
 

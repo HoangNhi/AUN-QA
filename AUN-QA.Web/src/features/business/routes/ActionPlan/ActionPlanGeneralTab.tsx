@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { ActionPlanDetail, ActionPlanStatus, AssignableMember, ExternalFindingOption } from "@/features/business/types/actionPlan.types";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
+import type { ModelCombobox } from "@/types/base/base.types";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useStandardsByCycle } from "@/features/business/hooks/useStandardsByCycle";
 import { useCriteriaByStandard } from "@/features/business/hooks/useCriteriaByStandard";
@@ -44,7 +45,7 @@ interface ActionPlanGeneralTabProps {
   assignableMembers: AssignableMember[];
   assignedTo: string[];
   setAssignedTo: Dispatch<SetStateAction<string[]>>;
-  uploadRef: RefObject<UploadFileRef>;
+  uploadRef: RefObject<UploadFileRef | null>;
   folderUpload: string;
   listAttachment: Attachment[];
   setListAttachment: Dispatch<SetStateAction<Attachment[]>>;
@@ -54,7 +55,7 @@ interface ActionPlanGeneralTabProps {
   standards: ReturnType<typeof useStandardsByCycle>;
   criteria: ReturnType<typeof useCriteriaByStandard>;
   cycleOptions: ReturnType<typeof useCycleOptions>;
-  statusOptions: { Value: string; Text: string }[];
+  statusOptions: ModelCombobox[];
   setPendingFindingCriterionId: Dispatch<SetStateAction<string | null>>;
 }
 

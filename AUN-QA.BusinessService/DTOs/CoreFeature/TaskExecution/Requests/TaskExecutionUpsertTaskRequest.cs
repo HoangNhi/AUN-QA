@@ -17,6 +17,8 @@ public class TaskExecutionUpsertTaskRequest
     public DateTime? DueDate { get; set; }
 
     public string? FolderUpload { get; set; }
+
+    public List<Guid> DeletedAttachmentIds { get; set; } = new();
 }
 
 public class TaskExecutionUpsertTaskRequestValidator : AbstractValidator<TaskExecutionUpsertTaskRequest>

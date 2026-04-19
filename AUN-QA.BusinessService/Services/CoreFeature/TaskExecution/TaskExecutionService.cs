@@ -169,26 +169,67 @@ public class TaskExecutionService : ITaskExecutionService
 
         var now = DateTime.UtcNow;
         var username = GetCurrentUsernameOrFallback();
+        var normalizedStatus = NormalizeTaskStatus(request.TaskStatus);
 
-        var task = new ActionTaskEntity
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id,
-            ActionPlanId = plan.Id,
-            Description = request.Description.Trim(),
-            Note = NormalizeText(request.Note),
-            TaskStatus = NormalizeTaskStatus(request.TaskStatus),
-            DueDate = request.DueDate,
-            CompletedAt = request.TaskStatus == (int)ActionTaskStatus.Done ? now : null,
-            CreatedAt = now,
-            CreatedBy = username,
-            IsActived = true,
-            IsDeleted = false
-        };
+            var task = new ActionTaskEntity
+            {
+                Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id,
+                ActionPlanId = plan.Id,
+                Description = request.Description.Trim(),
+                Note = NormalizeText(request.Note),
+                TaskStatus = normalizedStatus,
+                DueDate = request.DueDate,
+                CompletedAt = normalizedStatus == (int)ActionTaskStatus.Done ? now : null,
+                CreatedAt = now,
+                CreatedBy = username,
+                IsActived = true,
+                IsDeleted = false
+            };
 
-        await _context.ActionTasks.AddAsync(task);
-        await _context.SaveChangesAsync();
+            await _context.ActionTasks.AddAsync(task);
+            await _context.SaveChangesAsync();
 
-        return await MapTaskDtoAsync(task.Id);
+            if (!string.IsNullOrWhiteSpace(request.FolderUpload))
+            {
+                var attachments = await _uploadFileService.UploadDataAsync(
+                    task.Id.ToString(),
+                    "ActionTask",
+                    request.FolderUpload);
+
+                foreach (var item in attachments)
+                {
+                    var entity = new ActionTaskAttachmentEntity
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        ActionTaskId = task.Id,
+                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        FileName = item.FileName,
+                        FileUrl = item.FileUrl,
+                        UploadedAt = now,
+                        UploadedBy = username,
+                        CreatedAt = now,
+                        CreatedBy = username,
+                        IsActived = true,
+                        IsDeleted = false
+                    };
+
+                    await _context.ActionTaskAttachments.AddAsync(entity);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            await transaction.CommitAsync();
+            return await MapTaskDtoAsync(task.Id);
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task<TaskExecutionTaskDto> UpdateTask(TaskExecutionUpsertTaskRequest request)
@@ -209,40 +250,116 @@ public class TaskExecutionService : ITaskExecutionService
             throw new BusinessException("Bạn không có quyền cập nhật công việc của người khác");
         }
 
-        task.Description = request.Description.Trim();
-        task.Note = NormalizeText(request.Note);
-        task.TaskStatus = NormalizeTaskStatus(request.TaskStatus);
-        task.DueDate = request.DueDate;
-        task.CompletedAt = task.TaskStatus == (int)ActionTaskStatus.Done
-            ? (task.CompletedAt ?? DateTime.UtcNow)
-            : null;
-        task.UpdatedAt = DateTime.UtcNow;
-        task.UpdatedBy = GetCurrentUsernameOrFallback();
+        var now = DateTime.UtcNow;
+        var normalizedStatus = NormalizeTaskStatus(request.TaskStatus);
 
-        _context.ActionTasks.Update(task);
-        await _context.SaveChangesAsync();
-
-        if (task.TaskStatus == (int)ActionTaskStatus.Done)
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            var hasIncomplete = await _context.ActionTasks
-                .AnyAsync(t => t.ActionPlanId == task.ActionPlanId
-                    && !t.IsDeleted
-                    && t.IsActived
-                    && t.TaskStatus != (int)ActionTaskStatus.Done);
-
-            if (!hasIncomplete)
+            var deletedAttachmentIds = request.DeletedAttachmentIds?.Distinct().ToList() ?? new List<Guid>();
+            if (deletedAttachmentIds.Count > 0)
             {
-                var plan = await _context.ActionPlans
-                    .FirstOrDefaultAsync(p => p.Id == task.ActionPlanId && !p.IsDeleted && p.IsActived);
+                var attachmentsToDelete = await _context.ActionTaskAttachments
+                    .Where(x => x.ActionTaskId == task.Id
+                        && deletedAttachmentIds.Contains(x.Id)
+                        && !x.IsDeleted
+                        && x.IsActived)
+                    .ToListAsync();
 
-                if (plan != null && plan.Status == (int)ActionPlanStatus.InProgress)
+                if (attachmentsToDelete.Count > 0)
                 {
-                    plan.Status = (int)ActionPlanStatus.PendingReview;
-                    plan.UpdatedAt = DateTime.UtcNow;
-                    plan.UpdatedBy = GetCurrentUsernameOrFallback();
-                    await _context.SaveChangesAsync();
+                    var urlsToDelete = attachmentsToDelete
+                        .Where(x => !string.IsNullOrWhiteSpace(x.FileUrl))
+                        .Select(x => x.FileUrl!)
+                        .ToList();
+
+                    if (urlsToDelete.Count > 0)
+                    {
+                        await _uploadFileService.DeleteDataAsync(urlsToDelete);
+                    }
+
+                    foreach (var attachment in attachmentsToDelete)
+                    {
+                        attachment.IsDeleted = true;
+                        attachment.IsActived = false;
+                        attachment.UpdatedAt = now;
+                        attachment.UpdatedBy = username;
+                        _context.ActionTaskAttachments.Update(attachment);
+                    }
                 }
             }
+
+            task.Description = request.Description.Trim();
+            task.Note = NormalizeText(request.Note);
+            task.TaskStatus = normalizedStatus;
+            task.DueDate = request.DueDate;
+            task.CompletedAt = normalizedStatus == (int)ActionTaskStatus.Done
+                ? (task.CompletedAt ?? now)
+                : null;
+            task.UpdatedAt = now;
+            task.UpdatedBy = username;
+
+            _context.ActionTasks.Update(task);
+
+            if (!string.IsNullOrWhiteSpace(request.FolderUpload))
+            {
+                var attachments = await _uploadFileService.UploadDataAsync(
+                    task.Id.ToString(),
+                    "ActionTask",
+                    request.FolderUpload);
+
+                foreach (var item in attachments)
+                {
+                    var entity = new ActionTaskAttachmentEntity
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        ActionTaskId = task.Id,
+                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        FileName = item.FileName,
+                        FileUrl = item.FileUrl,
+                        UploadedAt = now,
+                        UploadedBy = username,
+                        CreatedAt = now,
+                        CreatedBy = username,
+                        IsActived = true,
+                        IsDeleted = false
+                    };
+
+                    await _context.ActionTaskAttachments.AddAsync(entity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            if (task.TaskStatus == (int)ActionTaskStatus.Done)
+            {
+                var hasIncomplete = await _context.ActionTasks
+                    .AnyAsync(t => t.ActionPlanId == task.ActionPlanId
+                        && !t.IsDeleted
+                        && t.IsActived
+                        && t.TaskStatus != (int)ActionTaskStatus.Done);
+
+                if (!hasIncomplete)
+                {
+                    var plan = await _context.ActionPlans
+                        .FirstOrDefaultAsync(p => p.Id == task.ActionPlanId && !p.IsDeleted && p.IsActived);
+
+                    if (plan != null && plan.Status == (int)ActionPlanStatus.InProgress)
+                    {
+                        plan.Status = (int)ActionPlanStatus.PendingReview;
+                        plan.UpdatedAt = now;
+                        plan.UpdatedBy = username;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
 
         return await MapTaskDtoAsync(task.Id);
@@ -255,7 +372,7 @@ public class TaskExecutionService : ITaskExecutionService
 
         if (task == null)
         {
-            throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
+            throw new BusinessException("Không tìm thấy công việc");
         }
 
         await GetEditablePlanAsync(task.ActionPlanId);
@@ -269,91 +386,9 @@ public class TaskExecutionService : ITaskExecutionService
         task.IsDeleted = true;
         task.IsActived = false;
         task.UpdatedAt = DateTime.UtcNow;
-        task.UpdatedBy = GetCurrentUsernameOrFallback();
+        task.UpdatedBy = username;
 
         _context.ActionTasks.Update(task);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task<List<TaskExecutionAttachmentDto>> UploadAttachment(TaskExecutionUploadAttachmentRequest request)
-    {
-        var task = await _context.ActionTasks
-            .FirstOrDefaultAsync(x => x.Id == request.TaskId && !x.IsDeleted && x.IsActived)
-            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
-
-        await GetEditablePlanAsync(task.ActionPlanId);
-
-        var attachments = await _uploadFileService.UploadDataAsync(
-            task.Id.ToString(),
-            "ActionTask",
-            request.FolderUpload);
-
-        var now = DateTime.UtcNow;
-        var username = GetCurrentUsernameOrFallback();
-        var created = new List<TaskExecutionAttachmentDto>();
-
-        foreach (var item in attachments)
-        {
-            var entity = new ActionTaskAttachmentEntity
-            {
-                Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                ActionTaskId = task.Id,
-                AttachmentId = item.Id == Guid.Empty ? null : item.Id,
-                FileName = item.FileName,
-                FileUrl = item.FileUrl,
-                UploadedAt = now,
-                UploadedBy = username,
-                CreatedAt = now,
-                CreatedBy = username,
-                IsActived = true,
-                IsDeleted = false
-            };
-
-            await _context.ActionTaskAttachments.AddAsync(entity);
-            created.Add(new TaskExecutionAttachmentDto
-            {
-                Id = entity.Id,
-                ActionTaskId = entity.ActionTaskId,
-                AttachmentId = entity.AttachmentId,
-                FileName = entity.FileName,
-                FileUrl = entity.FileUrl,
-                UploadedAt = entity.UploadedAt,
-                UploadedBy = entity.UploadedBy
-            });
-        }
-
-        await _context.SaveChangesAsync();
-        return created;
-    }
-
-    public async Task DeleteAttachment(TaskExecutionDeleteAttachmentRequest request)
-    {
-        var attachment = await _context.ActionTaskAttachments
-            .FirstOrDefaultAsync(x => x.Id == request.AttachmentId && !x.IsDeleted && x.IsActived);
-
-        if (attachment == null)
-        {
-            throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y tá»‡p Ä‘Ã­nh kÃ¨m");
-        }
-
-        var task = await _context.ActionTasks
-            .FirstOrDefaultAsync(x => x.Id == attachment.ActionTaskId && !x.IsDeleted && x.IsActived)
-            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
-
-        await GetEditablePlanAsync(task.ActionPlanId);
-
-        attachment.IsDeleted = true;
-        attachment.IsActived = false;
-        attachment.UpdatedAt = DateTime.UtcNow;
-        attachment.UpdatedBy = GetCurrentUsernameOrFallback();
-
-        _context.ActionTaskAttachments.Update(attachment);
-
-        if (!string.IsNullOrWhiteSpace(attachment.FileUrl))
-        {
-            await _uploadFileService.DeleteDataAsync(new List<string> { attachment.FileUrl! });
-        }
-
         await _context.SaveChangesAsync();
     }
 

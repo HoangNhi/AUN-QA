@@ -415,15 +415,90 @@ public class ActionPlanService : IActionPlanService
         }
 
         var now = DateTime.UtcNow;
-        task.Description = request.Description.Trim();
-        task.Note = NormalizeText(request.Note);
-        task.TaskStatus = request.TaskStatus;
-        task.DueDate = request.DueDate;
-        task.CompletedAt = request.TaskStatus == (int)ActionTaskStatus.Done ? now : null;
-        task.UpdatedAt = now;
-        task.UpdatedBy = GetCurrentUsernameOrFallback();
+        var username = GetCurrentUsernameOrFallback();
 
-        await _context.SaveChangesAsync();
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var deletedAttachmentIds = request.DeletedAttachmentIds?.Distinct().ToList() ?? new List<Guid>();
+            if (deletedAttachmentIds.Count > 0)
+            {
+                var attachmentsToDelete = await _context.ActionTaskAttachments
+                    .Where(x => x.ActionTaskId == task.Id
+                        && deletedAttachmentIds.Contains(x.Id)
+                        && !x.IsDeleted
+                        && x.IsActived)
+                    .ToListAsync();
+
+                if (attachmentsToDelete.Count > 0)
+                {
+                    var urlsToDelete = attachmentsToDelete
+                        .Where(x => !string.IsNullOrWhiteSpace(x.FileUrl))
+                        .Select(x => x.FileUrl!)
+                        .ToList();
+
+                    if (urlsToDelete.Count > 0)
+                    {
+                        await _uploadFileService.DeleteDataAsync(urlsToDelete);
+                    }
+
+                    foreach (var attachment in attachmentsToDelete)
+                    {
+                        attachment.IsDeleted = true;
+                        attachment.IsActived = false;
+                        attachment.UpdatedAt = now;
+                        attachment.UpdatedBy = username;
+                        _context.ActionTaskAttachments.Update(attachment);
+                    }
+                }
+            }
+
+            task.Description = request.Description.Trim();
+            task.Note = NormalizeText(request.Note);
+            task.TaskStatus = request.TaskStatus;
+            task.DueDate = request.DueDate;
+            task.CompletedAt = request.TaskStatus == (int)ActionTaskStatus.Done ? now : null;
+            task.UpdatedAt = now;
+            task.UpdatedBy = username;
+
+            _context.ActionTasks.Update(task);
+
+            if (!string.IsNullOrWhiteSpace(request.FolderUpload))
+            {
+                var attachments = await _uploadFileService.UploadDataAsync(
+                    task.Id.ToString(),
+                    "ActionTask",
+                    request.FolderUpload);
+
+                foreach (var item in attachments)
+                {
+                    var entity = new ActionTaskAttachment
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        ActionTaskId = task.Id,
+                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        FileName = item.FileName,
+                        FileUrl = item.FileUrl,
+                        UploadedAt = now,
+                        UploadedBy = username,
+                        CreatedAt = now,
+                        CreatedBy = username,
+                        IsActived = true,
+                        IsDeleted = false
+                    };
+
+                    await _context.ActionTaskAttachments.AddAsync(entity);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
 
         return await MapTaskDtoAsync(task.Id);
     }

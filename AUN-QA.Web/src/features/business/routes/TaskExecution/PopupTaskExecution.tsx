@@ -198,9 +198,8 @@ export default function PopupTaskExecution({
   );
 
   const refreshPlan = useCallback(async () => {
-    await Promise.all([planDetailQuery.refetch(), taskListQuery.refetch()]);
     onChanged();
-  }, [onChanged, planDetailQuery, taskListQuery]);
+  }, [onChanged]);
 
   const handleOpenNewTask = useCallback(() => {
     setSelectedTask(null);

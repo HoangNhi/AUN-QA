@@ -51,8 +51,6 @@ public class AuditActionFilter : IAsyncActionFilter
         { "insert-task", "CREATE" },
         { "update-task", "UPDATE" },
         { "delete-task", "DELETE" },
-        { "upload-task-attachment", "UPLOAD_ATTACHMENT" },
-        { "delete-task-attachment", "DELETE_ATTACHMENT" },
     };
 
     public AuditActionFilter(AuditProto.AuditProtoClient auditClient, ILogger<AuditActionFilter> logger)

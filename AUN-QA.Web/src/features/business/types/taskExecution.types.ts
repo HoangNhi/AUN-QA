@@ -69,19 +69,11 @@ export interface TaskExecutionUpsertTaskRequest {
   TaskStatus: number;
   DueDate?: string | null;
   FolderUpload?: string | null;
+  DeletedAttachmentIds: string[];
 }
 
 export interface TaskExecutionDeleteTaskRequest {
   TaskId: string;
-}
-
-export interface TaskExecutionUploadAttachmentRequest {
-  TaskId: string;
-  FolderUpload: string;
-}
-
-export interface TaskExecutionDeleteAttachmentRequest {
-  AttachmentId: string;
 }
 
 export type TaskExecutionAttachment = ActionTaskAttachment;

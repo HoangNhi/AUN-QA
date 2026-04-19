@@ -107,8 +107,7 @@ export default function DialogTaskForm({
   onSave,
 }: DialogTaskFormProps) {
   const uploadRef = useRef<UploadFileRef>(null);
-  const { saveTask, uploadAttachment, deleteAttachment, isMutating } =
-    useActionTask();
+  const { saveTask, isMutating } = useActionTask();
   const [draft, setDraft] = useState<TaskDraft>(() => buildDraft(task));
   const [listAttachment, setListAttachment] = useState<Attachment[]>(
     () => (task?.Attachments ?? []).map(mapToAttachment),
@@ -135,6 +134,15 @@ export default function DialogTaskForm({
       return;
     }
 
+    const originalAttachmentIds = new Set((task?.Attachments ?? []).map((attachment) => attachment.Id));
+    const currentAttachmentIds = new Set(listAttachment.map((attachment) => attachment.Id));
+    const deletedAttachmentIds = [...originalAttachmentIds].filter(
+      (id) => !currentAttachmentIds.has(id),
+    );
+
+    const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
+    const hasPendingFiles = pendingFiles.length > 0;
+
     const request: TaskExecutionUpsertTaskRequest = {
       Id: draft.Id,
       ActionPlanId: planId,
@@ -142,34 +150,23 @@ export default function DialogTaskForm({
       Note: draft.Note.trim() || null,
       TaskStatus: Number(draft.TaskStatus),
       DueDate: draft.DueDate ? format(draft.DueDate, "yyyy-MM-dd") : null,
-      FolderUpload: draft.FolderUpload,
+      FolderUpload: hasPendingFiles ? draft.FolderUpload : null,
+      DeletedAttachmentIds: deletedAttachmentIds,
     };
 
     setIsSaving(true);
     try {
-      const originalIds = (task?.Attachments ?? []).map((attachment) => attachment.Id);
-      const currentIds = new Set(listAttachment.map((attachment) => attachment.Id));
-      const removedIds = originalIds.filter((id) => !currentIds.has(id));
-
-      if (removedIds.length > 0) {
-        await Promise.all(
-          removedIds.map((AttachmentId) => deleteAttachment({ AttachmentId })),
-        );
-      }
-
-      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
-      const savedTask = onSave ? await onSave(request) : await saveTask(request);
-
-      if (pendingFiles.length > 0) {
+      if (hasPendingFiles) {
         const uploaded = await uploadRef.current?.upload();
         if (uploaded === false) {
           return;
         }
+      }
 
-        await uploadAttachment({
-          TaskId: savedTask.Id,
-          FolderUpload: draft.FolderUpload,
-        });
+      if (onSave) {
+        await onSave(request);
+      } else {
+        await saveTask(request);
       }
 
       onSaved();

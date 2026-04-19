@@ -18,9 +18,5 @@ public interface ITaskExecutionService
 
     Task DeleteTask(TaskExecutionDeleteTaskRequest request);
 
-    Task<List<TaskExecutionAttachmentDto>> UploadAttachment(TaskExecutionUploadAttachmentRequest request);
-
-    Task DeleteAttachment(TaskExecutionDeleteAttachmentRequest request);
-
     Task<ModelFilePreview> PreviewTaskAttachment(Guid attachmentId, string mode);
 }

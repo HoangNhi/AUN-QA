@@ -167,6 +167,7 @@ export interface ActionPlanUpdateTaskRequest {
   TaskStatus: number;
   DueDate?: string | null;
   FolderUpload?: string | null;
+  DeletedAttachmentIds: string[];
 }
 
 export type ActionPlanListResponse = GetListPagingResponse<ActionPlanListItem>;

@@ -17,6 +17,8 @@ public class ActionPlanUpdateTaskRequest
     public DateTime? DueDate { get; set; }
 
     public string? FolderUpload { get; set; }
+
+    public List<Guid> DeletedAttachmentIds { get; set; } = new();
 }
 
 public class ActionPlanUpdateTaskRequestValidator : AbstractValidator<ActionPlanUpdateTaskRequest>

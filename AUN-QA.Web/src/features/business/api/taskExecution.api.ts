@@ -1,8 +1,6 @@
 import api, { type ApiResponse } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/constants";
 import type {
-  TaskExecutionAttachment,
-  TaskExecutionDeleteAttachmentRequest,
   TaskExecutionDeleteTaskRequest,
   TaskExecutionGetPlansRequest,
   TaskExecutionGetTaskListRequest,
@@ -11,7 +9,6 @@ import type {
   TaskExecutionTask,
   TaskExecutionTaskListResponse,
   TaskExecutionUpsertTaskRequest,
-  TaskExecutionUploadAttachmentRequest,
 } from "../types/taskExecution.types";
 
 export const taskExecutionService = {
@@ -60,21 +57,6 @@ export const taskExecutionService = {
     request: TaskExecutionDeleteTaskRequest,
   ): Promise<ApiResponse<null>> =>
     api.delete<null>(API_ENDPOINTS.Business.TaskExecution.DELETE_TASK, {
-      data: request,
-    }),
-
-  uploadAttachment: (
-    request: TaskExecutionUploadAttachmentRequest,
-  ): Promise<ApiResponse<TaskExecutionAttachment[]>> =>
-    api.post<TaskExecutionAttachment[]>(
-      API_ENDPOINTS.Business.TaskExecution.UPLOAD_TASK_ATTACHMENT,
-      request,
-    ),
-
-  deleteAttachment: (
-    request: TaskExecutionDeleteAttachmentRequest,
-  ): Promise<ApiResponse<null>> =>
-    api.delete<null>(API_ENDPOINTS.Business.TaskExecution.DELETE_TASK_ATTACHMENT, {
       data: request,
     }),
 };

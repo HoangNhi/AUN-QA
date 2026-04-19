@@ -68,22 +68,6 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
         return Ok(new BaseResponse(true, 200));
     }
 
-    [HttpPost("upload-task-attachment")]
-    [AttributePermission(Action = ActionType.VIEW)]
-    public async Task<IActionResult> UploadTaskAttachment([FromBody] TaskExecutionUploadAttachmentRequest request)
-    {
-        var result = await _service.UploadAttachment(request);
-        return Ok(new BaseResponse<List<TaskExecutionAttachmentDto>> { Data = result, Success = true });
-    }
-
-    [HttpDelete("delete-task-attachment")]
-    [AttributePermission(Action = ActionType.VIEW)]
-    public async Task<IActionResult> DeleteTaskAttachment([FromBody] TaskExecutionDeleteAttachmentRequest request)
-    {
-        await _service.DeleteAttachment(request);
-        return Ok(new BaseResponse(true, 200));
-    }
-
     [HttpGet("preview-task-attachment/{attachmentId}")]
     [AttributePermission(Action = ActionType.NONE)]
     public async Task<IActionResult> PreviewTaskAttachment(

@@ -235,6 +235,7 @@ export const API_ENDPOINTS = {
     Sar: {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
       GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
+      GET_DRAFT_METADATA: `${BUSINESS_BASE}/Sar/get-draft-metadata`,
       SAVE_DRAFT: `${BUSINESS_BASE}/Sar/save-draft`,
       SUBMIT: `${BUSINESS_BASE}/Sar/submit`,
       REQUEST_REVISION: `${BUSINESS_BASE}/Sar/request-revision`,

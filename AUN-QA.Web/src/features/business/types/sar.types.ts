@@ -79,3 +79,20 @@ export interface SarAutofillPayloadDto {
 export interface ExportSarDocxRequest {
   CycleId: string;
 }
+
+export interface GetSarDraftMetadataRequest {
+  CycleId: string;
+}
+
+export interface SarDraftMetadata {
+  SarReportId: string;
+  CycleId: string;
+  Status: SarStatus;
+  ReviewRound?: number;
+  CanSubmitByRole?: boolean;
+  CanEditByRole?: boolean;
+  RevisionReason?: string | null;
+  LastSavedAt?: string | null;
+  UpdatedAt?: string | null;
+  UpdatedBy?: string | null;
+}

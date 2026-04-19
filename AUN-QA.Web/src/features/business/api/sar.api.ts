@@ -5,7 +5,9 @@ import type { GetListPagingResponse } from "@/types/base/base.types";
 import type {
   ApproveSarRequest,
   GetSarByCycleRequest,
+  GetSarDraftMetadataRequest,
   SarDraft,
+  SarDraftMetadata,
   SarGetListItem,
   SarGetListPagingRequest,
   SaveSarDraftRequest,
@@ -68,6 +70,15 @@ export const sarService = {
   ): Promise<ApiResponse<SarAutofillPayloadDto>> => {
     return api.post<SarAutofillPayloadDto>(
       API_ENDPOINTS.Business.Sar.GET_AUTOFILL_PAYLOAD,
+      request,
+    );
+  },
+
+  getDraftMetadata: async (
+    request: GetSarDraftMetadataRequest,
+  ): Promise<ApiResponse<SarDraftMetadata>> => {
+    return api.post<SarDraftMetadata>(
+      API_ENDPOINTS.Business.Sar.GET_DRAFT_METADATA,
       request,
     );
   },

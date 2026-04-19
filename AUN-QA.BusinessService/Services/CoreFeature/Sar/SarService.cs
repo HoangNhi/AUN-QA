@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Sar.Dtos;
@@ -1077,11 +1077,100 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
                 .Replace("\n", "<br/>", StringComparison.Ordinal);
         }
 
+        public async Task<SarDraftMetadataDto?> GetDraftMetadata(GetSarDraftMetadataRequest request)
+        {
+            // Lightweight SQL projection - skips YdocSnapshot + RenderedHtml
+            var report = await _context.SarReports
+                .AsNoTracking()
+                .Where(x => x.CycleId == request.CycleId && !x.IsDeleted && x.IsActived)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.CycleId,
+                    x.Status,
+                    x.ReviewRound,
+                    x.RevisionReason,
+                    x.LastSavedAt,
+                    x.UpdatedAt,
+                    x.UpdatedBy
+                })
+                .FirstOrDefaultAsync();
+
+            if (report == null)
+            {
+                return null;
+            }
+
+            // Compute RBAC (same logic as GetByCycle lines 253-269)
+            bool canSubmitByRole = false;
+            bool canEditByRole = false;
+
+            if (IsAdmin())
+            {
+                canSubmitByRole = true;
+                canEditByRole = true;
+            }
+            else
+            {
+                try
+                {
+                    var allowedRoles = Roles(
+                        CouncilRole.HeadOfCouncil,
+                        CouncilRole.ViceChairman,
+                        CouncilRole.Secretary,
+                        CouncilRole.Evaluator,
+                        CouncilRole.EvidenceProvider);
+
+                    var council = await RequireCouncilRoleAsync(request.CycleId, allowedRoles);
+                    canSubmitByRole = council?.RoleId == (int)CouncilRole.Secretary;
+                    canEditByRole = council != null && council.RoleId != (int)CouncilRole.EvidenceProvider;
+                }
+                catch (BusinessException)
+                {
+                    // User has no council role - read-only
+                }
+            }
+
+            return new SarDraftMetadataDto
+            {
+                SarReportId = report.Id,
+                CycleId = report.CycleId,
+                Status = report.Status,
+                ReviewRound = report.ReviewRound,
+                CanSubmitByRole = canSubmitByRole,
+                CanEditByRole = canEditByRole,
+                RevisionReason = report.RevisionReason,
+                LastSavedAt = report.LastSavedAt,
+                UpdatedAt = report.UpdatedAt,
+                UpdatedBy = report.UpdatedBy
+            };
+        }
+
+        public async Task PersistSnapshotFromCollab(PersistSarSnapshotFromCollabRequest request)
+        {
+            var report = await FindSarReportAsync(request.CycleId);
+            if (report == null)
+            {
+                return;
+            }
+
+            if (!SarWorkflowPolicy.CanSaveDraft(report.Status))
+            {
+                return;
+            }
+
+            report.YdocSnapshot = DecodeBase64(request.YDocSnapshotBase64);
+            report.LastSavedAt = DateTime.UtcNow;
+            report.UpdatedAt = DateTime.UtcNow;
+            report.UpdatedBy = "collab-service";
+
+            _context.SarReports.Update(report);
+            await _context.SaveChangesAsync();
+        }
+
         private static List<int> Roles(params CouncilRole[] roles)
         {
             return roles.Select(x => (int)x).ToList();
         }
     }
 }
-
-

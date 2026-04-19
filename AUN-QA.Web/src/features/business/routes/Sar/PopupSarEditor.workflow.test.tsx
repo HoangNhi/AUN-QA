@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canSubmitSar,
+  createSarCollabSessionKey,
   createSarEvidencePreviewCycleMap,
   createSarEvidencePreviewQueryKey,
   createSarEvidenceListRequest,
@@ -162,4 +163,28 @@ describe("PopupSarEditor workflow helpers", () => {
       expect(getSarRightPanelTabs(status)).toEqual(expectedTabs);
     },
   );
+
+  describe("createSarCollabSessionKey", () => {
+    it("produces a stable key from roomName and reportId", () => {
+      const key = createSarCollabSessionKey("sar_cycle_abc", "report-123");
+      expect(key).toBe("sar_cycle_abc:report-123");
+    });
+
+    it("uses fallback when reportId is null", () => {
+      const key = createSarCollabSessionKey("sar_cycle_abc", null);
+      expect(key).toBe("sar_cycle_abc:no-report");
+    });
+
+    it("returns the same key for the same inputs (stability)", () => {
+      const key1 = createSarCollabSessionKey("sar_cycle_x", "id-1");
+      const key2 = createSarCollabSessionKey("sar_cycle_x", "id-1");
+      expect(key1).toBe(key2);
+    });
+
+    it("returns different keys for different reportIds", () => {
+      const key1 = createSarCollabSessionKey("sar_cycle_x", "id-1");
+      const key2 = createSarCollabSessionKey("sar_cycle_x", "id-2");
+      expect(key1).not.toBe(key2);
+    });
+  });
 });

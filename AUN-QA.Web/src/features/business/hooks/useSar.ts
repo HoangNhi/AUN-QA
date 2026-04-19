@@ -5,6 +5,7 @@ import type { RowSelectionState } from "@tanstack/react-table";
 import { sarService } from "../api/sar.api";
 import type {
   SarDraft,
+  SarDraftMetadata,
   SarGetListItem,
   SarGetListPagingRequest,
   SaveSarDraftRequest,
@@ -22,6 +23,33 @@ const READ_ONLY_STATUS_HINTS = [
   /SAR is not in a valid state for save draft/i,
   /SAR is approved and read-only/i,
 ];
+
+export function getSarMetadataPollInterval(
+  isOpen: boolean,
+  cycleId?: string,
+): number | false {
+  return isOpen && !!cycleId ? 10000 : false;
+}
+
+export function mergeSarDraftWithMetadata(
+  draft: SarDraft | null,
+  metadata: SarDraftMetadata | null,
+): SarDraft | null {
+  if (!draft) return null;
+  if (!metadata) return draft;
+
+  return {
+    ...draft,
+    Status: metadata.Status,
+    ReviewRound: metadata.ReviewRound,
+    CanEditByRole: metadata.CanEditByRole,
+    CanSubmitByRole: metadata.CanSubmitByRole,
+    RevisionReason: metadata.RevisionReason,
+    LastSavedAt: metadata.LastSavedAt,
+    UpdatedAt: metadata.UpdatedAt,
+    UpdatedBy: metadata.UpdatedBy,
+  };
+}
 
 export const useSar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +88,20 @@ export const useSar = () => {
       return sarService.getByCycle({ CycleId: selectedSar.CycleId });
     },
     enabled: isOpen && !!selectedSar?.CycleId,
-    refetchInterval: isOpen && !!selectedSar?.CycleId ? 2000 : false,
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+  });
+
+  const { data: metadataResponse } = useQuery({
+    queryKey: ["sar", "draft-metadata", selectedSar?.CycleId],
+    queryFn: () => {
+      if (!selectedSar) {
+        throw new Error("Không có chu kỳ để tải metadata SAR.");
+      }
+      return sarService.getDraftMetadata({ CycleId: selectedSar.CycleId });
+    },
+    enabled: isOpen && !!selectedSar?.CycleId,
+    refetchInterval: getSarMetadataPollInterval(isOpen, selectedSar?.CycleId),
     refetchIntervalInBackground: true,
   });
 
@@ -70,7 +111,12 @@ export const useSar = () => {
     }
   }, [draftResponse]);
 
-  const draft = useMemo<SarDraft | null>(() => draftResponse?.Data ?? null, [draftResponse]);
+  const draft = useMemo<SarDraft | null>(() => {
+    const baseDraft = draftResponse?.Data ?? null;
+    const metadata = metadataResponse?.Data ?? null;
+    return mergeSarDraftWithMetadata(baseDraft, metadata);
+  }, [draftResponse?.Data, metadataResponse?.Data]);
+
   const forceReadOnlyLocalState = useCallback(() => {
     setSelectedSar((prev) => {
       if (!prev || prev.Status === 2 || prev.Status === 4) {

@@ -187,11 +187,6 @@ function resolvePortalHost(
     return explicitHost;
   }
 
-  const dialogContent = trigger?.closest("[data-slot='dialog-content']");
-  if (dialogContent instanceof HTMLElement) {
-    return dialogContent;
-  }
-
   return document.body;
 }
 

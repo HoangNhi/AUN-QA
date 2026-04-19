@@ -35,7 +35,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useDebounce } from "@/hooks/use-debounce";
+
 import { useAuth } from "@/hooks/useAuth";
 import { cn, getFileUrl } from "@/lib/utils";
 import { fileService } from "@/features/file/api/uploadfile.api";
@@ -108,6 +108,13 @@ const SAR_STATUS_META: Record<SarStatus, { label: string; className: string }> =
       className: "bg-emerald-100 text-emerald-700 border border-emerald-300",
     },
   };
+
+export function createSarCollabSessionKey(
+  roomName: string,
+  draftReportId: string | null,
+): string {
+  return `${roomName}:${draftReportId ?? "no-report"}`;
+}
 
 export function isSarEditorReadOnly(status: SarStatus): boolean {
   return status === 2 || status === 4;
@@ -322,6 +329,7 @@ export default function PopupSarEditor({
   const changeVersionRef = useRef(0);
   const lastPersistedVersionRef = useRef(0);
   const hasUnsavedLocalChangesRef = useRef(false);
+  const initializedSessionRef = useRef<string | null>(null);
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
   const [changeVersion, setChangeVersion] = useState(0);
@@ -697,6 +705,11 @@ export default function PopupSarEditor({
     };
   }, [editor, isEditable]);
 
+  const collabSessionKey = useMemo(
+    () => createSarCollabSessionKey(roomName, draftReportId),
+    [roomName, draftReportId],
+  );
+
   useEffect(() => {
     if (!open || !roomName || !draftReportId) {
       return;
@@ -710,7 +723,7 @@ export default function PopupSarEditor({
     const doc = new Y.Doc();
     ydocRef.current = doc;
 
-    if (draftSnapshot) {
+    if (draftSnapshot && initializedSessionRef.current !== collabSessionKey) {
       try {
         const update = base64ToUint8Array(draftSnapshot);
         Y.applyUpdate(doc, update);
@@ -718,6 +731,8 @@ export default function PopupSarEditor({
         toast.error("Không thể đọc được dữ liệu bản nháp SAR hiện tại");
       }
     }
+
+    initializedSessionRef.current = collabSessionKey;
 
     const provider = new WebsocketProvider(wsUrl, roomName, doc);
     providerRef.current = provider;
@@ -771,7 +786,7 @@ export default function PopupSarEditor({
   }, [
     open,
     draftReportId,
-    draftSnapshot,
+    collabSessionKey,
     roomName,
     wsUrl,
   ]);
@@ -811,7 +826,6 @@ export default function PopupSarEditor({
     draftReportId,
     isReadOnly,
     roomName,
-    draftSnapshot,
   ]);
 
   // Set awareness state with full user info (including initials and avatar)
@@ -923,34 +937,8 @@ export default function PopupSarEditor({
     [cycle, editor, isReadOnly, onSaveDraft, waitForPersistIdle],
   );
 
-  const debouncedChangeVersion = useDebounce(changeVersion, 800);
-
-  useEffect(() => {
-    if (
-      !open ||
-      isReadOnly ||
-      !isAutoSaveEnabled ||
-      debouncedChangeVersion === 0
-    ) {
-      return;
-    }
-
-    if (!hasUnsavedLocalChangesRef.current) {
-      return;
-    }
-
-    if (debouncedChangeVersion <= lastPersistedVersionRef.current) {
-      return;
-    }
-
-    void persistDraft("autosave", debouncedChangeVersion);
-  }, [
-    debouncedChangeVersion,
-    isAutoSaveEnabled,
-    isReadOnly,
-    open,
-    persistDraft,
-  ]);
+  // Autosave REST loop removed — persistence is now handled by CollabService
+  // (server-side debounced 5s). Only manual save (Ctrl+S, on close, before submit) remains.
 
   useEffect(() => {
     if (!open || isReadOnly) return;

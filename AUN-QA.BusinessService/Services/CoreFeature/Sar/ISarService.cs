@@ -21,5 +21,9 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Sar
         Task<SarAutofillPayloadDto> GetAutofillPayload(GetSarAutofillPayloadRequest request);
 
         Task<byte[]> ExportDocx(ExportSarDocxRequest request);
+
+        Task<SarDraftMetadataDto?> GetDraftMetadata(GetSarDraftMetadataRequest request);
+
+        Task PersistSnapshotFromCollab(PersistSarSnapshotFromCollabRequest request);
     }
 }

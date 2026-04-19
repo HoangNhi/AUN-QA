@@ -133,6 +133,44 @@ describe("MultipleSelector dropdown positioning", () => {
     });
   });
 
+  describe("MultipleSelector portal host resolution", () => {
+    it("renders dropdown into document.body when no portalContainer is given, even inside a dialog", async () => {
+      const dialogContent = document.createElement("div");
+      dialogContent.setAttribute("data-slot", "dialog-content");
+      document.body.appendChild(dialogContent);
+
+      render(
+        <MultipleSelector options={OPTIONS} placeholder="Add assignee..." />,
+        { container: dialogContent },
+      );
+
+      const root = dialogContent.querySelector(
+        "[data-slot='command']",
+      ) as HTMLDivElement;
+      const input = screen.getByPlaceholderText("Add assignee...");
+
+      mockRect(root, {
+        top: 120,
+        left: 100,
+        width: 320,
+        height: 40,
+        bottom: 160,
+      });
+
+      fireEvent.focus(input);
+
+      await waitFor(() => {
+        const dropdown = document.querySelector(
+          "[data-ms-dropdown='true']",
+        ) as HTMLDivElement | null;
+
+        expect(dropdown).toBeInTheDocument();
+        expect(dropdown?.parentElement).toBe(document.body);
+        expect(dialogContent.contains(dropdown)).toBe(false);
+      });
+    });
+  });
+
   it("stops wheel propagation from the dropdown scroll container", async () => {
     const bodyWheelSpy = vi.fn();
     document.body.addEventListener("wheel", bodyWheelSpy);

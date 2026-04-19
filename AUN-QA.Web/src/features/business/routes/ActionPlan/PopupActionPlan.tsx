@@ -91,6 +91,12 @@ export function getPopupSaveStatus(status: number, isNew: boolean): number {
   return normalizeActionPlanStatusForSave(status, isNew);
 }
 
+export function getPopupPanelInitialOpenState(
+  item?: Pick<ActionPlanDetail, "IsEdit"> | null,
+): boolean {
+  return !item?.IsEdit;
+}
+
 export default function PopupActionPlan({
   open,
   item,
@@ -145,7 +151,7 @@ export default function PopupActionPlan({
     setAssignedTo(item?.Assignees?.map((a) => a.UserId) ?? []);
     setFolderUpload(uuidv4());
     setListAttachment((item?.Attachments ?? []) as Attachment[]);
-    setIsPanelOpen(true);
+    setIsPanelOpen(getPopupPanelInitialOpenState(item));
   }, [item, open]);
 
   const councilRoleQuery = useQuery({

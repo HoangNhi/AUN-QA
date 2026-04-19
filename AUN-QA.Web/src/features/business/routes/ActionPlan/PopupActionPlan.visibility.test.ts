@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import { ActionPlanStatus } from "@/features/business/types/actionPlan.types";
 import {
   getPopupSaveStatus,
+  getPopupPanelInitialOpenState,
   isAssigneeSectionVisible,
 } from "./PopupActionPlan";
 
@@ -31,5 +32,16 @@ describe("getPopupSaveStatus", () => {
     expect(getPopupSaveStatus(ActionPlanStatus.PendingReview, false)).toBe(
       ActionPlanStatus.PendingReview,
     );
+  });
+});
+
+describe("getPopupPanelInitialOpenState", () => {
+  it("opens the panel for new items", () => {
+    expect(getPopupPanelInitialOpenState(undefined)).toBe(true);
+    expect(getPopupPanelInitialOpenState({ IsEdit: false })).toBe(true);
+  });
+
+  it("closes the panel for edit items", () => {
+    expect(getPopupPanelInitialOpenState({ IsEdit: true })).toBe(false);
   });
 });

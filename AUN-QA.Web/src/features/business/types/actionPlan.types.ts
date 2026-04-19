@@ -66,6 +66,7 @@ export interface ActionPlanAttachmentItem {
 
 export interface ActionPlanDetail {
   Id: string;
+  IsEdit: boolean;
   CycleId: string;
   Title: string;
   Description?: string | null;

@@ -20,6 +20,7 @@ const EMPTY_LIST: ActionPlanListResponse = {
 function createEmptyPlan(cycleId?: string | null): ActionPlanDetail {
   return {
     Id: "00000000-0000-0000-0000-000000000000",
+    IsEdit: false,
     CycleId: cycleId ?? "",
     Title: "",
     Description: "",
@@ -85,7 +86,10 @@ export function useActionPlanList() {
   const openPopup = useCallback(async (item: ActionPlanListItem) => {
     const response = await actionPlanService.getById(item.Id);
     if (response.Success && response.Data) {
-      setSelectedItem(response.Data);
+      setSelectedItem({
+        ...response.Data,
+        IsEdit: response.Data.IsEdit ?? true,
+      });
       setIsOpen(true);
       return;
     }

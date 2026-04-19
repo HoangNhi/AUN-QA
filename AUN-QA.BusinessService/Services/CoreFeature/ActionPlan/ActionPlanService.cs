@@ -745,6 +745,7 @@ public class ActionPlanService : IActionPlanService
         return new ActionPlanDetailDto
         {
             Id = plan.Id,
+            IsEdit = true,
             CycleId = plan.CycleId,
             Title = plan.Title,
             Description = plan.Description,

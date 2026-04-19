@@ -6,6 +6,8 @@ public class ActionPlanDetailDto
 {
     public Guid Id { get; set; }
 
+    public bool IsEdit { get; set; }
+
     public Guid CycleId { get; set; }
 
     public string Title { get; set; } = string.Empty;

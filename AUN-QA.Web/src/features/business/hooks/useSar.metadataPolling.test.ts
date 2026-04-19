@@ -27,7 +27,6 @@ describe("mergeSarDraftWithMetadata", () => {
   const baseDraft: SarDraft = {
     SarReportId: "report-1",
     CycleId: "cycle-1",
-    CycleName: "Cycle 1",
     Status: 1,
     ReviewRound: 0,
     CanSubmitByRole: false,
@@ -36,6 +35,8 @@ describe("mergeSarDraftWithMetadata", () => {
     LastSavedAt: "2026-04-18T10:00:00Z",
     UpdatedAt: "2026-04-18T10:00:00Z",
     UpdatedBy: "user-a",
+    CreatedAt: "2026-04-18T09:00:00Z",
+    CreatedBy: "user-a",
     YDocSnapshotBase64: "heavy-snapshot-data",
     RenderedHtml: "<p>heavy-html-content</p>",
   };
@@ -81,7 +82,6 @@ describe("mergeSarDraftWithMetadata", () => {
     // Heavy content preserved
     expect(merged!.YDocSnapshotBase64).toBe("heavy-snapshot-data");
     expect(merged!.RenderedHtml).toBe("<p>heavy-html-content</p>");
-    expect(merged!.CycleName).toBe("Cycle 1");
   });
 
   it("does not mutate the original draft object", () => {

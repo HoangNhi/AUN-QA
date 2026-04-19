@@ -179,10 +179,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function resolvePortalHost(
-  trigger: HTMLDivElement | null,
-  explicitHost?: HTMLElement | null,
-): HTMLElement {
+function resolvePortalHost(explicitHost?: HTMLElement | null): HTMLElement {
   if (explicitHost instanceof HTMLElement) {
     return explicitHost;
   }
@@ -438,7 +435,7 @@ const MultipleSelector = ({
       if (!trigger) return;
 
       const triggerRect = trigger.getBoundingClientRect();
-      const host = resolvePortalHost(trigger, portalContainer);
+      const host = resolvePortalHost(portalContainer);
       const useContainerStrategy =
         portalContainer instanceof HTMLElement && host !== document.body;
 
@@ -760,7 +757,7 @@ const MultipleSelector = ({
               )}
             </div>
           </div>,
-          resolvePortalHost(containerRef.current, portalContainer),
+          resolvePortalHost(portalContainer),
         )}
     </Command>
   );

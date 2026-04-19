@@ -332,7 +332,6 @@ export default function PopupSarEditor({
   const initializedSessionRef = useRef<string | null>(null);
 
   const [ydoc, setYdoc] = useState<Y.Doc | null>(null);
-  const [changeVersion, setChangeVersion] = useState(0);
   const [isCollabConnected, setIsCollabConnected] = useState(false);
   const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -759,7 +758,6 @@ export default function PopupSarEditor({
     changeVersionRef.current = 0;
     lastPersistedVersionRef.current = 0;
     hasUnsavedLocalChangesRef.current = false;
-    setChangeVersion(0);
     setIsAutoSaveEnabled(false);
 
     return () => {
@@ -780,7 +778,6 @@ export default function PopupSarEditor({
       changeVersionRef.current = 0;
       lastPersistedVersionRef.current = 0;
       hasUnsavedLocalChangesRef.current = false;
-      setChangeVersion(0);
       setIsAutoSaveEnabled(false);
     };
   }, [
@@ -853,11 +850,7 @@ export default function PopupSarEditor({
     const onUpdate = (_update: Uint8Array, origin: unknown) => {
       if (isLocalSarAutosaveOrigin({ origin }, providerRef.current)) {
         hasUnsavedLocalChangesRef.current = true;
-        setChangeVersion((prev) => {
-          const next = prev + 1;
-          changeVersionRef.current = next;
-          return next;
-        });
+        changeVersionRef.current += 1;
       }
     };
 

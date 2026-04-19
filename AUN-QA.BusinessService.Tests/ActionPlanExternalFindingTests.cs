@@ -77,6 +77,53 @@ public class ActionPlanExternalFindingTests
         Assert.Null(item.CriterionName);
     }
 
+    [Fact]
+    public async Task GetExternalReviewFindings_excludes_findings_already_used_by_other_action_plans()
+    {
+        await using var context = CreateContext();
+        var seed = SeedExternalReviewData(context);
+        var actionPlanId = Guid.NewGuid();
+
+        context.ActionPlans.Add(new ActionPlan
+        {
+            Id = actionPlanId,
+            CycleId = seed.CycleId,
+            Title = "Existing plan",
+            Priority = 2,
+            Deadline = DateTime.UtcNow.AddDays(7),
+            Status = 1,
+            SourceFindingId = seed.FindingId,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.SaveChanges();
+
+        var catalogService = Substitute.For<ICatalogIntegrationService>();
+        catalogService
+            .GetStandardsWithCriteriaStreamAsync(Arg.Any<GetStandardsWithCriteriaStreamRequest>(), Arg.Any<CancellationToken>())
+            .Returns(CreateCatalogRows(seed.StandardId, seed.CriterionId));
+
+        var service = CreateActionPlanService(context, catalogService);
+
+        var excludedResult = await service.GetExternalReviewFindings(new ActionPlanExternalFindingRequest
+        {
+            CycleId = seed.CycleId
+        });
+
+        Assert.Empty(excludedResult);
+
+        var includedResult = await service.GetExternalReviewFindings(new ActionPlanExternalFindingRequest
+        {
+            CycleId = seed.CycleId,
+            CurrentActionPlanId = actionPlanId
+        });
+
+        var item = Assert.Single(includedResult);
+        Assert.Equal(seed.FindingId, item.Id);
+    }
+
     private static BusinessContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<BusinessContext>()
@@ -87,7 +134,7 @@ public class ActionPlanExternalFindingTests
         return new BusinessContext(options);
     }
 
-    private static (Guid CycleId, Guid StandardSetId, Guid StandardId, Guid CriterionId) SeedExternalReviewData(BusinessContext context)
+    private static (Guid CycleId, Guid StandardSetId, Guid StandardId, Guid CriterionId, Guid FindingId) SeedExternalReviewData(BusinessContext context)
     {
         var cycleId = Guid.NewGuid();
         var standardSetId = Guid.NewGuid();
@@ -150,7 +197,7 @@ public class ActionPlanExternalFindingTests
         });
 
         context.SaveChanges();
-        return (cycleId, standardSetId, standardId, criterionId);
+        return (cycleId, standardSetId, standardId, criterionId, findingId);
     }
 
     private static ActionPlanService CreateActionPlanService(BusinessContext context, ICatalogIntegrationService catalogService)

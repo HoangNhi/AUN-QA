@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -21,6 +21,7 @@ import {
 import MultipleSelector, { type Option } from "@/components/ui/multi-select";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
+import { cn } from "@/lib/utils";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useStandardsByCycle } from "@/features/business/hooks/useStandardsByCycle";
 import { useCriteriaByStandard } from "@/features/business/hooks/useCriteriaByStandard";
@@ -122,6 +123,9 @@ export default function PopupActionPlan({
   const [pendingFindingCriterionId, setPendingFindingCriterionId] = useState<
     string | null
   >(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(
+    !item?.Id || item.Id === EMPTY_GUID,
+  );
 
   useEffect(() => {
     if (!open) {
@@ -143,6 +147,7 @@ export default function PopupActionPlan({
     setAssignedTo(item?.Assignees?.map((a) => a.UserId) ?? []);
     setFolderUpload(uuidv4());
     setListAttachment((item?.Attachments ?? []) as Attachment[]);
+    setIsPanelOpen(!item?.Id || item.Id === EMPTY_GUID);
   }, [item, open]);
 
   const councilRoleQuery = useQuery({
@@ -165,12 +170,15 @@ export default function PopupActionPlan({
   const standards = useStandardsByCycle(form.CycleId || undefined);
   const criteria = useCriteriaByStandard(form.StandardId || undefined);
   const { members: assignableMembers } = useAssignableUsersOptions(open);
+  const currentActionPlanId =
+    !form.Id || form.Id === EMPTY_GUID ? null : form.Id;
 
   const findingsQuery = useQuery({
-    queryKey: ["action-plan", "findings", form.CycleId],
+    queryKey: ["action-plan", "findings", form.CycleId, currentActionPlanId],
     queryFn: async (): Promise<ExternalFindingOption[]> => {
       const response = await actionPlanService.getExternalReviewFindings({
         CycleId: form.CycleId || null,
+        CurrentActionPlanId: currentActionPlanId,
       });
       if (!response.Success || !response.Data) {
         return [];
@@ -681,49 +689,79 @@ export default function PopupActionPlan({
           </div>
 
           <div className="min-h-0 overflow-auto bg-slate-50 p-5">
-            <div className="mb-3">
-              <h3 className="text-base font-semibold text-slate-900">
-                Kiến nghị từ CHECK
-              </h3>
-              <p className="text-xs text-slate-500">
-                Chọn để điền nhanh vào biểu mẫu.
-              </p>
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Kiến nghị từ CHECK
+                </h3>
+                {isPanelOpen && (
+                  <p className="text-xs text-slate-500">
+                    Chọn để điền nhanh vào biểu mẫu.
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setIsPanelOpen((value) => !value)}
+              >
+                {isPanelOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
             </div>
 
-            {!form.CycleId ? (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
-                Chọn chu kỳ để tải danh sách phát hiện.
-              </div>
-            ) : findingsQuery.isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải...
-              </div>
-            ) : findings.length > 0 ? (
-              <div className="space-y-3">
-                {findings.map((finding) => (
-                  <button
-                    key={finding.Id}
-                    type="button"
-                    onClick={() =>
-                      (canEditFields || isNew) && handleChangeFinding(finding)
-                    }
-                    disabled={!canEditFields && !isNew}
-                    className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-sky-300 hover:bg-sky-50/40 disabled:cursor-default disabled:opacity-60"
-                  >
-                    <p className="font-medium text-sm text-slate-900">
-                      {finding.Summary ?? finding.Content}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Tiêu chuẩn: {getFindingStandardDisplay(finding)}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
-                Không có phát hiện nào cho chu kỳ này.
-              </div>
+            {isPanelOpen && (
+              <>
+                {!form.CycleId ? (
+                  <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                    Chọn chu kỳ để tải danh sách phát hiện.
+                  </div>
+                ) : findingsQuery.isLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang tải...
+                  </div>
+                ) : findings.length > 0 ? (
+                  <div className="space-y-3">
+                    {findings.map((finding) => {
+                      const isSelected = finding.Id === form.SourceFindingId;
+
+                      return (
+                        <button
+                          key={finding.Id}
+                          type="button"
+                          onClick={() =>
+                            (canEditFields || isNew) && handleChangeFinding(finding)
+                          }
+                          disabled={!canEditFields && !isNew}
+                          className={cn(
+                            "w-full rounded-xl border p-4 text-left shadow-sm transition",
+                            isSelected
+                              ? "border-sky-400 bg-sky-50 ring-2 ring-sky-400"
+                              : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/40",
+                            !canEditFields && !isNew && "cursor-default opacity-60",
+                          )}
+                        >
+                          <p className="text-sm font-medium text-slate-900">
+                            {finding.Summary ?? finding.Content}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Tiêu chuẩn: {getFindingStandardDisplay(finding)}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                    Không có phát hiện nào cho chu kỳ này.
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

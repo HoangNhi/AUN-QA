@@ -155,6 +155,7 @@ export interface ActionPlanDeleteListRequest {
 export interface ActionPlanExternalFindingRequest {
   CycleId?: string | null;
   TextSearch?: string | null;
+  CurrentActionPlanId?: string | null;
 }
 
 export type ActionPlanListResponse = GetListPagingResponse<ActionPlanListItem>;

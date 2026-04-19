@@ -5,4 +5,6 @@ public class ActionPlanExternalFindingRequest
     public Guid? CycleId { get; set; }
 
     public string? TextSearch { get; set; }
+
+    public Guid? CurrentActionPlanId { get; set; }
 }

@@ -448,6 +448,13 @@ public class ActionPlanService : IActionPlanService
             query = query.Where(x => x.Finding.Content.Contains(text));
         }
 
+        query = query.Where(x =>
+            !_context.ActionPlans.Any(ap =>
+                ap.SourceFindingId == x.Finding.Id
+                && !ap.IsDeleted
+                && ap.IsActived
+                && (request.CurrentActionPlanId == null || ap.Id != request.CurrentActionPlanId.Value)));
+
         var rows = await query
             .OrderByDescending(x => x.Finding.CreatedAt)
             .ToListAsync();

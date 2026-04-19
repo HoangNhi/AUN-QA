@@ -30,11 +30,8 @@ export function getActionPlanStatusColor(status: number): string {
   }
 }
 
-export function canEditActionPlan(status: number): boolean {
-  return (
-    status === ActionPlanStatus.Draft ||
-    status === ActionPlanStatus.PendingReview
-  );
+export function canEditActionPlan(_status: number): boolean {
+  return true;
 }
 
 export function canChangeStatus(councilRoleId: number): boolean {

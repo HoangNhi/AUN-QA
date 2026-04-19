@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ActionPlanStatus } from "@/features/business/types/actionPlan.types";
 import {
   canDeleteActionPlan,
+  canEditActionPlan,
   normalizeActionPlanStatusForSave,
   shouldShowAssigneeSection,
 } from "./actionPlan.utils";
@@ -36,5 +37,23 @@ describe("canDeleteActionPlan", () => {
     expect(canDeleteActionPlan(ActionPlanStatus.InProgress)).toBe(false);
     expect(canDeleteActionPlan(ActionPlanStatus.PendingReview)).toBe(false);
     expect(canDeleteActionPlan(ActionPlanStatus.Completed)).toBe(false);
+  });
+});
+
+describe("canEditActionPlan", () => {
+  it("allows editing for Draft", () => {
+    expect(canEditActionPlan(ActionPlanStatus.Draft)).toBe(true);
+  });
+
+  it("allows editing for InProgress", () => {
+    expect(canEditActionPlan(ActionPlanStatus.InProgress)).toBe(true);
+  });
+
+  it("allows editing for PendingReview", () => {
+    expect(canEditActionPlan(ActionPlanStatus.PendingReview)).toBe(true);
+  });
+
+  it("allows editing for Completed", () => {
+    expect(canEditActionPlan(ActionPlanStatus.Completed)).toBe(true);
   });
 });

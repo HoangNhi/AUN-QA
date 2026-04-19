@@ -2,6 +2,7 @@
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { DatePicker } from "@/components/ui/datepicker";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
+import { taskExecutionService } from "@/features/business/api/taskExecution.api";
 import { useActionTask } from "./hooks/useActionTask";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
 import type {
@@ -92,6 +94,7 @@ function mapToAttachment(a: TaskExecutionTask["Attachments"][number]): Attachmen
     RelatedId: a.ActionTaskId,
     FileName: a.FileName,
     FileExtension: "",
+    FileSize: a.FileSize ?? 0,
     FileUrl: a.FileUrl ?? "",
     FullFileName: a.FileName,
   };
@@ -113,16 +116,34 @@ export default function DialogTaskForm({
     () => (task?.Attachments ?? []).map(mapToAttachment),
   );
   const [isSaving, setIsSaving] = useState(false);
+  const isExistingTask = Boolean(task?.Id && task.Id !== EMPTY_GUID);
+
+  const taskDetailQuery = useQuery({
+    queryKey: ["task-detail", task?.Id],
+    queryFn: async (): Promise<TaskExecutionTask> => {
+      const response = await taskExecutionService.getTaskDetail(task!.Id);
+      if (!response.Success || !response.Data) {
+        throw new Error(response.Message || "Không thể tải thông tin công việc.");
+      }
+
+      return response.Data;
+    },
+    enabled: open && isExistingTask,
+  });
+
+  const taskDetail = taskDetailQuery.data ?? null;
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    setDraft(buildDraft(task));
-    setListAttachment((task?.Attachments ?? []).map(mapToAttachment));
-  }, [open, task]);
+    const source = taskDetail ?? task;
+    setDraft(buildDraft(source));
+    setListAttachment((source?.Attachments ?? []).map(mapToAttachment));
+  }, [open, task, taskDetail]);
   const isBusy = isMutating || isSaving;
+  const isDetailLoading = open && isExistingTask && taskDetailQuery.isLoading;
   const title = !isOwner
     ? "Xem công việc"
     : task && task.Id !== EMPTY_GUID
@@ -134,7 +155,9 @@ export default function DialogTaskForm({
       return;
     }
 
-    const originalAttachmentIds = new Set((task?.Attachments ?? []).map((attachment) => attachment.Id));
+    const originalAttachmentIds = new Set(
+      (taskDetail?.Attachments ?? task?.Attachments ?? []).map((attachment) => attachment.Id),
+    );
     const currentAttachmentIds = new Set(listAttachment.map((attachment) => attachment.Id));
     const deletedAttachmentIds = [...originalAttachmentIds].filter(
       (id) => !currentAttachmentIds.has(id),
@@ -200,7 +223,14 @@ export default function DialogTaskForm({
             </Button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          {isDetailLoading ? (
+            <div className="flex flex-1 items-center justify-center gap-2 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Đang tải thông tin công việc...
+            </div>
+          ) : (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <div className="grid gap-4">
               {!isOwner ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -293,6 +323,8 @@ export default function DialogTaskForm({
               </Button>
             ) : null}
           </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

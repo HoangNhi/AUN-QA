@@ -127,6 +127,7 @@ public class TaskExecutionService : ITaskExecutionService
                     AttachmentId = a.AttachmentId,
                     FileName = a.FileName,
                     FileUrl = a.FileUrl,
+                    FileSize = a.FileSize,
                     UploadedAt = a.UploadedAt,
                     UploadedBy = a.UploadedBy
                 }).ToList());
@@ -201,17 +202,18 @@ public class TaskExecutionService : ITaskExecutionService
 
                 foreach (var item in attachments)
                 {
-                    var entity = new ActionTaskAttachmentEntity
-                    {
-                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                        ActionTaskId = task.Id,
-                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
-                        FileName = item.FileName,
-                        FileUrl = item.FileUrl,
-                        UploadedAt = now,
-                        UploadedBy = username,
-                        CreatedAt = now,
-                        CreatedBy = username,
+                var entity = new ActionTaskAttachmentEntity
+                {
+                    Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                    ActionTaskId = task.Id,
+                    AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                    FileName = item.FileName,
+                    FileUrl = item.FileUrl,
+                    FileSize = item.FileSize ?? 0,
+                    UploadedAt = now,
+                    UploadedBy = username,
+                    CreatedAt = now,
+                    CreatedBy = username,
                         IsActived = true,
                         IsDeleted = false
                     };
@@ -310,17 +312,18 @@ public class TaskExecutionService : ITaskExecutionService
 
                 foreach (var item in attachments)
                 {
-                    var entity = new ActionTaskAttachmentEntity
-                    {
-                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                        ActionTaskId = task.Id,
-                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
-                        FileName = item.FileName,
-                        FileUrl = item.FileUrl,
-                        UploadedAt = now,
-                        UploadedBy = username,
-                        CreatedAt = now,
-                        CreatedBy = username,
+                var entity = new ActionTaskAttachmentEntity
+                {
+                    Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                    ActionTaskId = task.Id,
+                    AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                    FileName = item.FileName,
+                    FileUrl = item.FileUrl,
+                    FileSize = item.FileSize ?? 0,
+                    UploadedAt = now,
+                    UploadedBy = username,
+                    CreatedAt = now,
+                    CreatedBy = username,
                         IsActived = true,
                         IsDeleted = false
                     };
@@ -361,6 +364,16 @@ public class TaskExecutionService : ITaskExecutionService
             await transaction.RollbackAsync();
             throw;
         }
+
+        return await MapTaskDtoAsync(task.Id);
+    }
+
+    public async Task<TaskExecutionTaskDto> GetTaskDetail(Guid taskId)
+    {
+        var task = await _context.ActionTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == taskId && !x.IsDeleted && x.IsActived)
+            ?? throw new BusinessException("KhÃ´ng tÃ¬m tháº¥y cÃ´ng viá»‡c");
 
         return await MapTaskDtoAsync(task.Id);
     }
@@ -576,6 +589,7 @@ public class TaskExecutionService : ITaskExecutionService
                 AttachmentId = x.AttachmentId,
                 FileName = x.FileName,
                 FileUrl = x.FileUrl,
+                FileSize = x.FileSize,
                 UploadedAt = x.UploadedAt,
                 UploadedBy = x.UploadedBy
             })

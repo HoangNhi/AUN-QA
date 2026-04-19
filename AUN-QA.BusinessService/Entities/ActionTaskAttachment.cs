@@ -31,5 +31,7 @@ public partial class ActionTaskAttachment
 
     public bool IsDeleted { get; set; }
 
+    public double FileSize { get; set; }
+
     public virtual ActionTask ActionTask { get; set; } = null!;
 }

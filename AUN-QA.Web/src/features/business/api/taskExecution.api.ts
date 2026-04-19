@@ -29,6 +29,11 @@ export const taskExecutionService = {
       params: { id },
     }),
 
+  getTaskDetail: (id: string): Promise<ApiResponse<TaskExecutionTask>> =>
+    api.get<TaskExecutionTask>(API_ENDPOINTS.Business.TaskExecution.GET_TASK_DETAIL, {
+      params: { id },
+    }),
+
   getTaskList: (
     request: TaskExecutionGetTaskListRequest,
   ): Promise<ApiResponse<TaskExecutionTaskListResponse>> =>

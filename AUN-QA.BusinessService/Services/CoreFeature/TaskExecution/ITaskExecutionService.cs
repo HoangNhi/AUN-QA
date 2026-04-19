@@ -12,6 +12,8 @@ public interface ITaskExecutionService
 
     Task<TaskExecutionTaskListResponseDto> GetTaskList(TaskExecutionGetTaskListRequest request);
 
+    Task<TaskExecutionTaskDto> GetTaskDetail(Guid taskId);
+
     Task<TaskExecutionTaskDto> InsertTask(TaskExecutionUpsertTaskRequest request);
 
     Task<TaskExecutionTaskDto> UpdateTask(TaskExecutionUpsertTaskRequest request);

@@ -145,9 +145,7 @@ public partial class BusinessContext : DbContext
 
         modelBuilder.Entity<ActionPlanAttachment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("ActionPlanAttachment_pk");
-
-            entity.ToTable("ActionPlanAttachments");
+            entity.HasKey(e => e.Id).HasName("PK__ActionPl__3214EC07C13DDAF8");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.CreatedBy).HasMaxLength(200);

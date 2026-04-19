@@ -479,6 +479,7 @@ public class ActionPlanService : IActionPlanService
                         AttachmentId = item.Id == Guid.Empty ? null : item.Id,
                         FileName = item.FileName,
                         FileUrl = item.FileUrl,
+                        FileSize = item.FileSize ?? 0,
                         UploadedAt = now,
                         UploadedBy = username,
                         CreatedAt = now,
@@ -740,6 +741,7 @@ public class ActionPlanService : IActionPlanService
                 AttachmentId = x.AttachmentId,
                 FileName = x.FileName,
                 FileUrl = x.FileUrl,
+                FileSize = x.FileSize,
                 UploadedAt = x.UploadedAt,
                 UploadedBy = x.UploadedBy
             })
@@ -950,6 +952,7 @@ public class ActionPlanService : IActionPlanService
                         AttachmentId = a.AttachmentId,
                         FileName = a.FileName,
                         FileUrl = a.FileUrl,
+                        FileSize = a.FileSize,
                         UploadedAt = a.UploadedAt,
                         UploadedBy = a.UploadedBy
                     }).ToList()

@@ -44,6 +44,14 @@ public class TaskExecutionController : BaseController<TaskExecutionController>
         return Ok(new BaseResponse<TaskExecutionTaskListResponseDto> { Data = result, Success = true });
     }
 
+    [HttpGet("get-task-detail")]
+    [AttributePermission(Action = ActionType.VIEW)]
+    public async Task<IActionResult> GetTaskDetail([FromQuery] GetByIdRequest request)
+    {
+        var result = await _service.GetTaskDetail(request.Id!.Value);
+        return Ok(new BaseResponse<TaskExecutionTaskDto> { Data = result, Success = true });
+    }
+
     [HttpPost("insert-task")]
     [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> InsertTask([FromBody] TaskExecutionUpsertTaskRequest request)

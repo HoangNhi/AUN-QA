@@ -12,6 +12,7 @@ using AUN_QA.SystemService.Protos;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using IActionPlanService = AUN_QA.BusinessService.Services.CoreFeature.ActionPlan.IActionPlanService;
 
@@ -60,6 +61,85 @@ public class TaskExecutionServiceTests
 
         Assert.Equal((int)ActionTaskStatus.Todo, result.TaskStatus);
         Assert.Equal("Xử lý hồ sơ", result.Description);
+    }
+
+    [Fact]
+    public async Task InsertTask_persists_uploaded_attachment_filesize()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var planId = SeedAssignedPlan(context, cycleId);
+        SeedCouncil(context, cycleId, userId);
+        context.SaveChanges();
+
+        var attachmentId = Guid.NewGuid();
+        var uploadService = Substitute.For<AUN_QA.BusinessService.Services.Commons.UploadFile.IUploadFileService>();
+        uploadService.UploadDataAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(new List<ModelAttachment>
+            {
+                new()
+                {
+                    Id = attachmentId,
+                    ReferenceType = 0,
+                    RelatedId = Guid.NewGuid(),
+                    FileName = "tai-lieu.pdf",
+                    FileExtension = ".pdf",
+                    FileSize = 4096,
+                    FileUrl = "/files/tai-lieu.pdf"
+                }
+            }));
+        uploadService.DeleteDataAsync(Arg.Any<List<string>>())
+            .Returns(Task.FromResult(true));
+
+        var service = CreateService(context, userId, "secretary", uploadService: uploadService);
+
+        var result = await service.InsertTask(new TaskExecutionUpsertTaskRequest
+        {
+            ActionPlanId = planId,
+            Description = "Luu tep dinh kem",
+            TaskStatus = (int)ActionTaskStatus.InProgress,
+            FolderUpload = "temp-folder"
+        });
+
+        Assert.Single(result.Attachments);
+        Assert.Equal(4096, result.Attachments[0].FileSize);
+
+        var savedAttachment = await context.ActionTaskAttachments.FirstAsync(x => x.Id == attachmentId);
+        Assert.Equal(4096, savedAttachment.FileSize);
+    }
+
+    [Fact]
+    public async Task GetTaskList_returns_attachment_filesize()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var planId = SeedAssignedPlan(context, cycleId);
+        SeedCouncil(context, cycleId, userId);
+
+        var taskId = SeedTask(context, planId, (int)ActionTaskStatus.Done, "alice");
+        SeedAttachment(context, taskId, "KhaNang.pdf", 8192);
+        context.SaveChanges();
+
+        var service = CreateService(context, userId, "secretary");
+
+        var result = await service.GetTaskList(new TaskExecutionGetTaskListRequest
+        {
+            ActionPlanId = planId,
+            PageIndex = 1,
+            PageSize = 10
+        });
+
+        Assert.Single(result.Data);
+        Assert.Single(result.Data[0].Attachments);
+        Assert.Equal(8192, result.Data[0].Attachments[0].FileSize);
+    }
+
+    [Fact]
+    public void TaskExecutionService_exposes_GetTaskDetail()
+    {
+        Assert.NotNull(typeof(TaskExecutionService).GetMethod("GetTaskDetail"));
     }
 
     [Fact]
@@ -192,6 +272,7 @@ public class TaskExecutionServiceTests
     {
         var options = new DbContextOptionsBuilder<BusinessContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new BusinessContext(options);
@@ -260,7 +341,7 @@ public class TaskExecutionServiceTests
         return taskId;
     }
 
-    private static void SeedAttachment(BusinessContext context, Guid taskId, string fileName)
+    private static void SeedAttachment(BusinessContext context, Guid taskId, string fileName, double fileSize = 0)
     {
         context.ActionTaskAttachments.Add(new ActionTaskAttachment
         {
@@ -268,6 +349,7 @@ public class TaskExecutionServiceTests
             ActionTaskId = taskId,
             FileName = fileName,
             FileUrl = $"/files/{fileName}",
+            FileSize = fileSize,
             UploadedAt = DateTime.UtcNow,
             UploadedBy = "tester",
             CreatedAt = DateTime.UtcNow,

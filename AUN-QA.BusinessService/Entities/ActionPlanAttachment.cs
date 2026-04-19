@@ -9,13 +9,13 @@ public partial class ActionPlanAttachment
 
     public Guid RelatedId { get; set; }
 
-    public string FileName { get; set; } = null!;
+    public string? FileName { get; set; }
 
-    public string FileExtension { get; set; } = null!;
+    public string? FileExtension { get; set; }
 
-    public double FileSize { get; set; }
+    public double? FileSize { get; set; }
 
-    public string FileUrl { get; set; } = null!;
+    public string? FileUrl { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

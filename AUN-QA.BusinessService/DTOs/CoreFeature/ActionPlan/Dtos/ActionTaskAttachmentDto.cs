@@ -12,6 +12,8 @@ public class ActionTaskAttachmentDto
 
     public string? FileUrl { get; set; }
 
+    public double FileSize { get; set; }
+
     public DateTime UploadedAt { get; set; }
 
     public string UploadedBy { get; set; } = string.Empty;

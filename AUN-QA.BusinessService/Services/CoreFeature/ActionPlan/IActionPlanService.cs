@@ -23,4 +23,6 @@ public interface IActionPlanService
     Task<List<AssignableMemberDto>> GetAssignableUsersCombobox();
 
     Task<int> GetMyCouncilRoleId(Guid cycleId);
+
+    Task<ModelFilePreview> PreviewAttachment(Guid attachmentId, string mode);
 }

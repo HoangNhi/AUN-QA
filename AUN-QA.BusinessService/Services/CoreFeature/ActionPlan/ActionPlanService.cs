@@ -581,6 +581,28 @@ public class ActionPlanService : IActionPlanService
         return council?.RoleId ?? 0;
     }
 
+    public async Task<ModelFilePreview> PreviewAttachment(Guid attachmentId, string mode)
+    {
+        var attachment = await _context.ActionPlanAttachments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == attachmentId && x.IsActived && !x.IsDeleted);
+
+        if (attachment == null)
+        {
+            throw new BusinessException("Tệp đính kèm không tồn tại");
+        }
+
+        if (string.IsNullOrWhiteSpace(attachment.FileUrl))
+        {
+            throw new BusinessException("Tệp đính kèm không có đường dẫn hợp lệ");
+        }
+
+        return await _uploadFileService.PreviewFileAsync(
+            attachment.FileUrl,
+            mode,
+            fileId: attachment.Id);
+    }
+
     private static void ValidateStatusTransition(int current, int requested)
     {
         if (current == requested)

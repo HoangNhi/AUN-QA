@@ -169,12 +169,17 @@ export const API_ENDPOINTS = {
       GET_BY_ID: `${BUSINESS_BASE}/ActionPlan/get-by-id`,
       INSERT: `${BUSINESS_BASE}/ActionPlan/insert`,
       UPDATE: `${BUSINESS_BASE}/ActionPlan/update`,
-        DELETE_LIST: `${BUSINESS_BASE}/ActionPlan/delete-list`,
-        GET_EXTERNAL_REVIEW_FINDINGS: `${BUSINESS_BASE}/ActionPlan/get-external-review-findings`,
-        GET_ASSIGNABLE_MEMBERS: `${BUSINESS_BASE}/ActionPlan/assignable-members`,
-        GET_ASSIGNABLE_USERS_COMBOBOX: `${BUSINESS_BASE}/ActionPlan/assignable-users-combobox`,
-        GET_MY_COUNCIL_ROLE: `${BUSINESS_BASE}/ActionPlan/my-council-role`,
-      },
+      DELETE_LIST: `${BUSINESS_BASE}/ActionPlan/delete-list`,
+      GET_EXTERNAL_REVIEW_FINDINGS: `${BUSINESS_BASE}/ActionPlan/get-external-review-findings`,
+      GET_ASSIGNABLE_MEMBERS: `${BUSINESS_BASE}/ActionPlan/assignable-members`,
+      GET_ASSIGNABLE_USERS_COMBOBOX: `${BUSINESS_BASE}/ActionPlan/assignable-users-combobox`,
+      GET_MY_COUNCIL_ROLE: `${BUSINESS_BASE}/ActionPlan/my-council-role`,
+      PREVIEW_ATTACHMENT: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) =>
+        `${BUSINESS_BASE}/ActionPlan/preview-attachment/${attachmentId}?mode=${mode}`,
+    },
     TaskExecution: {
       GET_MY_PLANS: `${BUSINESS_BASE}/TaskExecution/get-my-plans`,
       GET_PLAN_DETAIL: `${BUSINESS_BASE}/TaskExecution/get-plan-detail`,
@@ -187,7 +192,8 @@ export const API_ENDPOINTS = {
       PREVIEW_TASK_ATTACHMENT: (
         attachmentId: string,
         mode: "internal" | "external" = "internal",
-      ) => `${BUSINESS_BASE}/TaskExecution/preview-task-attachment/${attachmentId}?mode=${mode}`,
+      ) =>
+        `${BUSINESS_BASE}/TaskExecution/preview-task-attachment/${attachmentId}?mode=${mode}`,
     },
     CriterionEvaluation: {
       GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,

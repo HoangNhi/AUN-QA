@@ -9,7 +9,11 @@ vi.mock("docx-preview", () => ({
 }));
 
 vi.mock("@/features/file/api/uploadfile.api", () => ({
-  fileService: { previewFile: vi.fn(), previewTaskAttachment: vi.fn() },
+  fileService: {
+    previewFile: vi.fn(),
+    previewTaskAttachment: vi.fn(),
+    previewActionPlanAttachment: vi.fn(),
+  },
 }));
 
 vi.mock("@/components/ui/pdf-viewer", () => ({
@@ -28,6 +32,10 @@ beforeEach(() => {
     blob: new Blob(["x"], { type: "application/octet-stream" }),
     contentType: "application/octet-stream",
   });
+  vi.mocked(fileService.previewActionPlanAttachment).mockResolvedValue({
+    blob: new Blob(["x"], { type: "application/octet-stream" }),
+    contentType: "application/octet-stream",
+  });
 });
 
 describe("FileViewerDialog layout", () => {
@@ -40,7 +48,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 1,
@@ -81,7 +89,40 @@ describe("FileViewerDialog layout", () => {
     );
 
     expect(await screen.findByTestId("image-preview")).toBeInTheDocument();
-    expect(fileService.previewTaskAttachment).toHaveBeenCalledWith(20, "internal");
+    expect(fileService.previewTaskAttachment).toHaveBeenCalledWith(
+      20,
+      "internal",
+    );
+    expect(fileService.previewFile).not.toHaveBeenCalled();
+  });
+
+  it("uses action plan preview endpoint when previewContext is ActionPlan", async () => {
+    vi.mocked(fileService.previewActionPlanAttachment).mockResolvedValueOnce({
+      blob: new Blob(["x"], { type: "image/jpeg" }),
+      contentType: "image/jpeg",
+    });
+
+    render(
+      <FileViewerDialog
+        isOpen
+        onClose={() => {}}
+        file={
+          {
+            Id: 23,
+            FullFileName: "action-plan.jpg",
+            FileExtension: "jpg",
+            FileUrl: "/action-plan.jpg",
+          } as any
+        }
+        previewContext="ActionPlan"
+      />,
+    );
+
+    expect(await screen.findByTestId("image-preview")).toBeInTheDocument();
+    expect(fileService.previewActionPlanAttachment).toHaveBeenCalledWith(
+      23,
+      "internal",
+    );
     expect(fileService.previewFile).not.toHaveBeenCalled();
   });
 
@@ -94,7 +135,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 2,
@@ -121,7 +162,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 5,
@@ -147,7 +188,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 6,
@@ -173,7 +214,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 11,
@@ -198,7 +239,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 12,
@@ -224,7 +265,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 7,
@@ -254,7 +295,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 9,
@@ -281,7 +322,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 8,
@@ -302,7 +343,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 3,
@@ -328,7 +369,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 4,
@@ -356,7 +397,7 @@ describe("FileViewerDialog layout", () => {
     render(
       <FileViewerDialog
         isOpen
-        onClose={() => { }}
+        onClose={() => {}}
         file={
           {
             Id: 21,

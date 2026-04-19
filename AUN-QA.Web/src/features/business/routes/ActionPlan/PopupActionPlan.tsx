@@ -1,7 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -123,9 +123,7 @@ export default function PopupActionPlan({
   const [pendingFindingCriterionId, setPendingFindingCriterionId] = useState<
     string | null
   >(null);
-  const [isPanelOpen, setIsPanelOpen] = useState(
-    !item?.Id || item.Id === EMPTY_GUID,
-  );
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
 
   useEffect(() => {
     if (!open) {
@@ -147,7 +145,7 @@ export default function PopupActionPlan({
     setAssignedTo(item?.Assignees?.map((a) => a.UserId) ?? []);
     setFolderUpload(uuidv4());
     setListAttachment((item?.Attachments ?? []) as Attachment[]);
-    setIsPanelOpen(!item?.Id || item.Id === EMPTY_GUID);
+    setIsPanelOpen(true);
   }, [item, open]);
 
   const councilRoleQuery = useQuery({
@@ -254,11 +252,7 @@ export default function PopupActionPlan({
   const handleSave = async () => {
     const saveStatus = getPopupSaveStatus(Number(form.Status), isNew);
 
-    if (
-      isStatusChangeable &&
-      saveStatus === 2 &&
-      assignedTo.length === 0
-    ) {
+    if (isStatusChangeable && saveStatus === 2 && assignedTo.length === 0) {
       toast.error(
         "Vui lòng chọn ít nhất một người thực hiện trước khi chuyển sang Đang thực hiện.",
       );
@@ -301,8 +295,8 @@ export default function PopupActionPlan({
       >
         <DialogTitle className="sr-only">Kế hoạch cải tiến</DialogTitle>
 
-        <div className="grid max-h-[94vh] grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="flex min-h-0 flex-col overflow-hidden border-r bg-white">
+        <div className="relative flex max-h-[94vh] overflow-hidden">
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r bg-white">
             <div className="flex shrink-0 items-start justify-between gap-3 border-b p-4">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
@@ -536,64 +530,64 @@ export default function PopupActionPlan({
                   <div className="grid gap-2">
                     <Label>Người thực hiện</Label>
                     {canEditAssignees ? (
-                    <>
-                      <MultipleSelector
-                        value={selectedAssigneeOptions}
-                        options={assigneeOptions}
-                        onChange={(options) =>
-                          setAssignedTo(options.map((option) => option.value))
-                        }
-                        placeholder="Thêm người thực hiện..."
-                        hidePlaceholderWhenSelected
-                        portalContainer={formScrollContainer}
-                      />
-                      <div className="hidden">
-                        <Combobox
-                          options={assignableMembers.map((member) => ({
-                            Value: member.UserId,
-                            Text: assignableMemberLabel(member),
-                          }))}
-                          value={undefined}
-                          onValueChange={(value) => {
-                            if (value && !assignedTo.includes(value)) {
-                              setAssignedTo((prev) => [...prev, value]);
-                            }
-                          }}
+                      <>
+                        <MultipleSelector
+                          value={selectedAssigneeOptions}
+                          options={assigneeOptions}
+                          onChange={(options) =>
+                            setAssignedTo(options.map((option) => option.value))
+                          }
                           placeholder="Thêm người thực hiện..."
-                          emptyText="Không có thành viên phù hợp."
+                          hidePlaceholderWhenSelected
+                          portalContainer={formScrollContainer}
                         />
-                        {assignedTo.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {assignedTo.map((userId) => {
-                              const member = assignableMembers.find(
-                                (item) => item.UserId === userId,
-                              );
-                              return (
-                                <span
-                                  key={userId}
-                                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
-                                >
-                                  {member
-                                    ? assignableMemberLabel(member)
-                                    : userId}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setAssignedTo((prev) =>
-                                        prev.filter((id) => id !== userId),
-                                      )
-                                    }
-                                    className="ml-1 text-blue-500 hover:text-blue-800"
+                        <div className="hidden">
+                          <Combobox
+                            options={assignableMembers.map((member) => ({
+                              Value: member.UserId,
+                              Text: assignableMemberLabel(member),
+                            }))}
+                            value={undefined}
+                            onValueChange={(value) => {
+                              if (value && !assignedTo.includes(value)) {
+                                setAssignedTo((prev) => [...prev, value]);
+                              }
+                            }}
+                            placeholder="Thêm người thực hiện..."
+                            emptyText="Không có thành viên phù hợp."
+                          />
+                          {assignedTo.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {assignedTo.map((userId) => {
+                                const member = assignableMembers.find(
+                                  (item) => item.UserId === userId,
+                                );
+                                return (
+                                  <span
+                                    key={userId}
+                                    className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800"
                                   >
-                                    ×
-                                  </button>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </>
+                                    {member
+                                      ? assignableMemberLabel(member)
+                                      : userId}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setAssignedTo((prev) =>
+                                          prev.filter((id) => id !== userId),
+                                        )
+                                      }
+                                      className="ml-1 text-blue-500 hover:text-blue-800"
+                                    >
+                                      ×
+                                    </button>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {item?.Assignees?.length ? (
@@ -626,6 +620,7 @@ export default function PopupActionPlan({
                     setListAttachment={setListAttachment}
                     readonly={!canEditFields && !isNew}
                     multiFile
+                    previewContext="ActionPlan"
                   />
                 </div>
 
@@ -686,87 +681,84 @@ export default function PopupActionPlan({
                 </Button>
               )}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsPanelOpen((value) => !value)}
+              className="absolute right-0 top-1/2 z-10 flex h-10 w-3.5 -translate-y-1/2 items-center justify-center rounded-l bg-sky-500 text-white shadow-md hover:bg-sky-600"
+              aria-label={isPanelOpen ? "Ẩn kiến nghị" : "Hiện kiến nghị"}
+            >
+              {isPanelOpen ? (
+                <ChevronRight className="h-3 w-3" />
+              ) : (
+                <ChevronLeft className="h-3 w-3" />
+              )}
+            </button>
           </div>
 
-          <div className="min-h-0 overflow-auto bg-slate-50 p-5">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
+          {isPanelOpen && (
+            <div className="w-80 shrink-0 overflow-auto border-l bg-slate-50 p-5">
+              <div className="mb-3">
                 <h3 className="text-base font-semibold text-slate-900">
                   Kiến nghị từ CHECK
                 </h3>
-                {isPanelOpen && (
-                  <p className="text-xs text-slate-500">
-                    Chọn để điền nhanh vào biểu mẫu.
-                  </p>
-                )}
+                <p className="text-xs text-slate-500">
+                  Chọn để điền nhanh vào biểu mẫu.
+                </p>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setIsPanelOpen((value) => !value)}
-              >
-                {isPanelOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
+
+              {!form.CycleId ? (
+                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                  Chọn chu kỳ để tải danh sách phát hiện.
+                </div>
+              ) : findingsQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang tải...
+                </div>
+              ) : findings.length > 0 ? (
+                <div className="space-y-3">
+                  {findings.map((finding) => {
+                    const isSelected = finding.Id === form.SourceFindingId;
+
+                    return (
+                      <button
+                        key={finding.Id}
+                        type="button"
+                        onClick={() =>
+                          (canEditFields || isNew) &&
+                          handleChangeFinding(finding)
+                        }
+                        disabled={!canEditFields && !isNew}
+                        className={cn(
+                          "w-full rounded-xl border p-4 text-left shadow-sm transition",
+                          isSelected
+                            ? "border-sky-400 bg-sky-50 ring-2 ring-sky-400"
+                            : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/40",
+                          !canEditFields &&
+                            !isNew &&
+                            "cursor-default opacity-60",
+                        )}
+                      >
+                        <p className="text-sm font-medium text-slate-900">
+                          {finding.Summary ?? finding.Content}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Tiêu chuẩn: {getFindingStandardDisplay(finding)}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
+                  Không có phát hiện nào cho chu kỳ này.
+                </div>
+              )}
             </div>
-
-            {isPanelOpen && (
-              <>
-                {!form.CycleId ? (
-                  <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
-                    Chọn chu kỳ để tải danh sách phát hiện.
-                  </div>
-                ) : findingsQuery.isLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang tải...
-                  </div>
-                ) : findings.length > 0 ? (
-                  <div className="space-y-3">
-                    {findings.map((finding) => {
-                      const isSelected = finding.Id === form.SourceFindingId;
-
-                      return (
-                        <button
-                          key={finding.Id}
-                          type="button"
-                          onClick={() =>
-                            (canEditFields || isNew) && handleChangeFinding(finding)
-                          }
-                          disabled={!canEditFields && !isNew}
-                          className={cn(
-                            "w-full rounded-xl border p-4 text-left shadow-sm transition",
-                            isSelected
-                              ? "border-sky-400 bg-sky-50 ring-2 ring-sky-400"
-                              : "border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/40",
-                            !canEditFields && !isNew && "cursor-default opacity-60",
-                          )}
-                        >
-                          <p className="text-sm font-medium text-slate-900">
-                            {finding.Summary ?? finding.Content}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            Tiêu chuẩn: {getFindingStandardDisplay(finding)}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">
-                    Không có phát hiện nào cho chu kỳ này.
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

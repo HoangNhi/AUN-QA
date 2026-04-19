@@ -91,4 +91,16 @@ public class ActionPlanController : BaseController<ActionPlanController>
         var roleId = await _service.GetMyCouncilRoleId(cycleId);
         return Ok(new BaseResponse<int> { Data = roleId, Success = true });
     }
+
+    [HttpGet("preview-attachment/{attachmentId}")]
+    [AttributePermission(Action = ActionType.NONE)]
+    public async Task<IActionResult> PreviewAttachment(
+        [FromRoute] Guid attachmentId,
+        [FromQuery] string mode = "internal")
+    {
+        var result = await _service.PreviewAttachment(attachmentId, mode);
+        Response.Headers["X-Original-Content-Type"] = result.OriginalContentType ?? string.Empty;
+        Response.Headers["X-Converted-Content-Type"] = result.ConvertedContentType ?? string.Empty;
+        return File(result.FileContent, result.ContentType, result.FileName);
+    }
 }

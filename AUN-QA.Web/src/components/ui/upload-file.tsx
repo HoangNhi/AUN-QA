@@ -34,7 +34,7 @@ export interface UploadFileProps {
   onSuccess?: () => void;
   hasError?: boolean;
   viewerMode?: "internal" | "external";
-  previewContext?: "evidence" | "taskAttachment";
+  previewContext?: "evidence" | "taskAttachment" | "ActionPlan";
 }
 
 export interface UploadFileRef {

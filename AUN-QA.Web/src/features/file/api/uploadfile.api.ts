@@ -61,9 +61,33 @@ export const fileService = {
     return {
       blob: response.data,
       contentType:
-        response.headers["content-type"] ?? response.data?.type ?? "application/octet-stream",
-      originalContentType: response.headers["x-original-content-type"] || undefined,
-        convertedContentType: response.headers["x-converted-content-type"] || undefined,
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
+    };
+  },
+  previewActionPlanAttachment: async (
+    attachmentId: string,
+    mode: "internal" | "external" = "internal",
+  ): Promise<PreviewFileResult> => {
+    const response = await api.downloadFile(
+      API_ENDPOINTS.Business.ActionPlan.PREVIEW_ATTACHMENT(attachmentId, mode),
+    );
+
+    return {
+      blob: response.data,
+      contentType:
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
     };
   },
   previewTaskAttachment: async (
@@ -71,15 +95,22 @@ export const fileService = {
     mode: "internal" | "external" = "internal",
   ): Promise<PreviewFileResult> => {
     const response = await api.downloadFile(
-      API_ENDPOINTS.Business.TaskExecution.PREVIEW_TASK_ATTACHMENT(attachmentId, mode),
+      API_ENDPOINTS.Business.TaskExecution.PREVIEW_TASK_ATTACHMENT(
+        attachmentId,
+        mode,
+      ),
     );
 
     return {
       blob: response.data,
       contentType:
-        response.headers["content-type"] ?? response.data?.type ?? "application/octet-stream",
-      originalContentType: response.headers["x-original-content-type"] || undefined,
-      convertedContentType: response.headers["x-converted-content-type"] || undefined,
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
     };
   },
 };

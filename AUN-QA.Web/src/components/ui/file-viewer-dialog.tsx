@@ -33,7 +33,7 @@ interface FileViewerDialogProps {
   file: Attachment | null;
   mode?: "internal" | "external";
   allowDownload?: boolean;
-  previewContext?: "evidence" | "taskAttachment";
+  previewContext?: "evidence" | "taskAttachment" | "ActionPlan";
 }
 
 function getFileIcon(type: string, className = "size-5") {
@@ -125,7 +125,9 @@ const FileViewerDialog = ({
   const previewFile =
     previewContext === "taskAttachment"
       ? fileService.previewTaskAttachment
-      : fileService.previewFile;
+      : previewContext === "ActionPlan"
+        ? fileService.previewActionPlanAttachment
+        : fileService.previewFile;
   const viewerType = useMemo(
     () => previewViewerType ?? defaultViewerType,
     [defaultViewerType, previewViewerType],
@@ -167,13 +169,13 @@ const FileViewerDialog = ({
     const loadPreview = async () => {
       setIsLoading(true);
       setErrorMessage(null);
-    setOfficeBlob(null);
-    setWorkbook(null);
-    setActiveSheet("");
-    setPreviewViewerType(null);
+      setOfficeBlob(null);
+      setWorkbook(null);
+      setActiveSheet("");
+      setPreviewViewerType(null);
 
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = null;
       }
       setBlobUrl(null);
@@ -194,9 +196,12 @@ const FileViewerDialog = ({
         if (isCancelled) return;
 
         const effectiveContentType =
-          preview.convertedContentType ?? preview.contentType ?? preview.blob.type;
+          preview.convertedContentType ??
+          preview.contentType ??
+          preview.blob.type;
         const resolvedViewerType =
-          getFileViewerTypeFromContentType(effectiveContentType) ?? defaultViewerType;
+          getFileViewerTypeFromContentType(effectiveContentType) ??
+          defaultViewerType;
 
         setPreviewViewerType(resolvedViewerType);
 

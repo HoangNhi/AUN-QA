@@ -102,12 +102,15 @@ export default function PopupTaskExecution({
 
   const [activeTab, setActiveTab] = useState("general");
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<TaskExecutionTask | null>(null);
-  const [taskPageRequest, setTaskPageRequest] = useState<TaskExecutionGetTaskListRequest>({
-    ActionPlanId: item.Id,
-    PageIndex: 1,
-    PageSize: 10,
-  });
+  const [selectedTask, setSelectedTask] = useState<TaskExecutionTask | null>(
+    null,
+  );
+  const [taskPageRequest, setTaskPageRequest] =
+    useState<TaskExecutionGetTaskListRequest>({
+      ActionPlanId: item.Id,
+      PageIndex: 1,
+      PageSize: 10,
+    });
 
   const { deleteTask, isMutating } = useActionTask();
 
@@ -142,14 +145,21 @@ export default function PopupTaskExecution({
   });
 
   const taskListQuery = useQuery({
-    queryKey: ["task-execution", "task-list", planDetailQuery.data?.Id ?? item.Id, taskPageRequest],
+    queryKey: [
+      "task-execution",
+      "task-list",
+      planDetailQuery.data?.Id ?? item.Id,
+      taskPageRequest,
+    ],
     queryFn: async () => {
       const response = await taskExecutionService.getTaskList({
         ...taskPageRequest,
         ActionPlanId: planDetailQuery.data?.Id ?? item.Id,
       });
       if (!response.Success || !response.Data) {
-        throw new Error(response.Message || "Không thể tải danh sách công việc.");
+        throw new Error(
+          response.Message || "Không thể tải danh sách công việc.",
+        );
       }
       return response.Data;
     },
@@ -161,13 +171,16 @@ export default function PopupTaskExecution({
   const cycleId = planDetail?.CycleId ?? item.CycleId;
   const standardId = planDetail?.StandardId ?? item.StandardId ?? "";
   const criterionId = planDetail?.CriterionId ?? item.CriterionId ?? "";
-  const currentStatus = Number(planDetail?.Status ?? item.Status ?? ActionPlanStatus.Draft);
+  const currentStatus = Number(
+    planDetail?.Status ?? item.Status ?? ActionPlanStatus.Draft,
+  );
   const currentPriority = Number(planDetail?.Priority ?? item.Priority ?? 2);
   const tasks = taskListQuery.data?.Data ?? [];
   const taskTotalRow = taskListQuery.data?.TotalRow ?? 0;
   const doneTasks = taskListQuery.data?.DoneCount ?? 0;
   const totalTasks = taskTotalRow;
-  const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+  const progressPercent =
+    totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
   const canEdit = currentStatus === ActionPlanStatus.InProgress;
   const statusOptions = useMemo(() => getActionPlanStatusComboboxOptions(), []);
   const cycleOptions = useCycleOptions(open);
@@ -179,7 +192,8 @@ export default function PopupTaskExecution({
   );
 
   const isTaskOwner = useCallback(
-    (task: TaskExecutionTask) => task.CreatedBy.trim().toLowerCase() === normalizedCurrentUsername,
+    (task: TaskExecutionTask) =>
+      task.CreatedBy.trim().toLowerCase() === normalizedCurrentUsername,
     [normalizedCurrentUsername],
   );
 
@@ -204,7 +218,9 @@ export default function PopupTaskExecution({
         return;
       }
 
-      const confirmed = window.confirm("Bạn có chắc chắn muốn xóa công việc này không?");
+      const confirmed = window.confirm(
+        "Bạn có chắc chắn muốn xóa công việc này không?",
+      );
       if (!confirmed) {
         return;
       }
@@ -224,16 +240,22 @@ export default function PopupTaskExecution({
       {
         id: "index",
         header: "STT",
-        cell: ({ row }) => <span className="text-slate-500">{row.index + 1}</span>,
+        cell: ({ row }) => (
+          <span className="text-slate-500">{row.index + 1}</span>
+        ),
       },
       {
         accessorKey: "Description",
         header: "Mô tả",
         cell: ({ row }) => (
           <div className="min-w-[220px]">
-            <p className="font-medium text-slate-900">{row.original.Description}</p>
+            <p className="font-medium text-slate-900">
+              {row.original.Description}
+            </p>
             {row.original.Note ? (
-              <p className="line-clamp-1 text-xs text-slate-500">{row.original.Note}</p>
+              <p className="line-clamp-1 text-xs text-slate-500">
+                {row.original.Note}
+              </p>
             ) : null}
           </div>
         ),
@@ -344,12 +366,21 @@ export default function PopupTaskExecution({
                   </div>
                 </div>
               </div>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => onOpenChange(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
               <div className="shrink-0 border-b px-5 pt-3">
                 <TabsList className="grid w-full max-w-sm grid-cols-2">
                   <TabsTrigger value="general">Thông tin chung</TabsTrigger>
@@ -357,7 +388,10 @@ export default function PopupTaskExecution({
                 </TabsList>
               </div>
 
-              <TabsContent value="general" className="mt-0 flex-1 overflow-y-auto px-5 py-5">
+              <TabsContent
+                value="general"
+                className="mt-0 flex-1 overflow-y-auto px-5 py-5"
+              >
                 {planDetailQuery.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -372,7 +406,10 @@ export default function PopupTaskExecution({
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="grid gap-2 md:col-span-2">
                         <Label>Tên kế hoạch</Label>
-                        <Input value={planDetail?.Title ?? item.Title} readOnly />
+                        <Input
+                          value={planDetail?.Title ?? item.Title}
+                          readOnly
+                        />
                       </div>
                       <div className="grid gap-2">
                         <Label>Chu kỳ</Label>
@@ -432,7 +469,10 @@ export default function PopupTaskExecution({
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="grid gap-2">
                         <Label>Ưu tiên</Label>
-                        <Select value={String(currentPriority)} onValueChange={() => {}}>
+                        <Select
+                          value={String(currentPriority)}
+                          onValueChange={() => {}}
+                        >
                           <SelectTrigger className="w-full" disabled>
                             <SelectValue placeholder="Chọn ưu tiên" />
                           </SelectTrigger>
@@ -448,7 +488,11 @@ export default function PopupTaskExecution({
                         <DatePicker
                           className="w-full"
                           optionLabel="Chọn thời hạn"
-                          value={parseLocalDate(parseDateInput(planDetail?.Deadline ?? item.Deadline))}
+                          value={parseLocalDate(
+                            parseDateInput(
+                              planDetail?.Deadline ?? item.Deadline,
+                            ),
+                          )}
                           onChange={() => {}}
                           disabled
                         />
@@ -485,11 +529,15 @@ export default function PopupTaskExecution({
                               key={assignee.UserId}
                               className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700"
                             >
-                              {assignee.Fullname ?? assignee.Username ?? assignee.UserId}
+                              {assignee.Fullname ??
+                                assignee.Username ??
+                                assignee.UserId}
                             </span>
                           ))
                         ) : (
-                          <p className="text-sm italic text-slate-400">Chưa có người thực hiện</p>
+                          <p className="text-sm italic text-slate-400">
+                            Chưa có người thực hiện
+                          </p>
                         )}
                       </div>
                     </div>
@@ -502,14 +550,17 @@ export default function PopupTaskExecution({
                         setListAttachment={() => {}}
                         readonly
                         multiFile
-                        previewContext="taskAttachment"
+                        previewContext="ActionPlan"
                       />
                     </div>
                   </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="tasks" className="mt-0 flex-1 overflow-y-auto px-5 py-5">
+              <TabsContent
+                value="tasks"
+                className="mt-0 flex-1 overflow-y-auto px-5 py-5"
+              >
                 {taskListQuery.isLoading ? (
                   <div className="flex items-center gap-2 text-sm text-slate-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -518,9 +569,16 @@ export default function PopupTaskExecution({
                 ) : (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-slate-500">{taskTotalRow} công việc</p>
+                      <p className="text-sm text-slate-500">
+                        {taskTotalRow} công việc
+                      </p>
                       {canEdit ? (
-                        <Button type="button" size="sm" onClick={handleOpenNewTask} disabled={isMutating}>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleOpenNewTask}
+                          disabled={isMutating}
+                        >
                           <Plus className="mr-1 h-3 w-3" />
                           Thêm công việc
                         </Button>
@@ -529,7 +587,8 @@ export default function PopupTaskExecution({
 
                     {!canEdit ? (
                       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                        Kế hoạch này chưa ở trạng thái đang thực hiện nên chưa thể chỉnh sửa công việc.
+                        Kế hoạch này chưa ở trạng thái đang thực hiện nên chưa
+                        thể chỉnh sửa công việc.
                       </div>
                     ) : null}
 

@@ -60,6 +60,14 @@ public class ActionPlanController : BaseController<ActionPlanController>
         return Ok(new BaseResponse(true, 200));
     }
 
+    [HttpPut("update-task")]
+    [AttributePermission(Action = ActionType.VIEW)]
+    public async Task<IActionResult> UpdateTask([FromBody] ActionPlanUpdateTaskRequest request)
+    {
+        var result = await _service.UpdateTaskByCouncil(request);
+        return Ok(new BaseResponse<ActionTaskDto> { Data = result, Success = true });
+    }
+
     [HttpPost("get-external-review-findings")]
     [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> GetExternalReviewFindings([FromBody] ActionPlanExternalFindingRequest request)

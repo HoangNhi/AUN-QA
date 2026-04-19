@@ -384,6 +384,50 @@ public class ActionPlanService : IActionPlanService
         return await GetById(plan.Id);
     }
 
+    public async Task<ActionTaskDto> UpdateTaskByCouncil(ActionPlanUpdateTaskRequest request)
+    {
+        var task = await _context.ActionTasks
+            .FirstOrDefaultAsync(x => x.Id == request.Id && !x.IsDeleted && x.IsActived);
+
+        if (task == null)
+        {
+            throw new BusinessException("Không tìm thấy công việc");
+        }
+
+        if (task.ActionPlanId != request.ActionPlanId)
+        {
+            throw new BusinessException("Công việc không thuộc kế hoạch hành động này");
+        }
+
+        var plan = await _context.ActionPlans
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == task.ActionPlanId && !x.IsDeleted && x.IsActived);
+
+        if (plan == null)
+        {
+            throw new BusinessException("Không tìm thấy kế hoạch hành động");
+        }
+
+        var councilRole = await GetMyCouncilRoleId(plan.CycleId);
+        if (councilRole != 1 && councilRole != 2)
+        {
+            throw new BusinessException("Chỉ CTH/PCT mới có quyền cập nhật công việc tại đây.");
+        }
+
+        var now = DateTime.UtcNow;
+        task.Description = request.Description.Trim();
+        task.Note = NormalizeText(request.Note);
+        task.TaskStatus = request.TaskStatus;
+        task.DueDate = request.DueDate;
+        task.CompletedAt = request.TaskStatus == (int)ActionTaskStatus.Done ? now : null;
+        task.UpdatedAt = now;
+        task.UpdatedBy = GetCurrentUsernameOrFallback();
+
+        await _context.SaveChangesAsync();
+
+        return await MapTaskDtoAsync(task.Id);
+    }
+
     public async Task DeleteList(ActionPlanDeleteListRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
@@ -601,6 +645,43 @@ public class ActionPlanService : IActionPlanService
             attachment.FileUrl,
             mode,
             fileId: attachment.Id);
+    }
+
+    private async Task<ActionTaskDto> MapTaskDtoAsync(Guid taskId)
+    {
+        var task = await _context.ActionTasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == taskId && !x.IsDeleted && x.IsActived)
+            ?? throw new BusinessException("Không tìm thấy công việc");
+
+        var attachments = await _context.ActionTaskAttachments
+            .AsNoTracking()
+            .Where(x => x.ActionTaskId == taskId && !x.IsDeleted && x.IsActived)
+            .OrderBy(x => x.CreatedAt)
+            .Select(x => new ActionTaskAttachmentDto
+            {
+                Id = x.Id,
+                ActionTaskId = x.ActionTaskId,
+                AttachmentId = x.AttachmentId,
+                FileName = x.FileName,
+                FileUrl = x.FileUrl,
+                UploadedAt = x.UploadedAt,
+                UploadedBy = x.UploadedBy
+            })
+            .ToListAsync();
+
+        return new ActionTaskDto
+        {
+            Id = task.Id,
+            ActionPlanId = task.ActionPlanId,
+            Description = task.Description,
+            Note = task.Note,
+            TaskStatus = task.TaskStatus,
+            DueDate = task.DueDate,
+            CompletedAt = task.CompletedAt,
+            CreatedBy = task.CreatedBy,
+            Attachments = attachments
+        };
     }
 
     private static void ValidateStatusTransition(int current, int requested)

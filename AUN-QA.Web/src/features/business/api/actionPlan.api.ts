@@ -8,8 +8,10 @@ import type {
   ActionPlanGetListRequest,
   ActionPlanListItem,
   ActionPlanUpsertRequest,
+  ActionPlanUpdateTaskRequest,
   AssignableMember,
   ExternalFindingOption,
+  ActionTask,
 } from "../types/actionPlan.types";
 
 export const actionPlanService = {
@@ -50,4 +52,9 @@ export const actionPlanService = {
     api.get<number>(API_ENDPOINTS.Business.ActionPlan.GET_MY_COUNCIL_ROLE, {
       params: { cycleId },
     }),
+
+  updateTask: (
+    request: ActionPlanUpdateTaskRequest,
+  ): Promise<ApiResponse<ActionTask>> =>
+    api.put<ActionTask>(API_ENDPOINTS.Business.ActionPlan.UPDATE_TASK, request),
 };

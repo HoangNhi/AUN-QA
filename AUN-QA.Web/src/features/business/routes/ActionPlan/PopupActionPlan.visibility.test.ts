@@ -5,6 +5,8 @@ import {
   getPopupSaveStatus,
   getPopupPanelInitialOpenState,
   isAssigneeSectionVisible,
+  isActionPlanTasksTabEnabled,
+  shouldShowActionPlanSidePanel,
 } from "./PopupActionPlan";
 
 vi.mock("@/components/ui/upload-file", () => ({
@@ -43,5 +45,22 @@ describe("getPopupPanelInitialOpenState", () => {
 
   it("closes the panel for edit items", () => {
     expect(getPopupPanelInitialOpenState({ IsEdit: true })).toBe(false);
+  });
+});
+
+describe("isActionPlanTasksTabEnabled", () => {
+  it("disables tasks tab while creating a new plan", () => {
+    expect(isActionPlanTasksTabEnabled(true)).toBe(false);
+  });
+
+  it("enables tasks tab for existing plans", () => {
+    expect(isActionPlanTasksTabEnabled(false)).toBe(true);
+  });
+});
+
+describe("shouldShowActionPlanSidePanel", () => {
+  it("shows the side panel only on the general tab when open", () => {
+    expect(shouldShowActionPlanSidePanel("general", true)).toBe(true);
+    expect(shouldShowActionPlanSidePanel("tasks", true)).toBe(false);
   });
 });

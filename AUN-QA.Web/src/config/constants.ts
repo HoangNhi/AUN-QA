@@ -174,6 +174,7 @@ export const API_ENDPOINTS = {
       GET_ASSIGNABLE_MEMBERS: `${BUSINESS_BASE}/ActionPlan/assignable-members`,
       GET_ASSIGNABLE_USERS_COMBOBOX: `${BUSINESS_BASE}/ActionPlan/assignable-users-combobox`,
       GET_MY_COUNCIL_ROLE: `${BUSINESS_BASE}/ActionPlan/my-council-role`,
+      UPDATE_TASK: `${BUSINESS_BASE}/ActionPlan/update-task`,
       PREVIEW_ATTACHMENT: (
         attachmentId: string,
         mode: "internal" | "external" = "internal",

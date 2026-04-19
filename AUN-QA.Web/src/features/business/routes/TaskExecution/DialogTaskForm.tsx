@@ -11,7 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import UploadFile, { type UploadFileRef } from "@/components/ui/upload-file";
 import { getFileUrl } from "@/lib/utils";
 import { useActionTask } from "./hooks/useActionTask";
-import type { TaskExecutionTask } from "@/features/business/types/taskExecution.types";
+import type {
+  TaskExecutionTask,
+  TaskExecutionUpsertTaskRequest,
+} from "@/features/business/types/taskExecution.types";
 import { ActionTaskStatus } from "@/features/business/types/actionPlan.types";
 
 const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
@@ -38,6 +41,7 @@ export interface DialogTaskFormProps {
   planId: string;
   isOwner: boolean;
   onSaved: () => void;
+  onSave?: (request: TaskExecutionUpsertTaskRequest) => Promise<TaskExecutionTask>;
 }
 
 function parseDateToLocal(value?: string | null): Date | undefined {
@@ -88,10 +92,12 @@ export default function DialogTaskForm({
   planId,
   isOwner,
   onSaved,
+  onSave,
 }: DialogTaskFormProps) {
   const uploadRef = useRef<UploadFileRef>(null);
   const { saveTask, uploadAttachment, isMutating } = useActionTask();
   const [draft, setDraft] = useState<TaskDraft>(() => buildDraft(task));
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -102,6 +108,7 @@ export default function DialogTaskForm({
   }, [open, task]);
 
   const existingAttachments = task?.Attachments ?? [];
+  const isBusy = isMutating || isSaving;
   const title = !isOwner
     ? "Xem công việc"
     : task && task.Id !== EMPTY_GUID
@@ -109,12 +116,11 @@ export default function DialogTaskForm({
       : "Thêm công việc mới";
 
   const handleSave = async () => {
-    if (!planId || !draft.Description.trim()) {
+    if (!planId || !draft.Description.trim() || isBusy) {
       return;
     }
 
-    const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
-    const savedTask = await saveTask({
+    const request: TaskExecutionUpsertTaskRequest = {
       Id: draft.Id,
       ActionPlanId: planId,
       Description: draft.Description.trim(),
@@ -122,22 +128,30 @@ export default function DialogTaskForm({
       TaskStatus: Number(draft.TaskStatus),
       DueDate: draft.DueDate ? format(draft.DueDate, "yyyy-MM-dd") : null,
       FolderUpload: draft.FolderUpload,
-    });
+    };
 
-    if (pendingFiles.length > 0) {
-      const uploaded = await uploadRef.current?.upload();
-      if (uploaded === false) {
-        return;
+    setIsSaving(true);
+    try {
+      const pendingFiles = uploadRef.current?.getPendingFiles() ?? [];
+      const savedTask = onSave ? await onSave(request) : await saveTask(request);
+
+      if (pendingFiles.length > 0) {
+        const uploaded = await uploadRef.current?.upload();
+        if (uploaded === false) {
+          return;
+        }
+
+        await uploadAttachment({
+          TaskId: savedTask.Id,
+          FolderUpload: draft.FolderUpload,
+        });
       }
 
-      await uploadAttachment({
-        TaskId: savedTask.Id,
-        FolderUpload: draft.FolderUpload,
-      });
+      onSaved();
+      onOpenChange(false);
+    } finally {
+      setIsSaving(false);
     }
-
-    onSaved();
-    onOpenChange(false);
   };
 
   return (
@@ -179,7 +193,7 @@ export default function DialogTaskForm({
                   onChange={(e) => setDraft((prev) => ({ ...prev, Description: e.target.value }))}
                   placeholder="Nhập mô tả công việc..."
                   rows={3}
-                  readOnly={!isOwner || isMutating}
+                  readOnly={!isOwner || isBusy}
                 />
               </div>
 
@@ -190,7 +204,7 @@ export default function DialogTaskForm({
                   onChange={(e) => setDraft((prev) => ({ ...prev, Note: e.target.value }))}
                   placeholder="Ghi chú thêm..."
                   rows={2}
-                  readOnly={!isOwner || isMutating}
+                  readOnly={!isOwner || isBusy}
                 />
               </div>
 
@@ -208,7 +222,7 @@ export default function DialogTaskForm({
                     }
                     placeholder="Chọn trạng thái"
                     emptyText="Không có trạng thái."
-                    readonly={!isOwner || isMutating}
+                    readonly={!isOwner || isBusy}
                   />
                 </div>
 
@@ -219,7 +233,7 @@ export default function DialogTaskForm({
                     optionLabel="Chọn thời hạn"
                     value={draft.DueDate}
                     onChange={(date) => setDraft((prev) => ({ ...prev, DueDate: date }))}
-                    disabled={!isOwner || isMutating}
+                    disabled={!isOwner || isBusy}
                   />
                 </div>
               </div>
@@ -255,7 +269,7 @@ export default function DialogTaskForm({
                     ref={uploadRef}
                     folderUpload={draft.FolderUpload}
                     fileSizeLimit={100}
-                    readonly={isMutating}
+                    readonly={isBusy}
                     allowDownload
                     viewerMode="internal"
                     previewContext="taskAttachment"
@@ -273,9 +287,9 @@ export default function DialogTaskForm({
               <Button
                 type="button"
                 onClick={() => void handleSave()}
-                disabled={isMutating || !draft.Description.trim()}
+                disabled={isBusy || !draft.Description.trim()}
               >
-                {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Lưu
               </Button>
             ) : null}

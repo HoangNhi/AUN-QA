@@ -159,4 +159,14 @@ export interface ActionPlanExternalFindingRequest {
   CurrentActionPlanId?: string | null;
 }
 
+export interface ActionPlanUpdateTaskRequest {
+  Id: string;
+  ActionPlanId: string;
+  Description: string;
+  Note?: string | null;
+  TaskStatus: number;
+  DueDate?: string | null;
+  FolderUpload?: string | null;
+}
+
 export type ActionPlanListResponse = GetListPagingResponse<ActionPlanListItem>;

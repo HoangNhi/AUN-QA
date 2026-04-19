@@ -4,9 +4,11 @@ import { Combobox } from "@/components/ui/combobox";
 import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useListPage } from "@/hooks/useListPage";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
+import { ACTION_PLAN_STATUS_OPTIONS } from "@/features/business/routes/ActionPlan/actionPlan.utils";
 import { useTaskExecutionPlans } from "./hooks/useTaskExecutionPlans";
 import { getTaskExecutionColumns } from "./columns";
 import PopupTaskExecution from "./PopupTaskExecution";
+import { ActionPlanStatus } from "@/features/business/types/actionPlan.types";
 import type { TaskExecutionPlanListItem } from "@/features/business/types/taskExecution.types";
 
 export default function TaskExecutionPage() {
@@ -42,6 +44,7 @@ export default function TaskExecutionPage() {
     setRowSelection,
     defaultPageRequest: {
       CycleId: undefined,
+      Status: undefined,
     },
   });
 
@@ -62,21 +65,42 @@ export default function TaskExecutionPage() {
       filterGridCols="md:grid-cols-3"
       searchInputClassName="col-span-1 bg-background"
       filterContent={
-        <Combobox
-          options={cycleOptions.options ?? []}
-          loading={cycleOptions.isLoading}
-          value={pageRequest.CycleId ?? undefined}
-          onValueChange={(value) =>
-            setPageRequest((prev) => ({
-              ...prev,
-              CycleId: value || undefined,
-              PageIndex: 1,
-            }))
-          }
-          placeholder="Tất cả chu kỳ"
-          searchPlaceholder="Tìm chu kỳ..."
-          emptyText="Không tìm thấy chu kỳ."
-        />
+        <>
+          <Combobox
+            options={cycleOptions.options ?? []}
+            loading={cycleOptions.isLoading}
+            value={pageRequest.CycleId ?? undefined}
+            onValueChange={(value) =>
+              setPageRequest((prev) => ({
+                ...prev,
+                CycleId: value || undefined,
+                PageIndex: 1,
+              }))
+            }
+            placeholder="Tất cả chu kỳ"
+            searchPlaceholder="Tìm chu kỳ..."
+            emptyText="Không tìm thấy chu kỳ."
+          />
+          <Combobox
+            options={ACTION_PLAN_STATUS_OPTIONS.filter(
+              (option) => option.value !== ActionPlanStatus.Draft,
+            ).map((option) => ({
+              Value: String(option.value),
+              Text: option.label,
+            }))}
+            value={pageRequest.Status != null ? String(pageRequest.Status) : undefined}
+            onValueChange={(value) =>
+              setPageRequest((prev) => ({
+                ...prev,
+                Status: value ? Number(value) : undefined,
+                PageIndex: 1,
+              }))
+            }
+            placeholder="Tất cả trạng thái"
+            searchPlaceholder="Tìm trạng thái..."
+            emptyText="Không tìm thấy trạng thái."
+          />
+        </>
       }
       hideAdd
     >

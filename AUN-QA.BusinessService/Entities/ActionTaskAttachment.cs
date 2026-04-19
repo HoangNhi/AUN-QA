@@ -33,5 +33,7 @@ public partial class ActionTaskAttachment
 
     public double FileSize { get; set; }
 
+    public string FileExtension { get; set; } = null!;
+
     public virtual ActionTask ActionTask { get; set; } = null!;
 }

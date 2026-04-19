@@ -21,6 +21,7 @@ export const taskExecutionService = {
         pageSize: request.PageSize,
         textSearch: request.TextSearch,
         cycleId: request.CycleId,
+        status: request.Status,
       },
     }),
 

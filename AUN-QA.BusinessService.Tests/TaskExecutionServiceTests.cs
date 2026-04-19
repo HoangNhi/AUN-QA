@@ -104,9 +104,13 @@ public class TaskExecutionServiceTests
 
         Assert.Single(result.Attachments);
         Assert.Equal(4096, result.Attachments[0].FileSize);
+        var fileExtensionProperty = result.Attachments[0].GetType().GetProperty("FileExtension");
+        Assert.NotNull(fileExtensionProperty);
+        Assert.Equal(".pdf", fileExtensionProperty!.GetValue(result.Attachments[0]));
 
         var savedAttachment = await context.ActionTaskAttachments.FirstAsync(x => x.Id == attachmentId);
         Assert.Equal(4096, savedAttachment.FileSize);
+        Assert.Equal(".pdf", savedAttachment.FileExtension);
     }
 
     [Fact]
@@ -134,6 +138,130 @@ public class TaskExecutionServiceTests
         Assert.Single(result.Data);
         Assert.Single(result.Data[0].Attachments);
         Assert.Equal(8192, result.Data[0].Attachments[0].FileSize);
+        var fileExtensionProperty = result.Data[0].Attachments[0].GetType().GetProperty("FileExtension");
+        Assert.NotNull(fileExtensionProperty);
+        Assert.Equal(".pdf", fileExtensionProperty!.GetValue(result.Data[0].Attachments[0]));
+    }
+
+    [Fact]
+    public async Task GetMyPlans_mac_dinh_hien_thi_ke_hoach_InProgress_PendingReview_va_Completed()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var inProgressPlanId = SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.InProgress);
+        var pendingReviewPlanId = SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.PendingReview);
+        var completedPlanId = SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.Completed);
+        SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.Draft);
+        SeedCouncil(context, cycleId, userId);
+
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = inProgressPlanId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = "seed",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = completedPlanId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = "seed",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = pendingReviewPlanId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = "seed",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.SaveChanges();
+
+        var service = CreateService(context, userId, "secretary");
+
+        var result = await service.GetMyPlans(new TaskExecutionGetPlansRequest
+        {
+            PageIndex = 1,
+            PageSize = 10
+        });
+
+        Assert.Equal(3, result.TotalRow);
+        Assert.Equal(3, result.Data.Count);
+        Assert.All(result.Data, item => Assert.Contains(item.Status, new[] {
+            (int)ActionPlanStatus.InProgress,
+            (int)ActionPlanStatus.PendingReview,
+            (int)ActionPlanStatus.Completed
+        }));
+    }
+
+    [Fact]
+    public async Task GetMyPlans_loc_dung_theo_trang_thai_yeu_cau()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var inProgressPlanId = SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.InProgress);
+        var completedPlanId = SeedAssignedPlan(context, cycleId, (int)ActionPlanStatus.Completed);
+        SeedCouncil(context, cycleId, userId);
+
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = inProgressPlanId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = "seed",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = completedPlanId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = "seed",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+        context.SaveChanges();
+
+        var service = CreateService(context, userId, "secretary");
+        var request = new TaskExecutionGetPlansRequest
+        {
+            PageIndex = 1,
+            PageSize = 10
+        };
+
+        var statusProperty = typeof(TaskExecutionGetPlansRequest).GetProperty("Status");
+        Assert.NotNull(statusProperty);
+        statusProperty!.SetValue(request, (int)ActionPlanStatus.Completed);
+
+        var result = await service.GetMyPlans(request);
+
+        Assert.Equal(1, result.TotalRow);
+        Assert.Single(result.Data);
+        Assert.Equal((int)ActionPlanStatus.Completed, result.Data[0].Status);
     }
 
     [Fact]
@@ -226,6 +354,7 @@ public class TaskExecutionServiceTests
             Id = attachmentId,
             ActionTaskId = taskId,
             FileName = "task.pdf",
+            FileExtension = ".pdf",
             FileUrl = "/files/task.pdf",
             UploadedAt = DateTime.UtcNow,
             UploadedBy = "secretary",
@@ -300,7 +429,7 @@ public class TaskExecutionServiceTests
         return cycleId;
     }
 
-    private static Guid SeedAssignedPlan(BusinessContext context, Guid cycleId)
+    private static Guid SeedAssignedPlan(BusinessContext context, Guid cycleId, int status = (int)ActionPlanStatus.InProgress)
     {
         var planId = Guid.NewGuid();
         context.ActionPlans.Add(new ActionPlan
@@ -310,7 +439,7 @@ public class TaskExecutionServiceTests
             Title = "Kế hoạch",
             Priority = (int)ActionPriority.Medium,
             Deadline = DateTime.UtcNow.AddDays(7),
-            Status = (int)ActionPlanStatus.InProgress,
+            Status = status,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "admin",
             IsActived = true,
@@ -341,13 +470,19 @@ public class TaskExecutionServiceTests
         return taskId;
     }
 
-    private static void SeedAttachment(BusinessContext context, Guid taskId, string fileName, double fileSize = 0)
+    private static void SeedAttachment(
+        BusinessContext context,
+        Guid taskId,
+        string fileName,
+        double fileSize = 0,
+        string fileExtension = ".pdf")
     {
         context.ActionTaskAttachments.Add(new ActionTaskAttachment
         {
             Id = Guid.NewGuid(),
             ActionTaskId = taskId,
             FileName = fileName,
+            FileExtension = fileExtension,
             FileUrl = $"/files/{fileName}",
             FileSize = fileSize,
             UploadedAt = DateTime.UtcNow,

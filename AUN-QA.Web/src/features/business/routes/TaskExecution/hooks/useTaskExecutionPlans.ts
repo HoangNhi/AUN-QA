@@ -27,6 +27,7 @@ export function useTaskExecutionPlans() {
     PageIndex: 1,
     PageSize: 10,
     TextSearch: "",
+    Status: undefined,
   });
 
   const {

@@ -44,6 +44,7 @@ export interface TaskExecutionPlanDetail {
 
 export interface TaskExecutionGetPlansRequest extends GetListPagingRequest {
   CycleId?: string | null;
+  Status?: number | null;
 }
 
 export interface TaskExecutionGetTaskListRequest {

@@ -35,6 +35,7 @@ export interface ActionTaskAttachment {
   ActionTaskId: string;
   AttachmentId?: string | null;
   FileName: string;
+  FileExtension?: string | null;
   FileSize?: number | null;
   FileUrl?: string | null;
   UploadedAt: string;

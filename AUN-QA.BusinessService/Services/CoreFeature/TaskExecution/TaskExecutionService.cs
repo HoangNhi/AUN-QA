@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.TaskExecution.Dtos;
@@ -126,6 +127,7 @@ public class TaskExecutionService : ITaskExecutionService
                     ActionTaskId = a.ActionTaskId,
                     AttachmentId = a.AttachmentId,
                     FileName = a.FileName,
+                    FileExtension = a.FileExtension,
                     FileUrl = a.FileUrl,
                     FileSize = a.FileSize,
                     UploadedAt = a.UploadedAt,
@@ -202,18 +204,21 @@ public class TaskExecutionService : ITaskExecutionService
 
                 foreach (var item in attachments)
                 {
-                var entity = new ActionTaskAttachmentEntity
-                {
-                    Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                    ActionTaskId = task.Id,
-                    AttachmentId = item.Id == Guid.Empty ? null : item.Id,
-                    FileName = item.FileName,
-                    FileUrl = item.FileUrl,
-                    FileSize = item.FileSize ?? 0,
-                    UploadedAt = now,
-                    UploadedBy = username,
-                    CreatedAt = now,
-                    CreatedBy = username,
+                    var entity = new ActionTaskAttachmentEntity
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        ActionTaskId = task.Id,
+                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        FileName = item.FileName,
+                        FileExtension = !string.IsNullOrWhiteSpace(item.FileExtension)
+                            ? item.FileExtension
+                            : Path.GetExtension(item.FileName),
+                        FileUrl = item.FileUrl,
+                        FileSize = item.FileSize ?? 0,
+                        UploadedAt = now,
+                        UploadedBy = username,
+                        CreatedAt = now,
+                        CreatedBy = username,
                         IsActived = true,
                         IsDeleted = false
                     };
@@ -312,18 +317,21 @@ public class TaskExecutionService : ITaskExecutionService
 
                 foreach (var item in attachments)
                 {
-                var entity = new ActionTaskAttachmentEntity
-                {
-                    Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                    ActionTaskId = task.Id,
-                    AttachmentId = item.Id == Guid.Empty ? null : item.Id,
-                    FileName = item.FileName,
-                    FileUrl = item.FileUrl,
-                    FileSize = item.FileSize ?? 0,
-                    UploadedAt = now,
-                    UploadedBy = username,
-                    CreatedAt = now,
-                    CreatedBy = username,
+                    var entity = new ActionTaskAttachmentEntity
+                    {
+                        Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
+                        ActionTaskId = task.Id,
+                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        FileName = item.FileName,
+                        FileExtension = !string.IsNullOrWhiteSpace(item.FileExtension)
+                            ? item.FileExtension
+                            : Path.GetExtension(item.FileName),
+                        FileUrl = item.FileUrl,
+                        FileSize = item.FileSize ?? 0,
+                        UploadedAt = now,
+                        UploadedBy = username,
+                        CreatedAt = now,
+                        CreatedBy = username,
                         IsActived = true,
                         IsDeleted = false
                     };
@@ -424,7 +432,7 @@ public class TaskExecutionService : ITaskExecutionService
     {
         return _context.ActionPlans
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && x.IsActived && x.Status == (int)ActionPlanStatus.InProgress);
+            .Where(x => !x.IsDeleted && x.IsActived);
     }
 
     private async Task<GetListPagingResponse<TaskExecutionPlanListItemDto>> BuildPlanListResponseAsync(
@@ -435,6 +443,17 @@ public class TaskExecutionService : ITaskExecutionService
         {
             query = query.Where(x => x.CycleId == request.CycleId.Value);
         }
+
+        var allowedStatuses = request.Status.HasValue
+            ? new[] { request.Status.Value }
+            : new[]
+            {
+                (int)ActionPlanStatus.InProgress,
+                (int)ActionPlanStatus.PendingReview,
+                (int)ActionPlanStatus.Completed
+            };
+
+        query = query.Where(x => allowedStatuses.Contains(x.Status));
 
         if (!string.IsNullOrWhiteSpace(request.TextSearch))
         {
@@ -588,6 +607,7 @@ public class TaskExecutionService : ITaskExecutionService
                 ActionTaskId = x.ActionTaskId,
                 AttachmentId = x.AttachmentId,
                 FileName = x.FileName,
+                FileExtension = x.FileExtension,
                 FileUrl = x.FileUrl,
                 FileSize = x.FileSize,
                 UploadedAt = x.UploadedAt,

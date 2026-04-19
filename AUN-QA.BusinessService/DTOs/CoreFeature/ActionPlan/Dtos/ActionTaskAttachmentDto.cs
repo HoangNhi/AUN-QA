@@ -10,6 +10,8 @@ public class ActionTaskAttachmentDto
 
     public string FileName { get; set; } = string.Empty;
 
+    public string FileExtension { get; set; } = string.Empty;
+
     public string? FileUrl { get; set; }
 
     public double FileSize { get; set; }

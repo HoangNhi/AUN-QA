@@ -197,6 +197,9 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.FileExtension)
+                .HasMaxLength(50)
+                .HasDefaultValue("");
             entity.Property(e => e.FileName).HasMaxLength(500);
             entity.Property(e => e.FileUrl).HasMaxLength(2000);
             entity.Property(e => e.IsActived).HasDefaultValue(true);

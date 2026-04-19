@@ -79,6 +79,50 @@ public class ActionPlanUpdateTaskCouncilRoleTests
         Assert.Contains("CTH/PCT", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task UpdateTaskByCouncil_luu_duoc_file_extension_cho_attachment_moi()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var (cycleId, planId, taskId) = SeedPlanWithTask(context, status: (int)ActionPlanStatus.InProgress);
+        SeedCouncil(context, cycleId, userId, (int)CouncilRole.HeadOfCouncil);
+        await context.SaveChangesAsync();
+
+        var attachmentId = Guid.NewGuid();
+        var uploadService = Substitute.For<IUploadFileService>();
+        uploadService.UploadDataAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(new List<AUN_QA.Shared.DTOs.Base.ModelAttachment>
+            {
+                new()
+                {
+                    Id = attachmentId,
+                    FileName = "bien-ban-hop.pdf",
+                    FileExtension = ".pdf",
+                    FileSize = 2048,
+                    FileUrl = "/files/bien-ban-hop.pdf"
+                }
+            }));
+        uploadService.DeleteDataAsync(Arg.Any<List<string>>())
+            .Returns(Task.FromResult(true));
+
+        var service = CreateServiceForUser(context, userId, "council-user", uploadService);
+
+        var result = await service.UpdateTaskByCouncil(new ActionPlanUpdateTaskRequest
+        {
+            Id = taskId,
+            ActionPlanId = planId,
+            Description = "Nội dung mới",
+            TaskStatus = (int)ActionTaskStatus.Done,
+            FolderUpload = "temp-folder"
+        });
+
+        Assert.Single(result.Attachments);
+        Assert.Equal(".pdf", result.Attachments[0].FileExtension);
+
+        var savedAttachment = await context.ActionTaskAttachments.FirstAsync(x => x.Id == attachmentId);
+        Assert.Equal(".pdf", savedAttachment.FileExtension);
+    }
+
     private static BusinessContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<BusinessContext>()
@@ -161,7 +205,8 @@ public class ActionPlanUpdateTaskCouncilRoleTests
     private static ActionPlanService CreateServiceForUser(
         BusinessContext context,
         Guid userId,
-        string username)
+        string username,
+        IUploadFileService? uploadService = null)
     {
         var claims = new List<Claim>
         {
@@ -178,9 +223,15 @@ public class ActionPlanUpdateTaskCouncilRoleTests
             }
         };
 
-        var uploadService = Substitute.For<IUploadFileService>();
-        uploadService.UploadDataAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
-            .Returns(Task.FromResult(new List<AUN_QA.Shared.DTOs.Base.ModelAttachment>()));
+        var shouldUseDefaultUploadResponses = uploadService == null;
+        uploadService ??= Substitute.For<IUploadFileService>();
+
+        if (shouldUseDefaultUploadResponses)
+        {
+            uploadService.UploadDataAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(Task.FromResult(new List<AUN_QA.Shared.DTOs.Base.ModelAttachment>()));
+        }
+
         uploadService.DeleteDataAsync(Arg.Any<List<string>>())
             .Returns(Task.FromResult(true));
 

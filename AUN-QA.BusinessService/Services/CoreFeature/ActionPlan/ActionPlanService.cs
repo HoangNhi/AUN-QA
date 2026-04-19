@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.ActionPlan.Requests;
@@ -478,6 +479,9 @@ public class ActionPlanService : IActionPlanService
                         ActionTaskId = task.Id,
                         AttachmentId = item.Id == Guid.Empty ? null : item.Id,
                         FileName = item.FileName,
+                        FileExtension = !string.IsNullOrWhiteSpace(item.FileExtension)
+                            ? item.FileExtension
+                            : Path.GetExtension(item.FileName),
                         FileUrl = item.FileUrl,
                         FileSize = item.FileSize ?? 0,
                         UploadedAt = now,
@@ -740,6 +744,7 @@ public class ActionPlanService : IActionPlanService
                 ActionTaskId = x.ActionTaskId,
                 AttachmentId = x.AttachmentId,
                 FileName = x.FileName,
+                FileExtension = x.FileExtension,
                 FileUrl = x.FileUrl,
                 FileSize = x.FileSize,
                 UploadedAt = x.UploadedAt,
@@ -951,6 +956,7 @@ public class ActionPlanService : IActionPlanService
                         ActionTaskId = a.ActionTaskId,
                         AttachmentId = a.AttachmentId,
                         FileName = a.FileName,
+                        FileExtension = a.FileExtension,
                         FileUrl = a.FileUrl,
                         FileSize = a.FileSize,
                         UploadedAt = a.UploadedAt,

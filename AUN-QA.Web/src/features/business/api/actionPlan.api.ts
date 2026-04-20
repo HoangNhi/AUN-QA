@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/config/constants";
 import type { GetListPagingResponse } from "@/types/base/base.types";
 import type {
   ActionPlanDeleteListRequest,
+  ActionPlanDeleteResult,
   ActionPlanDetail,
   ActionPlanExternalFindingRequest,
   ActionPlanGetListRequest,
@@ -27,8 +28,12 @@ export const actionPlanService = {
   update: (request: ActionPlanUpsertRequest): Promise<ApiResponse<ActionPlanDetail>> =>
     api.put<ActionPlanDetail>(API_ENDPOINTS.Business.ActionPlan.UPDATE, request),
 
-  deleteList: (request: ActionPlanDeleteListRequest): Promise<ApiResponse<null>> =>
-    api.delete<null>(API_ENDPOINTS.Business.ActionPlan.DELETE_LIST, { data: request }),
+  deleteList: (
+    request: ActionPlanDeleteListRequest,
+  ): Promise<ApiResponse<ActionPlanDeleteResult>> =>
+    api.delete<ActionPlanDeleteResult>(API_ENDPOINTS.Business.ActionPlan.DELETE_LIST, {
+      data: request,
+    }),
 
   getExternalReviewFindings: (
     request: ActionPlanExternalFindingRequest,

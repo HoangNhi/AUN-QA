@@ -42,6 +42,24 @@ function renderActionsCell(item: ActionPlanListItem) {
   render(<>{cell}</>);
 }
 
+function renderSelectCell(item: ActionPlanListItem) {
+  const columns = getActionPlanColumns(vi.fn(), vi.fn());
+  const selectCol = columns.find((col) => col.id === "select");
+
+  if (!selectCol?.cell) {
+    throw new Error("Select cell template is not configured");
+  }
+
+  const mockRow = {
+    original: item,
+    getIsSelected: vi.fn().mockReturnValue(false),
+    toggleSelected: vi.fn(),
+  };
+
+  const cell = flexRender(selectCol.cell, { row: mockRow } as never);
+  render(<>{cell}</>);
+}
+
 describe("ActionPlan columns actions", () => {
   it("renders overflow menu trigger instead of direct open button", () => {
     renderActionsCell(makeItem());
@@ -70,5 +88,31 @@ describe("ActionPlan columns actions", () => {
     fireEvent.click(trigger);
 
     expect(screen.queryByText("Xóa")).not.toBeInTheDocument();
+  });
+});
+
+describe("ActionPlan columns select checkbox", () => {
+  it("renders a checkbox for each row", () => {
+    renderSelectCell(makeItem());
+
+    expect(
+      screen.getByRole("checkbox", { name: /select row/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("checkbox is rendered for Draft status", () => {
+    renderSelectCell(makeItem({ Status: ActionPlanStatus.Draft }));
+
+    expect(
+      screen.getByRole("checkbox", { name: /select row/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("checkbox is rendered for InProgress status", () => {
+    renderSelectCell(makeItem({ Status: ActionPlanStatus.InProgress }));
+
+    expect(
+      screen.getByRole("checkbox", { name: /select row/i }),
+    ).toBeInTheDocument();
   });
 });

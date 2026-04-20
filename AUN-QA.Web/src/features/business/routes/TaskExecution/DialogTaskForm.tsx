@@ -88,15 +88,22 @@ function buildDraft(task: TaskExecutionTask | null): TaskDraft {
 }
 
 function mapToAttachment(a: TaskExecutionTask["Attachments"][number]): Attachment {
+  const ext = a.FileExtension ?? "";
+  const fullFileName = ext
+    ? ext.startsWith(".")
+      ? `${a.FileName}${ext}`
+      : `${a.FileName}.${ext}`
+    : a.FileName;
+
   return {
     Id: a.Id,
     ReferenceType: 0,
     RelatedId: a.ActionTaskId,
     FileName: a.FileName,
-    FileExtension: "",
+    FileExtension: ext,
     FileSize: a.FileSize ?? 0,
     FileUrl: a.FileUrl ?? "",
-    FullFileName: a.FileName,
+    FullFileName: fullFileName,
   };
 }
 

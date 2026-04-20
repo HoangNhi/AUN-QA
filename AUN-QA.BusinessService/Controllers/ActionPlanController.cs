@@ -37,7 +37,7 @@ public class ActionPlanController : BaseController<ActionPlanController>
     }
 
     [HttpPost("insert")]
-    [AttributePermission(Action = ActionType.ADD)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> Insert([FromBody] ActionPlanUpsertRequest request)
     {
         var result = await _service.Insert(request);
@@ -45,7 +45,7 @@ public class ActionPlanController : BaseController<ActionPlanController>
     }
 
     [HttpPut("update")]
-    [AttributePermission(Action = ActionType.UPDATE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> Update([FromBody] ActionPlanUpsertRequest request)
     {
         var result = await _service.Update(request);
@@ -53,11 +53,11 @@ public class ActionPlanController : BaseController<ActionPlanController>
     }
 
     [HttpDelete("delete-list")]
-    [AttributePermission(Action = ActionType.DELETE)]
+    [AttributePermission(Action = ActionType.VIEW)]
     public async Task<IActionResult> DeleteList([FromBody] ActionPlanDeleteListRequest request)
     {
-        await _service.DeleteList(request);
-        return Ok(new BaseResponse(true, 200));
+        var result = await _service.DeleteList(request);
+        return Ok(new BaseResponse<DeleteListResultDto> { Data = result, Success = true });
     }
 
     [HttpPut("update-task")]

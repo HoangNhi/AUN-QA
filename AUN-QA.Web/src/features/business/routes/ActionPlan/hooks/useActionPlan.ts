@@ -43,9 +43,20 @@ export function useActionPlan() {
       if (!response.Success) {
         throw new Error(response.Message || "Không thể xóa kế hoạch hành động.");
       }
+
+      return response.Data!;
     },
-    onSuccess: async () => {
-      toast.success("Đã xóa kế hoạch hành động.");
+    onSuccess: async (result) => {
+      if (result.DeletedCount > 0 && result.SkippedCount === 0) {
+        toast.success(`Đã xóa ${result.DeletedCount} kế hoạch hành động.`);
+      } else if (result.DeletedCount > 0 && result.SkippedCount > 0) {
+        toast.warning(
+          `Đã xóa ${result.DeletedCount} kế hoạch. ${result.SkippedCount} kế hoạch bị bỏ qua do không có quyền.`,
+        );
+      } else {
+        toast.error("Không có kế hoạch nào được xóa. Bạn không có quyền xóa các mục đã chọn.");
+      }
+
       await invalidate();
     },
     onError: (error) => {

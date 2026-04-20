@@ -508,7 +508,7 @@ public class ActionPlanService : IActionPlanService
         return await MapTaskDtoAsync(task.Id);
     }
 
-    public async Task DeleteList(ActionPlanDeleteListRequest request)
+    public async Task<DeleteListResultDto> DeleteList(ActionPlanDeleteListRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
         {
@@ -524,22 +524,71 @@ public class ActionPlanService : IActionPlanService
             throw new BusinessException("Không tìm thấy kế hoạch hành động");
         }
 
+        var now = DateTime.UtcNow;
+        var username = GetCurrentUsernameOrFallback();
+        var isAdmin = IsAdmin();
+
+        var rolePerCycle = new Dictionary<Guid, int>();
+        if (!isAdmin)
+        {
+            var userId = GetCurrentUserIdOrNull();
+            if (userId != null)
+            {
+                var cycleIds = plans.Select(x => x.CycleId).Distinct().ToList();
+                var councils = await _context.Councils
+                    .AsNoTracking()
+                    .Where(x => cycleIds.Contains(x.CycleId)
+                        && x.UserId == userId.Value
+                        && !x.IsDeleted
+                        && x.IsActived)
+                    .Select(x => new { x.CycleId, x.RoleId })
+                    .ToListAsync();
+                rolePerCycle = councils.ToDictionary(x => x.CycleId, x => x.RoleId);
+            }
+        }
+
+        int deletedCount = 0;
+        int skippedCount = 0;
+
         foreach (var plan in plans)
         {
-            if (plan.Status != (int)ActionPlanStatus.Draft)
+            bool canDelete;
+            if (isAdmin)
             {
-                throw new BusinessException("Chỉ được xóa kế hoạch ở trạng thái nháp");
+                canDelete = true;
+            }
+            else
+            {
+                rolePerCycle.TryGetValue(plan.CycleId, out var roleId);
+                canDelete = plan.Status == (int)ActionPlanStatus.Draft
+                    ? roleId == (int)CouncilRole.HeadOfCouncil
+                      || roleId == (int)CouncilRole.ViceChairman
+                      || roleId == (int)CouncilRole.Secretary
+                    : roleId == (int)CouncilRole.HeadOfCouncil
+                      || roleId == (int)CouncilRole.ViceChairman;
+            }
+
+            if (!canDelete)
+            {
+                skippedCount++;
+                continue;
             }
 
             plan.IsDeleted = true;
             plan.IsActived = false;
-            plan.UpdatedAt = DateTime.UtcNow;
-            plan.UpdatedBy = GetCurrentUsernameOrFallback();
+            plan.UpdatedAt = now;
+            plan.UpdatedBy = username;
+            deletedCount++;
         }
 
         await _context.SaveChangesAsync();
-    }
 
+        return new DeleteListResultDto
+        {
+            DeletedCount = deletedCount,
+            SkippedCount = skippedCount
+        };
+    }
     public async Task<List<ExternalFindingOptionDto>> GetExternalReviewFindings(ActionPlanExternalFindingRequest request)
     {
         var query = from finding in _context.ExternalReviewFindings.AsNoTracking()

@@ -16,7 +16,7 @@ public interface IActionPlanService
 
     Task<ActionTaskDto> UpdateTaskByCouncil(ActionPlanUpdateTaskRequest request);
 
-    Task DeleteList(ActionPlanDeleteListRequest request);
+    Task<DeleteListResultDto> DeleteList(ActionPlanDeleteListRequest request);
 
     Task<List<ExternalFindingOptionDto>> GetExternalReviewFindings(ActionPlanExternalFindingRequest request);
 

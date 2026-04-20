@@ -155,6 +155,11 @@ export interface ActionPlanDeleteListRequest {
   Ids: string[];
 }
 
+export interface ActionPlanDeleteResult {
+  DeletedCount: number;
+  SkippedCount: number;
+}
+
 export interface ActionPlanExternalFindingRequest {
   CycleId?: string | null;
   TextSearch?: string | null;

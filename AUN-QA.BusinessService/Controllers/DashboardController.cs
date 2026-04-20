@@ -24,7 +24,7 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> GetCyclesSummary()
         {
             var result = await _service.GetCyclesSummaryAsync();
-            return Ok(new BaseResponse<List<CycleSummaryDto>> { Data = result, Success = true });
+            return Ok(new BaseResponse<DashboardOverviewDto> { Data = result, Success = true });
         }
     }
 }

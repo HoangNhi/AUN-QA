@@ -1,4 +1,5 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard;
+using AUN_QA.BusinessService.DTOs.Common;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.CatalogService.Protos;
@@ -25,14 +26,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
             _catalogService = catalogService;
         }
 
-        public async Task<List<CycleSummaryDto>> GetCyclesSummaryAsync()
+        public async Task<DashboardOverviewDto> GetCyclesSummaryAsync()
         {
             var userIdValue = _contextAccessor.HttpContext?.User?.Claims
                 .FirstOrDefault(x => x.Type == UserIdClaimType)?.Value;
 
             if (!Guid.TryParse(userIdValue, out var userId))
             {
-                return new List<CycleSummaryDto>();
+                return new DashboardOverviewDto();
             }
 
             var cycleIds = await _context.Councils
@@ -44,13 +45,52 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
 
             if (cycleIds.Count == 0)
             {
-                return new List<CycleSummaryDto>();
+                return new DashboardOverviewDto();
             }
 
             var cycles = await _context.Cycles
                 .AsNoTracking()
                 .Where(x => cycleIds.Contains(x.Id) && x.Status != 5 && x.IsActived && !x.IsDeleted)
                 .ToListAsync();
+
+            var activeCycleIds = cycles.Select(x => x.Id).ToList();
+            var now = DateTime.UtcNow;
+            var warningThreshold = now.AddDays(30);
+
+            var evidenceCount = await _context.EvidenceCycleMaps
+                .AsNoTracking()
+                .CountAsync(x => activeCycleIds.Contains(x.CycleId) && x.IsActived && !x.IsDeleted);
+
+            var actionPlansCount = await _context.ActionPlans
+                .AsNoTracking()
+                .CountAsync(x => activeCycleIds.Contains(x.CycleId) && x.IsActived && !x.IsDeleted);
+
+            var incompleteActionPlansCount = await _context.ActionPlans
+                .AsNoTracking()
+                .CountAsync(x =>
+                    activeCycleIds.Contains(x.CycleId)
+                    && x.IsActived
+                    && !x.IsDeleted
+                    && x.Status != (int)ActionPlanStatus.Completed);
+
+            var expiringEvidenceCount = await (
+                from map in _context.EvidenceCycleMaps.AsNoTracking()
+                join evidence in _context.Evidences.AsNoTracking()
+                    on map.EvidenceId equals evidence.Id
+                where activeCycleIds.Contains(map.CycleId)
+                    && map.IsActived
+                    && !map.IsDeleted
+                    && evidence.IsActived
+                    && !evidence.IsDeleted
+                    && evidence.ExpiryDate.HasValue
+                    && evidence.ExpiryDate.Value >= now
+                    && evidence.ExpiryDate.Value <= warningThreshold
+                select evidence.Id
+            )
+                .Distinct()
+                .CountAsync();
+
+            var upcomingDeadlineCount = cycles.Count(x => x.EndDate >= now && x.EndDate <= warningThreshold);
 
             var result = new List<CycleSummaryDto>();
 
@@ -63,12 +103,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                         StandardSetId = cycle.StandardSetId.ToString()
                     });
 
-                var criterionNames = new Dictionary<Guid, string>();
+                var standardNames = new Dictionary<Guid, string>();
+                var standardOrders = new Dictionary<Guid, int>();
                 await foreach (var row in standardRows)
                 {
-                    if (!criterionNames.ContainsKey(row.CriterionId))
+                    if (!standardNames.ContainsKey(row.StandardId))
                     {
-                        criterionNames[row.CriterionId] = row.CriterionName;
+                        standardNames[row.StandardId] = row.StandardName;
+                        standardOrders[row.StandardId] = row.StandardOrder;
                     }
                 }
 
@@ -83,47 +125,65 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
 
                 var criteriaTotal = evaluations.Count;
                 var criteriaEvaluated = scoredEvaluations.Count;
-                var avgScore = scoredEvaluations.Count > 0
-                    ? Math.Round(scoredEvaluations.Average(x => (double)x.OfficialScore!.Value), 1)
+                var rankedStandards = scoredEvaluations
+                    .GroupBy(x => x.StandardId)
+                    .Select(group => new
+                    {
+                        StandardId = group.Key,
+                        AvgScore = group.Average(x => (double)x.OfficialScore!.Value)
+                    })
+                    .OrderByDescending(x => x.AvgScore)
+                    .ToList();
+                var avgScore = rankedStandards.Count > 0
+                    ? Math.Round(rankedStandards.Average(x => x.AvgScore), 1)
                     : 0;
                 var progressPercent = criteriaTotal > 0
                     ? (int)Math.Round((double)criteriaEvaluated / criteriaTotal * 100)
                     : 0;
 
-                var rankedCriteria = scoredEvaluations
-                    .GroupBy(x => x.CriterionId)
-                    .Select(group => new
-                    {
-                        CriterionId = group.Key,
-                        AvgScore = group.Average(x => (double)x.OfficialScore!.Value)
-                    })
-                    .OrderByDescending(x => x.AvgScore)
-                    .ToList();
-
-                var topCriteria = rankedCriteria
+                var topCriteria = rankedStandards
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = criterionNames.TryGetValue(x.CriterionId, out var criterionName)
-                            ? criterionName
-                            : x.CriterionId.ToString(),
+                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
+                            ? standardName
+                            : x.StandardId.ToString(),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
 
-                var bottomCriteria = rankedCriteria
+                var topStandardIds = rankedStandards
+                    .Take(2)
+                    .Select(x => x.StandardId)
+                    .ToHashSet();
+
+                var bottomCriteria = rankedStandards
                     .OrderBy(x => x.AvgScore)
+                    .Where(x => !topStandardIds.Contains(x.StandardId))
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = criterionNames.TryGetValue(x.CriterionId, out var criterionName)
-                            ? criterionName
-                            : x.CriterionId.ToString(),
+                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
+                            ? standardName
+                            : x.StandardId.ToString(),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
 
-                var evidenceCount = await _context.EvidenceCycleMaps
+                var chartSeries = rankedStandards
+                    .OrderBy(x => standardOrders.TryGetValue(x.StandardId, out var standardOrder)
+                        ? standardOrder
+                        : int.MaxValue)
+                    .Select(x => new CriteriaSummaryDto
+                    {
+                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
+                            ? standardName
+                            : x.StandardId.ToString(),
+                        Score = Math.Round(x.AvgScore, 1)
+                    })
+                    .ToList();
+
+                var cycleEvidenceCount = await _context.EvidenceCycleMaps
                     .AsNoTracking()
                     .CountAsync(x => x.CycleId == cycle.Id && x.IsActived && !x.IsDeleted);
 
@@ -138,17 +198,30 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     Stats = new CycleStatsDto
                     {
                         AvgScore = avgScore,
-                        EvidenceCount = evidenceCount,
+                        EvidenceCount = cycleEvidenceCount,
                         CriteriaEvaluated = criteriaEvaluated,
                         CriteriaTotal = criteriaTotal,
                         ProgressPercent = progressPercent
                     },
+                    ChartSeries = chartSeries,
                     TopCriteria = topCriteria,
                     BottomCriteria = bottomCriteria
                 });
             }
 
-            return result;
+            return new DashboardOverviewDto
+            {
+                Summary = new DashboardSummaryDto
+                {
+                    ActiveCyclesCount = cycles.Count,
+                    EvidenceCount = evidenceCount,
+                    ActionPlansCount = actionPlansCount,
+                    IncompleteActionPlansCount = incompleteActionPlansCount,
+                    ExpiringEvidenceCount = expiringEvidenceCount,
+                    UpcomingDeadlineCount = upcomingDeadlineCount
+                },
+                Cycles = result
+            };
         }
     }
 }

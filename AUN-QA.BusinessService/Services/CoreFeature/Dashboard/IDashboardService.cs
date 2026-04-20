@@ -4,6 +4,6 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
 {
     public interface IDashboardService
     {
-        Task<List<CycleSummaryDto>> GetCyclesSummaryAsync();
+        Task<DashboardOverviewDto> GetCyclesSummaryAsync();
     }
 }

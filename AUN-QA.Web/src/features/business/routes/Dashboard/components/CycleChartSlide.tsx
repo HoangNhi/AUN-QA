@@ -7,34 +7,28 @@ import {
 } from "@/features/business/types/dashboard.types";
 import SpiderChartWidget from "./SpiderChartWidget";
 import BarChartWidget from "./BarChartWidget";
-import { useEffect, useState } from "react";
 
 interface Props {
   cycle: CycleSummary;
 }
 
 const CycleChartSlide = ({ cycle }: Props) => {
-  const [now, setNow] = useState<number | null>(null);
-
-  useEffect(() => {
-    const syncNow = () => setNow(Date.now());
-    syncNow();
-
-    const timer = window.setInterval(syncNow, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const statusMeta = CYCLE_STATUS_LABEL[cycle.CycleStatus] ?? {
     label: "N/A",
     className: "bg-gray-100 text-gray-500",
   };
 
   const deadline = cycle.Deadline ? new Date(cycle.Deadline) : null;
-  const daysLeft = deadline && now ? Math.ceil((deadline.getTime() - now) / (1000 * 60 * 60 * 24)) : null;
-  const isDeadlineSoon = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+  const deadlineLabel = deadline ? deadline.toLocaleDateString("vi-VN") : null;
+  const now = new Date();
+  const isDeadlineSoon = deadline
+    ? deadline.getTime() >= now.getTime()
+      && deadline.getTime() <= now.getTime() + 30 * 24 * 60 * 60 * 1000
+    : false;
 
   const chartLabel =
     cycle.ChartType === DashboardChartType.BarChart ? "Bar Chart" : "Spider Chart";
+  const showInsights = cycle.ChartType === DashboardChartType.SpiderChart;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -58,7 +52,7 @@ const CycleChartSlide = ({ cycle }: Props) => {
             {chartLabel}
           </span>
         </div>
-        {deadline && (
+        {deadlineLabel && (
           <div
             className={cn(
               "flex shrink-0 items-center gap-1 text-xs font-semibold",
@@ -66,7 +60,7 @@ const CycleChartSlide = ({ cycle }: Props) => {
             )}
           >
             <CalendarDays size={12} />
-            {daysLeft !== null ? `Còn ${daysLeft} ngày` : deadline.toLocaleDateString("vi-VN")}
+            {deadlineLabel}
           </div>
         )}
       </div>
@@ -137,7 +131,7 @@ const CycleChartSlide = ({ cycle }: Props) => {
             </div>
           </div>
 
-          {(cycle.TopCriteria.length > 0 || cycle.BottomCriteria.length > 0) && (
+          {showInsights && (cycle.TopCriteria.length > 0 || cycle.BottomCriteria.length > 0) && (
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-xl bg-emerald-50 p-3">
                 <p className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">

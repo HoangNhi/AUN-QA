@@ -1,5 +1,21 @@
 namespace AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard
 {
+    public class DashboardOverviewDto
+    {
+        public DashboardSummaryDto Summary { get; set; } = new();
+        public List<CycleSummaryDto> Cycles { get; set; } = new();
+    }
+
+    public class DashboardSummaryDto
+    {
+        public int ActiveCyclesCount { get; set; }
+        public int EvidenceCount { get; set; }
+        public int ActionPlansCount { get; set; }
+        public int IncompleteActionPlansCount { get; set; }
+        public int ExpiringEvidenceCount { get; set; }
+        public int UpcomingDeadlineCount { get; set; }
+    }
+
     public class CycleSummaryDto
     {
         public Guid CycleId { get; set; }
@@ -9,6 +25,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard
         public string StandardSetName { get; set; } = string.Empty;
         public int ChartType { get; set; }
         public CycleStatsDto Stats { get; set; } = new();
+        public List<CriteriaSummaryDto> ChartSeries { get; set; } = new();
         public List<CriteriaSummaryDto> TopCriteria { get; set; } = new();
         public List<CriteriaSummaryDto> BottomCriteria { get; set; } = new();
     }

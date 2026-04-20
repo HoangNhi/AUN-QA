@@ -42,28 +42,44 @@ describe("useDashboardCycles", () => {
     vi.clearAllMocks();
   });
 
-  it("lấy danh sách chu kỳ dashboard từ đúng endpoint và trả dữ liệu", async () => {
+  it("lấy overview dashboard và trả về cả summary lẫn danh sách chu kỳ", async () => {
     vi.mocked(dashboardService.getCyclesSummary).mockResolvedValue({
       Success: true,
-      Data: [
-        {
-          CycleId: "cycle-1",
-          CycleName: "Chu kỳ 1",
-          CycleStatus: 1,
-          Deadline: "2026-05-01T00:00:00Z",
-          StandardSetName: "Bộ tiêu chuẩn A",
-          ChartType: 1,
-          Stats: {
-            AvgScore: 4.25,
-            EvidenceCount: 12,
-            CriteriaEvaluated: 8,
-            CriteriaTotal: 10,
-            ProgressPercent: 80,
-          },
-          TopCriteria: [],
-          BottomCriteria: [],
+      Data: {
+        Summary: {
+          ActiveCyclesCount: 2,
+          EvidenceCount: 12,
+          ActionPlansCount: 5,
+          IncompleteActionPlansCount: 3,
+          ExpiringEvidenceCount: 1,
+          UpcomingDeadlineCount: 1,
         },
-      ],
+        Cycles: [
+          {
+            CycleId: "cycle-1",
+            CycleName: "Chu kỳ 1",
+            CycleStatus: 1,
+            Deadline: "2026-05-01T00:00:00Z",
+            StandardSetName: "Bộ tiêu chuẩn A",
+            ChartType: 1,
+            Stats: {
+              AvgScore: 4.25,
+              EvidenceCount: 12,
+              CriteriaEvaluated: 8,
+              CriteriaTotal: 10,
+              ProgressPercent: 80,
+            },
+            ChartSeries: [
+              {
+                Name: "Tiêu chuẩn 1",
+                Score: 4.25,
+              },
+            ],
+            TopCriteria: [],
+            BottomCriteria: [],
+          },
+        ],
+      },
     } as never);
 
     const { useDashboardCycles } = await import("./useDashboardCycles");
@@ -72,12 +88,20 @@ describe("useDashboardCycles", () => {
     const { result, unmount } = renderHook(() => useDashboardCycles(), { wrapper });
 
     await waitFor(() => {
-      expect(result.current.data).toHaveLength(1);
+      const overview = result.current.data as any;
+      expect(overview?.Cycles).toHaveLength(1);
     });
 
     expect(dashboardService.getCyclesSummary).toHaveBeenCalledWith();
     expect(dashboardService.getCyclesSummary).toHaveBeenCalledTimes(1);
-    expect(result.current.data?.[0]).toMatchObject({
+
+    const overview = result.current.data as any;
+    expect(overview?.Summary).toMatchObject({
+      ActiveCyclesCount: 2,
+      ActionPlansCount: 5,
+      IncompleteActionPlansCount: 3,
+    });
+    expect(overview?.Cycles?.[0]).toMatchObject({
       CycleId: "cycle-1",
       CycleName: "Chu kỳ 1",
       StandardSetName: "Bộ tiêu chuẩn A",

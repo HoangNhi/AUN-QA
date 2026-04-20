@@ -24,9 +24,9 @@ const chartConfig = {
 } as const;
 
 const SpiderChartWidget = ({ cycle }: Props) => {
-  const allCriteria = [...cycle.TopCriteria, ...cycle.BottomCriteria];
+  const series = cycle.ChartSeries ?? [];
 
-  if (allCriteria.length === 0) {
+  if (series.length === 0) {
     return (
       <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
         Chưa có dữ liệu tiêu chí để hiển thị
@@ -34,7 +34,7 @@ const SpiderChartWidget = ({ cycle }: Props) => {
     );
   }
 
-  const chartData = allCriteria.map((item) => ({
+  const chartData = series.map((item) => ({
     criterion: item.Name.length > 16 ? `${item.Name.slice(0, 16)}…` : item.Name,
     score: item.Score,
   }));

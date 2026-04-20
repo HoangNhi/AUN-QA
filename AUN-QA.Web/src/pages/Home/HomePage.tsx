@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw, ShieldCheck, TrendingUp } from "lucide-react";
+import { AlertTriangle, ClipboardList, FolderKanban, RefreshCw, ShieldCheck } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -9,37 +9,13 @@ import {
 } from "@/components/ui/carousel";
 import { useDashboardCycles } from "@/features/business/routes/Dashboard/hooks/useDashboardCycles";
 import CycleChartSlide from "@/features/business/routes/Dashboard/components/CycleChartSlide";
-import { useEffect, useState } from "react";
 
 const HomePage = () => {
-  const { data: cycles = [], isLoading, isError } = useDashboardCycles();
-  const [now, setNow] = useState<number | null>(null);
-
-  useEffect(() => {
-    const syncNow = () => setNow(Date.now());
-    syncNow();
-
-    const timer = window.setInterval(syncNow, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const totalEvidence = cycles.reduce((sum, cycle) => sum + cycle.Stats.EvidenceCount, 0);
-  const averageProgress =
-    cycles.length > 0
-      ? Math.round(
-          cycles.reduce((sum, cycle) => sum + cycle.Stats.ProgressPercent, 0) /
-            cycles.length,
-        )
-      : 0;
-  const totalWarnings = cycles.filter((cycle) => {
-    if (!cycle.Deadline || !now) {
-      return false;
-    }
-
-    const daysLeft = Math.ceil((new Date(cycle.Deadline).getTime() - now) / 86400000);
-
-    return daysLeft >= 0 && daysLeft <= 30;
-  }).length;
+  const { data: overview, isLoading, isError } = useDashboardCycles();
+  const summary = overview?.Summary;
+  const cycles = overview?.Cycles ?? [];
+  const totalWarnings =
+    (summary?.ExpiringEvidenceCount ?? 0) + (summary?.UpcomingDeadlineCount ?? 0);
 
   return (
     <div className="space-y-6">
@@ -49,7 +25,7 @@ const HomePage = () => {
             <div>
               <p className="text-sm font-medium text-slate-500">Chu kỳ active</p>
               <h3 className="text-2xl font-bold text-slate-800">
-                {isLoading ? "—" : cycles.length}
+                {isLoading ? "—" : summary?.ActiveCyclesCount ?? 0}
               </h3>
             </div>
             <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600">
@@ -64,35 +40,39 @@ const HomePage = () => {
             <div>
               <p className="text-sm font-medium text-slate-500">Kho minh chứng</p>
               <h3 className="text-2xl font-bold text-slate-800">
-                {isLoading ? "—" : totalEvidence.toLocaleString()}
+                {isLoading ? "—" : (summary?.EvidenceCount ?? 0).toLocaleString("vi-VN")}
               </h3>
             </div>
             <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
-              <TrendingUp size={20} />
+              <FolderKanban size={20} />
             </div>
           </div>
-          <p className="mt-2 text-xs text-slate-400">Single Source of Truth</p>
+          <p className="mt-2 text-xs text-slate-400">Tổng minh chứng của các chu kỳ đang tham gia</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Tiến độ TB</p>
+              <p className="text-sm font-medium text-slate-500">Action Plans</p>
               <h3 className="text-2xl font-bold text-emerald-600">
-                {isLoading || cycles.length === 0 ? "—" : `${averageProgress}%`}
+                {isLoading ? "—" : summary?.ActionPlansCount ?? 0}
               </h3>
             </div>
             <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
-              <TrendingUp size={20} />
+              <ClipboardList size={20} />
             </div>
           </div>
-          <p className="mt-2 text-xs text-slate-400">Trung bình tất cả chu kỳ</p>
+          <p className="mt-2 text-xs text-slate-400">
+            {isLoading
+              ? "Đang tải"
+              : `${summary?.IncompleteActionPlansCount ?? 0} chưa hoàn thành`}
+          </p>
         </div>
 
         <div className="rounded-2xl border border-l-4 border-amber-500 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Deadline sắp tới</p>
+              <p className="text-sm font-medium text-slate-500">Cảnh báo</p>
               <h3 className="text-2xl font-bold text-amber-600">
                 {isLoading ? "—" : totalWarnings}
               </h3>
@@ -101,7 +81,11 @@ const HomePage = () => {
               <AlertTriangle size={20} />
             </div>
           </div>
-          <p className="mt-2 text-xs font-medium text-rose-500">Trong vòng 30 ngày</p>
+          <p className="mt-2 text-xs font-medium text-rose-500">
+            {isLoading
+              ? "Đang tải"
+              : `${summary?.ExpiringEvidenceCount ?? 0} MC sắp hết hạn · ${summary?.UpcomingDeadlineCount ?? 0} deadline sắp tới`}
+          </p>
         </div>
       </div>
 

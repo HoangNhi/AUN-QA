@@ -7,17 +7,11 @@ public partial class ActionTaskAttachment
 {
     public Guid Id { get; set; }
 
-    public Guid ActionTaskId { get; set; }
-
-    public Guid? AttachmentId { get; set; }
+    public Guid RelatedId { get; set; }
 
     public string FileName { get; set; } = null!;
 
     public string? FileUrl { get; set; }
-
-    public DateTime UploadedAt { get; set; }
-
-    public string UploadedBy { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 
@@ -31,9 +25,9 @@ public partial class ActionTaskAttachment
 
     public bool IsDeleted { get; set; }
 
-    public double FileSize { get; set; }
+    public double? FileSize { get; set; }
 
     public string FileExtension { get; set; } = null!;
 
-    public virtual ActionTask ActionTask { get; set; } = null!;
+    public virtual ActionTask Related { get; set; } = null!;
 }

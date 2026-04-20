@@ -190,7 +190,7 @@ public partial class BusinessContext : DbContext
 
             entity.ToTable("ActionTaskAttachment");
 
-            entity.HasIndex(e => e.ActionTaskId, "IX_ActionTaskAttachment_ActionTaskId");
+            entity.HasIndex(e => e.RelatedId, "IX_ActionTaskAttachment_ActionTaskId");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt).HasColumnType("datetime");
@@ -200,20 +200,15 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.FileExtension)
                 .HasMaxLength(50)
                 .HasDefaultValue("");
-            entity.Property(e => e.FileName).HasMaxLength(500);
-            entity.Property(e => e.FileUrl).HasMaxLength(2000);
+            entity.Property(e => e.FileSize).HasDefaultValue(0.0);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
-            entity.Property(e => e.UploadedAt).HasColumnType("datetime");
-            entity.Property(e => e.UploadedBy)
-                .HasMaxLength(256)
-                .IsUnicode(false);
 
-            entity.HasOne(d => d.ActionTask).WithMany(p => p.ActionTaskAttachments)
-                .HasForeignKey(d => d.ActionTaskId)
+            entity.HasOne(d => d.Related).WithMany(p => p.ActionTaskAttachments)
+                .HasForeignKey(d => d.RelatedId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ActionTaskAttachment_ActionTask_fk");
         });

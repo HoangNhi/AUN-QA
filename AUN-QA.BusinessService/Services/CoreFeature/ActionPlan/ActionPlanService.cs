@@ -425,7 +425,7 @@ public class ActionPlanService : IActionPlanService
             if (deletedAttachmentIds.Count > 0)
             {
                 var attachmentsToDelete = await _context.ActionTaskAttachments
-                    .Where(x => x.ActionTaskId == task.Id
+                    .Where(x => x.RelatedId == task.Id
                         && deletedAttachmentIds.Contains(x.Id)
                         && !x.IsDeleted
                         && x.IsActived)
@@ -476,16 +476,13 @@ public class ActionPlanService : IActionPlanService
                     var entity = new ActionTaskAttachment
                     {
                         Id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id,
-                        ActionTaskId = task.Id,
-                        AttachmentId = item.Id == Guid.Empty ? null : item.Id,
+                        RelatedId = task.Id,
                         FileName = item.FileName,
                         FileExtension = !string.IsNullOrWhiteSpace(item.FileExtension)
                             ? item.FileExtension
                             : Path.GetExtension(item.FileName),
                         FileUrl = item.FileUrl,
                         FileSize = item.FileSize ?? 0,
-                        UploadedAt = now,
-                        UploadedBy = username,
                         CreatedAt = now,
                         CreatedBy = username,
                         IsActived = true,
@@ -785,19 +782,19 @@ public class ActionPlanService : IActionPlanService
 
         var attachments = await _context.ActionTaskAttachments
             .AsNoTracking()
-            .Where(x => x.ActionTaskId == taskId && !x.IsDeleted && x.IsActived)
+            .Where(x => x.RelatedId == taskId && !x.IsDeleted && x.IsActived)
             .OrderBy(x => x.CreatedAt)
             .Select(x => new ActionTaskAttachmentDto
             {
                 Id = x.Id,
-                ActionTaskId = x.ActionTaskId,
-                AttachmentId = x.AttachmentId,
+                ActionTaskId = x.RelatedId,
+                AttachmentId = x.Id,
                 FileName = x.FileName,
                 FileExtension = x.FileExtension,
                 FileUrl = x.FileUrl,
-                FileSize = x.FileSize,
-                UploadedAt = x.UploadedAt,
-                UploadedBy = x.UploadedBy
+                FileSize = x.FileSize ?? 0,
+                UploadedAt = x.CreatedAt,
+                UploadedBy = x.CreatedBy
             })
             .ToListAsync();
 
@@ -946,12 +943,12 @@ public class ActionPlanService : IActionPlanService
             ? new List<ActionTaskAttachment>()
             : await _context.ActionTaskAttachments
                 .AsNoTracking()
-                .Where(x => taskIds.Contains(x.ActionTaskId) && !x.IsDeleted && x.IsActived)
+                .Where(x => taskIds.Contains(x.RelatedId) && !x.IsDeleted && x.IsActived)
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
 
         var taskAttachmentGroups = taskAttachmentList
-            .GroupBy(x => x.ActionTaskId)
+            .GroupBy(x => x.RelatedId)
             .ToDictionary(x => x.Key, x => x.ToList());
 
         return new ActionPlanDetailDto
@@ -1002,14 +999,14 @@ public class ActionPlanService : IActionPlanService
                     Attachments = (xAttachments ?? new List<ActionTaskAttachment>()).Select(a => new ActionTaskAttachmentDto
                     {
                         Id = a.Id,
-                        ActionTaskId = a.ActionTaskId,
-                        AttachmentId = a.AttachmentId,
+                        ActionTaskId = a.RelatedId,
+                        AttachmentId = a.Id,
                         FileName = a.FileName,
                         FileExtension = a.FileExtension,
                         FileUrl = a.FileUrl,
-                        FileSize = a.FileSize,
-                        UploadedAt = a.UploadedAt,
-                        UploadedBy = a.UploadedBy
+                        FileSize = a.FileSize ?? 0,
+                        UploadedAt = a.CreatedAt,
+                        UploadedBy = a.CreatedBy
                     }).ToList()
                 };
             }).ToList()

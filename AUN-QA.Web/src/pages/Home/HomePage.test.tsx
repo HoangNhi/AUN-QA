@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import HomePage from "./HomePage";
+import HomePage from "./HomePage.tsx";
 import { useDashboardCycles } from "@/features/business/routes/Dashboard/hooks/useDashboardCycles";
 
 vi.mock("@/features/business/routes/Dashboard/hooks/useDashboardCycles", () => ({

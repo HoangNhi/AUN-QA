@@ -51,14 +51,7 @@ public class AuthServiceTests
         Assert.Equal(userId.ToString(), invoker.CapturedUserId);
     }
 
-    private static SystemContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<SystemContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-
-        return new SystemContext(options);
-    }
+    private static TestSystemContext CreateContext() => new();
 
     private static AuthService CreateService(SystemContext context, object businessClient)
     {

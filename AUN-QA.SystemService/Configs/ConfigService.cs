@@ -5,6 +5,7 @@ using AUN_QA.Shared.Common;
 using Grpc.Net.Client.Web;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AutoDependencyRegistration;
 using AutoMapper;
 using FluentValidation.AspNetCore;
@@ -30,8 +31,12 @@ namespace AUN_QA.SystemService.Configs
 
             // Audit context and interceptors
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Services.IAuditLogWriter, AUN_QA.SystemService.Infrastructure.Services.AuditLogWriter>();
+            builder.Services.AddScoped<ISystemReferenceGuard, SystemReferenceGuard>();
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Filters.AuditActionFilter>();
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>();
+
+            builder.Services.AddDbContextFactory<SystemContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("System")));
 
             //DATABASE
             builder.Services.AddDbContext<SystemContext>((sp, options) =>

@@ -30,4 +30,6 @@ public partial class AuditLog
     public string? ErrorMessage { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public virtual User User { get; set; } = null!;
 }

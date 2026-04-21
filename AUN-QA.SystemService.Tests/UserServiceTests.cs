@@ -4,6 +4,7 @@ using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Protos;
 using AUN_QA.SystemService.Services.Commons.UploadFile;
 using AUN_QA.SystemService.Services.CoreFeature.User;
@@ -148,7 +149,7 @@ public class UserServiceTests
                     IsActived = false
                 }
             })
-        });
+        }, new SystemReferenceGuard(context));
 
         var response = await grpc.GetUsersByIds(new GetUsersByIdsRequest
         {
@@ -178,7 +179,7 @@ public class UserServiceTests
                 Avatar = "",
                 IsActived = true
             })
-        });
+        }, new SystemReferenceGuard(context));
 
         var response = await grpc.UpdateUserProfile(new UpdateUserProfileRequest
         {
@@ -193,16 +194,9 @@ public class UserServiceTests
         Assert.Equal("updated-reviewer@example.com", response.User.Email);
     }
 
-    private static SystemContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<SystemContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
+    private static TestSystemContext CreateContext() => new();
 
-        return new SystemContext(options);
-    }
-
-    private static UserService CreateService(SystemContext context)
+    private static UserService CreateService(TestSystemContext context)
     {
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -222,7 +216,7 @@ public class UserServiceTests
             }
         };
 
-        return new UserService(context, mapperConfig.CreateMapper(), accessor, new FakeUploadFileService());
+        return new UserService(context, mapperConfig.CreateMapper(), accessor, new FakeUploadFileService(), new SystemReferenceGuard(context));
     }
 
     private static void SeedUser(

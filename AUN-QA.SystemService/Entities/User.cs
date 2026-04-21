@@ -33,5 +33,9 @@ public partial class User
 
     public string? Avatar { get; set; }
 
+    public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
+
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    public virtual Role Role { get; set; } = null!;
 }

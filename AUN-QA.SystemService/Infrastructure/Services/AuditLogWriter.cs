@@ -1,5 +1,7 @@
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
+using Microsoft.EntityFrameworkCore;
 
 namespace AUN_QA.SystemService.Infrastructure.Services;
 
@@ -20,6 +22,20 @@ public class AuditLogWriter : IAuditLogWriter
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SystemContext>();
+            var referenceGuard = scope.ServiceProvider.GetRequiredService<ISystemReferenceGuard>();
+
+            var resolvedUserId = await referenceGuard.TryResolveExistingUserIdAsync(auditLog.UserId);
+            if (!resolvedUserId.HasValue)
+            {
+                _logger.LogWarning(
+                    "Skipping audit log for {Action} on {Entity} because user {UserId} is not a valid FK target",
+                    auditLog.Action,
+                    auditLog.EntityName,
+                    auditLog.UserId);
+                return;
+            }
+
+            auditLog.UserId = resolvedUserId.Value;
             context.AuditLogs.Add(auditLog);
             await context.SaveChangesAsync();
         }

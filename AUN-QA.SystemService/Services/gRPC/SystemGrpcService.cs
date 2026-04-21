@@ -2,6 +2,7 @@ using AUN_QA.SystemService.Protos;
 using AUN_QA.SystemService.Services.CoreFeature.User;
 using AUN_QA.SystemService.Infrastructure.Data;
 using AUN_QA.SystemService.Helpers;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +15,13 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
     {
         private readonly SystemContext _context;
         private readonly IUserService _userService;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
-        public SystemGrpcService(SystemContext context, IUserService userService)
+        public SystemGrpcService(SystemContext context, IUserService userService, ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _userService = userService;
+            _referenceGuard = referenceGuard;
         }
 
         public override async Task<CheckActionResponse> CheckPermission(CheckPermissionRequest request, ServerCallContext context)
@@ -186,6 +189,19 @@ namespace AUN_QA.SystemService.Services.SystemGrpc
                 {
                     Success = false,
                     Message = "RoleId không hợp lệ."
+                };
+            }
+
+            try
+            {
+                await _referenceGuard.EnsureRoleExistsAsync(roleId);
+            }
+            catch (AUN_QA.Shared.Exceptions.BusinessException ex)
+            {
+                return new CreateExternalUserResponse
+                {
+                    Success = false,
+                    Message = ex.Message
                 };
             }
 

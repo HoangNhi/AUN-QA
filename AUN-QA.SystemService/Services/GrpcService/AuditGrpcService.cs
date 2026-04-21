@@ -1,5 +1,6 @@
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Protos;
 using Grpc.Core;
 
@@ -8,11 +9,13 @@ namespace AUN_QA.SystemService.Services.GrpcService;
 public class AuditGrpcService : AuditProto.AuditProtoBase
 {
     private readonly SystemContext _context;
+    private readonly ISystemReferenceGuard _referenceGuard;
     private readonly ILogger<AuditGrpcService> _logger;
 
-    public AuditGrpcService(SystemContext context, ILogger<AuditGrpcService> logger)
+    public AuditGrpcService(SystemContext context, ISystemReferenceGuard referenceGuard, ILogger<AuditGrpcService> logger)
     {
         _context = context;
+        _referenceGuard = referenceGuard;
         _logger = logger;
     }
 
@@ -21,10 +24,26 @@ public class AuditGrpcService : AuditProto.AuditProtoBase
     {
         try
         {
+            Guid? resolvedUserId = null;
+            if (Guid.TryParse(request.UserId, out var uid))
+            {
+                resolvedUserId = await _referenceGuard.TryResolveExistingUserIdAsync(uid);
+            }
+
+            if (!resolvedUserId.HasValue)
+            {
+                _logger.LogWarning(
+                    "Skipping audit log from {ServiceName} because request user id '{UserId}' is invalid",
+                    request.ServiceName,
+                    request.UserId);
+
+                return new WriteAuditLogReply { Success = true, Message = "Skipped audit log because user id was invalid." };
+            }
+
             var auditLog = new AuditLog
             {
                 Id = Guid.NewGuid(),
-                UserId = Guid.TryParse(request.UserId, out var uid) ? uid : Guid.Empty,
+                UserId = resolvedUserId.Value,
                 UserName = request.UserName,
                 Action = request.Action,
                 EntityName = request.EntityName,

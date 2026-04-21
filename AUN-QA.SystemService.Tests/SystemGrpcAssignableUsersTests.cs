@@ -3,6 +3,7 @@ using System.Reflection;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Services.CoreFeature.User;
 using AUN_QA.SystemService.Services.SystemGrpc;
 using Grpc.Core;
@@ -32,7 +33,7 @@ public class SystemGrpcAssignableUsersTests
 
         await context.SaveChangesAsync();
 
-        var grpc = new SystemGrpcService(context, new FakeUserService());
+        var grpc = new SystemGrpcService(context, new FakeUserService(), new SystemReferenceGuard(context));
         var method = typeof(SystemGrpcService).GetMethod(
             "GetActiveUsersExceptRole",
             BindingFlags.Instance | BindingFlags.Public);
@@ -61,14 +62,7 @@ public class SystemGrpcAssignableUsersTests
         Assert.Equal("internal-01", user.GetType().GetProperty("Username")!.GetValue(user));
     }
 
-    private static SystemContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<SystemContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-
-        return new SystemContext(options);
-    }
+    private static TestSystemContext CreateContext() => new();
 
     private static void SeedUser(
         SystemContext context,

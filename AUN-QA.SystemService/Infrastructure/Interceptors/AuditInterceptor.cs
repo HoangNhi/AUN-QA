@@ -2,6 +2,7 @@ using System.Text.Json;
 using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -11,15 +12,17 @@ namespace AUN_QA.SystemService.Infrastructure.Interceptors;
 public class AuditInterceptor : SaveChangesInterceptor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ISystemReferenceGuard _referenceGuard;
 
     private static readonly HashSet<string> ExcludedProperties = new(StringComparer.OrdinalIgnoreCase)
     {
         "Password", "PasswordSalt", "Token", "RefreshToken"
     };
 
-    public AuditInterceptor(IHttpContextAccessor httpContextAccessor)
+    public AuditInterceptor(IHttpContextAccessor httpContextAccessor, ISystemReferenceGuard referenceGuard)
     {
         _httpContextAccessor = httpContextAccessor;
+        _referenceGuard = referenceGuard;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
@@ -71,10 +74,14 @@ public class AuditInterceptor : SaveChangesInterceptor
         // EntityName = controller name from request path, or first entity type
         var controllerName = GetControllerName(httpContext) ?? entries.First().Entity.GetType().Name;
 
+        var userId = await ResolveAuditUserIdAsync(httpContext, cancellationToken);
+        if (!userId.HasValue)
+            return await base.SavingChangesAsync(eventData, result, cancellationToken);
+
         var auditLog = new AuditLog
         {
             Id = Guid.NewGuid(),
-            UserId = GetUserId(httpContext),
+            UserId = userId.Value,
             UserName = GetUserName(httpContext),
             Action = action,
             EntityName = controllerName,
@@ -91,6 +98,15 @@ public class AuditInterceptor : SaveChangesInterceptor
         context.AuditLogs.Add(auditLog);
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+
+    private async Task<Guid?> ResolveAuditUserIdAsync(HttpContext? httpContext, CancellationToken cancellationToken)
+    {
+        var claim = httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
+        if (!Guid.TryParse(claim, out var userId))
+            return null;
+
+        return await _referenceGuard.TryResolveExistingUserIdAsync(userId, cancellationToken);
     }
 
     private static string InferAction(List<EntityEntry> entries)
@@ -126,12 +142,6 @@ public class AuditInterceptor : SaveChangesInterceptor
         if (!group.ContainsKey(entityName))
             group[entityName] = new List<Dictionary<string, object?>>();
         group[entityName].Add(values);
-    }
-
-    private static Guid GetUserId(HttpContext? httpContext)
-    {
-        var claim = httpContext?.User?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
-        return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
     }
 
     private static string GetUserName(HttpContext? httpContext)

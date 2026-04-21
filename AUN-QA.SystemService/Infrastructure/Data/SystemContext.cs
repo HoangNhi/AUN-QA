@@ -83,6 +83,11 @@ public partial class SystemContext : DbContext
                 .HasMaxLength(255)
                 .HasDefaultValueSql("''::character varying")
                 .HasColumnName("user_name");
+
+            entity.HasOne(d => d.User).WithMany(p => p.AuditLogs)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_AuditLog_User");
         });
 
         modelBuilder.Entity<Menu>(entity =>
@@ -168,6 +173,16 @@ public partial class SystemContext : DbContext
                 .HasColumnName("is_viewed");
             entity.Property(e => e.MenuId).HasColumnName("menu_id");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+            entity.HasOne(d => d.Menu).WithMany(p => p.Permissions)
+                .HasForeignKey(d => d.MenuId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_permission_menu");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Permissions)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_permission_role");
         });
 
         modelBuilder.Entity<RefreshToken>(entity =>
@@ -263,6 +278,11 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(255)
                 .HasColumnName("updated_by");
+
+            entity.HasOne(d => d.Parent).WithMany(p => p.InverseParent)
+                .HasForeignKey(d => d.ParentId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_SystemGroup_SystemGroup");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -302,6 +322,11 @@ public partial class SystemContext : DbContext
             entity.Property(e => e.Username)
                 .HasMaxLength(255)
                 .HasColumnName("username");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_user_role");
         });
 
         OnModelCreatingPartial(modelBuilder);

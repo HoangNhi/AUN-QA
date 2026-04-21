@@ -22,4 +22,8 @@ public partial class Permission
     public bool IsApproved { get; set; }
 
     public bool IsAnalyzed { get; set; }
+
+    public virtual Menu Menu { get; set; } = null!;
+
+    public virtual Role Role { get; set; } = null!;
 }

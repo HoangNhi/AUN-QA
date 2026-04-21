@@ -4,6 +4,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Services.Commons.UploadFile;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
@@ -20,17 +21,20 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IUploadFileService _uploadFileService;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
         public UserService(
             SystemContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
-            IUploadFileService uploadFileService)
+            IUploadFileService uploadFileService,
+            ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _uploadFileService = uploadFileService;
+            _referenceGuard = referenceGuard;
         }
 
         public async Task<ModelUser> GetById(GetByIdRequest request)
@@ -135,6 +139,8 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại");
             }
 
+            await _referenceGuard.EnsureRoleExistsAsync(request.RoleId);
+
             var add = _mapper.Map<Entities.User>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
             add.PasswordSalt = Encrypt_DecryptHelper.GenerateSalt();
@@ -167,6 +173,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             }
 
             var oldPassword = update.Password;
+            await _referenceGuard.EnsureRoleExistsAsync(request.RoleId);
             _mapper.Map(request, update);
 
             if (request.Password != DefaultPassword)

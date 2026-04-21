@@ -4,6 +4,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.SystemGroup.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -17,15 +18,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
         public SystemGroupService(
             SystemContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _referenceGuard = referenceGuard;
         }
 
         public async Task<ModelSystemGroup> GetById(GetByIdRequest request)
@@ -53,6 +57,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
 
             var add = _mapper.Map<Entities.SystemGroup>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            if (add.ParentId.HasValue)
+            {
+                if (add.ParentId.Value == add.Id)
+                {
+                    throw new BusinessException("Nhóm cha không hợp lệ");
+                }
+
+                await _referenceGuard.EnsureSystemGroupExistsAsync(
+                    add.ParentId.Value,
+                    "Nhóm cha không tồn tại.");
+            }
+
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.UtcNow;
 
@@ -79,6 +95,17 @@ namespace AUN_QA.SystemService.Services.CoreFeature.SystemGroup
                 throw new BusinessException("Dữ liệu không tồn tại");
             }
 
+            if (request.Parentid.HasValue)
+            {
+                if (request.Parentid.Value == update.Id)
+                {
+                    throw new BusinessException("Nhóm cha không hợp lệ");
+                }
+
+                await _referenceGuard.EnsureSystemGroupExistsAsync(
+                    request.Parentid.Value,
+                    "Nhóm cha không tồn tại.");
+            }
             _mapper.Map(request, update);
 
             update.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";

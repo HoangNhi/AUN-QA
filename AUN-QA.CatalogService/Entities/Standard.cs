@@ -28,4 +28,8 @@ public partial class Standard
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();
+
+    public virtual StandardSet StandardSet { get; set; } = null!;
 }

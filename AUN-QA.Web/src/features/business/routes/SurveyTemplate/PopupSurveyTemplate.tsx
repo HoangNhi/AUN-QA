@@ -136,10 +136,10 @@ const PopupSurveyTemplate = ({
         style={
           mode === "preview"
             ? {
-              maxWidth: "100vw",
-              width: "100vw",
-              height: "100vh",
-            }
+                maxWidth: "100vw",
+                width: "100vw",
+                height: "100vh",
+              }
             : undefined
         }
       >
@@ -268,9 +268,13 @@ const PopupSurveyTemplate = ({
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="1">Sinh viên</SelectItem>
-                                  <SelectItem value="2">Cựu sinh viên</SelectItem>
+                                  <SelectItem value="2">
+                                    Cựu sinh viên
+                                  </SelectItem>
                                   <SelectItem value="4">Giảng viên</SelectItem>
-                                  <SelectItem value="3">Nhà tuyên dương</SelectItem>
+                                  <SelectItem value="3">
+                                    Nhà tuyển dụng
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -287,7 +291,9 @@ const PopupSurveyTemplate = ({
                             <FormItem>
                               <FormLabel>Trạng thái</FormLabel>
                               <Select
-                                onValueChange={(val) => field.onChange(val === "true")}
+                                onValueChange={(val) =>
+                                  field.onChange(val === "true")
+                                }
                                 defaultValue={field.value ? "true" : "false"}
                               >
                                 <FormControl>
@@ -297,7 +303,9 @@ const PopupSurveyTemplate = ({
                                 </FormControl>
                                 <SelectContent>
                                   <SelectGroup>
-                                    <SelectItem value="true">Hoạt động</SelectItem>
+                                    <SelectItem value="true">
+                                      Hoạt động
+                                    </SelectItem>
                                     <SelectItem value="false">
                                       Không hoạt động
                                     </SelectItem>
@@ -338,13 +346,17 @@ const PopupSurveyTemplate = ({
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Lưu
                 </Button>
                 {!surveyTemplate?.IsEdit && (
                   <Button
                     type="button"
-                    onClick={form.handleSubmit((values) => onSubmit(values, true))}
+                    onClick={form.handleSubmit((values) =>
+                      onSubmit(values, true),
+                    )}
                     disabled={isLoading}
                   >
                     {isLoading && (

@@ -28,4 +28,8 @@ public partial class CriterionRequirement
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual Criterion Criterion { get; set; } = null!;
+
+    public virtual FileType FileType { get; set; } = null!;
 }

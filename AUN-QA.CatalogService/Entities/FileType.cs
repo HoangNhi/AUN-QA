@@ -24,4 +24,6 @@ public partial class FileType
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<CriterionRequirement> CriterionRequirements { get; set; } = new List<CriterionRequirement>();
 }

@@ -23,7 +23,7 @@ namespace AUN_QA.CatalogService.Controllers
 
         [HttpPost, Route("get-list")]
         [AttributePermission(Action = ActionType.NONE)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        public async Task<IActionResult> GetList(StandardGetListPagingRequest request)
         {
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelStandardGetListPaging>> { Data = result, Success = true });

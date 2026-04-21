@@ -11,7 +11,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
         Task Insert(StandardRequest request);
         Task Update(StandardRequest request);
         Task DeleteList(DeleteListRequest request);
-        Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request);
+        Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(StandardGetListPagingRequest request);
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task<List<StandardRequest>> GetListWithCriteria(GetListStandardWithCriteriaRequest request);
         Task<List<ModelStandard>> GetByStandardSetId(Guid standardSetId);

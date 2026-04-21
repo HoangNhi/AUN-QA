@@ -32,4 +32,8 @@ public partial class Criterion
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<CriterionRequirement> CriterionRequirements { get; set; } = new List<CriterionRequirement>();
+
+    public virtual Standard Standard { get; set; } = null!;
 }

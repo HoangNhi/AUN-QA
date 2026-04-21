@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
 import type { EvidenceGetListPaging } from "@/features/business/types/evidence.types";
 
@@ -56,11 +57,9 @@ export const getColumns = (
         const colorClass = statusColors[status] || "bg-gray-100 text-gray-700";
 
         return (
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${colorClass}`}
-          >
+          <Badge className={`${colorClass} whitespace-nowrap`}>
             {statusText}
-          </span>
+          </Badge>
         );
       },
     },
@@ -169,4 +168,3 @@ const ActionCell = ({
     </>
   );
 };
-

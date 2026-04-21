@@ -12,6 +12,8 @@ function makeItem(
     Name: "Minh chứng 1",
     Code: "MC-001",
     Status: 3,
+    IsActived: true,
+    IsEdit: false,
     FileTypeId: "file-type-1",
     FileTypeName: "Bản mô tả CTĐT",
     Description: "",
@@ -39,7 +41,7 @@ function renderStatusCell(item: EvidenceGetListPaging) {
         return item.Status;
       }
 
-      return (item as Record<string, unknown>)[key];
+      return item[key as keyof EvidenceGetListPaging];
     },
   };
 

@@ -6,6 +6,8 @@ var systemService = builder
     .AddProject<Projects.AUN_QA_SystemService>("SystemService")
     .WithReference(fileService);
 
+fileService.WithReference(systemService);
+
 var catalogService = builder.AddProject<Projects.AUN_QA_CatalogService>("CatalogService")
     .WithReference(systemService)
     .WithReference(fileService);

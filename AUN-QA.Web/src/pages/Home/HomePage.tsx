@@ -132,11 +132,10 @@ const HomePage = () => {
                   <>
                     <CarouselPrevious className="-left-2" />
                     <CarouselNext className="-right-2" />
+                    <CarouselDots className="mt-4" />
                   </>
                 )}
               </Carousel>
-
-              {cycles.length > 1 && <CarouselDots className="mt-4" />}
             </>
           )}
         </div>

@@ -1,5 +1,6 @@
 using AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard;
 using AUN_QA.BusinessService.DTOs.Common;
+using CriterionEvaluationEntity = AUN_QA.BusinessService.Entities.CriterionEvaluation;
 using AUN_QA.BusinessService.Infrastructure.Data;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.CatalogService.Protos;
@@ -92,36 +93,66 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
 
             var upcomingDeadlineCount = cycles.Count(x => x.EndDate >= now && x.EndDate <= warningThreshold);
 
+            // Batch DB queries — one query each instead of N per cycle
+            var allEvaluations = await _context.CriterionEvaluations
+                .AsNoTracking()
+                .Where(x => activeCycleIds.Contains(x.CycleId) && x.IsActived && !x.IsDeleted)
+                .ToListAsync();
+            var evaluationsByCycle = allEvaluations
+                .GroupBy(x => x.CycleId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var evidenceCountsByCycle = await _context.EvidenceCycleMaps
+                .AsNoTracking()
+                .Where(x => activeCycleIds.Contains(x.CycleId) && x.IsActived && !x.IsDeleted)
+                .GroupBy(x => x.CycleId)
+                .Select(g => new { CycleId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.CycleId, x => x.Count);
+
+            // De-duplicate gRPC calls by unique StandardSetId then parallelize
+            var uniqueStandardSetIds = cycles
+                .Select(x => x.StandardSetId.ToString())
+                .Distinct()
+                .ToList();
+
+            var standardSetInfoTasks = uniqueStandardSetIds
+                .ToDictionary(id => id, id => _catalogService.GetStandardSetInfoAsync(id));
+            await Task.WhenAll(standardSetInfoTasks.Values);
+            var standardSetInfoMap = standardSetInfoTasks
+                .ToDictionary(kv => kv.Key, kv => kv.Value.Result);
+
+            // One gRPC stream per unique StandardSetId
+            var standardNamesMap = new Dictionary<string, Dictionary<Guid, string>>();
+            var standardOrdersMap = new Dictionary<string, Dictionary<Guid, int>>();
+            foreach (var ssId in uniqueStandardSetIds)
+            {
+                var names = new Dictionary<Guid, string>();
+                var orders = new Dictionary<Guid, int>();
+                var stream = _catalogService.GetStandardsWithCriteriaStreamAsync(
+                    new GetStandardsWithCriteriaStreamRequest { StandardSetId = ssId });
+                await foreach (var row in stream)
+                {
+                    if (!names.ContainsKey(row.StandardId))
+                    {
+                        names[row.StandardId] = row.StandardName;
+                        orders[row.StandardId] = row.StandardOrder;
+                    }
+                }
+                standardNamesMap[ssId] = names;
+                standardOrdersMap[ssId] = orders;
+            }
+
             var result = new List<CycleSummaryDto>();
 
             foreach (var cycle in cycles)
             {
-                var standardSetInfo = await _catalogService.GetStandardSetInfoAsync(cycle.StandardSetId.ToString());
-                var standardRows = _catalogService.GetStandardsWithCriteriaStreamAsync(
-                    new GetStandardsWithCriteriaStreamRequest
-                    {
-                        StandardSetId = cycle.StandardSetId.ToString()
-                    });
+                var ssIdKey = cycle.StandardSetId.ToString();
+                var standardSetInfo = standardSetInfoMap[ssIdKey];
+                var standardNames = standardNamesMap[ssIdKey];
+                var standardOrders = standardOrdersMap[ssIdKey];
 
-                var standardNames = new Dictionary<Guid, string>();
-                var standardOrders = new Dictionary<Guid, int>();
-                await foreach (var row in standardRows)
-                {
-                    if (!standardNames.ContainsKey(row.StandardId))
-                    {
-                        standardNames[row.StandardId] = row.StandardName;
-                        standardOrders[row.StandardId] = row.StandardOrder;
-                    }
-                }
-
-                var evaluations = await _context.CriterionEvaluations
-                    .AsNoTracking()
-                    .Where(x => x.CycleId == cycle.Id && x.IsActived && !x.IsDeleted)
-                    .ToListAsync();
-
-                var scoredEvaluations = evaluations
-                    .Where(x => x.OfficialScore.HasValue)
-                    .ToList();
+                var evaluations = evaluationsByCycle.TryGetValue(cycle.Id, out var evals) ? evals : new List<CriterionEvaluationEntity>();
+                var scoredEvaluations = evaluations.Where(x => x.OfficialScore.HasValue).ToList();
 
                 var criteriaTotal = evaluations.Count;
                 var criteriaEvaluated = scoredEvaluations.Count;
@@ -145,17 +176,12 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
-                            ? standardName
-                            : x.StandardId.ToString(),
+                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
 
-                var topStandardIds = rankedStandards
-                    .Take(2)
-                    .Select(x => x.StandardId)
-                    .ToHashSet();
+                var topStandardIds = rankedStandards.Take(2).Select(x => x.StandardId).ToHashSet();
 
                 var bottomCriteria = rankedStandards
                     .OrderBy(x => x.AvgScore)
@@ -163,29 +189,21 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
-                            ? standardName
-                            : x.StandardId.ToString(),
+                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
 
                 var chartSeries = rankedStandards
-                    .OrderBy(x => standardOrders.TryGetValue(x.StandardId, out var standardOrder)
-                        ? standardOrder
-                        : int.MaxValue)
+                    .OrderBy(x => standardOrders.TryGetValue(x.StandardId, out var ord) ? ord : int.MaxValue)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var standardName)
-                            ? standardName
-                            : x.StandardId.ToString(),
+                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
 
-                var cycleEvidenceCount = await _context.EvidenceCycleMaps
-                    .AsNoTracking()
-                    .CountAsync(x => x.CycleId == cycle.Id && x.IsActived && !x.IsDeleted);
+                var cycleEvidenceCount = evidenceCountsByCycle.TryGetValue(cycle.Id, out var cnt) ? cnt : 0;
 
                 result.Add(new CycleSummaryDto
                 {

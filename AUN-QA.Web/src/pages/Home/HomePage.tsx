@@ -15,15 +15,15 @@ const HomePage = () => {
   const summary = overview?.Summary;
   const cycles = overview?.Cycles ?? [];
   const totalWarnings =
-    (summary?.ExpiringEvidenceCount ?? 0) + (summary?.UpcomingDeadlineCount ?? 0);
+    (summary?.OverdueActionPlansCount ?? 0) + (summary?.NearDueActionPlansCount ?? 0);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Chu kỳ active</p>
+              <p className="text-sm font-medium text-slate-500">Chu kỳ hoạt động</p>
               <h3 className="text-2xl font-bold text-slate-800">
                 {isLoading ? "—" : summary?.ActiveCyclesCount ?? 0}
               </h3>
@@ -35,7 +35,7 @@ const HomePage = () => {
           <p className="mt-2 text-xs text-slate-400">Đang tham gia</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">Kho minh chứng</p>
@@ -50,10 +50,10 @@ const HomePage = () => {
           <p className="mt-2 text-xs text-slate-400">Tổng minh chứng của các chu kỳ đang tham gia</p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Action Plans</p>
+              <p className="text-sm font-medium text-slate-500">Kế hoạch hành động</p>
               <h3 className="text-2xl font-bold text-emerald-600">
                 {isLoading ? "—" : summary?.ActionPlansCount ?? 0}
               </h3>
@@ -69,10 +69,10 @@ const HomePage = () => {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-l-4 border-amber-500 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-l-4 border-amber-500 bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-500">Cảnh báo</p>
+              <p className="text-sm font-medium text-slate-500">Cảnh báo kế hoạch</p>
               <h3 className="text-2xl font-bold text-amber-600">
                 {isLoading ? "—" : totalWarnings}
               </h3>
@@ -84,62 +84,53 @@ const HomePage = () => {
           <p className="mt-2 text-xs font-medium text-rose-500">
             {isLoading
               ? "Đang tải"
-              : `${summary?.ExpiringEvidenceCount ?? 0} MC sắp hết hạn · ${summary?.UpcomingDeadlineCount ?? 0} deadline sắp tới`}
+              : `${summary?.OverdueActionPlansCount ?? 0} quá hạn · ${summary?.NearDueActionPlansCount ?? 0} trong 30 ngày`}
           </p>
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-cyan-50 shadow-sm">
-        <div className="border-b border-slate-200/80 px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">
-            Chu kỳ đang tham gia
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Mỗi slide hiển thị đúng kiểu biểu đồ được cấu hình cho StandardSet.
-          </p>
-        </div>
+      <div>
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">
+          Chu kỳ đang tham gia
+        </h2>
 
-        <div className="p-5">
-          {isLoading && (
-            <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/70">
-              <RefreshCw size={20} className="animate-spin text-slate-400" />
-            </div>
-          )}
+        {isLoading && (
+          <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white/70">
+            <RefreshCw size={20} className="animate-spin text-slate-400" />
+          </div>
+        )}
 
-          {isError && (
-            <div className="flex h-56 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-sm text-red-500">
-              Không thể tải dữ liệu. Vui lòng thử lại.
-            </div>
-          )}
+        {isError && (
+          <div className="flex h-56 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-sm text-red-500">
+            Không thể tải dữ liệu. Vui lòng thử lại.
+          </div>
+        )}
 
-          {!isLoading && !isError && cycles.length === 0 && (
-            <div className="flex h-56 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">
-              Bạn chưa tham gia chu kỳ đánh giá nào đang hoạt động.
-            </div>
-          )}
+        {!isLoading && !isError && cycles.length === 0 && (
+          <div className="flex h-56 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm text-slate-400">
+            Bạn chưa tham gia chu kỳ đánh giá nào đang hoạt động.
+          </div>
+        )}
 
-          {!isLoading && !isError && cycles.length > 0 && (
-            <>
-              <Carousel opts={{ align: "start" }} className="w-full">
-                <CarouselContent>
-                  {cycles.map((cycle) => (
-                    <CarouselItem key={cycle.CycleId}>
-                      <CycleChartSlide cycle={cycle} />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {cycles.length > 1 && (
-                  <>
-                    <CarouselPrevious className="-left-2" />
-                    <CarouselNext className="-right-2" />
-                    <CarouselDots className="mt-4" />
-                  </>
-                )}
-              </Carousel>
-            </>
-          )}
-        </div>
-      </section>
+        {!isLoading && !isError && cycles.length > 0 && (
+          <Carousel opts={{ align: "start" }} className="w-full overflow-hidden">
+            <CarouselContent>
+              {cycles.map((cycle) => (
+                <CarouselItem key={cycle.CycleId}>
+                  <CycleChartSlide cycle={cycle} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {cycles.length > 1 && (
+              <>
+                <CarouselPrevious className="-left-2" />
+                <CarouselNext className="-right-2" />
+                <CarouselDots className="mt-4" />
+              </>
+            )}
+          </Carousel>
+        )}
+      </div>
     </div>
   );
 };

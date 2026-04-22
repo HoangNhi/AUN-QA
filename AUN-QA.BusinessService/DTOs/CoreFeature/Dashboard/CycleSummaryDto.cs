@@ -12,8 +12,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard
         public int EvidenceCount { get; set; }
         public int ActionPlansCount { get; set; }
         public int IncompleteActionPlansCount { get; set; }
-        public int ExpiringEvidenceCount { get; set; }
-        public int UpcomingDeadlineCount { get; set; }
+        public int OverdueActionPlansCount { get; set; }
+        public int NearDueActionPlansCount { get; set; }
     }
 
     public class CycleSummaryDto

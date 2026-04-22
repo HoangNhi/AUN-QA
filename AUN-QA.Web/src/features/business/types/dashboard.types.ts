@@ -21,8 +21,8 @@ export interface DashboardSummary {
   EvidenceCount: number;
   ActionPlansCount: number;
   IncompleteActionPlansCount: number;
-  ExpiringEvidenceCount: number;
-  UpcomingDeadlineCount: number;
+  OverdueActionPlansCount: number;
+  NearDueActionPlansCount: number;
 }
 
 export interface CycleSummary {
@@ -49,8 +49,8 @@ export const EMPTY_DASHBOARD_OVERVIEW: DashboardOverview = {
     EvidenceCount: 0,
     ActionPlansCount: 0,
     IncompleteActionPlansCount: 0,
-    ExpiringEvidenceCount: 0,
-    UpcomingDeadlineCount: 0,
+    OverdueActionPlansCount: 0,
+    NearDueActionPlansCount: 0,
   },
   Cycles: [],
 };

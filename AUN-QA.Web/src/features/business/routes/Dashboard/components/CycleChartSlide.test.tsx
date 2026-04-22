@@ -54,7 +54,7 @@ describe("CycleChartSlide", () => {
     expect(screen.queryByText(/Còn \d+ ngày/)).not.toBeInTheDocument();
     expect(screen.queryByText("Điểm mạnh")).not.toBeInTheDocument();
     expect(screen.queryByText("Cần cải thiện")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Bar Chart")).not.toHaveLength(0);
+    expect(screen.getAllByText("Biểu đồ thanh")).not.toHaveLength(0);
   });
 
   it("giữ panel insight khi là Spider Chart", () => {
@@ -88,6 +88,6 @@ describe("CycleChartSlide", () => {
 
     expect(screen.getByText("Điểm mạnh")).toBeInTheDocument();
     expect(screen.getByText("Cần cải thiện")).toBeInTheDocument();
-    expect(screen.getAllByText("Spider Chart")).not.toHaveLength(0);
+    expect(screen.getAllByText("Biểu đồ radar")).not.toHaveLength(0);
   });
 });

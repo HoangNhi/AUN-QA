@@ -74,24 +74,24 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     && !x.IsDeleted
                     && x.Status != (int)ActionPlanStatus.Completed);
 
-            var expiringEvidenceCount = await (
-                from map in _context.EvidenceCycleMaps.AsNoTracking()
-                join evidence in _context.Evidences.AsNoTracking()
-                    on map.EvidenceId equals evidence.Id
-                where activeCycleIds.Contains(map.CycleId)
-                    && map.IsActived
-                    && !map.IsDeleted
-                    && evidence.IsActived
-                    && !evidence.IsDeleted
-                    && evidence.ExpiryDate.HasValue
-                    && evidence.ExpiryDate.Value >= now
-                    && evidence.ExpiryDate.Value <= warningThreshold
-                select evidence.Id
-            )
-                .Distinct()
-                .CountAsync();
+            var overdueActionPlansCount = await _context.ActionPlans
+                .AsNoTracking()
+                .CountAsync(x =>
+                    activeCycleIds.Contains(x.CycleId)
+                    && x.IsActived
+                    && !x.IsDeleted
+                    && x.Status != (int)ActionPlanStatus.Completed
+                    && x.Deadline < now);
 
-            var upcomingDeadlineCount = cycles.Count(x => x.EndDate >= now && x.EndDate <= warningThreshold);
+            var nearDueActionPlansCount = await _context.ActionPlans
+                .AsNoTracking()
+                .CountAsync(x =>
+                    activeCycleIds.Contains(x.CycleId)
+                    && x.IsActived
+                    && !x.IsDeleted
+                    && x.Status != (int)ActionPlanStatus.Completed
+                    && x.Deadline >= now
+                    && x.Deadline <= warningThreshold);
 
             // Batch DB queries — one query each instead of N per cycle
             var allEvaluations = await _context.CriterionEvaluations
@@ -194,12 +194,14 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     })
                     .ToList();
 
-                var chartSeries = rankedStandards
-                    .OrderBy(x => standardOrders.TryGetValue(x.StandardId, out var ord) ? ord : int.MaxValue)
-                    .Select(x => new CriteriaSummaryDto
+                var scoredByStandard = rankedStandards.ToDictionary(x => x.StandardId, x => x.AvgScore);
+
+                var chartSeries = standardNames
+                    .OrderBy(kv => standardOrders.TryGetValue(kv.Key, out var ord) ? ord : int.MaxValue)
+                    .Select(kv => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
-                        Score = Math.Round(x.AvgScore, 1)
+                        Name = kv.Value,
+                        Score = scoredByStandard.TryGetValue(kv.Key, out var s) ? Math.Round(s, 1) : 0
                     })
                     .ToList();
 
@@ -235,8 +237,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     EvidenceCount = evidenceCount,
                     ActionPlansCount = actionPlansCount,
                     IncompleteActionPlansCount = incompleteActionPlansCount,
-                    ExpiringEvidenceCount = expiringEvidenceCount,
-                    UpcomingDeadlineCount = upcomingDeadlineCount
+                    OverdueActionPlansCount = overdueActionPlansCount,
+                    NearDueActionPlansCount = nearDueActionPlansCount
                 },
                 Cycles = result
             };

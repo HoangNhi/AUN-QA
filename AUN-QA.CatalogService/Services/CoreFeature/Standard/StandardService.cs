@@ -477,7 +477,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var query = from standard in _context.Standards
                         join criterion in _context.Criteria on standard.Id equals criterion.StandardId
                         where standard.StandardSetId == standardSetId
-                          && !standard.IsDeleted && standard.IsActived
+                          && !standard.IsDeleted
                           && !criterion.IsDeleted && criterion.IsActived
                         orderby standard.Order, criterion.Order
                         select new { standard, criterion };

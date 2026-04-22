@@ -27,7 +27,7 @@ const CycleChartSlide = ({ cycle }: Props) => {
     : false;
 
   const chartLabel =
-    cycle.ChartType === DashboardChartType.BarChart ? "Bar Chart" : "Spider Chart";
+    cycle.ChartType === DashboardChartType.BarChart ? "Biểu đồ thanh" : "Biểu đồ radar";
   const showInsights = cycle.ChartType === DashboardChartType.SpiderChart;
 
   return (

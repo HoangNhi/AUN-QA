@@ -24,8 +24,8 @@ describe("HomePage", () => {
           EvidenceCount: 12,
           ActionPlansCount: 5,
           IncompleteActionPlansCount: 3,
-          ExpiringEvidenceCount: 1,
-          UpcomingDeadlineCount: 1,
+          OverdueActionPlansCount: 1,
+          NearDueActionPlansCount: 2,
         },
         Cycles: [
           {
@@ -72,13 +72,60 @@ describe("HomePage", () => {
 
     expect(() => render(<HomePage />)).not.toThrow();
 
-    expect(screen.getByText(/active/i)).toBeInTheDocument();
-    expect(screen.getByText(/Action Plans/i)).toBeInTheDocument();
+    expect(screen.getByText("Chu kỳ hoạt động")).toBeInTheDocument();
+    expect(screen.getByText("Kế hoạch hành động")).toBeInTheDocument();
+    expect(screen.getByText("Cảnh báo kế hoạch")).toBeInTheDocument();
+    expect(screen.getByText(/1 quá hạn · 2 trong 30 ngày/)).toBeInTheDocument();
     expect(screen.getByText("Chu kỳ 1")).toBeInTheDocument();
     expect(screen.getByText("Chu kỳ 2")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getAllByRole("button")).toHaveLength(4);
     });
+  });
+
+  it("hiển thị trạng thái loading", () => {
+    vi.mocked(useDashboardCycles).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    } as never);
+
+    render(<HomePage />);
+    expect(screen.getAllByText("—")).toHaveLength(4);
+  });
+
+  it("hiển thị thông báo lỗi khi isError", () => {
+    vi.mocked(useDashboardCycles).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as never);
+
+    render(<HomePage />);
+    expect(screen.getByText("Không thể tải dữ liệu. Vui lòng thử lại.")).toBeInTheDocument();
+  });
+
+  it("hiển thị thông báo chưa tham gia chu kỳ khi cycles rỗng", () => {
+    vi.mocked(useDashboardCycles).mockReturnValue({
+      data: {
+        Summary: {
+          ActiveCyclesCount: 0,
+          EvidenceCount: 0,
+          ActionPlansCount: 0,
+          IncompleteActionPlansCount: 0,
+          OverdueActionPlansCount: 0,
+          NearDueActionPlansCount: 0,
+        },
+        Cycles: [],
+      },
+      isLoading: false,
+      isError: false,
+    } as never);
+
+    render(<HomePage />);
+    expect(
+      screen.getByText("Bạn chưa tham gia chu kỳ đánh giá nào đang hoạt động."),
+    ).toBeInTheDocument();
   });
 });

@@ -51,8 +51,8 @@ describe("useDashboardCycles", () => {
           EvidenceCount: 12,
           ActionPlansCount: 5,
           IncompleteActionPlansCount: 3,
-          ExpiringEvidenceCount: 1,
-          UpcomingDeadlineCount: 1,
+          OverdueActionPlansCount: 1,
+          NearDueActionPlansCount: 1,
         },
         Cycles: [
           {

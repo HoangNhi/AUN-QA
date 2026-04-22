@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import * as React from "react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MultipleSelector from "./multi-select";
 
@@ -35,11 +36,15 @@ function mockRect(element: HTMLElement, rect: Partial<DOMRect>) {
   } as DOMRect);
 }
 
-function renderSelector(props?: { portalContainer?: HTMLElement | null }) {
+function renderSelector(props?: {
+  keepOpenOnSelect?: boolean;
+  portalContainer?: HTMLElement | null;
+}) {
   const { container } = render(
     <MultipleSelector
       options={OPTIONS}
       placeholder="Add assignee..."
+      keepOpenOnSelect={props?.keepOpenOnSelect}
       portalContainer={props?.portalContainer ?? null}
     />,
   );
@@ -194,5 +199,213 @@ describe("MultipleSelector dropdown positioning", () => {
     expect(bodyWheelSpy).not.toHaveBeenCalled();
 
     document.body.removeEventListener("wheel", bodyWheelSpy);
+  });
+
+  it("clears the search text after selecting an option by default", async () => {
+    const { root, input } = renderSelector();
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Assignee 1" } });
+
+    await waitFor(() => {
+      expect(input).toHaveValue("Assignee 1");
+    });
+
+    fireEvent.mouseDown(screen.getByText("Assignee 1"));
+
+    await waitFor(() => {
+      expect(input).toHaveValue("");
+    });
+  });
+
+  it("keeps the search text after selecting an option when keepOpenOnSelect is true", async () => {
+    const { root, input } = renderSelector({ keepOpenOnSelect: true });
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "Assignee 1" } });
+
+    await waitFor(() => {
+      expect(input).toHaveValue("Assignee 1");
+    });
+
+    fireEvent.mouseDown(screen.getByText("Assignee 1"));
+
+    await waitFor(() => {
+      expect(input).toHaveValue("Assignee 1");
+    });
+  });
+
+  it("keeps the dropdown open after selecting an option when keepOpenOnSelect is true", async () => {
+    const { root, input } = renderSelector({ keepOpenOnSelect: true });
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+
+    const scrollContainer = await screen.findByTestId(
+      "multi-select-scroll-container",
+    );
+    fireEvent.mouseDown(within(scrollContainer).getByText("Assignee 1"));
+
+    await waitFor(() => {
+      const openScrollContainer = screen.getByTestId(
+        "multi-select-scroll-container",
+      );
+      expect(
+        within(openScrollContainer).getByText("Assignee 2"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("keeps the dropdown open after a controlled value update when keepOpenOnSelect is true", async () => {
+    function ControlledHost() {
+      const [value, setValue] = React.useState<typeof OPTIONS>([]);
+
+      return (
+        <MultipleSelector
+          value={value}
+          options={OPTIONS}
+          keepOpenOnSelect
+          placeholder="Add assignee..."
+          onChange={setValue}
+        />
+      );
+    }
+
+    const { container } = render(<ControlledHost />);
+    const root = container.querySelector("[data-slot='command']") as HTMLDivElement;
+    const input = screen.getByPlaceholderText("Add assignee...");
+
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+
+    const scrollContainer = await screen.findByTestId(
+      "multi-select-scroll-container",
+    );
+    fireEvent.mouseDown(within(scrollContainer).getByText("Assignee 1"));
+
+    await waitFor(() => {
+      const openScrollContainer = screen.getByTestId(
+        "multi-select-scroll-container",
+      );
+      expect(
+        within(openScrollContainer).getByText("Assignee 2"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("keeps the dropdown open in controlled mode when options come from defaultOptions", async () => {
+    function ControlledDefaultOptionsHost() {
+      const [value, setValue] = React.useState<typeof OPTIONS>([]);
+
+      return (
+        <MultipleSelector
+          value={value}
+          defaultOptions={OPTIONS}
+          keepOpenOnSelect
+          placeholder="Add assignee..."
+          onChange={setValue}
+        />
+      );
+    }
+
+    const { container } = render(<ControlledDefaultOptionsHost />);
+    const root = container.querySelector("[data-slot='command']") as HTMLDivElement;
+    const input = screen.getByPlaceholderText("Add assignee...");
+
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+
+    const scrollContainer = await screen.findByTestId(
+      "multi-select-scroll-container",
+    );
+    fireEvent.mouseDown(within(scrollContainer).getByText("Assignee 1"));
+
+    await waitFor(() => {
+      const openScrollContainer = screen.getByTestId(
+        "multi-select-scroll-container",
+      );
+      expect(
+        within(openScrollContainer).getByText("Assignee 2"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("updates dropdown options when defaultOptions changes after mount", async () => {
+    function AsyncDefaultOptionsHost() {
+      const [defaultOptions, setDefaultOptions] = React.useState<
+        typeof OPTIONS
+      >([]);
+
+      return (
+        <>
+          <button type="button" onClick={() => setDefaultOptions(OPTIONS)}>
+            Load options
+          </button>
+          <MultipleSelector
+            defaultOptions={defaultOptions}
+            keepOpenOnSelect
+            placeholder="Add assignee..."
+          />
+        </>
+      );
+    }
+
+    const { container } = render(<AsyncDefaultOptionsHost />);
+    const root = container.querySelector("[data-slot='command']") as HTMLDivElement;
+    const input = screen.getByPlaceholderText("Add assignee...");
+
+    mockRect(root, {
+      top: 120,
+      left: 100,
+      width: 320,
+      height: 40,
+      bottom: 160,
+    });
+
+    fireEvent.focus(input);
+    fireEvent.click(screen.getByRole("button", { name: "Load options" }));
+
+    await waitFor(() => {
+      const openScrollContainer = screen.getByTestId(
+        "multi-select-scroll-container",
+      );
+      expect(
+        within(openScrollContainer).getByText("Assignee 1"),
+      ).toBeInTheDocument();
+    });
   });
 });

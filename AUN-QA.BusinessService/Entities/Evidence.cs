@@ -40,4 +40,8 @@ public partial class Evidence
     public DateTime? ApprovedAt { get; set; }
 
     public string? ApprovedBy { get; set; }
+
+    public virtual ICollection<EvidenceAttachment> EvidenceAttachments { get; set; } = new List<EvidenceAttachment>();
+
+    public virtual ICollection<EvidenceCycleMap> EvidenceCycleMaps { get; set; } = new List<EvidenceCycleMap>();
 }

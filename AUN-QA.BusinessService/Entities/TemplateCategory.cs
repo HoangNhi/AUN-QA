@@ -24,4 +24,8 @@ public partial class TemplateCategory
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<TemplateQuestion> TemplateQuestions { get; set; } = new List<TemplateQuestion>();
+
+    public virtual TemplateTopic Topic { get; set; } = null!;
 }

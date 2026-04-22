@@ -47,6 +47,8 @@ public partial class ActionPlan
 
     public virtual ICollection<ActionPlanAssignee> ActionPlanAssignees { get; set; } = new List<ActionPlanAssignee>();
 
+    public virtual ICollection<ActionPlanAttachment> ActionPlanAttachments { get; set; } = new List<ActionPlanAttachment>();
+
     public virtual ICollection<ActionTask> ActionTasks { get; set; } = new List<ActionTask>();
 
     public virtual Cycle Cycle { get; set; } = null!;

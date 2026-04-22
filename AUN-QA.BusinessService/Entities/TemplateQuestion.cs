@@ -26,4 +26,8 @@ public partial class TemplateQuestion
     public bool IsDeleted { get; set; }
 
     public bool IsRequired { get; set; }
+
+    public virtual TemplateCategory Category { get; set; } = null!;
+
+    public virtual ICollection<SurveyScore> SurveyScores { get; set; } = new List<SurveyScore>();
 }

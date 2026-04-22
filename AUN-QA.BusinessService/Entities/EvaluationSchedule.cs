@@ -28,4 +28,6 @@ public partial class EvaluationSchedule
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual Cycle Cycle { get; set; } = null!;
 }

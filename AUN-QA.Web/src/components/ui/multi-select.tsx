@@ -95,6 +95,9 @@ interface MultipleSelectorProps {
   /** hide the clear all button. */
   hideClearAllButton?: boolean;
 
+  /** Keep dropdown open after selecting an option. */
+  keepOpenOnSelect?: boolean;
+
   /** Explicit portal host for dialog-aware rendering. */
   portalContainer?: HTMLElement | null;
 }
@@ -327,9 +330,11 @@ const MultipleSelector = ({
   commandProps,
   inputProps,
   hideClearAllButton = false,
+  keepOpenOnSelect = false,
   portalContainer,
 }: MultipleSelectorProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const isSelectingRef = React.useRef(false);
   const [open, setOpen] = React.useState(false);
   const [onScrollbar, setOnScrollbar] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -349,6 +354,10 @@ const MultipleSelector = ({
   const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
 
   const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    if (isSelectingRef.current) {
+      return;
+    }
+
     const target = event.target as Node;
     const insideTrigger = containerRef.current?.contains(target);
     const insideDropdown = dropdownRef.current?.contains(target);
@@ -386,11 +395,14 @@ const MultipleSelector = ({
 
         // This is not a default behavior of the <input /> field
         if (e.key === "Escape") {
+          if (keepOpenOnSelect) {
+            setOpen(false);
+          }
           input.blur();
         }
       }
     },
-    [handleUnselect, selected],
+    [handleUnselect, keepOpenOnSelect, selected],
   );
 
   const handleDropdownWheel = React.useCallback(
@@ -465,11 +477,12 @@ const MultipleSelector = ({
 
   useEffect(() => {
     /** If `onSearch` is provided, do not trigger options updated. */
-    if (!arrayOptions || onSearch) {
+    if (onSearch) {
       return;
     }
 
-    const newOption = transToGroupOption(arrayOptions || [], groupBy);
+    const sourceOptions = arrayOptions ?? arrayDefaultOptions;
+    const newOption = transToGroupOption(sourceOptions, groupBy);
 
     if (JSON.stringify(newOption) !== JSON.stringify(options)) {
       setOptions(newOption);
@@ -618,6 +631,7 @@ const MultipleSelector = ({
           {/* Avoid having the "Search" Icon */}
           <CommandPrimitive.Input
             {...inputProps}
+            key="multi-select-input"
             ref={inputRef}
             value={inputValue}
             disabled={disabled}
@@ -626,6 +640,16 @@ const MultipleSelector = ({
               inputProps?.onValueChange?.(value);
             }}
             onBlur={(event) => {
+              if (isSelectingRef.current) {
+                inputProps?.onBlur?.(event);
+                return;
+              }
+
+              if (keepOpenOnSelect) {
+                inputProps?.onBlur?.(event);
+                return;
+              }
+
               window.requestAnimationFrame(() => {
                 const activeElement = document.activeElement;
                 const activeInsideDropdown =
@@ -664,6 +688,7 @@ const MultipleSelector = ({
             )}
           />
           <button
+            key="multi-select-clear-all"
             type="button"
             onClick={() => {
               setSelected(selected.filter((s) => s.fixed));
@@ -737,10 +762,24 @@ const MultipleSelector = ({
                               onMaxSelected?.(selected.length);
                               return;
                             }
-                            setInputValue("");
+                            if (keepOpenOnSelect) {
+                              isSelectingRef.current = true;
+                            }
+                            if (!keepOpenOnSelect) {
+                              setInputValue("");
+                            }
                             const newOptions = [...selected, option];
                             setSelected(newOptions);
                             onChange?.(newOptions);
+                            if (keepOpenOnSelect) {
+                              window.requestAnimationFrame(() => {
+                                inputRef.current?.focus();
+                                setOpen(true);
+                                window.setTimeout(() => {
+                                  isSelectingRef.current = false;
+                                }, 0);
+                              });
+                            }
                           }}
                           className={cn(
                             "relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm select-none hover:bg-accent hover:text-accent-foreground",

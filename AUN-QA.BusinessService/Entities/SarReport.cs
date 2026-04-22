@@ -45,5 +45,7 @@ public partial class SarReport
 
     public int ReviewRound { get; set; }
 
+    public virtual Cycle Cycle { get; set; } = null!;
+
     public virtual ICollection<InternalComment> InternalComments { get; set; } = new List<InternalComment>();
 }

@@ -151,6 +151,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.CreatedBy).HasMaxLength(200);
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.UpdatedBy).HasMaxLength(200);
+
+            entity.HasOne(d => d.Related).WithMany(p => p.ActionPlanAttachments)
+                .HasForeignKey(d => d.RelatedId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ActionPlanAttachment_ActionPlan");
         });
 
         modelBuilder.Entity<ActionTask>(entity =>
@@ -233,6 +238,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.Councils)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Council_Cycle");
         });
 
         modelBuilder.Entity<CriterionEvaluation>(entity =>
@@ -254,6 +264,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.CriterionEvaluations)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CriterionEvaluation_Cycle");
         });
 
         modelBuilder.Entity<Cycle>(entity =>
@@ -292,6 +307,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.EvaluationSchedules)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EvaluationSchedule_Cycle");
         });
 
         modelBuilder.Entity<EvaluationSubmission>(entity =>
@@ -306,6 +326,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.IsActived).HasDefaultValue(true);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy).HasMaxLength(450);
+
+            entity.HasOne(d => d.CriterionEvaluation).WithMany(p => p.EvaluationSubmissions)
+                .HasForeignKey(d => d.CriterionEvaluationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EvaluationSubmission_CriterionEvaluation");
         });
 
         modelBuilder.Entity<Evidence>(entity =>
@@ -347,6 +372,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Related).WithMany(p => p.EvidenceAttachments)
+                .HasForeignKey(d => d.RelatedId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EvidenceAttachment_Evidence");
         });
 
         modelBuilder.Entity<EvidenceCycleMap>(entity =>
@@ -368,6 +398,16 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.EvidenceCycleMaps)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EvidenceCycleMap_Cycle");
+
+            entity.HasOne(d => d.Evidence).WithMany(p => p.EvidenceCycleMaps)
+                .HasForeignKey(d => d.EvidenceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EvidenceCycleMap_Evidence");
         });
 
         modelBuilder.Entity<ExternalReview>(entity =>
@@ -519,6 +559,11 @@ public partial class BusinessContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.YdocSnapshot).HasColumnName("YDocSnapshot");
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.SarReports)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SarReport_Cycle");
         });
 
         modelBuilder.Entity<SurveyCampaign>(entity =>
@@ -536,6 +581,16 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Cycle).WithMany(p => p.SurveyCampaigns)
+                .HasForeignKey(d => d.CycleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyCampaign_Cycle");
+
+            entity.HasOne(d => d.Template).WithMany(p => p.SurveyCampaigns)
+                .HasForeignKey(d => d.TemplateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyCampaign_SurveyTemplate");
         });
 
         modelBuilder.Entity<SurveyScore>(entity =>
@@ -550,6 +605,16 @@ public partial class BusinessContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.SurveyScores)
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyScore_TemplateQuestion");
+
+            entity.HasOne(d => d.Session).WithMany(p => p.SurveyScores)
+                .HasForeignKey(d => d.SessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyScore_SurveySession");
         });
 
         modelBuilder.Entity<SurveySession>(entity =>
@@ -570,6 +635,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Campaign).WithMany(p => p.SurveySessions)
+                .HasForeignKey(d => d.CampaignId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveySession_SurveyCampaign");
         });
 
         modelBuilder.Entity<SurveyTemplate>(entity =>
@@ -604,6 +674,16 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Session).WithMany(p => p.SurveyTextAnswers)
+                .HasForeignKey(d => d.SessionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyTextAnswer_SurveySession");
+
+            entity.HasOne(d => d.TextQuestion).WithMany(p => p.SurveyTextAnswers)
+                .HasForeignKey(d => d.TextQuestionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_SurveyTextAnswer_TemplateTextQuestion");
         });
 
         modelBuilder.Entity<TemplateCategory>(entity =>
@@ -621,6 +701,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Topic).WithMany(p => p.TemplateCategories)
+                .HasForeignKey(d => d.TopicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TemplateCategory_TemplateTopic");
         });
 
         modelBuilder.Entity<TemplateQuestion>(entity =>
@@ -638,6 +723,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Category).WithMany(p => p.TemplateQuestions)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TemplateQuestion_TemplateCategory");
         });
 
         modelBuilder.Entity<TemplateTextQuestion>(entity =>
@@ -655,6 +745,11 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Topic).WithMany(p => p.TemplateTextQuestions)
+                .HasForeignKey(d => d.TopicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TemplateTextQuestion_TemplateTopic");
         });
 
         modelBuilder.Entity<TemplateTopic>(entity =>
@@ -672,6 +767,16 @@ public partial class BusinessContext : DbContext
             entity.Property(e => e.UpdatedBy)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.Campaign).WithMany(p => p.TemplateTopics)
+                .HasForeignKey(d => d.CampaignId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_TemplateTopic_SurveyCampaign");
+
+            entity.HasOne(d => d.Template).WithMany(p => p.TemplateTopics)
+                .HasForeignKey(d => d.TemplateId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_TemplateTopic_SurveyTemplate");
         });
 
         OnModelCreatingPartial(modelBuilder);

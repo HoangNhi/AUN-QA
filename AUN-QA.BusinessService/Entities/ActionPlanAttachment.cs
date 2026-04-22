@@ -28,4 +28,6 @@ public partial class ActionPlanAttachment
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ActionPlan Related { get; set; } = null!;
 }

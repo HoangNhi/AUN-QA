@@ -34,4 +34,10 @@ public partial class SurveySession
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual SurveyCampaign Campaign { get; set; } = null!;
+
+    public virtual ICollection<SurveyScore> SurveyScores { get; set; } = new List<SurveyScore>();
+
+    public virtual ICollection<SurveyTextAnswer> SurveyTextAnswers { get; set; } = new List<SurveyTextAnswer>();
 }

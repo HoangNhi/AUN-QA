@@ -28,4 +28,8 @@ public partial class EvidenceCycleMap
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual Cycle Cycle { get; set; } = null!;
+
+    public virtual Evidence Evidence { get; set; } = null!;
 }

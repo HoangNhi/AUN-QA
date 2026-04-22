@@ -42,4 +42,8 @@ public partial class CriterionEvaluation
     public string? OfficialActionPlan { get; set; }
 
     public string? OfficialCurrentState { get; set; }
+
+    public virtual Cycle Cycle { get; set; } = null!;
+
+    public virtual ICollection<EvaluationSubmission> EvaluationSubmissions { get; set; } = new List<EvaluationSubmission>();
 }

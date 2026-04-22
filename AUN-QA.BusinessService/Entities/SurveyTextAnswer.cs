@@ -24,4 +24,8 @@ public partial class SurveyTextAnswer
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual SurveySession Session { get; set; } = null!;
+
+    public virtual TemplateTextQuestion TextQuestion { get; set; } = null!;
 }

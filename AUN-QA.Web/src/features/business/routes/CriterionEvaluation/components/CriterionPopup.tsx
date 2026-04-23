@@ -619,6 +619,8 @@ export function CriterionPopup({
                       setOfficialStrengths(sub.Strengths ?? "");
                       setOfficialWeaknesses(sub.Weaknesses ?? "");
                       setOfficialActionPlan(sub.ActionPlan ?? "");
+                      setOfficialScore(sub.ProposedScore ?? null);
+                      setOfficialResult(sub.ProposedResult ?? null);
                     }}
                   />
                 ) : isMySubmissionLoading ? (

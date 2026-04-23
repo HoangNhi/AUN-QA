@@ -225,6 +225,7 @@ export const PopupSession = ({
                   onRefresh={refetch}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
+                  containerClassName="h-[380px] overflow-auto w-full relative"
                 />
               </div>
             </div>

@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { CAMPAIGN_STATUS_OPTIONS } from "@/constants/business.constants";
 import { cn } from "@/lib/utils";
+import { remapTemplateTopicIdsForCampaign } from "../../utils/surveyCampaignTemplate";
 
 const formSchema = z.object({
   id: z.string(),
@@ -425,6 +426,7 @@ const PopupSurveyCampaign = ({
                               onValueChange={(val) => {
                                 field.onChange(val);
                                 form.setValue("templateId", "");
+                                setListTopic([]);
                               }}
                               placeholder="Chọn đối tượng"
                               searchPlaceholder="Tìm kiếm đối tượng..."
@@ -463,22 +465,34 @@ const PopupSurveyCampaign = ({
                               value={field.value}
                               onValueChange={async (val) => {
                                 field.onChange(val);
-                                if (val) {
-                                  setIsLoadingTemplate(true);
-                                  try {
-                                    const res =
-                                      await surveyTemplateService.getById(val);
-                                    if (res.Success) {
-                                      setListTopic(res.Data?.ListTopic || []);
-                                    } else {
-                                      setListTopic([]);
-                                      toast.error(res.Message);
-                                    }
-                                  } finally {
-                                    setIsLoadingTemplate(false);
-                                  }
-                                } else {
+
+                                if (!val) {
                                   setListTopic([]);
+                                  return;
+                                }
+
+                                setIsLoadingTemplate(true);
+
+                                try {
+                                  const res =
+                                    await surveyTemplateService.getById(val);
+
+                                  if (!res.Success) {
+                                    setListTopic([]);
+                                    toast.error(res.Message);
+                                    return;
+                                  }
+
+                                  // Template topics must be re-keyed before saving to a campaign update,
+                                  // otherwise backend ownership validation treats them as foreign records.
+                                  const clonedTopics =
+                                    remapTemplateTopicIdsForCampaign(
+                                      res.Data?.ListTopic || [],
+                                    );
+
+                                  setListTopic(clonedTopics);
+                                } finally {
+                                  setIsLoadingTemplate(false);
                                 }
                               }}
                               placeholder="Chọn mẫu khảo sát"

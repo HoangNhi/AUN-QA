@@ -70,7 +70,7 @@ describe("HomePage", () => {
       isError: false,
     } as never);
 
-    expect(() => render(<HomePage />)).not.toThrow();
+    const { container } = render(<HomePage />);
 
     expect(screen.getByText("Chu kỳ hoạt động")).toBeInTheDocument();
     expect(screen.getByText("Kế hoạch hành động")).toBeInTheDocument();
@@ -82,6 +82,10 @@ describe("HomePage", () => {
     await waitFor(() => {
       expect(screen.getAllByRole("button")).toHaveLength(4);
     });
+
+    const carouselViewport = container.querySelector(".snap-x");
+    expect(carouselViewport?.className).toContain("[scrollbar-width:none]");
+    expect(carouselViewport?.className).toContain("[&::-webkit-scrollbar]:hidden");
   });
 
   it("hiển thị trạng thái loading", () => {

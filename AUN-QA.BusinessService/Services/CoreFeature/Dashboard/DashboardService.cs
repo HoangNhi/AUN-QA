@@ -176,7 +176,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
+                        Name = ResolveStandardName(standardNames, x.StandardId),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
@@ -189,7 +189,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     .Take(2)
                     .Select(x => new CriteriaSummaryDto
                     {
-                        Name = standardNames.TryGetValue(x.StandardId, out var sn) ? sn : x.StandardId.ToString(),
+                        Name = ResolveStandardName(standardNames, x.StandardId),
                         Score = Math.Round(x.AvgScore, 1)
                     })
                     .ToList();
@@ -242,6 +242,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                 },
                 Cycles = result
             };
+        }
+
+        private static string ResolveStandardName(
+            IReadOnlyDictionary<Guid, string> standardNames,
+            Guid standardId)
+        {
+            if (standardNames.TryGetValue(standardId, out var standardName) && !string.IsNullOrWhiteSpace(standardName))
+            {
+                return standardName;
+            }
+
+            return "Tiêu chuẩn chưa xác định";
         }
     }
 }

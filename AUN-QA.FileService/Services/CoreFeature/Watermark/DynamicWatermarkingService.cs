@@ -35,6 +35,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
         };
 
         private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+        private static readonly Lazy<FontFamily> NotoSansFontFamily = new(LoadNotoSansFontFamily);
 
         private readonly IOfficeConversionService _officeConversionService;
 
@@ -126,7 +127,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
                 using var gfx = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append);
 
                 var fontSize = Math.Max(14, Math.Min(page.Width.Point, page.Height.Point) / 12);
-                var font = new XFont("Times New Roman", fontSize, XFontStyleEx.Bold);
+                var font = new XFont("Noto Sans", fontSize, XFontStyleEx.Bold);
                 var brush = new XSolidBrush(XColor.FromArgb(ClampOpacity(config.Opacity), 80, 80, 80));
 
                 var centerX = page.Width.Point / 2;
@@ -144,7 +145,7 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
                         break;
                     case 2:
                         var repeatFontSize = Math.Max(10, Math.Min(page.Width.Point, page.Height.Point) / 24.0);
-                        var repeatFont = new XFont("Times New Roman", repeatFontSize, XFontStyleEx.Bold);
+                        var repeatFont = new XFont("Noto Sans", repeatFontSize, XFontStyleEx.Bold);
                         DrawRepeatedWatermark(gfx, page.Width.Point, page.Height.Point, config.Text, repeatFont, brush);
                         break;
                     default:
@@ -259,16 +260,24 @@ namespace AUN_QA.FileService.Services.CoreFeature.Watermark
             }
         }
 
+        private static FontFamily LoadNotoSansFontFamily()
+        {
+            const string resourceName =
+                "AUN_QA.FileService.Services.CoreFeature.Watermark.Fonts.Resources.NotoSans-Bold.ttf";
+
+            var assembly = typeof(DynamicWatermarkingService).Assembly;
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException(
+                    $"Embedded resource '{resourceName}' not found.");
+
+            var collection = new FontCollection();
+            return collection.Add(stream);
+        }
+
         private static Font? ResolveFont(int imageHeight)
         {
-            if (!SystemFonts.Collection.Families.Any())
-            {
-                return null;
-            }
-
-            var family = SystemFonts.Collection.Families.First();
             var size = Math.Max(18f, imageHeight / 22f);
-            return family.CreateFont(size, FontStyle.Bold);
+            return NotoSansFontFamily.Value.CreateFont(size, FontStyle.Bold);
         }
 
         private static void SaveImageWithOriginalFormat(Image image, string fileExtension, Stream outputStream)

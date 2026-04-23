@@ -41,6 +41,7 @@ interface PopupEvidenceCycleMapProps {
   onApprove: (id: string, status: number, reason?: string) => void;
   isApproving?: boolean;
   readOnly?: boolean;
+  isExternalViewer?: boolean;
 }
 
 const formSchema = z
@@ -80,6 +81,7 @@ const PopupEvidenceCycleMap = ({
   onApprove,
   isApproving,
   readOnly,
+  isExternalViewer,
 }: PopupEvidenceCycleMapProps) => {
   const { user } = useAuth();
   const [assignedStandardIds, setAssignedStandardIds] = useState<string[]>([]);
@@ -127,7 +129,7 @@ const PopupEvidenceCycleMap = ({
   const [pendingReuseEvidence, setPendingReuseEvidence] =
     useState<ModelVerifiedEvidenceForReuse | null>(null);
   const queryClient = useQueryClient();
-  const isExternalReviewerView = !!readOnly;
+  const isExternalReviewerView = !!isExternalViewer;
 
   const reuseMutation = useMutation({
     mutationFn: () =>

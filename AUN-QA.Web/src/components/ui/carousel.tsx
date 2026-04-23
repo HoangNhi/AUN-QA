@@ -97,7 +97,7 @@ function CarouselContent({
     <div
       ref={viewportRef}
       className={cn(
-        "flex w-full overflow-x-auto scroll-smooth rounded-2xl snap-x snap-mandatory",
+        "flex w-full overflow-x-auto scroll-smooth rounded-2xl snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
       onScroll={() => {

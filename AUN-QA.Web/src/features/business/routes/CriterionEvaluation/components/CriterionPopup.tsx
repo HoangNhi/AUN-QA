@@ -913,6 +913,7 @@ export function CriterionPopup({
             if (!open) setViewingEcmId(null);
           }}
           readOnly={true}
+          isExternalViewer={isExternalReviewer}
           isLoading={isEcmLoading}
           saveChange={() => {}}
           onApprove={() => {}}

@@ -16,7 +16,7 @@ describe("surveyCampaignTemplate utils", () => {
     expect(next[1]).toEqual({ Value: "b", Text: "Template B" });
   });
 
-  it("remaps all nested ids when cloning template topics for campaign", () => {
+  it("remaps nested ids and removes source linkage metadata when cloning template topics for campaign", () => {
     const source: TemplateTopic[] = [
       {
         Id: uuidv4(),
@@ -24,6 +24,8 @@ describe("surveyCampaignTemplate utils", () => {
         HasTextQuestionPart: true,
         TextQuestionTitle: "Other",
         Sort: 1,
+        TemplateId: uuidv4(),
+        CampaignId: uuidv4(),
         ListCategory: [
           {
             Id: uuidv4(),
@@ -68,6 +70,8 @@ describe("surveyCampaignTemplate utils", () => {
 
     expect(remapped).toHaveLength(1);
     expect(remapped[0].Id).not.toBe(source[0].Id);
+    expect((remapped[0] as Record<string, unknown>).TemplateId).toBeUndefined();
+    expect((remapped[0] as Record<string, unknown>).CampaignId).toBeUndefined();
     expect(remapped[0].ListCategory[0].Id).not.toBe(source[0].ListCategory[0].Id);
     expect(remapped[0].ListCategory[0].TopicId).toBe(remapped[0].Id);
     expect(remapped[0].ListCategory[0].ListQuestion[0].Id).not.toBe(

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, Loader2, RefreshCw } from "lucide-react";
 import { useCriterionEvaluation } from "../../hooks/useCriterionEvaluation";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { standardSetService } from "@/features/catalog/api/standardset.api";
@@ -44,6 +44,8 @@ function inferFrameworkFromGroups(
 }
 export function CriterionEvaluationPage() {
   const { user, isExternalReviewer } = useAuth();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     selectedCycleId,
@@ -94,6 +96,37 @@ export function CriterionEvaluationPage() {
     cycleOptions,
     setSelectedCycleId,
   ]);
+
+  const handleRefresh = async () => {
+    if (!selectedCycleId || isRefreshing) {
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["criterionEvaluation", "summary", selectedCycleId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["criterionEvaluation", "list", selectedCycleId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["criterionEvaluation", "popupData"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            "criterionEvaluation",
+            "surveyCampaigns",
+            "popup",
+            selectedCycleId,
+          ],
+        }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const { data: standardSetData } = useQuery({
     queryKey: ["standardSet-detail", standardSetId],
@@ -174,6 +207,21 @@ export function CriterionEvaluationPage() {
             placeholder={isCycleLoading ? "Đang tải..." : "Chọn chu kỳ..."}
             className="w-[260px]"
           />
+          {selectedCycleId && (
+            <button
+              type="button"
+              onClick={() => {
+                void handleRefresh();
+              }}
+              disabled={isRefreshing || isSummaryLoading || isListLoading}
+              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              title="Tải lại dữ liệu"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </button>
+          )}
         </div>
       </div>
 

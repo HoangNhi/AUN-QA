@@ -526,6 +526,37 @@ export default function PopupInternalReview({
   }, [editor, isCommentsLoading, item?.Status, open, visibleComments]);
 
   useEffect(() => {
+    if (!open || !editor || editor.isDestroyed || editor.view.isDestroyed) {
+      return;
+    }
+
+    if (item?.Status === 2) {
+      return;
+    }
+
+    const markIds = new Set<string>();
+
+    editor.state.doc.descendants((node) => {
+      node.marks.forEach((mark) => {
+        if (mark.type.name !== "comment") {
+          return;
+        }
+
+        const id = String(mark.attrs.commentId ?? "").trim();
+        if (id) {
+          markIds.add(id);
+        }
+      });
+
+      return true;
+    });
+
+    markIds.forEach((id) => {
+      editor.commands.unsetComment(id);
+    });
+  }, [editor, item?.Status, open]);
+
+  useEffect(() => {
     if (!editor || editor.isDestroyed || editor.view.isDestroyed) {
       return;
     }

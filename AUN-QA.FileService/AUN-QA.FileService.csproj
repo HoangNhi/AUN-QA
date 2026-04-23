@@ -47,6 +47,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Services\CoreFeature\Watermark\Fonts\Resources\NotoSans-Bold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="wwwroot\Business\Evidence\**" />
     <None Remove="wwwroot\Business\Evidence\**" />
   </ItemGroup>

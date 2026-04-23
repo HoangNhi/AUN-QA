@@ -44,25 +44,29 @@ public class DashboardServiceTests
         SeedEvaluation(context, activeCycleId, standardOneId, criterionTwoId, 5);
         SeedEvaluation(context, activeCycleId, standardTwoId, criterionThreeId, 2);
 
-        var expiringEvidenceId = Guid.NewGuid();
-        var longTermEvidenceId = Guid.NewGuid();
+        var overdueActionPlanDeadline = DateTime.UtcNow.AddDays(-2);
+        var nearDueActionPlanDeadline = DateTime.UtcNow.AddDays(15);
+        var completedActionPlanDeadline = DateTime.UtcNow.AddDays(-1);
+
+        var evidenceOneId = Guid.NewGuid();
+        var evidenceTwoId = Guid.NewGuid();
         var secondCycleEvidenceId = Guid.NewGuid();
         var deletedEvidenceId = Guid.NewGuid();
 
-        SeedEvidence(context, expiringEvidenceId, DateTime.UtcNow.AddDays(7));
-        SeedEvidence(context, longTermEvidenceId, DateTime.UtcNow.AddDays(90));
+        SeedEvidence(context, evidenceOneId, DateTime.UtcNow.AddDays(7));
+        SeedEvidence(context, evidenceTwoId, DateTime.UtcNow.AddDays(90));
         SeedEvidence(context, secondCycleEvidenceId, null);
         SeedEvidence(context, deletedEvidenceId, DateTime.UtcNow.AddDays(5));
 
-        SeedEvidenceMap(context, activeCycleId, expiringEvidenceId, false);
-        SeedEvidenceMap(context, activeCycleId, longTermEvidenceId, false);
+        SeedEvidenceMap(context, activeCycleId, evidenceOneId, false);
+        SeedEvidenceMap(context, activeCycleId, evidenceTwoId, false);
         SeedEvidenceMap(context, secondActiveCycleId, secondCycleEvidenceId, false);
         SeedEvidenceMap(context, activeCycleId, deletedEvidenceId, true);
 
-        SeedActionPlan(context, activeCycleId, (int)ActionPlanStatus.Completed);
-        SeedActionPlan(context, activeCycleId, (int)ActionPlanStatus.InProgress);
-        SeedActionPlan(context, secondActiveCycleId, (int)ActionPlanStatus.PendingReview);
-        SeedActionPlan(context, finishedCycleId, (int)ActionPlanStatus.Draft);
+        SeedActionPlan(context, activeCycleId, (int)ActionPlanStatus.Completed, completedActionPlanDeadline);
+        SeedActionPlan(context, activeCycleId, (int)ActionPlanStatus.InProgress, overdueActionPlanDeadline);
+        SeedActionPlan(context, secondActiveCycleId, (int)ActionPlanStatus.PendingReview, nearDueActionPlanDeadline);
+        SeedActionPlan(context, finishedCycleId, (int)ActionPlanStatus.Draft, DateTime.UtcNow.AddDays(10));
 
         context.SaveChanges();
 
@@ -137,8 +141,8 @@ public class DashboardServiceTests
         Assert.Equal(3, GetInt32PropertyValue(summary, "EvidenceCount"));
         Assert.Equal(3, GetInt32PropertyValue(summary, "ActionPlansCount"));
         Assert.Equal(2, GetInt32PropertyValue(summary, "IncompleteActionPlansCount"));
-        Assert.Equal(1, GetInt32PropertyValue(summary, "ExpiringEvidenceCount"));
-        Assert.Equal(1, GetInt32PropertyValue(summary, "UpcomingDeadlineCount"));
+        Assert.Equal(1, GetInt32PropertyValue(summary, "OverdueActionPlansCount"));
+        Assert.Equal(1, GetInt32PropertyValue(summary, "NearDueActionPlansCount"));
 
         Assert.Equal(2, cycles.Count);
         Assert.Contains(cycles, cycle =>
@@ -254,6 +258,62 @@ public class DashboardServiceTests
         Assert.DoesNotContain(
             topCriteria.Select(item => GetStringPropertyValue(item, "Name")),
             name => bottomCriteria.Select(item => GetStringPropertyValue(item, "Name")).Contains(name));
+    }
+
+    [Fact]
+    public async Task GetCyclesSummaryAsync_does_not_expose_uuid_in_top_or_bottom_criteria_when_catalog_name_is_missing()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        var standardSetId = Guid.NewGuid();
+        var namedStandardId = Guid.NewGuid();
+        var missingNameStandardId = Guid.NewGuid();
+        var namedCriterionId = Guid.NewGuid();
+        var missingNameCriterionId = Guid.NewGuid();
+
+        SeedCycle(context, cycleId, "Chu ky A", (int)CycleStatus.Act, standardSetId, DateTime.UtcNow.AddDays(10));
+        SeedCouncil(context, cycleId, userId);
+
+        SeedEvaluation(context, cycleId, namedStandardId, namedCriterionId, 6);
+        SeedEvaluation(context, cycleId, missingNameStandardId, missingNameCriterionId, 5);
+
+        context.SaveChanges();
+
+        var catalog = new FakeCatalogIntegrationService
+        {
+            StandardSetInfo = new StandardSetInfoDto
+            {
+                EvaluationMode = 1,
+                ChartType = 0,
+                Name = "AUN-QA 2024"
+            },
+            Criteria = new[]
+            {
+                new StandardWithCriteriaDto
+                {
+                    StandardId = namedStandardId,
+                    StandardCode = "STD-01",
+                    StandardName = "Tieu chuan 1",
+                    StandardOrder = 1,
+                    CriterionId = namedCriterionId,
+                    CriterionCode = "CR-01",
+                    CriterionName = "Nhan su",
+                    IsPrerequisite = false,
+                    CriterionOrder = 1
+                }
+            }
+        };
+
+        var service = CreateService(context, userId, catalog);
+
+        object result = await service.GetCyclesSummaryAsync();
+        var cycle = Assert.Single(GetObjectList(result, "Cycles"));
+        var topCriteria = GetObjectList(cycle, "TopCriteria");
+        var bottomCriteria = GetObjectList(cycle, "BottomCriteria");
+
+        Assert.DoesNotContain(missingNameStandardId.ToString(), topCriteria.Select(item => GetStringPropertyValue(item, "Name")));
+        Assert.DoesNotContain(missingNameStandardId.ToString(), bottomCriteria.Select(item => GetStringPropertyValue(item, "Name")));
     }
 
     private static BusinessContext CreateContext()
@@ -381,7 +441,7 @@ public class DashboardServiceTests
         });
     }
 
-    private static void SeedActionPlan(BusinessContext context, Guid cycleId, int status)
+    private static void SeedActionPlan(BusinessContext context, Guid cycleId, int status, DateTime deadline)
     {
         context.ActionPlans.Add(new ActionPlan
         {
@@ -389,7 +449,7 @@ public class DashboardServiceTests
             CycleId = cycleId,
             Title = $"Action plan {Guid.NewGuid():N}",
             Priority = 1,
-            Deadline = DateTime.UtcNow.AddDays(15),
+            Deadline = deadline,
             Status = status,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "seed",

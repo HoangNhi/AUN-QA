@@ -25,6 +25,7 @@ const CAMPAIGN_STATUS_META: Record<
   0: { label: "Chưa bắt đầu", className: "bg-slate-100 text-slate-600" },
   1: { label: "Đang diễn ra", className: "bg-blue-100 text-blue-700" },
   2: { label: "Đã kết thúc", className: "bg-emerald-100 text-emerald-700" },
+  3: { label: "Đã kết thúc", className: "bg-emerald-100 text-emerald-700" },
 };
 
 

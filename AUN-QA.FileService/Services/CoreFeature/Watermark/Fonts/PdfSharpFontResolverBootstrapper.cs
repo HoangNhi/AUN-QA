@@ -23,7 +23,7 @@ public static class PdfSharpFontResolverBootstrapper
 
             if (GlobalFontSettings.FontResolver == null)
             {
-                GlobalFontSettings.FontResolver = new TimesNewRomanFontResolver();
+                GlobalFontSettings.FontResolver = new NotoSansFontResolver();
             }
 
             _configured = true;

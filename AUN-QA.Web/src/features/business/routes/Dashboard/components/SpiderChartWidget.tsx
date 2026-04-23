@@ -19,10 +19,42 @@ interface Props {
   cycle: CycleSummary;
 }
 
+interface CustomPolarTickProps {
+  payload?: { value: string; payload?: { index?: number } };
+  x?: number;
+  y?: number;
+  textAnchor?: string;
+  index?: number;
+}
+
+const CustomPolarTick = ({
+  payload,
+  x = 0,
+  y = 0,
+  textAnchor = "middle",
+  index = 0,
+}: CustomPolarTickProps) => {
+  const resolvedIndex = index ?? payload?.payload?.index ?? 0;
+  const num = String(resolvedIndex + 1).padStart(2, "0");
+  const raw = payload?.value ?? "";
+  const name = raw.length > 10 ? `${raw.slice(0, 10)}…` : raw;
+
+  return (
+    <text x={x} y={y} textAnchor={textAnchor} fontSize={10}>
+      <tspan fill="#6366f1" fontWeight="700">
+        {num}{" "}
+      </tspan>
+      <tspan fill="#334155" fontWeight="500">
+        {name}
+      </tspan>
+    </text>
+  );
+};
+
 const chartConfig = {
   score: {
     label: "Điểm",
-    color: "hsl(var(--chart-1))",
+    color: "#6366f1",
   },
 } as const;
 
@@ -32,22 +64,23 @@ const SpiderChartWidget = ({ cycle }: Props) => {
 
   if (series.length === 0) {
     return (
-      <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
         Chưa có dữ liệu tiêu chí để hiển thị
       </div>
     );
   }
 
-  const chartData = series.map((item) => ({
-    criterion: item.Name.length > 16 ? `${item.Name.slice(0, 16)}…` : item.Name,
+  const chartData = series.map((item, index) => ({
+    criterion: item.Name,
     score: item.Score,
+    index,
   }));
 
   return (
-    <ChartContainer config={chartConfig} className="h-[240px] w-full">
+    <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <RadarChart data={chartData}>
         <PolarGrid />
-        <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10 }} />
+        <PolarAngleAxis dataKey="criterion" tick={<CustomPolarTick />} />
         <PolarRadiusAxis
           angle={30}
           domain={isPassFail ? [0, "auto"] : [0, 7]}
@@ -56,9 +89,10 @@ const SpiderChartWidget = ({ cycle }: Props) => {
         <Radar
           name="Điểm"
           dataKey="score"
-          stroke="hsl(var(--chart-1))"
-          fill="hsl(var(--chart-1))"
-          fillOpacity={0.25}
+          stroke="#6366f1"
+          fill="#6366f1"
+          fillOpacity={0.18}
+          strokeWidth={2}
         />
         <ChartTooltip content={<ChartTooltipContent />} />
       </RadarChart>

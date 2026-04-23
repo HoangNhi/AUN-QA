@@ -20,48 +20,81 @@ interface Props {
   cycle: CycleSummary;
 }
 
+interface CustomYTickProps {
+  x?: number;
+  y?: number;
+  payload?: { value: string; payload?: { index?: number } };
+  index?: number;
+}
+
+const CustomYTick = ({ x = 0, y = 0, payload, index }: CustomYTickProps) => {
+  const resolvedIndex = index ?? payload?.payload?.index ?? 0;
+  const num = String(resolvedIndex + 1).padStart(2, "0");
+  const raw = payload?.value ?? "";
+  const name = raw.length > 12 ? `${raw.slice(0, 12)}…` : raw;
+
+  return (
+    <text x={x} y={y} textAnchor="end" dominantBaseline="middle" fontSize={10}>
+      <tspan fill="#6366f1" fontWeight="700">
+        {num}{" "}
+      </tspan>
+      <tspan fill="#334155" fontWeight="500">
+        {name}
+      </tspan>
+    </text>
+  );
+};
+
+const chartConfig = {
+  score: {
+    label: "Điểm",
+    color: "#6366f1",
+  },
+} as const;
+
 const BarChartWidget = ({ cycle }: Props) => {
   const series = cycle.ChartSeries ?? [];
   const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
 
   if (series.length === 0) {
     return (
-      <div className="flex h-[240px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
+      <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
         Chưa có dữ liệu tiêu chí để hiển thị
       </div>
     );
   }
 
-  const chartData = series.map((item) => ({
-    criterion: item.Name.length > 12 ? `${item.Name.slice(0, 12)}…` : item.Name,
+  const chartData = series.map((item, index) => ({
+    criterion: item.Name,
     score: item.Score,
+    index,
   }));
 
-  const chartConfig = {
-    score: {
-      label: isPassFail ? "Tiêu chí đạt" : "Điểm",
-      color: "hsl(var(--chart-1))",
-    },
-  } as const;
-
   return (
-    <ChartContainer config={chartConfig} className="h-[240px] w-full">
-      <BarChart data={chartData} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="criterion" tick={{ fontSize: 9 }} />
-        <YAxis domain={isPassFail ? [0, "auto"] : [0, 7]} tick={{ fontSize: 9 }} />
+    <ChartContainer config={chartConfig} className="h-[300px] w-full">
+      <BarChart
+        layout="vertical"
+        data={chartData}
+        margin={{ top: 4, right: 28, left: 0, bottom: 4 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+        <XAxis
+          type="number"
+          domain={isPassFail ? [0, "auto"] : [0, 7]}
+          tick={{ fontSize: 9 }}
+        />
+        <YAxis
+          type="category"
+          dataKey="criterion"
+          width={115}
+          tick={<CustomYTick />}
+        />
         <ChartTooltip content={<ChartTooltipContent />} />
-        <Bar dataKey="score" radius={[4, 4, 0, 0]}>
-          {chartData.map((entry) => (
+        <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+          {chartData.map((entry, idx) => (
             <Cell
-              key={entry.criterion}
-              fill={
-                isPassFail
-                  ? "hsl(var(--chart-1))"
-                  : entry.score >= 4
-                    ? "hsl(var(--chart-1))"
-                    : "hsl(var(--chart-4))"
-              }
+              key={`${entry.criterion}-${idx}`}
+              fill={isPassFail || entry.score >= 4 ? "#6366f1" : "#f43f5e"}
             />
           ))}
         </Bar>

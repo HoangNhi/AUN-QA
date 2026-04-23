@@ -80,7 +80,7 @@ export function SummaryBar({ summary, filterSlot, framework }: SummaryBarProps) 
         >
           <span className="text-base">⚡</span>
           <span>
-            TC điều kiện:{" "}
+            Tiêu chí điều kiện:{" "}
             <span
               className={`font-medium ${prerequisiteFailed > 0 ? "text-red-600" : "text-green-600"}`}
             >
@@ -98,13 +98,13 @@ export function SummaryBar({ summary, filterSlot, framework }: SummaryBarProps) 
         {(summary.FailedCriteria > 0 || summary.FailedStandards > 0) && (
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span>
-              TC không đạt:{" "}
+              Tiêu chí không đạt:{" "}
               <span className="font-medium text-red-600">
                 {summary.FailedCriteria}
               </span>
             </span>
             <span>
-              TS không đạt:{" "}
+              Tiêu chuẩn không đạt:{" "}
               <span className="font-medium text-red-600">
                 {summary.FailedStandards}
               </span>

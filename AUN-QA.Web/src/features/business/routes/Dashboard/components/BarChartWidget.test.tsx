@@ -32,17 +32,11 @@ const baseCycle: CycleSummary = {
 };
 
 describe("BarChartWidget", () => {
-  it("dùng chart series thay vì phụ thuộc vào top/bottom criteria", () => {
-    render(<BarChartWidget cycle={baseCycle} />);
-
-    expect(screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị")).not.toBeInTheDocument();
-    expect(screen.getByText("TC1")).toBeInTheDocument();
-  });
-
   it("hiển thị empty state khi không có chart series", () => {
     render(<BarChartWidget cycle={{ ...baseCycle, ChartSeries: [] }} />);
-
-    expect(screen.getByText("Chưa có dữ liệu tiêu chí để hiển thị")).toBeInTheDocument();
+    expect(
+      screen.getByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).toBeInTheDocument();
   });
 
   it("hiển thị empty state cho PASS_FAIL khi không có chart series", () => {
@@ -55,8 +49,22 @@ describe("BarChartWidget", () => {
         }}
       />,
     );
+    expect(
+      screen.getByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).toBeInTheDocument();
+  });
 
-    expect(screen.getByText("Chưa có dữ liệu tiêu chí để hiển thị")).toBeInTheDocument();
+  it("render chart và ẩn empty state khi có chart series", () => {
+    render(<BarChartWidget cycle={baseCycle} />);
+    expect(
+      screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hiển thị index label 01, 02 cho từng tiêu chuẩn", () => {
+    render(<BarChartWidget cycle={baseCycle} />);
+    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("02")).toBeInTheDocument();
   });
 
   it("render chart series cho PASS_FAIL", () => {
@@ -72,8 +80,10 @@ describe("BarChartWidget", () => {
         }}
       />,
     );
-
-    expect(screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị")).not.toBeInTheDocument();
-    expect(screen.getByText("Tieu chuan 1")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("01")).toBeInTheDocument();
+    expect(screen.getByText("02")).toBeInTheDocument();
   });
 });

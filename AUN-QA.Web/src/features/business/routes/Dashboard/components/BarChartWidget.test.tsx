@@ -86,4 +86,17 @@ describe("BarChartWidget", () => {
     expect(screen.getByText("01")).toBeInTheDocument();
     expect(screen.getByText("02")).toBeInTheDocument();
   });
+
+  it("render dynamic label for scoring vs pass/fail in tooltips/legends (hidden in DOM usually, but test config)", () => {
+    // Note: Recharts Tooltips don't always render in jsdom easily, but we can verify the text isn't crashing
+    const { rerender } = render(<BarChartWidget cycle={baseCycle} />);
+    expect(screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị")).not.toBeInTheDocument();
+
+    rerender(
+      <BarChartWidget
+        cycle={{ ...baseCycle, EvaluationMode: DashboardEvaluationMode.PassFail }}
+      />
+    );
+    expect(screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị")).not.toBeInTheDocument();
+  });
 });

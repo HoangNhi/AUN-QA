@@ -23,7 +23,7 @@ interface CustomPolarTickProps {
   payload?: { value: string; payload?: { index?: number } };
   x?: number;
   y?: number;
-  textAnchor?: string;
+  textAnchor?: "start" | "middle" | "end" | "inherit";
   index?: number;
 }
 
@@ -51,13 +51,6 @@ const CustomPolarTick = ({
   );
 };
 
-const chartConfig = {
-  score: {
-    label: "Điểm",
-    color: "#6366f1",
-  },
-} as const;
-
 const SpiderChartWidget = ({ cycle }: Props) => {
   const series = cycle.ChartSeries ?? [];
   const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
@@ -76,6 +69,15 @@ const SpiderChartWidget = ({ cycle }: Props) => {
     index,
   }));
 
+  const chartLabel = isPassFail ? "Số tiêu chí đạt" : "Điểm trung bình";
+
+  const chartConfig = {
+    score: {
+      label: chartLabel,
+      color: "#6366f1",
+    },
+  } as const;
+
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <RadarChart data={chartData}>
@@ -87,7 +89,7 @@ const SpiderChartWidget = ({ cycle }: Props) => {
           tick={{ fontSize: 9 }}
         />
         <Radar
-          name="Điểm"
+          name={chartLabel}
           dataKey="score"
           stroke="#6366f1"
           fill="#6366f1"

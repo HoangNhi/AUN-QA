@@ -45,13 +45,6 @@ const CustomYTick = ({ x = 0, y = 0, payload, index }: CustomYTickProps) => {
   );
 };
 
-const chartConfig = {
-  score: {
-    label: "Điểm",
-    color: "#6366f1",
-  },
-} as const;
-
 const BarChartWidget = ({ cycle }: Props) => {
   const series = cycle.ChartSeries ?? [];
   const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
@@ -69,6 +62,15 @@ const BarChartWidget = ({ cycle }: Props) => {
     score: item.Score,
     index,
   }));
+
+  const chartLabel = isPassFail ? "Số tiêu chí đạt" : "Điểm trung bình";
+
+  const chartConfig = {
+    score: {
+      label: chartLabel,
+      color: "#6366f1",
+    },
+  } as const;
 
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">

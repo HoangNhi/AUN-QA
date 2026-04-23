@@ -16,5 +16,7 @@ export function useDashboardCycles() {
 
       return response.Data ?? EMPTY_DASHBOARD_OVERVIEW;
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 }

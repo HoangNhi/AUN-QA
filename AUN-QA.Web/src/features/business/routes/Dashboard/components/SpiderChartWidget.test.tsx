@@ -68,4 +68,20 @@ describe("SpiderChartWidget", () => {
       screen.getByText("Chưa có dữ liệu tiêu chí để hiển thị"),
     ).toBeInTheDocument();
   });
+
+  it("render dynamic label for scoring vs pass/fail without crashing", () => {
+    const { rerender } = render(<SpiderChartWidget cycle={baseCycle} />);
+    expect(
+      screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <SpiderChartWidget
+        cycle={{ ...baseCycle, EvaluationMode: DashboardEvaluationMode.PassFail }}
+      />
+    );
+    expect(
+      screen.queryByText("Chưa có dữ liệu tiêu chí để hiển thị"),
+    ).not.toBeInTheDocument();
+  });
 });

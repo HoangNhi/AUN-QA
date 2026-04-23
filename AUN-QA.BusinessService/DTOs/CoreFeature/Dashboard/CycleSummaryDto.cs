@@ -24,6 +24,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard
         public DateTime? Deadline { get; set; }
         public string StandardSetName { get; set; } = string.Empty;
         public int ChartType { get; set; }
+        public int EvaluationMode { get; set; }
         public CycleStatsDto Stats { get; set; } = new();
         public List<CriteriaSummaryDto> ChartSeries { get; set; } = new();
         public List<CriteriaSummaryDto> TopCriteria { get; set; } = new();
@@ -37,6 +38,7 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard
         public int CriteriaEvaluated { get; set; }
         public int CriteriaTotal { get; set; }
         public int ProgressPercent { get; set; }
+        public int PassedCount { get; set; }
     }
 
     public class CriteriaSummaryDto

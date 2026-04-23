@@ -62,12 +62,14 @@ describe("useDashboardCycles", () => {
             Deadline: "2026-05-01T00:00:00Z",
             StandardSetName: "Bộ tiêu chuẩn A",
             ChartType: 1,
+            EvaluationMode: 1,
             Stats: {
               AvgScore: 4.25,
               EvidenceCount: 12,
               CriteriaEvaluated: 8,
               CriteriaTotal: 10,
               ProgressPercent: 80,
+              PassedCount: 0,
             },
             ChartSeries: [
               {

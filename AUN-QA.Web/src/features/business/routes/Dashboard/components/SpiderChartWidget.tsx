@@ -10,7 +10,10 @@ import {
   Radar,
   RadarChart,
 } from "recharts";
-import type { CycleSummary } from "@/features/business/types/dashboard.types";
+import {
+  DashboardEvaluationMode,
+  type CycleSummary,
+} from "@/features/business/types/dashboard.types";
 
 interface Props {
   cycle: CycleSummary;
@@ -25,6 +28,7 @@ const chartConfig = {
 
 const SpiderChartWidget = ({ cycle }: Props) => {
   const series = cycle.ChartSeries ?? [];
+  const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
 
   if (series.length === 0) {
     return (
@@ -44,7 +48,11 @@ const SpiderChartWidget = ({ cycle }: Props) => {
       <RadarChart data={chartData}>
         <PolarGrid />
         <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10 }} />
-        <PolarRadiusAxis angle={30} domain={[0, 7]} tick={{ fontSize: 9 }} />
+        <PolarRadiusAxis
+          angle={30}
+          domain={isPassFail ? [0, "auto"] : [0, 7]}
+          tick={{ fontSize: 9 }}
+        />
         <Radar
           name="Điểm"
           dataKey="score"

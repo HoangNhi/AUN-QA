@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { CYCLE_STATUS_LABEL } from "@/constants/catalog.constants";
 import {
   DashboardChartType,
+  DashboardEvaluationMode,
   type CycleSummary,
 } from "@/features/business/types/dashboard.types";
 import SpiderChartWidget from "./SpiderChartWidget";
@@ -29,6 +30,7 @@ const CycleChartSlide = ({ cycle }: Props) => {
   const chartLabel =
     cycle.ChartType === DashboardChartType.BarChart ? "Biểu đồ thanh" : "Biểu đồ radar";
   const showInsights = cycle.ChartType === DashboardChartType.SpiderChart;
+  const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -78,10 +80,17 @@ const CycleChartSlide = ({ cycle }: Props) => {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-slate-50 p-3">
               <p className="text-[10px] uppercase tracking-wide text-slate-400">
-                Điểm trung bình
+                {isPassFail ? "Kết quả" : "Điểm trung bình"}
               </p>
               <p className="mt-1 text-lg font-bold text-indigo-600">
-                {cycle.Stats.AvgScore > 0 ? (
+                {isPassFail ? (
+                  <>
+                    {cycle.Stats.PassedCount} đạt
+                    <span className="ml-1 text-sm font-normal text-slate-400">
+                      / {cycle.Stats.CriteriaTotal}
+                    </span>
+                  </>
+                ) : cycle.Stats.AvgScore > 0 ? (
                   <>
                     {cycle.Stats.AvgScore}
                     <span className="ml-1 text-sm font-normal text-slate-400">/ 7</span>

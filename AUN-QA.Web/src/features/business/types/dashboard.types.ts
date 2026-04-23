@@ -3,6 +3,11 @@ export enum DashboardChartType {
   BarChart = 1,
 }
 
+export enum DashboardEvaluationMode {
+  Scoring7 = 1,
+  PassFail = 2,
+}
+
 export interface CriteriaSummary {
   Name: string;
   Score: number;
@@ -14,6 +19,7 @@ export interface CycleStats {
   CriteriaEvaluated: number;
   CriteriaTotal: number;
   ProgressPercent: number;
+  PassedCount: number;
 }
 
 export interface DashboardSummary {
@@ -32,6 +38,7 @@ export interface CycleSummary {
   Deadline?: string | null;
   StandardSetName: string;
   ChartType: DashboardChartType | number;
+  EvaluationMode: DashboardEvaluationMode;
   Stats: CycleStats;
   ChartSeries: CriteriaSummary[];
   TopCriteria: CriteriaSummary[];

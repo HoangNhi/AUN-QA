@@ -2,6 +2,7 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.Dashboard;
 using AUN_QA.BusinessService.DTOs.Common;
 using CriterionEvaluationEntity = AUN_QA.BusinessService.Entities.CriterionEvaluation;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.Services.CoreFeature.CriterionEvaluation;
 using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AUN_QA.CatalogService.Protos;
 using AutoDependencyRegistration.Attributes;
@@ -152,58 +153,93 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                 var standardOrders = standardOrdersMap[ssIdKey];
 
                 var evaluations = evaluationsByCycle.TryGetValue(cycle.Id, out var evals) ? evals : new List<CriterionEvaluationEntity>();
-                var scoredEvaluations = evaluations.Where(x => x.OfficialScore.HasValue).ToList();
+                var isPassFail = standardSetInfo.EvaluationMode == CriterionEvaluationPolicy.EvaluationModeMoet;
+                var scoredEvaluations = isPassFail
+                    ? evaluations.Where(x => x.OfficialResult.HasValue).ToList()
+                    : evaluations.Where(x => x.OfficialScore.HasValue).ToList();
 
                 var criteriaTotal = evaluations.Count;
                 var criteriaEvaluated = scoredEvaluations.Count;
-                var rankedStandards = scoredEvaluations
-                    .GroupBy(x => x.StandardId)
-                    .Select(group => new
-                    {
-                        StandardId = group.Key,
-                        AvgScore = group.Average(x => (double)x.OfficialScore!.Value)
-                    })
-                    .OrderByDescending(x => x.AvgScore)
-                    .ToList();
-                var avgScore = rankedStandards.Count > 0
-                    ? Math.Round(rankedStandards.Average(x => x.AvgScore), 1)
-                    : 0;
                 var progressPercent = criteriaTotal > 0
                     ? (int)Math.Round((double)criteriaEvaluated / criteriaTotal * 100)
                     : 0;
 
-                var topCriteria = rankedStandards
-                    .Take(2)
-                    .Select(x => new CriteriaSummaryDto
-                    {
-                        Name = ResolveStandardName(standardNames, x.StandardId),
-                        Score = Math.Round(x.AvgScore, 1)
-                    })
-                    .ToList();
+                double avgScore;
+                int passedCount;
+                List<CriteriaSummaryDto> topCriteria;
+                List<CriteriaSummaryDto> bottomCriteria;
+                List<CriteriaSummaryDto> chartSeries;
 
-                var topStandardIds = rankedStandards.Take(2).Select(x => x.StandardId).ToHashSet();
+                if (isPassFail)
+                {
+                    var passByStandard = scoredEvaluations
+                        .GroupBy(x => x.StandardId)
+                        .ToDictionary(g => g.Key, g => g.Count(x => x.OfficialResult == true));
 
-                var bottomCriteria = rankedStandards
-                    .OrderBy(x => x.AvgScore)
-                    .Where(x => !topStandardIds.Contains(x.StandardId))
-                    .Take(2)
-                    .Select(x => new CriteriaSummaryDto
-                    {
-                        Name = ResolveStandardName(standardNames, x.StandardId),
-                        Score = Math.Round(x.AvgScore, 1)
-                    })
-                    .ToList();
+                    passedCount = passByStandard.Values.Sum();
+                    avgScore = 0;
+                    topCriteria = new List<CriteriaSummaryDto>();
+                    bottomCriteria = new List<CriteriaSummaryDto>();
 
-                var scoredByStandard = rankedStandards.ToDictionary(x => x.StandardId, x => x.AvgScore);
+                    chartSeries = standardNames
+                        .OrderBy(kv => standardOrders.TryGetValue(kv.Key, out var ord) ? ord : int.MaxValue)
+                        .Select(kv => new CriteriaSummaryDto
+                        {
+                            Name = kv.Value,
+                            Score = passByStandard.TryGetValue(kv.Key, out var p) ? p : 0
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    var rankedStandards = scoredEvaluations
+                        .GroupBy(x => x.StandardId)
+                        .Select(group => new
+                        {
+                            StandardId = group.Key,
+                            AvgScore = group.Average(x => (double)x.OfficialScore!.Value)
+                        })
+                        .OrderByDescending(x => x.AvgScore)
+                        .ToList();
 
-                var chartSeries = standardNames
-                    .OrderBy(kv => standardOrders.TryGetValue(kv.Key, out var ord) ? ord : int.MaxValue)
-                    .Select(kv => new CriteriaSummaryDto
-                    {
-                        Name = kv.Value,
-                        Score = scoredByStandard.TryGetValue(kv.Key, out var s) ? Math.Round(s, 1) : 0
-                    })
-                    .ToList();
+                    avgScore = rankedStandards.Count > 0
+                        ? Math.Round(rankedStandards.Average(x => x.AvgScore), 1)
+                        : 0;
+                    passedCount = 0;
+
+                    topCriteria = rankedStandards
+                        .Take(2)
+                        .Select(x => new CriteriaSummaryDto
+                        {
+                            Name = ResolveStandardName(standardNames, x.StandardId),
+                            Score = Math.Round(x.AvgScore, 1)
+                        })
+                        .ToList();
+
+                    var topStandardIds = rankedStandards.Take(2).Select(x => x.StandardId).ToHashSet();
+
+                    bottomCriteria = rankedStandards
+                        .OrderBy(x => x.AvgScore)
+                        .Where(x => !topStandardIds.Contains(x.StandardId))
+                        .Take(2)
+                        .Select(x => new CriteriaSummaryDto
+                        {
+                            Name = ResolveStandardName(standardNames, x.StandardId),
+                            Score = Math.Round(x.AvgScore, 1)
+                        })
+                        .ToList();
+
+                    var scoredByStandard = rankedStandards.ToDictionary(x => x.StandardId, x => x.AvgScore);
+
+                    chartSeries = standardNames
+                        .OrderBy(kv => standardOrders.TryGetValue(kv.Key, out var ord) ? ord : int.MaxValue)
+                        .Select(kv => new CriteriaSummaryDto
+                        {
+                            Name = kv.Value,
+                            Score = scoredByStandard.TryGetValue(kv.Key, out var s) ? Math.Round(s, 1) : 0
+                        })
+                        .ToList();
+                }
 
                 var cycleEvidenceCount = evidenceCountsByCycle.TryGetValue(cycle.Id, out var cnt) ? cnt : 0;
 
@@ -215,13 +251,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Dashboard
                     Deadline = cycle.EndDate,
                     StandardSetName = standardSetInfo.Name,
                     ChartType = standardSetInfo.ChartType,
+                    EvaluationMode = standardSetInfo.EvaluationMode,
                     Stats = new CycleStatsDto
                     {
                         AvgScore = avgScore,
                         EvidenceCount = cycleEvidenceCount,
                         CriteriaEvaluated = criteriaEvaluated,
                         CriteriaTotal = criteriaTotal,
-                        ProgressPercent = progressPercent
+                        ProgressPercent = progressPercent,
+                        PassedCount = passedCount
                     },
                     ChartSeries = chartSeries,
                     TopCriteria = topCriteria,

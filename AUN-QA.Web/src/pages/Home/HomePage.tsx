@@ -2,10 +2,8 @@ import { AlertTriangle, ClipboardList, FolderKanban, RefreshCw, ShieldCheck } fr
 import {
   Carousel,
   CarouselContent,
-  CarouselDots,
+  CarouselNavigation,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useDashboardCycles } from "@/features/business/routes/Dashboard/hooks/useDashboardCycles";
 import CycleChartSlide from "@/features/business/routes/Dashboard/components/CycleChartSlide";
@@ -121,13 +119,7 @@ const HomePage = () => {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            {cycles.length > 1 && (
-              <>
-                <CarouselPrevious className="-left-2" />
-                <CarouselNext className="-right-2" />
-                <CarouselDots className="mt-4" />
-              </>
-            )}
+            {cycles.length > 1 && <CarouselNavigation />}
           </Carousel>
         )}
       </div>

@@ -205,6 +205,57 @@ function CarouselDots({
   );
 }
 
+function CarouselNavigation({
+  className,
+}: React.ComponentProps<"div">) {
+  const { currentIndex, count, scrollPrev, scrollNext, goTo } = useCarousel();
+
+  if (count <= 1) {
+    return null;
+  }
+
+  return (
+    <div className={cn("mt-4 flex items-center justify-center gap-3", className)}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-700 disabled:opacity-30"
+        disabled={currentIndex <= 0}
+        onClick={scrollPrev}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        <span className="sr-only">Trang trước</span>
+      </Button>
+
+      {Array.from({ length: count }).map((_, index) => (
+        <button
+          key={index}
+          type="button"
+          aria-label={`Đi tới slide ${index + 1}`}
+          onClick={() => goTo(index)}
+          className={cn(
+            "h-2 rounded-full transition-all duration-200",
+            index === currentIndex ? "w-6 bg-indigo-500" : "w-2 bg-slate-300",
+          )}
+        />
+      ))}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-700 disabled:opacity-30"
+        disabled={currentIndex >= count - 1}
+        onClick={scrollNext}
+      >
+        <ChevronRight className="h-4 w-4" />
+        <span className="sr-only">Trang sau</span>
+      </Button>
+    </div>
+  );
+}
+
 export {
   Carousel,
   CarouselContent,
@@ -212,4 +263,5 @@ export {
   CarouselPrevious,
   CarouselNext,
   CarouselDots,
+  CarouselNavigation,
 };

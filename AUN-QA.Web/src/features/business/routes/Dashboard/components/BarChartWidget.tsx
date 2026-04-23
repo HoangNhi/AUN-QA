@@ -11,21 +11,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { CycleSummary } from "@/features/business/types/dashboard.types";
+import {
+  DashboardEvaluationMode,
+  type CycleSummary,
+} from "@/features/business/types/dashboard.types";
 
 interface Props {
   cycle: CycleSummary;
 }
 
-const chartConfig = {
-  score: {
-    label: "Điểm",
-    color: "hsl(var(--chart-1))",
-  },
-} as const;
-
 const BarChartWidget = ({ cycle }: Props) => {
   const series = cycle.ChartSeries ?? [];
+  const isPassFail = cycle.EvaluationMode === DashboardEvaluationMode.PassFail;
 
   if (series.length === 0) {
     return (
@@ -40,18 +37,31 @@ const BarChartWidget = ({ cycle }: Props) => {
     score: item.Score,
   }));
 
+  const chartConfig = {
+    score: {
+      label: isPassFail ? "Tiêu chí đạt" : "Điểm",
+      color: "hsl(var(--chart-1))",
+    },
+  } as const;
+
   return (
     <ChartContainer config={chartConfig} className="h-[240px] w-full">
       <BarChart data={chartData} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="criterion" tick={{ fontSize: 9 }} />
-        <YAxis domain={[0, 7]} tick={{ fontSize: 9 }} />
+        <YAxis domain={isPassFail ? [0, "auto"] : [0, 7]} tick={{ fontSize: 9 }} />
         <ChartTooltip content={<ChartTooltipContent />} />
         <Bar dataKey="score" radius={[4, 4, 0, 0]}>
           {chartData.map((entry) => (
             <Cell
               key={entry.criterion}
-              fill={entry.score >= 4 ? "hsl(var(--chart-1))" : "hsl(var(--chart-4))"}
+              fill={
+                isPassFail
+                  ? "hsl(var(--chart-1))"
+                  : entry.score >= 4
+                    ? "hsl(var(--chart-1))"
+                    : "hsl(var(--chart-4))"
+              }
             />
           ))}
         </Bar>

@@ -261,6 +261,96 @@ public class DashboardServiceTests
     }
 
     [Fact]
+    public async Task GetCyclesSummaryAsync_aggregates_pass_fail_results_for_moet_cycle()
+    {
+        await using var context = CreateContext();
+        var userId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        var standardSetId = Guid.NewGuid();
+        var standardOneId = Guid.NewGuid();
+        var standardTwoId = Guid.NewGuid();
+        var criterionOneId = Guid.NewGuid();
+        var criterionTwoId = Guid.NewGuid();
+        var criterionThreeId = Guid.NewGuid();
+
+        SeedCycle(context, cycleId, "Chu ky MOET", (int)CycleStatus.Act, standardSetId, DateTime.UtcNow.AddDays(10));
+        SeedCouncil(context, cycleId, userId);
+
+        SeedPassFailEvaluation(context, cycleId, standardOneId, criterionOneId, true);
+        SeedPassFailEvaluation(context, cycleId, standardOneId, criterionTwoId, true);
+        SeedPassFailEvaluation(context, cycleId, standardTwoId, criterionThreeId, false);
+
+        context.SaveChanges();
+
+        var catalog = new FakeCatalogIntegrationService
+        {
+            StandardSetInfo = new StandardSetInfoDto
+            {
+                EvaluationMode = 2,
+                ChartType = 1,
+                Name = "MOET 2025"
+            },
+            Criteria = new[]
+            {
+                new StandardWithCriteriaDto
+                {
+                    StandardId = standardOneId,
+                    StandardCode = "TC1",
+                    StandardName = "Tieu chuan 1",
+                    StandardOrder = 1,
+                    CriterionId = criterionOneId,
+                    CriterionCode = "TC1.1",
+                    CriterionName = "Tieu chi 1",
+                    IsPrerequisite = false,
+                    CriterionOrder = 1
+                },
+                new StandardWithCriteriaDto
+                {
+                    StandardId = standardOneId,
+                    StandardCode = "TC1",
+                    StandardName = "Tieu chuan 1",
+                    StandardOrder = 1,
+                    CriterionId = criterionTwoId,
+                    CriterionCode = "TC1.2",
+                    CriterionName = "Tieu chi 2",
+                    IsPrerequisite = false,
+                    CriterionOrder = 2
+                },
+                new StandardWithCriteriaDto
+                {
+                    StandardId = standardTwoId,
+                    StandardCode = "TC2",
+                    StandardName = "Tieu chuan 2",
+                    StandardOrder = 2,
+                    CriterionId = criterionThreeId,
+                    CriterionCode = "TC2.1",
+                    CriterionName = "Tieu chi 3",
+                    IsPrerequisite = false,
+                    CriterionOrder = 3
+                }
+            }
+        };
+
+        var service = CreateService(context, userId, catalog);
+
+        object result = await service.GetCyclesSummaryAsync();
+        var cycles = GetObjectList(result, "Cycles");
+        var cycle = Assert.Single(cycles);
+        var stats = GetPropertyValue(cycle, "Stats");
+        var chartSeries = GetObjectList(cycle, "ChartSeries");
+
+        Assert.Equal(2, GetInt32PropertyValue(cycle, "EvaluationMode"));
+        Assert.Equal(3, GetInt32PropertyValue(stats, "CriteriaEvaluated"));
+        Assert.Equal(2, GetInt32PropertyValue(stats, "PassedCount"));
+        Assert.Equal(0.0, GetDoublePropertyValue(stats, "AvgScore"), 1);
+
+        var tc1 = chartSeries.First(s => GetStringPropertyValue(s, "Name") == "Tieu chuan 1");
+        var tc2 = chartSeries.First(s => GetStringPropertyValue(s, "Name") == "Tieu chuan 2");
+        Assert.Equal(2.0, GetDoublePropertyValue(tc1, "Score"), 1);
+        Assert.Equal(0.0, GetDoublePropertyValue(tc2, "Score"), 1);
+    }
+
+    [Fact]
     public async Task GetCyclesSummaryAsync_does_not_expose_uuid_in_top_or_bottom_criteria_when_catalog_name_is_missing()
     {
         await using var context = CreateContext();
@@ -402,6 +492,29 @@ public class DashboardServiceTests
             CriterionId = criterionId,
             Status = 4,
             OfficialScore = score,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+    }
+
+    private static void SeedPassFailEvaluation(
+        BusinessContext context,
+        Guid cycleId,
+        Guid standardId,
+        Guid criterionId,
+        bool passed)
+    {
+        context.CriterionEvaluations.Add(new CriterionEvaluation
+        {
+            Id = Guid.NewGuid(),
+            CycleId = cycleId,
+            StandardId = standardId,
+            CriterionId = criterionId,
+            Status = 4,
+            OfficialScore = null,
+            OfficialResult = passed,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "seed",
             IsActived = true,

@@ -67,7 +67,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Survey
                 throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
-            await CheckPdcaReadPermissionAsync(data.CycleId);
+            //await CheckPdcaReadPermissionAsync(data.CycleId);
 
             var result = _mapper.Map<SurveyCampaignRequest>(data);
 

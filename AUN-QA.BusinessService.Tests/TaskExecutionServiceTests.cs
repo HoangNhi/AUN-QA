@@ -352,12 +352,10 @@ public class TaskExecutionServiceTests
         context.ActionTaskAttachments.Add(new ActionTaskAttachment
         {
             Id = attachmentId,
-            ActionTaskId = taskId,
+            RelatedId = taskId,
             FileName = "task.pdf",
             FileExtension = ".pdf",
             FileUrl = "/files/task.pdf",
-            UploadedAt = DateTime.UtcNow,
-            UploadedBy = "secretary",
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "secretary",
             IsActived = true,
@@ -395,6 +393,123 @@ public class TaskExecutionServiceTests
             25,
             0,
             attachmentId);
+    }
+
+    [Fact]
+    public async Task UpdateTask_khi_chi_mot_assignee_hoan_thanh_task_thi_khong_chuyen_PendingReview()
+    {
+        await using var context = CreateContext();
+        var userAliceId = Guid.NewGuid();
+        var userBobId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var planId = SeedAssignedPlan(context, cycleId);
+        SeedAssignee(context, planId, userAliceId);
+        SeedAssignee(context, planId, userBobId);
+
+        // Alice có 1 task chuẩn bị mark Done, Bob chưa có task nào
+        var taskId = SeedTask(context, planId, (int)ActionTaskStatus.InProgress, "alice");
+        context.SaveChanges();
+
+        // gRPC trả về cả alice và bob
+        var fakeInvoker = new FakeCallInvoker
+        {
+            GetUsersByIdsHandler = req =>
+            {
+                var resp = new GetUsersByIdsResponse();
+                resp.Users.Add(new UserInfo { Id = userAliceId.ToString(), Username = "alice", Fullname = "Alice" });
+                resp.Users.Add(new UserInfo { Id = userBobId.ToString(), Username = "bob", Fullname = "Bob" });
+                return resp;
+            }
+        };
+
+        var service = CreateService(context, userAliceId, "alice", fakeInvoker);
+        await service.UpdateTask(new TaskExecutionUpsertTaskRequest
+        {
+            Id = taskId,
+            ActionPlanId = planId,
+            Description = "Công việc của Alice",
+            TaskStatus = (int)ActionTaskStatus.Done,
+            DueDate = DateTime.UtcNow.AddDays(1)
+        });
+
+        var plan = await context.ActionPlans.FirstAsync(x => x.Id == planId);
+        // Plan PHẢI vẫn là InProgress vì Bob chưa có task
+        Assert.Equal((int)ActionPlanStatus.InProgress, plan.Status);
+    }
+
+    [Fact]
+    public async Task UpdateTask_khi_tat_ca_assignee_co_task_done_thi_chuyen_PendingReview()
+    {
+        await using var context = CreateContext();
+        var userAliceId = Guid.NewGuid();
+        var userBobId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var planId = SeedAssignedPlan(context, cycleId);
+        SeedAssignee(context, planId, userAliceId);
+        SeedAssignee(context, planId, userBobId);
+
+        // Bob đã có task Done từ trước
+        SeedTask(context, planId, (int)ActionTaskStatus.Done, "bob");
+        // Alice có task sắp được mark Done
+        var aliceTaskId = SeedTask(context, planId, (int)ActionTaskStatus.InProgress, "alice");
+        context.SaveChanges();
+
+        var fakeInvoker = new FakeCallInvoker
+        {
+            GetUsersByIdsHandler = req =>
+            {
+                var resp = new GetUsersByIdsResponse();
+                resp.Users.Add(new UserInfo { Id = userAliceId.ToString(), Username = "alice", Fullname = "Alice" });
+                resp.Users.Add(new UserInfo { Id = userBobId.ToString(), Username = "bob", Fullname = "Bob" });
+                return resp;
+            }
+        };
+
+        var service = CreateService(context, userAliceId, "alice", fakeInvoker);
+        await service.UpdateTask(new TaskExecutionUpsertTaskRequest
+        {
+            Id = aliceTaskId,
+            ActionPlanId = planId,
+            Description = "Công việc của Alice",
+            TaskStatus = (int)ActionTaskStatus.Done,
+            DueDate = DateTime.UtcNow.AddDays(1)
+        });
+
+        var plan = await context.ActionPlans.FirstAsync(x => x.Id == planId);
+        Assert.Equal((int)ActionPlanStatus.PendingReview, plan.Status);
+    }
+
+    [Fact]
+    public async Task UpdateTask_khi_grpc_loi_fallback_tat_ca_task_done_la_du_de_chuyen_PendingReview()
+    {
+        await using var context = CreateContext();
+        var userAliceId = Guid.NewGuid();
+        var userBobId = Guid.NewGuid();
+        var cycleId = SeedCycle(context, (int)CycleStatus.Act);
+        var planId = SeedAssignedPlan(context, cycleId);
+        SeedAssignee(context, planId, userAliceId);
+        SeedAssignee(context, planId, userBobId);
+
+        // Chỉ Alice có task, Bob không có — nhưng gRPC sẽ lỗi
+        var taskId = SeedTask(context, planId, (int)ActionTaskStatus.InProgress, "alice");
+        context.SaveChanges();
+
+        // FakeCallInvoker mặc định (không set GetUsersByIdsHandler) trả về GetUsersByIdsResponse rỗng
+        // → userMap.Count == 0 → fallback
+        var service = CreateService(context, userAliceId, "alice", new FakeCallInvoker());
+
+        await service.UpdateTask(new TaskExecutionUpsertTaskRequest
+        {
+            Id = taskId,
+            ActionPlanId = planId,
+            Description = "Công việc của Alice",
+            TaskStatus = (int)ActionTaskStatus.Done,
+            DueDate = DateTime.UtcNow.AddDays(1)
+        });
+
+        var plan = await context.ActionPlans.FirstAsync(x => x.Id == planId);
+        // Fallback: không có gRPC data → chỉ cần tất cả task done
+        Assert.Equal((int)ActionPlanStatus.PendingReview, plan.Status);
     }
 
     private static BusinessContext CreateContext()
@@ -480,13 +595,11 @@ public class TaskExecutionServiceTests
         context.ActionTaskAttachments.Add(new ActionTaskAttachment
         {
             Id = Guid.NewGuid(),
-            ActionTaskId = taskId,
+            RelatedId = taskId,
             FileName = fileName,
             FileExtension = fileExtension,
             FileUrl = $"/files/{fileName}",
             FileSize = fileSize,
-            UploadedAt = DateTime.UtcNow,
-            UploadedBy = "tester",
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "tester",
             IsActived = true,
@@ -504,6 +617,22 @@ public class TaskExecutionServiceTests
             RoleId = (int)CouncilRole.Secretary,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "seed",
+            IsActived = true,
+            IsDeleted = false
+        });
+    }
+
+    private static void SeedAssignee(BusinessContext context, Guid planId, Guid userId, string assignedBy = "admin")
+    {
+        context.ActionPlanAssignees.Add(new ActionPlanAssignee
+        {
+            Id = Guid.NewGuid(),
+            ActionPlanId = planId,
+            UserId = userId,
+            AssignedAt = DateTime.UtcNow,
+            AssignedBy = assignedBy,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = assignedBy,
             IsActived = true,
             IsDeleted = false
         });

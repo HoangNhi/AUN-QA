@@ -344,7 +344,7 @@ public class TaskExecutionService : ITaskExecutionService
                         && t.IsActived
                         && t.TaskStatus != (int)ActionTaskStatus.Done);
 
-                if (!hasIncomplete)
+                if (!hasIncomplete && await AllAssigneesHaveCompletedTasksAsync(task.ActionPlanId))
                 {
                     var plan = await _context.ActionPlans
                         .FirstOrDefaultAsync(p => p.Id == task.ActionPlanId && !p.IsDeleted && p.IsActived);
@@ -730,6 +730,40 @@ public class TaskExecutionService : ITaskExecutionService
             (int)ActionPlanStatus.Completed => "HoÃ n thÃ nh",
             _ => "KhÃ´ng xÃ¡c Ä‘á»‹nh"
         };
+    }
+
+    private async Task<bool> AllAssigneesHaveCompletedTasksAsync(Guid actionPlanId)
+    {
+        var assigneeUserIds = await _context.ActionPlanAssignees
+            .AsNoTracking()
+            .Where(x => x.ActionPlanId == actionPlanId && !x.IsDeleted && x.IsActived)
+            .Select(x => x.UserId)
+            .ToListAsync();
+
+        if (assigneeUserIds.Count == 0)
+            return true;
+
+        var userMap = await LoadUsersAsync(assigneeUserIds);
+
+        if (userMap.Count == 0)
+            return true; // gRPC lỗi → fallback về behavior cũ
+
+        var taskCreators = await _context.ActionTasks
+            .AsNoTracking()
+            .Where(x => x.ActionPlanId == actionPlanId && !x.IsDeleted && x.IsActived)
+            .Select(x => x.CreatedBy)
+            .ToListAsync();
+
+        foreach (var userId in assigneeUserIds)
+        {
+            if (!userMap.TryGetValue(userId, out var userInfo) || userInfo.Username == null)
+                continue; // không resolve được user này → bỏ qua
+
+            if (!taskCreators.Any(c => string.Equals(c, userInfo.Username, StringComparison.OrdinalIgnoreCase)))
+                return false;
+        }
+
+        return true;
     }
 
     private static GetListPagingResponse<TaskExecutionPlanListItemDto> EmptyList(TaskExecutionGetPlansRequest request)

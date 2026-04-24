@@ -1612,6 +1612,7 @@ export default function PopupSarEditor({
             // Read-only preview mode: no approve action.
           }}
           readOnly
+          isExternalViewer={isExternalReviewer}
           isLoading={isEvidencePreviewLoading}
         />
       </Suspense>

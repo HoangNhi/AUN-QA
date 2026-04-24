@@ -190,6 +190,7 @@ const EvidenceCycleMapPage = () => {
           onApprove={approve}
           isApproving={isApproving}
           readOnly={isExternalReviewer}
+          isExternalViewer={isExternalReviewer}
         />
       )}
 

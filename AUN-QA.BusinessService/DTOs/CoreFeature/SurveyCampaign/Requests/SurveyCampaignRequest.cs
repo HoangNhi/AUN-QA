@@ -24,6 +24,11 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.SurveyCampaign.Requests
         public int? Status { get; set; } = ((int)SurveyCampaignStatus.Draft);
 
         public List<TemplateTopicRequest> ListTopic { get; set; } = new();
+
+        /// <summary>
+        /// Tên chu kỳ đánh giá, chỉ dùng cho màn hình xem chi tiết.
+        /// </summary>
+        public string? CycleName { get; set; }
     }
 
     public class SurveyCampaignRequestValidator : AbstractValidator<SurveyCampaignRequest>

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/home/HomePage";
+import HomePage from "./pages/Home/HomePage.tsx";
 import UserPage from "./features/system/routes/User/UserPage";
 import MainLayout from "./components/layout/MainLayout/MainLayout";
 import FacultyPage from "./features/catalog/routes/Faculty/FacultyPage";
@@ -22,6 +22,10 @@ import StandardSetPage from "./features/catalog/routes/StandardSet/StandardSetPa
 import AuditLogPage from "./features/system/routes/AuditLog/AuditLogPage";
 import { CriterionEvaluationPage } from "./features/business/routes/CriterionEvaluation/CriterionEvaluationPage";
 import SarPage from "./features/business/routes/Sar/SarPage";
+import InternalReviewPage from "./features/business/routes/InternalReview/InternalReviewPage";
+import ExternalReviewPage from "./features/business/routes/ExternalReview/ExternalReviewPage";
+import ActionPlanPage from "./features/business/routes/ActionPlan/ActionPlanPage";
+import TaskExecutionPage from "./features/business/routes/TaskExecution/TaskExecutionPage";
 
 import { DoSurveyPage } from "./features/business/routes/SurveyCampaign/DoSurveyPage";
 
@@ -59,6 +63,10 @@ const Router: FC = () => {
           <Route path="/auditlog" element={<AuditLogPage />} />
           <Route path="/criterionevaluation" element={<CriterionEvaluationPage />} />
           <Route path="/sar" element={<SarPage />} />
+          <Route path="/internalreview" element={<InternalReviewPage />} />
+          <Route path="/externalreview" element={<ExternalReviewPage />} />
+          <Route path="/actionplan" element={<ActionPlanPage />} />
+          <Route path="/taskexecution" element={<TaskExecutionPage />} />
         </Route>
 
         <Route element={<MainLayout />}>

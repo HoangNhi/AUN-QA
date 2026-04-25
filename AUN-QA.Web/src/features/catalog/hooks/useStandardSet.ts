@@ -19,6 +19,7 @@ export const useStandardSet = () => {
     Code: "",
     Name: "",
     EvaluationMode: 1,
+    ChartType: 0,
     IsActived: true,
     IsEdit: false,
     FolderUpload: "",
@@ -38,7 +39,6 @@ export const useStandardSet = () => {
     });
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  // 1. Fetch List
   const {
     data: listResponse,
     refetch,
@@ -56,7 +56,6 @@ export const useStandardSet = () => {
     PageSize: 10,
   };
 
-  // 2. Mutations
   const queryClient = useQueryClient();
 
   const saveMutation = useMutation({
@@ -77,14 +76,12 @@ export const useStandardSet = () => {
     },
     onSuccess: (_, variables) => {
       toast.success(
-        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công"
+        variables.IsEdit ? "Cập nhật thành công" : "Thêm mới thành công",
       );
       queryClient.invalidateQueries({ queryKey: ["standardSets"] });
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu"
-      );
+      toast.error(error instanceof Error ? error.message : "Lỗi khi lưu dữ liệu");
     },
   });
 
@@ -102,13 +99,10 @@ export const useStandardSet = () => {
       setRowSelection({});
     },
     onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu"
-      );
+      toast.error(error instanceof Error ? error.message : "Lỗi khi xóa dữ liệu");
     },
   });
 
-  // 3. Handlers
   const getList = useCallback(() => {
     refetch();
   }, [refetch]);
@@ -139,7 +133,7 @@ export const useStandardSet = () => {
 
   const saveChange = async (
     saveStandardSet: StandardSet & { IsEdit: boolean },
-    isAddMore: boolean
+    isAddMore: boolean,
   ) => {
     try {
       await saveMutation.mutateAsync(saveStandardSet);

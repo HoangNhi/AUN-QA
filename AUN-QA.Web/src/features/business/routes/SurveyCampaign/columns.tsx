@@ -34,27 +34,9 @@ export const getColumns = (
   deleteList: (ids: string[]) => void,
   showPopupSession: (id: string, name: string) => void,
   changeStatus: (id: string) => Promise<void>,
-): ColumnDef<SurveyCampaignGetListPaging>[] => [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-    },
+  isReadOnly: boolean = false,
+): ColumnDef<SurveyCampaignGetListPaging>[] => {
+  const columns: ColumnDef<SurveyCampaignGetListPaging>[] = [
     {
       accessorKey: "Cycle",
       header: "Quy trình",
@@ -63,8 +45,10 @@ export const getColumns = (
       accessorKey: "Name",
       header: "Tên chiến dịch",
       cell: ({ row }) => (
-        <div className="max-w-[300px]">
-          <p className="line-clamp-2 font-medium leading-5">{row.original.Name}</p>
+        <div className="max-w-75">
+          <p className="line-clamp-2 font-medium leading-5">
+            {row.original.Name}
+          </p>
         </div>
       ),
     },
@@ -77,8 +61,10 @@ export const getColumns = (
       header: "Trạng thái",
       cell: ({ row }) => {
         const status = row.original.Status;
-        const statusConfig: Record<number, { text: string; className: string }> =
-        {
+        const statusConfig: Record<
+          number,
+          { text: string; className: string }
+        > = {
           1: {
             text: "Chưa bắt đầu",
             className: "bg-gray-100 text-gray-800 hover:bg-gray-200",
@@ -109,12 +95,46 @@ export const getColumns = (
         );
       },
     },
-    {
-      id: "actions",
-      meta: {
-        className: "text-center",
-      },
+  ];
+
+  if (!isReadOnly) {
+    columns.unshift({
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
       cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+    });
+  }
+
+  columns.push({
+    id: "actions",
+    meta: {
+      className: "text-center",
+    },
+    cell: ({ row }) =>
+      isReadOnly ? (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => showPopupDetail(row.original.Id, true)}
+        >
+          Xem
+        </Button>
+      ) : (
         <ActionCell
           row={row}
           showPopupDetail={showPopupDetail}
@@ -123,8 +143,16 @@ export const getColumns = (
           changeStatus={changeStatus}
         />
       ),
-    },
-  ];
+  });
+
+  if (isReadOnly) {
+    return columns.filter(
+      (col) => !("accessorKey" in col) || col.accessorKey !== "Status",
+    );
+  }
+
+  return columns;
+};
 
 const ActionCell = ({
   row,
@@ -144,7 +172,6 @@ const ActionCell = ({
 
   const status = row.original.Status;
   const isDraft = status === 1;
-
   const isCompleted = status === 3;
 
   return (
@@ -254,4 +281,3 @@ const ActionCell = ({
     </>
   );
 };
-

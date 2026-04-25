@@ -1,5 +1,6 @@
 using AUN_QA.ApiGateway.Configs;
 using AUN_QA.ApiGateway.Middlewares;
+using AUN_QA.Shared.Common;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -26,12 +27,14 @@ builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 builder.ExecuteConfigService();
+builder.Services.AddTrustedForwardedHeaders(forwardLimit: 1);
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
 
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandler>();
+app.UseTrustedForwardedHeaders();
 
 app.UseCors();
 

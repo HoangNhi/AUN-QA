@@ -7,6 +7,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Requests;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Services;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Services.CoreFeature.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,11 +20,13 @@ namespace AUN_QA.SystemService.Controllers
     {
         private readonly IAuthService _service;
         private readonly IAuditLogWriter _auditWriter;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
-        public AuthController(IAuthService service, IAuditLogWriter auditWriter)
+        public AuthController(IAuthService service, IAuditLogWriter auditWriter, ISystemReferenceGuard referenceGuard)
         {
             _service = service;
             _auditWriter = auditWriter;
+            _referenceGuard = referenceGuard;
         }
 
         [HttpPost, Route("login")]
@@ -33,7 +36,7 @@ namespace AUN_QA.SystemService.Controllers
             var ipAddress = GetClientIpAddress();
             try
             {
-                var result = _service.Login(request, ipAddress);
+                var result = await _service.LoginAsync(request, ipAddress);
 
                 await _auditWriter.WriteAsync(new AuditLog
                 {
@@ -56,22 +59,26 @@ namespace AUN_QA.SystemService.Controllers
             }
             catch (Exception ex)
             {
-                await _auditWriter.WriteAsync(new AuditLog
+                var failedLoginUserId = await _referenceGuard.TryResolveUserIdByUsernameAsync(request.Username);
+                if (failedLoginUserId.HasValue)
                 {
-                    Id = Guid.NewGuid(),
-                    UserId = Guid.Empty,
-                    UserName = request.Username,
-                    Action = "LOGIN",
-                    EntityName = "Auth",
-                    EntityId = null,
-                    OldValues = null,
-                    NewValues = null,
-                    IpAddress = ipAddress,
-                    ServiceName = "SystemService",
-                    IsSuccess = false,
-                    ErrorMessage = ex.Message,
-                    CreatedAt = DateTime.UtcNow
-                });
+                    await _auditWriter.WriteAsync(new AuditLog
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = failedLoginUserId.Value,
+                        UserName = request.Username,
+                        Action = "LOGIN",
+                        EntityName = "Auth",
+                        EntityId = null,
+                        OldValues = null,
+                        NewValues = null,
+                        IpAddress = ipAddress,
+                        ServiceName = "SystemService",
+                        IsSuccess = false,
+                        ErrorMessage = ex.Message,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
 
                 throw;
             }
@@ -82,23 +89,31 @@ namespace AUN_QA.SystemService.Controllers
         {
             var userId = User?.Claims.FirstOrDefault(c => c.Type == "name")?.Value;
             var userName = User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "Unknown";
-
-            await _auditWriter.WriteAsync(new AuditLog
+            Guid? resolvedUserId = null;
+            if (Guid.TryParse(userId, out var parsedUserId))
             {
-                Id = Guid.NewGuid(),
-                UserId = Guid.TryParse(userId, out var uid) ? uid : Guid.Empty,
-                UserName = userName,
-                Action = "LOGOUT",
-                EntityName = "Auth",
-                EntityId = userId,
-                OldValues = null,
-                NewValues = null,
-                IpAddress = GetClientIpAddress(),
-                ServiceName = "SystemService",
-                IsSuccess = true,
-                ErrorMessage = null,
-                CreatedAt = DateTime.UtcNow
-            });
+                resolvedUserId = await _referenceGuard.TryResolveExistingUserIdAsync(parsedUserId);
+            }
+
+            if (resolvedUserId.HasValue)
+            {
+                await _auditWriter.WriteAsync(new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = resolvedUserId.Value,
+                    UserName = userName,
+                    Action = "LOGOUT",
+                    EntityName = "Auth",
+                    EntityId = userId,
+                    OldValues = null,
+                    NewValues = null,
+                    IpAddress = GetClientIpAddress(),
+                    ServiceName = "SystemService",
+                    IsSuccess = true,
+                    ErrorMessage = null,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
             return Ok(new BaseResponse<object> { Data = null, Success = true, Message = "Đăng xuất thành công" });
         }

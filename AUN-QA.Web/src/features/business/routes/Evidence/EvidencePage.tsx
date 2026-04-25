@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
+import { useAuth } from "@/hooks/useAuth";
+import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
+import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import { useEvidence } from "@/features/business/hooks/useEvidence";
 import { getColumns } from "./columns";
 import PopupEvidence from "./PopupEvidence";
-import { Button } from "@/components/ui/button";
-import { Combobox } from "@/components/ui/combobox";
-import { EVIDENCE_STATUS_OPTIONS } from "@/constants/business.constants";
-import { ListPageLayout } from "@/components/layout/ListPageLayout";
-import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
-import { useListPage } from "@/hooks/useListPage";
 import {
   Dialog,
   DialogClose,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 
 const EvidencePage = () => {
+  const { isExternalReviewer } = useAuth();
   const {
     data,
     evidence,
@@ -47,8 +49,8 @@ const EvidencePage = () => {
   );
 
   const columns = useMemo(
-    () => getColumns(showPopupDetail, deleteList),
-    [showPopupDetail, deleteList],
+    () => getColumns(showPopupDetail, deleteList, isExternalReviewer),
+    [deleteList, isExternalReviewer, showPopupDetail],
   );
 
   const listPage = useListPage({
@@ -112,8 +114,21 @@ const EvidencePage = () => {
           />
         </>
       }
-      onAddClick={() => showPopupDetail("", false)}
-      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      hideAdd={isExternalReviewer}
+      onAddClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              showPopupDetail("", false);
+            }
+      }
+      onDeleteClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              listPage.setShowDeleteConfirm(true);
+            }
+      }
       deleteDisabled={selectedIds.length === 0}
       showDeleteConfirm={listPage.showDeleteConfirm}
       onDeleteConfirmChange={listPage.setShowDeleteConfirm}
@@ -121,17 +136,19 @@ const EvidencePage = () => {
       deleteItemCount={selectedIds.length}
       isDeleteLoading={isLoading}
       extraActions={
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => setShowSubmitConfirm(true)}
-          disabled={selectedIds.length === 0 || isSubmitting}
-        >
-          Gửi duyệt
-        </Button>
+        isExternalReviewer ? null : (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setShowSubmitConfirm(true)}
+            disabled={selectedIds.length === 0 || isSubmitting}
+          >
+            Gửi duyệt
+          </Button>
+        )
       }
     >
-      {isOpen && (
+      {isOpen && !isExternalReviewer && (
         <PopupEvidence
           key={evidence?.Id || "new"}
           evidence={evidence}
@@ -149,8 +166,7 @@ const EvidencePage = () => {
           <DialogHeader>
             <DialogTitle>Xác nhận gửi duyệt</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn gửi duyệt {selectedIds.length} mục đã chọn
-              không?
+              Bạn có chắc chắn muốn gửi duyệt {selectedIds.length} mục đã chọn không?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

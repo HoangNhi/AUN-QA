@@ -1,4 +1,5 @@
-﻿using AUN_QA.Shared.Exceptions;
+using AUN_QA.BusinessService.Protos;
+using AUN_QA.Shared.Exceptions;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Auth.Requests;
 using AUN_QA.SystemService.DTOs.CoreFeature.RefreshToken.Dtos;
@@ -16,26 +17,31 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
     [RegisterClassAsTransient]
     public class AuthService : IAuthService
     {
+        private static readonly Guid ExtRoleId = new("551d1351-008e-4910-a39c-1fcdde409fdf");
+
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IConfiguration _config;
+        private readonly BusinessProto.BusinessProtoClient _businessClient;
 
         public AuthService(
             SystemContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
-            IConfiguration config)
+            IConfiguration config,
+            BusinessProto.BusinessProtoClient businessClient)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _config = config;
+            _businessClient = businessClient;
         }
 
-        public LoginResponse Login(LoginRequest request, string ipAddress)
+        public async Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress)
         {
-            var user = _context.Users.Where(x => x.Username == request.Username).FirstOrDefault();
+            var user = _context.Users.Where(x => x.Username == request.Username && !x.IsDeleted).FirstOrDefault();
             if (user == null)
             {
                 throw new BusinessException("Tài khoản không tồn tại");
@@ -43,6 +49,11 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
 
             if (!user.IsActived)
             {
+                if (user.RoleId == ExtRoleId)
+                {
+                    throw new BusinessException("Tài khoản hoặc mật khẩu không đúng");
+                }
+
                 throw new BusinessException("Tài khoản đã bị vô hiệu");
             }
 
@@ -52,12 +63,24 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
                 throw new BusinessException("Tài khoản hoặc mật khẩu không đúng");
             }
 
+            if (user.RoleId == ExtRoleId)
+            {
+                var accessResponse = await _businessClient.CheckExternalReviewerAccessAsync(
+                    new CheckExternalReviewerAccessRequest
+                    {
+                        UserId = user.Id.ToString()
+                    });
+
+                if (!accessResponse.HasAccess)
+                {
+                    throw new BusinessException("Tài khoản hoặc mật khẩu không đúng");
+                }
+            }
+
             var data = _mapper.Map<LoginResponse>(user);
-            // Token
             var token = _config.GenerateJwtToken(data);
             var refreshToken = _config.GenerateRefreshToken(ipAddress);
             refreshToken.UserId = user.Id;
-            // Save Refresh Token
             _context.RefreshTokens.Add(refreshToken);
             _context.SaveChanges();
 

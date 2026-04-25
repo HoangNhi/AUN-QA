@@ -12,8 +12,10 @@ import TableCell from "@tiptap/extension-table-cell";
 import TableOfContents from "@tiptap/extension-table-of-contents";
 import type { TableOfContentData } from "@tiptap/extension-table-of-contents";
 import Image from "@tiptap/extension-image";
+import CommentExtension from "@sereneinserenade/tiptap-comment-extension";
 import type * as Y from "yjs";
 import type { WebsocketProvider } from "y-websocket";
+import { EvidenceTag } from "./extensions/EvidenceTag";
 
 export interface TocItem {
   id: string;
@@ -24,11 +26,16 @@ export interface TocItem {
   isScrolledOver: boolean;
 }
 
+export interface SarEditorCommentExtensionOptions {
+  onCommentActivated?: (commentId: string) => void;
+}
+
 export function createSarEditorExtensions(
   ydoc: Y.Doc | null,
   provider?: WebsocketProvider | null,
   onTocUpdate?: (items: TocItem[]) => void,
   userInfo?: { name: string; color: string },
+  commentOptions: SarEditorCommentExtensionOptions = {},
 ): AnyExtension[] {
   const extensions: AnyExtension[] = [
     StarterKit.configure({
@@ -39,9 +46,10 @@ export function createSarEditorExtensions(
       types: ["heading", "paragraph"],
     }),
     Link.configure({
-      openOnClick: false,
+      openOnClick: true,
       HTMLAttributes: {
         rel: "noopener noreferrer",
+        target: "_blank",
       },
     }),
     Table.configure({
@@ -55,6 +63,13 @@ export function createSarEditorExtensions(
         style: "max-width: 100%; height: auto; display: block;",
       },
     }),
+    CommentExtension.configure({
+      HTMLAttributes: {
+        class: "rounded-sm bg-amber-200/70 px-0.5 ring-1 ring-amber-300",
+      },
+      ...commentOptions,
+    }),
+    EvidenceTag,
   ];
 
   if (onTocUpdate) {

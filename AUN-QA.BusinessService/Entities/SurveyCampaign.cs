@@ -28,4 +28,12 @@ public partial class SurveyCampaign
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual Cycle Cycle { get; set; } = null!;
+
+    public virtual ICollection<SurveySession> SurveySessions { get; set; } = new List<SurveySession>();
+
+    public virtual SurveyTemplate Template { get; set; } = null!;
+
+    public virtual ICollection<TemplateTopic> TemplateTopics { get; set; } = new List<TemplateTopic>();
 }

@@ -38,20 +38,21 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("Criterion");
 
-            entity.Property(e => e.Id)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
+            entity.HasIndex(e => e.StandardId, "FK_Criterion_Standard");
+
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.DiagnosticQuestions).HasColumnType("text");
             entity.Property(e => e.Name).HasColumnType("text");
-            entity.Property(e => e.StandardId)
-                .UseCollation("ascii_general_ci")
-                .HasCharSet("ascii");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+
+            entity.HasOne(d => d.Standard).WithMany(p => p.Criteria)
+                .HasForeignKey(d => d.StandardId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Criterion_Standard");
         });
 
         modelBuilder.Entity<CriterionRequirement>(entity =>
@@ -60,11 +61,25 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("CriterionRequirement");
 
+            entity.HasIndex(e => e.CriterionId, "FK_CriterionRequirement_Criterion");
+
+            entity.HasIndex(e => e.FileTypeId, "FK_CriterionRequirement_FileType");
+
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
             entity.Property(e => e.Suggestion).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+
+            entity.HasOne(d => d.Criterion).WithMany(p => p.CriterionRequirements)
+                .HasForeignKey(d => d.CriterionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CriterionRequirement_Criterion");
+
+            entity.HasOne(d => d.FileType).WithMany(p => p.CriterionRequirements)
+                .HasForeignKey(d => d.FileTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CriterionRequirement_FileType");
         });
 
         modelBuilder.Entity<Faculty>(entity =>
@@ -129,6 +144,8 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("Standard");
 
+            entity.HasIndex(e => e.StandardSetId, "FK_Standard_StandardSet");
+
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);
@@ -136,6 +153,11 @@ public partial class CatalogContext : DbContext
             entity.Property(e => e.Name).HasColumnType("text");
             entity.Property(e => e.UpdatedAt).HasColumnType("timestamp");
             entity.Property(e => e.UpdatedBy).HasMaxLength(255);
+
+            entity.HasOne(d => d.StandardSet).WithMany(p => p.Standards)
+                .HasForeignKey(d => d.StandardSetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Standard_StandardSet");
         });
 
         modelBuilder.Entity<StandardSet>(entity =>
@@ -144,6 +166,7 @@ public partial class CatalogContext : DbContext
 
             entity.ToTable("StandardSet");
 
+            entity.Property(e => e.ChartType).HasComment("0 = SpiderChart, 1 = BarChart");
             entity.Property(e => e.Code).HasColumnType("text");
             entity.Property(e => e.CreatedAt).HasColumnType("timestamp");
             entity.Property(e => e.CreatedBy).HasMaxLength(255);

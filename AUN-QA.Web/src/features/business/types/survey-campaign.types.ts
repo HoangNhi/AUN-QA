@@ -11,6 +11,7 @@ export interface SurveyCampaign extends BaseRequest {
   TemplateId: string;
   StakeholderType: number;
   Name: string;
+  CycleName?: string;
   Status: number;
   ListSession: SurveySession[];
   ListScore: SurveyScore[];

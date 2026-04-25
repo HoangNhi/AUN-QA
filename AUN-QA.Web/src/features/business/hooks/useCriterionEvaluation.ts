@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { criterionEvaluationService } from "../api/criterionEvaluation.api";
@@ -18,6 +18,16 @@ export const useCriterionEvaluation = () => {
   const [filters, setFilters] = useState<
     Pick<CriterionEvaluationGetListRequest, "TextSearch" | "Status">
   >({ TextSearch: "", Status: undefined });
+  const autoInitializedCycleIdRef = useRef<string | null>(null);
+
+  // Reset filters when cycle changes
+  useEffect(() => {
+    if (selectedCycleId) {
+      queueMicrotask(() => {
+        setFilters({ TextSearch: "", Status: undefined });
+      });
+    }
+  }, [selectedCycleId]);
 
   // Fetch full cycle data to get StandardSetId
   const { data: cycleData } = useQuery({
@@ -65,7 +75,7 @@ export const useCriterionEvaluation = () => {
   const groups = listResponse?.Data ?? [];
 
   // Combined popup data query (submissions, evidences, mySubmission, survey campaigns, evaluation mode)
-  const { data: popupDataResponse, isLoading: isPopupDataLoading } = useQuery({
+  const { data: popupDataResponse, isLoading: isPopupDataLoading, isFetching: isPopupDataFetching } = useQuery({
     queryKey: ["criterionEvaluation", "popupData", activeItemId, selectedCycleId],
     queryFn: () =>
       criterionEvaluationService.getPopupData({
@@ -80,6 +90,8 @@ export const useCriterionEvaluation = () => {
   const mySubmission = popupDataResponse?.Data?.MySubmission ?? null;
   const surveyCampaigns = popupDataResponse?.Data?.SurveyCampaigns ?? [];
   const evaluationMode = popupDataResponse?.Data?.EvaluationMode ?? 1;
+  const officialFields = popupDataResponse?.Data?.OfficialFields ?? null;
+  const isRevisionAllowed = popupDataResponse?.Data?.IsRevisionAllowed ?? false;
 
   // Submit mutation
   const submitMutation = useMutation({
@@ -159,6 +171,31 @@ export const useCriterionEvaluation = () => {
     },
   });
 
+  // Auto-initialize criteria when cycle is Ongoing and list is empty
+  useEffect(() => {
+    // Only run after initial list load completes
+    if (isListLoading) return;
+
+    // Get cycle status from cycleData
+    const cycleStatus = Number(cycleData?.Status ?? 0);
+
+    // Check if we should auto-init
+    if (
+      groups.length === 0 &&
+      cycleStatus === 2 && // Ongoing
+      standardSetId &&
+      selectedCycleId &&
+      autoInitializedCycleIdRef.current !== selectedCycleId && // Haven't already tried for this cycle
+      !filters.TextSearch && // Only auto-init when no text search is active
+      filters.Status === undefined // Only auto-init when no status filter is active
+    ) {
+      // Mark this cycle as being auto-initialized
+      autoInitializedCycleIdRef.current = selectedCycleId;
+      // Trigger initialization
+      initializeMutation.mutate();
+    }
+  }, [groups, cycleData?.Status, standardSetId, selectedCycleId, isListLoading, filters]);
+
   return {
     // State
     selectedCycleId,
@@ -179,10 +216,13 @@ export const useCriterionEvaluation = () => {
     mySubmission,
     surveyCampaigns,
     evaluationMode,
+    officialFields,
+    isRevisionAllowed,
     // Loading
     isSummaryLoading,
     isListLoading,
     isPopupDataLoading,
+    isPopupDataFetching,
     isSubmitting: submitMutation.isPending,
     isApproving: approveMutation.isPending,
     // Actions

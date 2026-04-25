@@ -1,6 +1,9 @@
 using AUN_QA.BusinessService.Configs;
 using AUN_QA.BusinessService.Middlewares;
+using AUN_QA.BusinessService.Services.gRPC;
 using AUN_QA.ServiceDefaults;
+using AUN_QA.Shared.Common;
+using Grpc.AspNetCore.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,10 +27,12 @@ builder.Services.AddSwaggerGen();
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();
+builder.Services.AddTrustedForwardedHeaders(forwardLimit: 2);
 
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandler>();
+app.UseTrustedForwardedHeaders();
 
 app.MapDefaultEndpoints();
 
@@ -49,5 +54,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+app.MapGrpcService<BusinessGrpcService>();
 
 app.Run();

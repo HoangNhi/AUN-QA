@@ -4,6 +4,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Menu.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
@@ -16,15 +17,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
         public MenuService(
             SystemContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _referenceGuard = referenceGuard;
         }
 
         public async Task<ModelMenu> GetById(GetByIdRequest request)
@@ -52,6 +56,9 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
 
             var add = _mapper.Map<Entities.Menu>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
+            await _referenceGuard.EnsureSystemGroupExistsAsync(
+                add.SystemGroupId,
+                "Nhóm hệ thống không tồn tại.");
             add.Controller = add.Controller.ToLower();
             add.CreatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
             add.CreatedAt = DateTime.UtcNow;
@@ -79,6 +86,9 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Menu
                 throw new BusinessException("Dữ liệu không tồn tại");
             }
 
+            await _referenceGuard.EnsureSystemGroupExistsAsync(
+                request.SystemGroupId,
+                "Nhóm hệ thống không tồn tại.");
             _mapper.Map(request, update);
 
             update.Controller = update.Controller.ToLower();

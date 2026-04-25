@@ -5,6 +5,7 @@ using AUN_QA.BusinessService.Helpers;
 using AUN_QA.BusinessService.Services.CoreFeature.Sar;
 using AUN_QA.Shared.Common;
 using AUN_QA.Shared.DTOs.Base;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AUN_QA.BusinessService.Controllers
@@ -14,10 +15,12 @@ namespace AUN_QA.BusinessService.Controllers
     public class SarController : BaseController<SarController>
     {
         private readonly ISarService _service;
+        private readonly IConfiguration _configuration;
 
-        public SarController(ISarService service)
+        public SarController(ISarService service, IConfiguration configuration)
         {
             _service = service;
+            _configuration = configuration;
         }
 
         [HttpPost, Route("get-list")]
@@ -51,5 +54,74 @@ namespace AUN_QA.BusinessService.Controllers
             await _service.SaveDraft(request);
             return Ok(new BaseResponse(true, 200));
         }
+
+        [HttpPost, Route("submit")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Submit([FromBody] SubmitSarRequest request)
+        {
+            await _service.Submit(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("request-revision")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> RequestRevision([FromBody] RequestSarRevisionRequest request)
+        {
+            await _service.RequestRevision(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("approve")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> Approve([FromBody] ApproveSarRequest request)
+        {
+            await _service.Approve(request);
+            return Ok(new BaseResponse(true, 200));
+        }
+
+        [HttpPost, Route("get-autofill-payload")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetAutofillPayload([FromBody] GetSarAutofillPayloadRequest request)
+        {
+            var result = await _service.GetAutofillPayload(request);
+            return Ok(new BaseResponse<SarAutofillPayloadDto> { Data = result, Success = true });
+        }
+
+        [HttpPost, Route("export-docx")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> ExportDocx([FromBody] ExportSarDocxRequest request)
+        {
+            var docxBytes = await _service.ExportDocx(request);
+            return File(docxBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "SAR_Export.docx");
+        }
+
+        [HttpPost, Route("get-draft-metadata")]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetDraftMetadata([FromBody] GetSarDraftMetadataRequest request)
+        {
+            var result = await _service.GetDraftMetadata(request);
+            return Ok(new BaseResponse<SarDraftMetadataDto?>
+            {
+                Data = result,
+                Success = true
+            });
+        }
+
+        [HttpPost, Route("internal/persist-snapshot")]
+        [AllowAnonymous]
+        public async Task<IActionResult> PersistSnapshotFromCollab([FromBody] PersistSarSnapshotFromCollabRequest request)
+        {
+            var expectedSecret = _configuration["Collab:PersistSecret"];
+            var actualSecret = Request.Headers["x-collab-secret"].FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(expectedSecret) || !string.Equals(expectedSecret, actualSecret, StringComparison.Ordinal))
+            {
+                return Ok(new BaseResponse(false, 403, "Collab secret is invalid"));
+            }
+
+            await _service.PersistSnapshotFromCollab(request);
+            return Ok(new BaseResponse(true, 200));
+        }
     }
 }
+

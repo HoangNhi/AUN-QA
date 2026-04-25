@@ -32,6 +32,8 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
     [RegisterClassAsTransient]
     public class EvidenceCycleMapService : IEvidenceCycleMapService
     {
+        private static readonly Guid ExtRoleId = new("551d1351-008e-4910-a39c-1fcdde409fdf");
+
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
@@ -61,9 +63,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
                 throw new BusinessException("Không tìm thấy dữ liệu");
             }
 
-            await CheckPdcaPermissionAsync(data.CycleId.ToString(), Roles(CouncilRole.HeadOfCouncil, CouncilRole.ViceChairman, CouncilRole.Secretary, CouncilRole.Evaluator, CouncilRole.EvidenceProvider));
+            await CheckPdcaReadPermissionAsync(data.CycleId);
 
             var result = _mapper.Map<EvidenceCycleMapRequest>(data);
+
+            result.StandardSetId = await _context.Cycles
+                .AsNoTracking()
+                .Where(x => x.Id == data.CycleId && !x.IsDeleted)
+                .Select(x => (Guid?)x.StandardSetId)
+                .FirstOrDefaultAsync();
 
             // Load Evidence details
             var evidence = await _context.Evidences.AsNoTracking().FirstOrDefaultAsync(x => x.Id == data.EvidenceId);
@@ -336,6 +344,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             if (request.FileTypeId.HasValue)
             {
                 query = query.Where(x => x.Evidence_FileTypeId == request.FileTypeId.Value);
+            }
+
+            var roleClaim = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "role")?.Value;
+            var isExternalReviewer = Guid.TryParse(roleClaim, out var roleGuid) && roleGuid == ExtRoleId;
+
+            if (isExternalReviewer)
+            {
+                query = query.Where(x => x.Evidence_Status == (int)EvidenceStatus.Verified);
             }
 
             // === Role-based visibility filter ===
@@ -616,6 +633,29 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
         private static List<int> Roles(params CouncilRole[] roles)
             => roles.Select(r => (int)r).ToList();
 
+        private async Task CheckPdcaReadPermissionAsync(Guid cycleId)
+        {
+            var username = _contextAccessor.HttpContext?.User?.Identity?.Name;
+            if (string.Equals(username, "admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+            }
+
+            var allowedCycleIds = await _cycleService.GetCycleIdsByUserAsync(userId);
+            if (!allowedCycleIds.Contains(cycleId))
+            {
+                throw new BusinessException("Bạn không có quyền thực hiện thao tác này trong chu kỳ PDCA");
+            }
+        }
+
         private async Task CheckPdcaPermissionAsync(string cycleId, List<int>? allowedRoles = null)
         {
             var userId = _contextAccessor.HttpContext!.User.Claims
@@ -644,6 +684,10 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.EvidenceCycleMap
             // CycleStatus.Do == 2 (Thực hiện)
             const int CycleStatusDo = 2;
             if (status == CycleStatusDo)
+                return;
+
+            var isRevisionAllowed = await _cycleService.IsRevisionAllowedAsync(Guid.Parse(cycleId));
+            if (isRevisionAllowed)
                 return;
 
             var username = _contextAccessor.HttpContext!.User.Identity?.Name;

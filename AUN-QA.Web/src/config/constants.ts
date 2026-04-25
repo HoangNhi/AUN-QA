@@ -109,7 +109,11 @@ export const API_ENDPOINTS = {
       UPDATE: `${BUSINESS_BASE}/Cycle/update`,
       DELETE_LIST: `${BUSINESS_BASE}/Cycle/delete-list`,
       GET_COMBBOX_BY_USER: `${BUSINESS_BASE}/Cycle/get-combobox-by-user`,
+      GET_COMBOBOX_FOR_EXTERNAL_REVIEW: `${BUSINESS_BASE}/Cycle/get-combobox-for-external-review`,
       CHANGE_STATUS: `${BUSINESS_BASE}/Cycle/change-status`,
+    },
+    Dashboard: {
+      GET_CYCLES_SUMMARY: `${BUSINESS_BASE}/Dashboard/cycles-summary`,
     },
     Evidence: {
       GET_LIST: `${BUSINESS_BASE}/Evidence/get-list`,
@@ -163,6 +167,37 @@ export const API_ENDPOINTS = {
       SUBMIT_SURVEY: `${BUSINESS_BASE}/SurveyCampaign/submit-survey`,
       GET_AGGREGATED_RESULTS: `${BUSINESS_BASE}/SurveyCampaign/get-aggregated-results`,
     },
+    ActionPlan: {
+      GET_LIST: `${BUSINESS_BASE}/ActionPlan/get-list`,
+      GET_BY_ID: `${BUSINESS_BASE}/ActionPlan/get-by-id`,
+      INSERT: `${BUSINESS_BASE}/ActionPlan/insert`,
+      UPDATE: `${BUSINESS_BASE}/ActionPlan/update`,
+      DELETE_LIST: `${BUSINESS_BASE}/ActionPlan/delete-list`,
+      GET_EXTERNAL_REVIEW_FINDINGS: `${BUSINESS_BASE}/ActionPlan/get-external-review-findings`,
+      GET_ASSIGNABLE_MEMBERS: `${BUSINESS_BASE}/ActionPlan/assignable-members`,
+      GET_ASSIGNABLE_USERS_COMBOBOX: `${BUSINESS_BASE}/ActionPlan/assignable-users-combobox`,
+      GET_MY_COUNCIL_ROLE: `${BUSINESS_BASE}/ActionPlan/my-council-role`,
+      UPDATE_TASK: `${BUSINESS_BASE}/ActionPlan/update-task`,
+      PREVIEW_ATTACHMENT: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) =>
+        `${BUSINESS_BASE}/ActionPlan/preview-attachment/${attachmentId}?mode=${mode}`,
+    },
+    TaskExecution: {
+      GET_MY_PLANS: `${BUSINESS_BASE}/TaskExecution/get-my-plans`,
+      GET_PLAN_DETAIL: `${BUSINESS_BASE}/TaskExecution/get-plan-detail`,
+      GET_TASK_LIST: `${BUSINESS_BASE}/TaskExecution/get-task-list`,
+      GET_TASK_DETAIL: `${BUSINESS_BASE}/TaskExecution/get-task-detail`,
+      INSERT_TASK: `${BUSINESS_BASE}/TaskExecution/insert-task`,
+      UPDATE_TASK: `${BUSINESS_BASE}/TaskExecution/update-task`,
+      DELETE_TASK: `${BUSINESS_BASE}/TaskExecution/delete-task`,
+      PREVIEW_TASK_ATTACHMENT: (
+        attachmentId: string,
+        mode: "internal" | "external" = "internal",
+      ) =>
+        `${BUSINESS_BASE}/TaskExecution/preview-task-attachment/${attachmentId}?mode=${mode}`,
+    },
     CriterionEvaluation: {
       GET_SUMMARY: `${BUSINESS_BASE}/CriterionEvaluation/get-summary`,
       GET_LIST: `${BUSINESS_BASE}/CriterionEvaluation/get-list`,
@@ -174,10 +209,48 @@ export const API_ENDPOINTS = {
       GET_EVIDENCES: `${BUSINESS_BASE}/CriterionEvaluation/get-evidences`,
       GET_POPUP_DATA: `${BUSINESS_BASE}/CriterionEvaluation/get-popup-data`,
     },
+    InternalReview: {
+      GET_LIST: `${BUSINESS_BASE}/internal-review/list`,
+      GET_COMMENTS: `${BUSINESS_BASE}/internal-review/comments/get`,
+      ADD_COMMENT: `${BUSINESS_BASE}/internal-review/comments/add`,
+      DELETE_COMMENT: (id: string) =>
+        `${BUSINESS_BASE}/internal-review/comments/${id}`,
+    },
+    ExternalReview: {
+      GET_LIST: `${BUSINESS_BASE}/external-review`,
+      CREATE: `${BUSINESS_BASE}/external-review`,
+      GET_BY_CYCLE: `${BUSINESS_BASE}/external-review/by-cycle`,
+      UPDATE_STATUS: `${BUSINESS_BASE}/external-review/status`,
+      UPDATE_WATERMARK: `${BUSINESS_BASE}/external-review/watermark`,
+      CONFIRM_COMPLETION: (id: string) =>
+        `${BUSINESS_BASE}/external-review/${id}/confirm-completion`,
+      UPSERT_RESULT: `${BUSINESS_BASE}/external-review/results`,
+      ADD_FINDING: `${BUSINESS_BASE}/external-review/findings`,
+      UPDATE_FINDING: `${BUSINESS_BASE}/external-review/findings`,
+      DELETE_FINDING: (id: string) =>
+        `${BUSINESS_BASE}/external-review/findings/${id}`,
+      GET_ACCOUNTS: (id: string) =>
+        `${BUSINESS_BASE}/external-review/${id}/accounts`,
+      ADD_ACCOUNT: (id: string) =>
+        `${BUSINESS_BASE}/external-review/${id}/accounts`,
+      GET_ACCOUNTS_LIST: `${BUSINESS_BASE}/external-review/accounts/get-list`,
+      CREATE_AND_LINK_ACCOUNT: (id: string) =>
+        `${BUSINESS_BASE}/external-review/${id}/accounts/create-and-link`,
+      UPDATE_ACCOUNT: (accountId: string) =>
+        `${BUSINESS_BASE}/external-review/accounts/${accountId}`,
+      REMOVE_ACCOUNT: (accountId: string) =>
+        `${BUSINESS_BASE}/external-review/accounts/${accountId}`,
+    },
     Sar: {
       GET_LIST: `${BUSINESS_BASE}/Sar/get-list`,
       GET_BY_CYCLE: `${BUSINESS_BASE}/Sar/get-by-cycle`,
+      GET_DRAFT_METADATA: `${BUSINESS_BASE}/Sar/get-draft-metadata`,
       SAVE_DRAFT: `${BUSINESS_BASE}/Sar/save-draft`,
+      SUBMIT: `${BUSINESS_BASE}/Sar/submit`,
+      REQUEST_REVISION: `${BUSINESS_BASE}/Sar/request-revision`,
+      APPROVE: `${BUSINESS_BASE}/Sar/approve`,
+      GET_AUTOFILL_PAYLOAD: `${BUSINESS_BASE}/Sar/get-autofill-payload`,
+      EXPORT_DOCX: `${BUSINESS_BASE}/Sar/export-docx`,
     },
   },
   File: {

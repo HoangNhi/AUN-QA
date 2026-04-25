@@ -42,6 +42,12 @@ export const cycleService = {
     );
   },
 
+  getComboboxForExternalReview: async (): Promise<ApiResponse<ModelCombobox[]>> => {
+    return api.get<ModelCombobox[]>(
+      API_ENDPOINTS.Business.Cycle.GET_COMBOBOX_FOR_EXTERNAL_REVIEW,
+    );
+  },
+
   changeStatus: async (id: string): Promise<ApiResponse<null>> => {
     return api.put<null>(API_ENDPOINTS.Business.Cycle.CHANGE_STATUS, { Id: id });
   },

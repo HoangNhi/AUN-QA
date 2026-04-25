@@ -28,4 +28,6 @@ public partial class EvidenceAttachment
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual Evidence Related { get; set; } = null!;
 }

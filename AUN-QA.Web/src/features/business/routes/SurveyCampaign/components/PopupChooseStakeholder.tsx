@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -83,7 +83,7 @@ export const PopupChooseStakeholder = ({
       const response =
         await surveyCampaignService.getStakeholderNotInCampaign(pageRequest);
       if (!response.Success) {
-        toast.error(response.Message || "Lơ—i táº£i dữ liệu");
+        toast.error(response.Message || "Lỗi tải dữ liệu");
         throw new Error(response.Message);
       }
       return response;
@@ -137,7 +137,7 @@ export const PopupChooseStakeholder = ({
       } else {
         const selectedIds = Object.keys(rowSelection);
         if (selectedIds.length === 0) {
-          toast.warning("Vui lòng chơn ít nhất mơ™t ngươi tham gia");
+          toast.warning("Vui lòng chọn ít nhất một người tham gia");
           setIsLoading(false);
           return;
         }
@@ -149,14 +149,14 @@ export const PopupChooseStakeholder = ({
       }
 
       if (res.Success) {
-        toast.success("Thêm ngươi tham gia thÃ nh công");
+        toast.success("Thêm người tham gia thành công");
         onAdd?.([]);
         onOpenChange(false);
       } else {
-        toast.error(res.Message || "Thêm ngươi tham gia thất bại");
+        toast.error(res.Message || "Thêm người tham gia thất bại");
       }
     } catch {
-      toast.error("Lơ—i khi thêm ngươi tham gia");
+      toast.error("Lỗi khi thêm người tham gia");
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +166,7 @@ export const PopupChooseStakeholder = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
         <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
-          <DialogTitle>Thêm ngươi tham gia vÃ o khảo sát</DialogTitle>
+          <DialogTitle>Thêm người tham gia vào khảo sát</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden min-h-0 bg-gray-50/50 relative">
@@ -214,14 +214,13 @@ export const PopupChooseStakeholder = ({
             }
           >
             {isLoading
-              ? "Đang thêm..."
+              ? "Đang thêm..."
               : isSelectingAll
                 ? "Thêm tất cả"
-                : `Thêm ${Object.keys(rowSelection).length} ngươi`}
+                : `Thêm ${Object.keys(rowSelection).length} người`}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-

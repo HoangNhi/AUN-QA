@@ -259,7 +259,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             await _context.SaveChangesAsync();
         }
 
-        public async Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(GetListPagingRequest request)
+        public async Task<GetListPagingResponse<ModelStandardGetListPaging>> GetList(StandardGetListPagingRequest request)
         {
             var query = from s in _context.Standards.Where(x => !x.IsDeleted)
                         join ss in _context.StandardSets.Where(x => !x.IsDeleted && x.IsActived)
@@ -271,6 +271,16 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
                 query = query.Where(x => x.Standard.Name.Contains(request.TextSearch)
                     || x.Standard.Code.Contains(request.TextSearch)
                     || (x.Standard.Description != null && x.Standard.Description.Contains(request.TextSearch)));
+            }
+
+            if (request.StandardSetId.HasValue && request.StandardSetId.Value != Guid.Empty)
+            {
+                query = query.Where(x => x.Standard.StandardSetId == request.StandardSetId.Value);
+            }
+
+            if (request.IsActived.HasValue)
+            {
+                query = query.Where(x => x.Standard.IsActived == request.IsActived.Value);
             }
 
             var totalRow = await query.CountAsync();
@@ -467,7 +477,7 @@ namespace AUN_QA.CatalogService.Services.CoreFeature.Standard
             var query = from standard in _context.Standards
                         join criterion in _context.Criteria on standard.Id equals criterion.StandardId
                         where standard.StandardSetId == standardSetId
-                          && !standard.IsDeleted && standard.IsActived
+                          && !standard.IsDeleted
                           && !criterion.IsDeleted && criterion.IsActived
                         orderby standard.Order, criterion.Order
                         select new { standard, criterion };

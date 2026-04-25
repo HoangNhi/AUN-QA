@@ -10,6 +10,7 @@ export interface EvidenceCycleMap extends BaseRequest {
   Id: string;
   EvidenceId: string;
   CycleId: string;
+  StandardSetId?: string;
   ReviewStatus: number; // 1=NotStarted, 2=InProgress, 3=Completed
   FinalDecisionBy?: string;
   FinalDecisionAt?: string;

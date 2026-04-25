@@ -3,7 +3,7 @@ import { Download, Loader2, XIcon } from "lucide-react";
 
 import { fileService } from "@/features/file/api/uploadfile.api";
 import type { Attachment } from "@/features/file/types/uploadfile.types";
-import { getFileViewerType } from "@/lib/file-utils";
+import { getFileViewerType, type FileViewerType } from "@/lib/file-utils";
 import { cn, getFileUrl } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Dialog } from "@/components/ui/dialog";
@@ -32,6 +32,8 @@ interface FileViewerDialogProps {
   onClose: () => void;
   file: Attachment | null;
   mode?: "internal" | "external";
+  allowDownload?: boolean;
+  previewContext?: "evidence" | "taskAttachment" | "ActionPlan";
 }
 
 function getFileIcon(type: string, className = "size-5") {
@@ -58,11 +60,26 @@ function formatFileSize(bytes?: number) {
   return (kb / 1024).toFixed(1) + " MB";
 }
 
+function getFileViewerTypeFromContentType(
+  contentType?: string,
+): "pdf" | "image" | "video" | null {
+  if (!contentType) return null;
+
+  const normalized = contentType.toLowerCase();
+  if (normalized === "application/pdf") return "pdf";
+  if (normalized.startsWith("image/")) return "image";
+  if (normalized.startsWith("video/")) return "video";
+
+  return null;
+}
+
 const FileViewerDialog = ({
   isOpen,
   onClose,
   file,
   mode = "internal",
+  allowDownload = true,
+  previewContext = "evidence",
 }: FileViewerDialogProps) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [officeBlob, setOfficeBlob] = useState<Blob | null>(null);
@@ -71,6 +88,8 @@ const FileViewerDialog = ({
   const [zoom, setZoom] = useState(100);
   const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
   const [activeSheet, setActiveSheet] = useState<string>("");
+  const [previewViewerType, setPreviewViewerType] =
+    useState<FileViewerType | null>(null);
   const objectUrlRef = useRef<string | null>(null);
   const officeContainerRef = useRef<HTMLDivElement>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
@@ -99,7 +118,20 @@ const FileViewerDialog = ({
   const fileExt =
     file?.FileExtension || file?.FullFileName?.split(".").pop()?.toLowerCase();
 
-  const viewerType = useMemo(() => getFileViewerType(fileExt || ""), [fileExt]);
+  const defaultViewerType = useMemo(
+    () => getFileViewerType(fileExt || ""),
+    [fileExt],
+  );
+  const previewFile =
+    previewContext === "taskAttachment"
+      ? fileService.previewTaskAttachment
+      : previewContext === "ActionPlan"
+        ? fileService.previewActionPlanAttachment
+        : fileService.previewFile;
+  const viewerType = useMemo(
+    () => previewViewerType ?? defaultViewerType,
+    [defaultViewerType, previewViewerType],
+  );
   const shouldUseScrollableCanvas = false;
 
   // Global wheel listener for Ctrl + Scroll zoom
@@ -140,6 +172,7 @@ const FileViewerDialog = ({
       setOfficeBlob(null);
       setWorkbook(null);
       setActiveSheet("");
+      setPreviewViewerType(null);
 
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
@@ -148,7 +181,7 @@ const FileViewerDialog = ({
       setBlobUrl(null);
 
       try {
-        if (viewerType === "video") {
+        if (defaultViewerType === "video") {
           const directUrl = getFileUrl(file.FileUrl);
           if (!directUrl) {
             throw new Error("Invalid file url");
@@ -159,15 +192,25 @@ const FileViewerDialog = ({
           return;
         }
 
-        const blob = await fileService.previewFile(file.Id, mode);
+        const preview = await previewFile(file.Id, mode);
         if (isCancelled) return;
 
-        if (viewerType === "office") {
-          setOfficeBlob(blob);
+        const effectiveContentType =
+          preview.convertedContentType ??
+          preview.contentType ??
+          preview.blob.type;
+        const resolvedViewerType =
+          getFileViewerTypeFromContentType(effectiveContentType) ??
+          defaultViewerType;
+
+        setPreviewViewerType(resolvedViewerType);
+
+        if (resolvedViewerType === "office") {
+          setOfficeBlob(preview.blob);
           return;
         }
 
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(preview.blob);
         objectUrlRef.current = url;
         setBlobUrl(url);
       } catch {
@@ -190,7 +233,7 @@ const FileViewerDialog = ({
         objectUrlRef.current = null;
       }
     };
-  }, [file, isOpen, mode, viewerType]);
+  }, [file, isOpen, mode, defaultViewerType, previewFile]);
 
   useEffect(() => {
     if (viewerType === "office" && officeBlob) {
@@ -216,9 +259,8 @@ const FileViewerDialog = ({
             );
 
             // Post-process to physically split the DOM into separate sections for visual pagination
-            const wrapper = officeContainerRef.current.querySelector(
-              ".docx-wrapper",
-            );
+            const wrapper =
+              officeContainerRef.current.querySelector(".docx-wrapper");
             if (wrapper) {
               const sections = Array.from(
                 wrapper.querySelectorAll("section.docx"),
@@ -239,7 +281,7 @@ const FileViewerDialog = ({
                         '[style*="page-break-before: always"]',
                       ) !== null ||
                       child.querySelector('[style*="break-before: page"]') !==
-                      null;
+                        null;
 
                     if (hasPageBreak && currentSection.children.length > 0) {
                       // Create a new visual page container
@@ -313,8 +355,6 @@ const FileViewerDialog = ({
     }
   }, [officeBlob, viewerType, fileExt]);
 
-
-
   const handleDownload = async () => {
     if (!file) return;
 
@@ -343,8 +383,8 @@ const FileViewerDialog = ({
         return;
       }
 
-      const blob = await fileService.previewFile(file.Id, mode);
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const preview = await previewFile(file.Id, mode);
+      const downloadUrl = window.URL.createObjectURL(preview.blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = file.FullFileName || "download";
@@ -539,8 +579,8 @@ const FileViewerDialog = ({
                   <span className="uppercase tracking-wider">
                     {fileExt || "unknown"}{" "}
                     {viewerType !== "video" &&
-                      viewerType !== "office" &&
-                      viewerType !== "image"
+                    viewerType !== "office" &&
+                    viewerType !== "image"
                       ? ""
                       : `- ${viewerType}`}
                   </span>
@@ -587,13 +627,15 @@ const FileViewerDialog = ({
               )}
               */}
 
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md"
-              >
-                <Download className="size-4" />
-                <span className="hidden sm:inline">Tải xuống</span>
-              </button>
+              {allowDownload && (
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm font-medium backdrop-blur-md"
+                >
+                  <Download className="size-4" />
+                  <span className="hidden sm:inline">Tải xuống</span>
+                </button>
+              )}
 
               <div className="w-px h-6 bg-white/20 mx-1"></div>
 

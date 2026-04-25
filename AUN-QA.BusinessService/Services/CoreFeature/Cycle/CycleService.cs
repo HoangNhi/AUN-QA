@@ -5,9 +5,12 @@ using AUN_QA.BusinessService.DTOs.CoreFeature.Council.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Dtos;
 using AUN_QA.BusinessService.DTOs.CoreFeature.Cycle.Requests;
 using AUN_QA.BusinessService.DTOs.CoreFeature.EvaluationSchedule.Requests;
+using AUN_QA.BusinessService.DTOs.Integration.Catalog;
 using AUN_QA.BusinessService.Infrastructure.Data;
+using AUN_QA.BusinessService.Services.Integration.Catalog;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
+using AUN_QA.CatalogService.Protos;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -19,15 +22,18 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         private readonly BusinessContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ICatalogIntegrationService _catalogService;
 
         public CycleService(
             BusinessContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            ICatalogIntegrationService catalogService)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _catalogService = catalogService;
         }
 
         #region Chức năng chính
@@ -371,7 +377,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
             // === Role-based visibility filter ===
             var username = _contextAccessor.HttpContext.User.Identity.Name;
-            var roleClaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+            var roleClaim = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "role")?.Value;
 
             var privilegedRoleIds = new[]
             {
@@ -443,24 +449,92 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
         public async Task<List<ModelCombobox>> GetComboboxByUser()
         {
-            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name").Value;
+            var userIdString = _contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "name")?.Value;
 
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 return new List<ModelCombobox>();
             }
-            var query = from cycle in _context.Cycles
-                        join council in _context.Councils on cycle.Id equals council.CycleId
-                        where !cycle.IsDeleted && cycle.IsActived
-                           && !council.IsDeleted && council.IsActived
-                           && council.UserId == userId
-                        select new ModelCombobox
-                        {
-                            Text = cycle.Name,
-                            Value = cycle.Id.ToString()
-                        };
 
-            return await query.Distinct().OrderBy(x => x.Text).ToListAsync();
+            var councilQuery = from cycle in _context.Cycles
+                               join council in _context.Councils on cycle.Id equals council.CycleId
+                               where !cycle.IsDeleted && cycle.IsActived
+                                  && !council.IsDeleted && council.IsActived
+                                  && council.UserId == userId
+                               select new ModelCombobox
+                               {
+                                   Text = cycle.Name,
+                                   Value = cycle.Id.ToString()
+                               };
+
+            var externalQuery = from account in _context.ExternalReviewAccounts
+                                join review in _context.ExternalReviews on account.ExternalReviewId equals review.Id
+                                join cycle in _context.Cycles on review.CycleId equals cycle.Id
+                                where account.UserId == userId
+                                   && review.Status == (int)ExternalReviewStatus.InProgress
+                                   && !review.IsDeleted
+                                   && !cycle.IsDeleted && cycle.IsActived
+                                select new ModelCombobox
+                                {
+                                    Text = cycle.Name,
+                                    Value = cycle.Id.ToString()
+                                };
+
+            var taskAssigneeQuery =
+                from assignee in _context.ActionPlanAssignees
+                join plan in _context.ActionPlans on assignee.ActionPlanId equals plan.Id
+                join cycle in _context.Cycles on plan.CycleId equals cycle.Id
+                where assignee.UserId == userId
+                   && !assignee.IsDeleted && assignee.IsActived
+                   && !plan.IsDeleted && plan.IsActived
+                   && !cycle.IsDeleted && cycle.IsActived
+                select new ModelCombobox
+                {
+                    Text = cycle.Name,
+                    Value = cycle.Id.ToString()
+                };
+
+            return await councilQuery
+                .Union(externalQuery)
+                .Union(taskAssigneeQuery)
+                .Distinct()
+                .OrderBy(x => x.Text)
+                .ToListAsync();
+        }
+
+        public async Task<List<ModelCombobox>> GetComboboxForExternalReview()
+        {
+            var userIdString = _contextAccessor.HttpContext?.User?.Claims
+                .FirstOrDefault(x => x.Type == "name")?.Value;
+
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            {
+                return new List<ModelCombobox>();
+            }
+
+            var query = _context.Cycles
+                .AsNoTracking()
+                .Where(c => !c.IsDeleted && c.IsActived)
+                .Where(c => _context.Councils.Any(co =>
+                    co.CycleId == c.Id
+                    && !co.IsDeleted
+                    && co.IsActived
+                    && co.UserId == userId))
+                .Where(c => _context.SarReports
+                    .Where(sr => sr.CycleId == c.Id && !sr.IsDeleted && sr.IsActived)
+                    .OrderByDescending(sr => sr.UpdatedAt ?? sr.LastSavedAt ?? sr.CreatedAt)
+                    .Take(1)
+                    .Any(sr => sr.Status == (int)SarStatus.Approved))
+                .Select(c => new ModelCombobox
+                {
+                    Text = c.Name,
+                    Value = c.Id.ToString()
+                });
+
+            return await query
+                .Distinct()
+                .OrderBy(x => x.Text)
+                .ToListAsync();
         }
 
         public async Task ChangeStatusAsync(CycleChangeStatusRequest request)
@@ -495,7 +569,87 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
             cycle.UpdatedAt = DateTime.UtcNow;
 
             _context.Cycles.Update(cycle);
+
+            if (cycle.Status == (int)CycleStatus.Do)
+            {
+                var username = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                await EnsureSarReportInCycleAsync(cycle, username);
+                await SeedCriterionEvaluationsAsync(cycle, username);
+            }
+
             await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureSarReportInCycleAsync(Entities.Cycle cycle, string username)
+        {
+            var exists = await _context.SarReports
+                .AnyAsync(x => x.CycleId == cycle.Id && !x.IsDeleted && x.IsActived);
+
+            if (exists)
+            {
+                return;
+            }
+
+            _context.SarReports.Add(new Entities.SarReport
+            {
+                Id = Guid.NewGuid(),
+                CycleId = cycle.Id,
+                Status = (int)SarStatus.Draft,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = username,
+                IsActived = true,
+                IsDeleted = false
+            });
+        }
+
+        private async Task SeedCriterionEvaluationsAsync(Entities.Cycle cycle, string username)
+        {
+            var grpcRequest = new GetStandardsWithCriteriaStreamRequest
+            {
+                StandardSetId = cycle.StandardSetId.ToString()
+            };
+
+            var criteriaRows = new List<StandardWithCriteriaDto>();
+            await foreach (var row in _catalogService.GetStandardsWithCriteriaStreamAsync(grpcRequest))
+            {
+                criteriaRows.Add(row);
+            }
+
+            if (!criteriaRows.Any())
+            {
+                return;
+            }
+
+            var existingCriterionIds = (await _context.CriterionEvaluations
+                .AsNoTracking()
+                .Where(x => x.CycleId == cycle.Id && !x.IsDeleted)
+                .Select(x => x.CriterionId)
+                .ToListAsync())
+                .ToHashSet();
+
+            var now = DateTime.UtcNow;
+            var newEvaluations = criteriaRows
+                .GroupBy(x => x.CriterionId)
+                .Select(g => g.First())
+                .Where(x => !existingCriterionIds.Contains(x.CriterionId))
+                .Select(c => new Entities.CriterionEvaluation
+                {
+                    Id = Guid.NewGuid(),
+                    CycleId = cycle.Id,
+                    CriterionId = c.CriterionId,
+                    StandardId = c.StandardId,
+                    Status = (int)CriterionEvaluationStatus.Empty,
+                    CreatedAt = now,
+                    CreatedBy = username,
+                    IsActived = true,
+                    IsDeleted = false
+                })
+                .ToList();
+
+            if (newEvaluations.Any())
+            {
+                await _context.CriterionEvaluations.AddRangeAsync(newEvaluations);
+            }
         }
         #endregion
 
@@ -547,11 +701,23 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
 
         public async Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId)
         {
-            return await _context.Councils
+            var councilCycles = await _context.Councils
                 .Where(c => c.UserId == userId && !c.IsDeleted && c.IsActived)
                 .Select(c => c.CycleId)
+                .ToListAsync();
+
+            var externalCycles = await _context.ExternalReviewAccounts
+                .Where(a => a.UserId == userId)
+                .Join(
+                    _context.ExternalReviews.Where(r =>
+                        r.Status == (int)ExternalReviewStatus.InProgress && !r.IsDeleted),
+                    a => a.ExternalReviewId,
+                    r => r.Id,
+                    (a, r) => r.CycleId)
                 .Distinct()
                 .ToListAsync();
+
+            return councilCycles.Union(externalCycles).Distinct().ToList();
         }
 
         public async Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId)
@@ -563,6 +729,15 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
                 return (false, 0);
 
             return (true, cycle.Status);
+        }
+
+        public async Task<bool> IsRevisionAllowedAsync(Guid cycleId)
+        {
+            var sarReport = await _context.SarReports
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.CycleId == cycleId && !x.IsDeleted && x.IsActived);
+
+            return sarReport != null && sarReport.Status == (int)SarStatus.RevisionRequested;
         }
 
         private static bool IsDelegationActive(Entities.Council council)

@@ -34,4 +34,20 @@ public partial class Cycle
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<ActionPlan> ActionPlans { get; set; } = new List<ActionPlan>();
+
+    public virtual ICollection<Council> Councils { get; set; } = new List<Council>();
+
+    public virtual ICollection<CriterionEvaluation> CriterionEvaluations { get; set; } = new List<CriterionEvaluation>();
+
+    public virtual ICollection<EvaluationSchedule> EvaluationSchedules { get; set; } = new List<EvaluationSchedule>();
+
+    public virtual ICollection<EvidenceCycleMap> EvidenceCycleMaps { get; set; } = new List<EvidenceCycleMap>();
+
+    public virtual ICollection<ExternalReview> ExternalReviews { get; set; } = new List<ExternalReview>();
+
+    public virtual ICollection<SarReport> SarReports { get; set; } = new List<SarReport>();
+
+    public virtual ICollection<SurveyCampaign> SurveyCampaigns { get; set; } = new List<SurveyCampaign>();
 }

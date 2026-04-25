@@ -8,9 +8,7 @@ import { createPortal } from "react-dom";
 import { Command as CommandPrimitive, useCommandState } from "cmdk";
 import { XIcon } from "lucide-react";
 
-import {
-  Command,
-} from "@/components/ui/command";
+import { Command } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 
 export interface Option {
@@ -38,8 +36,6 @@ interface MultipleSelectorProps {
 
   /** Loading component. */
   loadingIndicator?: React.ReactNode;
-
-
 
   /** Debounce time for async search. Only work with `onSearch`. */
   delay?: number;
@@ -98,6 +94,12 @@ interface MultipleSelectorProps {
 
   /** hide the clear all button. */
   hideClearAllButton?: boolean;
+
+  /** Keep dropdown open after selecting an option. */
+  keepOpenOnSelect?: boolean;
+
+  /** Explicit portal host for dialog-aware rendering. */
+  portalContainer?: HTMLElement | null;
 }
 
 export interface MultipleSelectorRef {
@@ -159,7 +161,130 @@ function removePickedOption(groupOption: GroupOption, picked: Option[]) {
   return cloneOption;
 }
 
+type DropdownPlacement = "top" | "bottom";
+type DropdownStrategy = "viewport" | "container";
 
+type DropdownPos = {
+  top: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+  placement: DropdownPlacement;
+  strategy: DropdownStrategy;
+};
+
+const VIEWPORT_PADDING = 12;
+const DROPDOWN_OFFSET = 8;
+const DEFAULT_DROPDOWN_MAX_HEIGHT = 300;
+const MIN_DROPDOWN_MAX_HEIGHT = 140;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function resolvePortalHost(explicitHost?: HTMLElement | null): HTMLElement {
+  if (explicitHost instanceof HTMLElement) {
+    return explicitHost;
+  }
+
+  return document.body;
+}
+
+function resolveViewportDropdownPos(triggerRect: DOMRect): DropdownPos {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const availableWidth = Math.max(120, viewportWidth - VIEWPORT_PADDING * 2);
+  const width = Math.min(triggerRect.width, availableWidth);
+
+  const minLeft = VIEWPORT_PADDING;
+  const maxLeft = Math.max(minLeft, viewportWidth - VIEWPORT_PADDING - width);
+  const left = clamp(triggerRect.left, minLeft, maxLeft);
+
+  const spaceBelow = viewportHeight - triggerRect.bottom - VIEWPORT_PADDING;
+  const spaceAbove = triggerRect.top - VIEWPORT_PADDING;
+  const shouldOpenTop =
+    spaceBelow < MIN_DROPDOWN_MAX_HEIGHT && spaceAbove > spaceBelow;
+
+  const availableSpace = Math.max(0, shouldOpenTop ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(
+    DEFAULT_DROPDOWN_MAX_HEIGHT,
+    Math.max(MIN_DROPDOWN_MAX_HEIGHT, availableSpace),
+  );
+
+  const rawTop = shouldOpenTop
+    ? triggerRect.top - DROPDOWN_OFFSET - maxHeight
+    : triggerRect.bottom + DROPDOWN_OFFSET;
+  const minTop = VIEWPORT_PADDING;
+  const maxTop = Math.max(
+    minTop,
+    viewportHeight - VIEWPORT_PADDING - maxHeight,
+  );
+
+  return {
+    top: clamp(rawTop, minTop, maxTop),
+    left,
+    width,
+    maxHeight,
+    placement: shouldOpenTop ? "top" : "bottom",
+    strategy: "viewport",
+  };
+}
+
+function resolveContainerDropdownPos(
+  triggerRect: DOMRect,
+  container: HTMLElement,
+): DropdownPos {
+  const containerRect = container.getBoundingClientRect();
+  const viewportTop = container.scrollTop;
+  const viewportBottom = viewportTop + container.clientHeight;
+  const viewportLeft = container.scrollLeft;
+  const viewportRight = viewportLeft + container.clientWidth;
+
+  const triggerTop = triggerRect.top - containerRect.top + container.scrollTop;
+  const triggerBottom =
+    triggerRect.bottom - containerRect.top + container.scrollTop;
+  const triggerLeft =
+    triggerRect.left - containerRect.left + container.scrollLeft;
+
+  const availableWidth = Math.max(
+    120,
+    container.clientWidth - VIEWPORT_PADDING * 2,
+  );
+  const width = Math.min(triggerRect.width, availableWidth);
+  const minLeft = viewportLeft + VIEWPORT_PADDING;
+  const maxLeft = Math.max(minLeft, viewportRight - VIEWPORT_PADDING - width);
+  const left = clamp(triggerLeft, minLeft, maxLeft);
+
+  const spaceBelow = viewportBottom - triggerBottom - VIEWPORT_PADDING;
+  const spaceAbove = triggerTop - viewportTop - VIEWPORT_PADDING;
+  const shouldOpenTop =
+    spaceBelow < MIN_DROPDOWN_MAX_HEIGHT && spaceAbove > spaceBelow;
+
+  const availableSpace = Math.max(0, shouldOpenTop ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(
+    DEFAULT_DROPDOWN_MAX_HEIGHT,
+    Math.max(MIN_DROPDOWN_MAX_HEIGHT, availableSpace),
+  );
+
+  const rawTop = shouldOpenTop
+    ? triggerTop - DROPDOWN_OFFSET - maxHeight
+    : triggerBottom + DROPDOWN_OFFSET;
+  const minTop = viewportTop + VIEWPORT_PADDING;
+  const maxTop = Math.max(
+    minTop,
+    viewportBottom - VIEWPORT_PADDING - maxHeight,
+  );
+
+  return {
+    top: clamp(rawTop, minTop, maxTop),
+    left,
+    width,
+    maxHeight,
+    placement: shouldOpenTop ? "top" : "bottom",
+    strategy: "container",
+  };
+}
 
 const CommandEmpty = ({
   className,
@@ -205,18 +330,19 @@ const MultipleSelector = ({
   commandProps,
   inputProps,
   hideClearAllButton = false,
+  keepOpenOnSelect = false,
+  portalContainer,
 }: MultipleSelectorProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const isSelectingRef = React.useRef(false);
   const [open, setOpen] = React.useState(false);
   const [onScrollbar, setOnScrollbar] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [dropdownPos, setDropdownPos] = React.useState<{
-    top: number;
-    left: number;
-    width: number;
-  } | null>(null);
+  const [dropdownPos, setDropdownPos] = React.useState<DropdownPos | null>(
+    null,
+  );
 
   const [selected, setSelected] = React.useState<Option[]>(value || []);
 
@@ -228,6 +354,10 @@ const MultipleSelector = ({
   const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
 
   const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    if (isSelectingRef.current) {
+      return;
+    }
+
     const target = event.target as Node;
     const insideTrigger = containerRef.current?.contains(target);
     const insideDropdown = dropdownRef.current?.contains(target);
@@ -265,11 +395,30 @@ const MultipleSelector = ({
 
         // This is not a default behavior of the <input /> field
         if (e.key === "Escape") {
+          if (keepOpenOnSelect) {
+            setOpen(false);
+          }
           input.blur();
         }
       }
     },
-    [handleUnselect, selected],
+    [handleUnselect, keepOpenOnSelect, selected],
+  );
+
+  const handleDropdownWheel = React.useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      const list = event.currentTarget;
+      const atTop = list.scrollTop <= 0;
+      const atBottom =
+        list.scrollTop + list.clientHeight >= list.scrollHeight - 1;
+
+      if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) {
+        event.preventDefault();
+      }
+
+      event.stopPropagation();
+    },
+    [],
   );
 
   useEffect(() => {
@@ -294,13 +443,19 @@ const MultipleSelector = ({
     }
 
     const updatePos = () => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      setDropdownPos({
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: rect.width,
-      });
+      const trigger = containerRef.current;
+      if (!trigger) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const host = resolvePortalHost(portalContainer);
+      const useContainerStrategy =
+        portalContainer instanceof HTMLElement && host !== document.body;
+
+      setDropdownPos(
+        useContainerStrategy
+          ? resolveContainerDropdownPos(triggerRect, host)
+          : resolveViewportDropdownPos(triggerRect),
+      );
     };
 
     updatePos();
@@ -312,7 +467,7 @@ const MultipleSelector = ({
       window.removeEventListener("scroll", updatePos, true);
       window.removeEventListener("resize", updatePos);
     };
-  }, [open]);
+  }, [open, portalContainer]);
 
   useEffect(() => {
     if (value) {
@@ -322,11 +477,12 @@ const MultipleSelector = ({
 
   useEffect(() => {
     /** If `onSearch` is provided, do not trigger options updated. */
-    if (!arrayOptions || onSearch) {
+    if (onSearch) {
       return;
     }
 
-    const newOption = transToGroupOption(arrayOptions || [], groupBy);
+    const sourceOptions = arrayOptions ?? arrayDefaultOptions;
+    const newOption = transToGroupOption(sourceOptions, groupBy);
 
     if (JSON.stringify(newOption) !== JSON.stringify(options)) {
       setOptions(newOption);
@@ -384,8 +540,6 @@ const MultipleSelector = ({
     void exec();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus]);
-
-
 
   const selectables = React.useMemo<GroupOption>(
     () => removePickedOption(options, selected),
@@ -477,6 +631,7 @@ const MultipleSelector = ({
           {/* Avoid having the "Search" Icon */}
           <CommandPrimitive.Input
             {...inputProps}
+            key="multi-select-input"
             ref={inputRef}
             value={inputValue}
             disabled={disabled}
@@ -485,9 +640,26 @@ const MultipleSelector = ({
               inputProps?.onValueChange?.(value);
             }}
             onBlur={(event) => {
-              if (!onScrollbar) {
-                setOpen(false);
+              if (isSelectingRef.current) {
+                inputProps?.onBlur?.(event);
+                return;
               }
+
+              if (keepOpenOnSelect) {
+                inputProps?.onBlur?.(event);
+                return;
+              }
+
+              window.requestAnimationFrame(() => {
+                const activeElement = document.activeElement;
+                const activeInsideDropdown =
+                  activeElement instanceof Node &&
+                  dropdownRef.current?.contains(activeElement);
+
+                if (!activeInsideDropdown && !onScrollbar) {
+                  setOpen(false);
+                }
+              });
 
               inputProps?.onBlur?.(event);
             }}
@@ -516,6 +688,7 @@ const MultipleSelector = ({
             )}
           />
           <button
+            key="multi-select-clear-all"
             type="button"
             onClick={() => {
               setSelected(selected.filter((s) => s.fixed));
@@ -527,7 +700,7 @@ const MultipleSelector = ({
                 disabled ||
                 selected.length < 1 ||
                 selected.filter((s) => s.fixed).length === selected.length) &&
-              "hidden",
+                "hidden",
             )}
             aria-label="Clear all"
           >
@@ -540,11 +713,12 @@ const MultipleSelector = ({
         createPortal(
           <div
             className={cn(
-              "bg-popover text-popover-foreground fixed z-[9999] overflow-hidden rounded-md border shadow-lg",
+              "bg-popover text-popover-foreground z-[9999] overflow-hidden rounded-md border shadow-lg",
+              dropdownPos.strategy === "container" ? "absolute" : "fixed",
               "data-[state=open]:animate-in data-[state=closed]:animate-out",
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
               "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-              "pointer-events-auto"
+              "pointer-events-auto",
             )}
             style={{
               top: dropdownPos.top,
@@ -552,11 +726,20 @@ const MultipleSelector = ({
               width: dropdownPos.width,
             }}
             data-state={open ? "open" : "closed"}
+            data-ms-dropdown="true"
+            data-placement={dropdownPos.placement}
+            data-ms-strategy={dropdownPos.strategy}
             ref={dropdownRef}
             onMouseEnter={() => setOnScrollbar(true)}
             onMouseLeave={() => setOnScrollbar(false)}
           >
-            <div className="max-h-[300px] overflow-y-auto overflow-x-hidden scroll-py-1 p-1">
+            <div
+              className="overflow-y-auto overflow-x-hidden scroll-py-1 p-1 overscroll-contain"
+              style={{ maxHeight: dropdownPos.maxHeight }}
+              data-ms-scroll-container="true"
+              data-testid="multi-select-scroll-container"
+              onWheelCapture={handleDropdownWheel}
+            >
               {isLoading ? (
                 <>{loadingIndicator}</>
               ) : (
@@ -579,15 +762,29 @@ const MultipleSelector = ({
                               onMaxSelected?.(selected.length);
                               return;
                             }
-                            setInputValue("");
+                            if (keepOpenOnSelect) {
+                              isSelectingRef.current = true;
+                            }
+                            if (!keepOpenOnSelect) {
+                              setInputValue("");
+                            }
                             const newOptions = [...selected, option];
                             setSelected(newOptions);
                             onChange?.(newOptions);
+                            if (keepOpenOnSelect) {
+                              window.requestAnimationFrame(() => {
+                                inputRef.current?.focus();
+                                setOpen(true);
+                                window.setTimeout(() => {
+                                  isSelectingRef.current = false;
+                                }, 0);
+                              });
+                            }
                           }}
                           className={cn(
                             "relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm select-none hover:bg-accent hover:text-accent-foreground",
                             option.disable &&
-                            "pointer-events-none cursor-not-allowed opacity-50",
+                              "pointer-events-none cursor-not-allowed opacity-50",
                           )}
                         >
                           {option.label}
@@ -599,7 +796,7 @@ const MultipleSelector = ({
               )}
             </div>
           </div>,
-          document.body,
+          resolvePortalHost(portalContainer),
         )}
     </Command>
   );

@@ -24,4 +24,8 @@ public partial class SurveyTemplate
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<SurveyCampaign> SurveyCampaigns { get; set; } = new List<SurveyCampaign>();
+
+    public virtual ICollection<TemplateTopic> TemplateTopics { get; set; } = new List<TemplateTopic>();
 }

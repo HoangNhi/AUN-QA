@@ -1,4 +1,5 @@
 using AUN_QA.ServiceDefaults;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Configs;
 using AUN_QA.SystemService.Middlewares;
 using AUN_QA.SystemService.Services.SystemGrpc;
@@ -35,10 +36,12 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();
+builder.Services.AddTrustedForwardedHeaders(forwardLimit: 2);
 
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandler>();
+app.UseTrustedForwardedHeaders();
 
 app.MapDefaultEndpoints();
 

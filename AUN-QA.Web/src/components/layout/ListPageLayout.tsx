@@ -33,6 +33,7 @@ interface ListPageLayoutProps<TData> {
     onDeleteClick?: () => void;
     deleteDisabled?: boolean;
     extraActions?: ReactNode;
+    tableContainerClassName?: string;
 
     showDeleteConfirm?: boolean;
     onDeleteConfirmChange?: (open: boolean) => void;
@@ -42,6 +43,7 @@ interface ListPageLayoutProps<TData> {
 
     children?: ReactNode;
     hideAdd?: boolean;
+    compactToolbar?: boolean;
 }
 
 export function ListPageLayout<TData>({
@@ -71,26 +73,83 @@ export function ListPageLayout<TData>({
     isDeleteLoading = false,
     children,
     hideAdd = false,
+    compactToolbar = false,
+    tableContainerClassName,
 }: ListPageLayoutProps<TData>) {
     return (
         <div className="container mx-auto space-y-4">
-            <Card className="mb-4 bg-muted/40 shadow-none border-none sm:border-solid p-0">
-                <CardContent className="p-4">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-sm font-medium">Lọc danh sách</h3>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-xs"
-                            onClick={onResetFilters}
-                        >
-                            Đặt lại bộ lọc
-                        </Button>
-                    </div>
-                    <div className={`grid grid-cols-1 gap-4 ${filterGridCols}`}>
-                        {filterContent}
+            {!compactToolbar ? (
+                <Card className="mb-4 bg-muted/40 shadow-none border-none p-0 sm:border-solid">
+                    <CardContent className="p-4">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h3 className="text-sm font-medium">Lọc danh sách</h3>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 px-2 text-xs"
+                                onClick={onResetFilters}
+                            >
+                                Đặt lại bộ lọc
+                            </Button>
+                        </div>
+                        <div className={`grid grid-cols-1 gap-4 ${filterGridCols}`}>
+                            {filterContent}
 
-                        <InputGroup className={searchInputClassName}>
+                            <InputGroup className={searchInputClassName}>
+                                <InputGroupInput
+                                    placeholder="Tìm kiếm..."
+                                    value={searchTerm || ""}
+                                    onChange={(e) => onSearchTermChange(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            setPageRequest((prev: any) => ({
+                                                ...prev,
+                                                TextSearch: searchTerm,
+                                                PageIndex: 1,
+                                            }));
+                                        }
+                                    }}
+                                />
+                                <InputGroupButton
+                                    onClick={() => {
+                                        setPageRequest((prev: any) => ({
+                                            ...prev,
+                                            TextSearch: searchTerm,
+                                            PageIndex: 1,
+                                        }));
+                                    }}
+                                >
+                                    <SearchIcon />
+                                </InputGroupButton>
+                            </InputGroup>
+                        </div>
+                    </CardContent>
+                </Card>
+            ) : null}
+
+            <div className={compactToolbar ? "grid grid-cols-1 gap-3 md:grid-cols-2 md:items-center" : "grid grid-cols-3 items-center justify-between"}>
+                <div className={compactToolbar ? "flex items-center gap-2" : "col-span-2 flex items-center gap-2"}>
+                    {!hideAdd && onAddClick && (
+                        <Button size="sm" onClick={onAddClick}>
+                            Thêm
+                        </Button>
+                    )}
+                    {extraActions}
+                    {onDeleteClick && (
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={onDeleteClick}
+                            disabled={deleteDisabled}
+                        >
+                            Xóa
+                        </Button>
+                    )}
+                </div>
+
+                {compactToolbar ? (
+                    <div className="flex items-center justify-end gap-2">
+                        <InputGroup className="bg-background">
                             <InputGroupInput
                                 placeholder="Tìm kiếm..."
                                 value={searchTerm || ""}
@@ -117,29 +176,16 @@ export function ListPageLayout<TData>({
                                 <SearchIcon />
                             </InputGroupButton>
                         </InputGroup>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-3 items-center justify-between">
-                <div className="col-span-2 flex items-center gap-2">
-                    {!hideAdd && onAddClick && (
-                        <Button size="sm" onClick={onAddClick}>
-                            Thêm
-                        </Button>
-                    )}
-                    {extraActions}
-                    {onDeleteClick && (
                         <Button
+                            variant="ghost"
                             size="sm"
-                            variant="destructive"
-                            onClick={onDeleteClick}
-                            disabled={deleteDisabled}
+                            className="h-8 px-2 text-xs"
+                            onClick={onResetFilters}
                         >
-                            Xóa
+                            Đặt lại
                         </Button>
-                    )}
-                </div>
+                    </div>
+                ) : null}
             </div>
 
             <DataTable
@@ -152,6 +198,7 @@ export function ListPageLayout<TData>({
                 setPageRequest={setPageRequest}
                 onRefresh={onRefresh}
                 isLoading={isLoading}
+                containerClassName={tableContainerClassName}
             />
 
             {children}

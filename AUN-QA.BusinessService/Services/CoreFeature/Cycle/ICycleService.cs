@@ -13,6 +13,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         Task DeleteList(DeleteListRequest request);
         Task<GetListPagingResponse<ModelCycleGetListPaging>> GetList(CycleGetListPagingRequest request);
         Task<List<ModelCombobox>> GetComboboxByUser();
+        Task<List<ModelCombobox>> GetComboboxForExternalReview();
         Task ChangeStatusAsync(CycleChangeStatusRequest request);
         #endregion
 
@@ -26,6 +27,7 @@ namespace AUN_QA.BusinessService.Services.CoreFeature.Cycle
         Task<int?> GetUserRoleAsync(Guid cycleId, Guid userId);
         Task<List<Guid>> GetCycleIdsByUserAsync(Guid userId);
         Task<(bool Found, int Status)> GetCycleStatusAsync(Guid cycleId);
+        Task<bool> IsRevisionAllowedAsync(Guid cycleId);
         #endregion
     }
 }

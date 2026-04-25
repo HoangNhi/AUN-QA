@@ -14,6 +14,8 @@ namespace AUN_QA.BusinessService.DTOs.CoreFeature.EvidenceCycleMap.Requests
 
         public Guid CycleId { get; set; }
 
+        public Guid? StandardSetId { get; set; }
+
         public int ReviewStatus { get; set; } = ((int)EvidenceCycleMapReviewStatus.NotStarted);
 
         public string? FinalDecisionBy { get; set; }

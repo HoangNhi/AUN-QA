@@ -13,3 +13,10 @@ export interface Attachment {
     FileUrl: string;
     FullFileName: string;
 }
+
+export interface PreviewFileResult {
+    blob: Blob;
+    contentType: string;
+    originalContentType?: string;
+    convertedContentType?: string;
+}

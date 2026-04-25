@@ -2,6 +2,7 @@ using AUN_QA.Shared.DTOs.Base;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 namespace AUN_QA.SystemService.Configs
@@ -38,6 +39,7 @@ namespace AUN_QA.SystemService.Configs
                 })
                 .AddJwtBearer(options =>
                 {
+                    options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -46,7 +48,7 @@ namespace AUN_QA.SystemService.Configs
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-
+                        NameClaimType = JwtRegisteredClaimNames.UniqueName,
                         ClockSkew = TimeSpan.Zero
                     };
 

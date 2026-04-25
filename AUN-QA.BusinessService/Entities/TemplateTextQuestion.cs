@@ -26,4 +26,8 @@ public partial class TemplateTextQuestion
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual ICollection<SurveyTextAnswer> SurveyTextAnswers { get; set; } = new List<SurveyTextAnswer>();
+
+    public virtual TemplateTopic Topic { get; set; } = null!;
 }

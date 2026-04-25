@@ -37,11 +37,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
   id: z.string(),
-  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
-  code: z.string().min(1, "Mã tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
-  name: z.string().min(1, "Tên tiêu chuẩn không Đ‘ươ£c Đ‘ơƒ trơ‘ng"),
+  standardSetId: z.string().min(1, "Bộ tiêu chuẩn không được để trống"),
+  code: z.string().min(1, "Mã tiêu chuẩn không được để trống"),
+  name: z.string().min(1, "Tên tiêu chuẩn không được để trống"),
   description: z.string().optional(),
-  order: z.number().min(0, "Thứ tự phải lạ›n hoặc bằng 0"),
+  order: z.number().min(0, "Thứ tự phải lớn hoặc bằng 0"),
   isActived: z.boolean(),
 });
 
@@ -272,8 +272,8 @@ const PopupStandard = ({
       // Validate each criterion
       for (const criterion of criterions) {
         if (!criterion.Code.trim() || !criterion.Name.trim()) {
-          newErrors.criterions = "Tất cả tiêu chí phải có Mã vÃ  Tên";
-          toast.error("Tất cả tiêu chí phải có Mã vÃ  Tên");
+          newErrors.criterions = "Tất cả tiêu chí phải có Mã và Tên";
+          toast.error("Tất cả tiêu chí phải có Mã và Tên");
           break;
         }
 
@@ -283,21 +283,21 @@ const PopupStandard = ({
           criterion.CriterionRequirements.length === 0
         ) {
           newErrors.criterions =
-            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng";
-          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chơ©ng");
+            "Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng";
+          toast.error("Mỗi tiêu chí phải có ít nhất 1 yêu cầu minh chứng");
           break;
         }
 
         for (const req of criterion.CriterionRequirements) {
           if (!req.FileTypeId) {
             newErrors.criterions =
-              "Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu";
-            toast.error("Tất cả yêu cầu minh chơ©ng phải chơn Loại tÃ i liệu");
+              "Tất cả yêu cầu minh chứng phải chọn Loại tài liệu";
+            toast.error("Tất cả yêu cầu minh chứng phải chọn Loại tài liệu");
             break;
           }
           if (req.MinQuantity < 0) {
-            newErrors.criterions = "Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0";
-            toast.error("Sơ‘ lươ£ng tổ‘i thiơƒu phải >= 0");
+            newErrors.criterions = "Số lượng tối thiểu phải >= 0";
+            toast.error("Số lượng tối thiểu phải >= 0");
             break;
           }
         }
@@ -399,7 +399,7 @@ const PopupStandard = ({
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Lưu vÃ  thêm tiếp
+              Lưu và thêm tiếp
             </Button>
           )}
         </DialogFooter>
@@ -409,4 +409,3 @@ const PopupStandard = ({
 };
 
 export default PopupStandard;
-

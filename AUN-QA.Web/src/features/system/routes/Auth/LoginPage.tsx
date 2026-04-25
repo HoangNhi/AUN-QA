@@ -1,5 +1,4 @@
-﻿import { GalleryVerticalEnd } from "lucide-react";
-import { Button } from "@/components/ui/button";
+﻿import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
@@ -56,10 +55,8 @@ const LoginPage = () => {
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <GalleryVerticalEnd className="size-4" />
-            </div>
-            AUN-QA
+            <img src="/pdca.png" alt="PDCA" className="size-8 rounded-lg" />
+            PDCA
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -71,11 +68,9 @@ const LoginPage = () => {
               >
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">
-                      Login to your account
-                    </h1>
+                    <h1 className="text-2xl font-bold">Đăng nhập hệ thống</h1>
                     <p className="text-muted-foreground text-sm text-balance">
-                      Enter your email below to login to your account
+                      Hệ thống Quản lý Kiểm định Chất lượng Giáo dục Đại học
                     </p>
                   </div>
 
@@ -125,12 +120,19 @@ const LoginPage = () => {
                 </div>
               </form>
             </Form>
+            <div className="mt-8 pt-6 border-t border-slate-100 text-center md:text-left">
+              <p className="text-xs text-slate-500">
+                © {new Date().getFullYear()} Quality Assurance Management
+                System. <br />
+                Dành cho Ban thư ký, Hội đồng TĐG và Chuyên gia đánh giá ngoài.
+              </p>
+            </div>
           </div>
         </div>
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/placeholder.svg"
+          src="/login.png"
           alt="Image"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

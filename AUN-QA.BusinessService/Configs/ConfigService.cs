@@ -77,6 +77,8 @@ namespace AUN_QA.BusinessService.Configs
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddSingleton<IBackgroundTaskQueue>(ctx => new BackgroundTaskQueue(1000));
             builder.Services.AddHostedService<QueuedHostedService>();
+            builder.Services.AddHttpClient();
+            builder.Services.AddGrpc();
 
             //CORS
             builder.Services.AddCors(options =>
@@ -88,6 +90,7 @@ namespace AUN_QA.BusinessService.Configs
                         if (origin != null && origin.Length > 0)
                         {
                             policy.WithOrigins(origin)
+                                  .WithExposedHeaders("Content-Disposition", "X-Original-Content-Type", "X-Converted-Content-Type")
                                   .AllowAnyHeader()
                                   .AllowAnyMethod();
                         }

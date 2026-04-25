@@ -34,4 +34,6 @@ public partial class EvaluationSubmission
     public bool IsDeleted { get; set; }
 
     public bool IsActived { get; set; }
+
+    public virtual CriterionEvaluation CriterionEvaluation { get; set; } = null!;
 }

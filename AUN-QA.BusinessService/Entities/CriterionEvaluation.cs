@@ -34,4 +34,16 @@ public partial class CriterionEvaluation
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public string? OfficialStrengths { get; set; }
+
+    public string? OfficialWeaknesses { get; set; }
+
+    public string? OfficialActionPlan { get; set; }
+
+    public string? OfficialCurrentState { get; set; }
+
+    public virtual Cycle Cycle { get; set; } = null!;
+
+    public virtual ICollection<EvaluationSubmission> EvaluationSubmissions { get; set; } = new List<EvaluationSubmission>();
 }

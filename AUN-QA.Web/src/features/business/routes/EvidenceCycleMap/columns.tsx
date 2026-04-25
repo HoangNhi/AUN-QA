@@ -26,31 +26,9 @@ export const getColumns = (
   showPopupDetail: (id: string, isEdit: boolean) => void,
   deleteList: (ids: string[]) => void,
   fileTypeMap?: Record<string, string>,
-): ColumnDef<EvidenceCycleMapGetListPaging>[] => [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      ),
-      meta: {
-        className: "w-[50px] text-center",
-        headerClassName: "w-[50px] text-center",
-      },
-    },
+  isReadOnly: boolean = false,
+): ColumnDef<EvidenceCycleMapGetListPaging>[] => {
+  const columns: ColumnDef<EvidenceCycleMapGetListPaging>[] = [
     {
       accessorKey: "evidenceCode",
       header: "Mã MC",
@@ -66,13 +44,6 @@ export const getColumns = (
       },
     },
     {
-      accessorKey: "cycleName",
-      header: "Chu kỳ",
-      meta: {
-        headerClassName: "text-center",
-      },
-    },
-    {
       accessorKey: "fileTypeId",
       meta: {
         headerClassName: "text-center",
@@ -83,7 +54,18 @@ export const getColumns = (
         return <span>{name ?? "-"}</span>;
       },
     },
-    {
+  ];
+
+  if (!isReadOnly) {
+    columns.splice(2, 0, {
+      accessorKey: "cycleName",
+      header: "Chu kỳ",
+      meta: {
+        headerClassName: "text-center",
+      },
+    });
+
+    columns.push({
       accessorKey: "evidenceStatus",
       header: "Trạng thái minh chứng",
       meta: {
@@ -113,22 +95,62 @@ export const getColumns = (
           </span>
         );
       },
-    },
-    {
-      id: "actions",
-      meta: {
-        className: "w-[80px] text-center",
-        headerClassName: "w-[80px] text-center",
-      },
+    });
+  }
+
+  if (!isReadOnly) {
+    columns.unshift({
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
       cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      meta: {
+        className: "w-[50px] text-center",
+        headerClassName: "w-[50px] text-center",
+      },
+    });
+  }
+
+  columns.push({
+    id: "actions",
+    meta: {
+      className: "w-[120px] text-center",
+      headerClassName: "w-[120px] text-center",
+    },
+    cell: ({ row }) =>
+      isReadOnly ? (
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => showPopupDetail(row.original.Id, true)}
+        >
+          Xem
+        </Button>
+      ) : (
         <ActionCell
           row={row}
           showPopupDetail={showPopupDetail}
           deleteList={deleteList}
         />
       ),
-    },
-  ];
+  });
+
+  return columns;
+};
 
 const ActionCell = ({
   row,
@@ -191,4 +213,3 @@ const ActionCell = ({
     </>
   );
 };
-

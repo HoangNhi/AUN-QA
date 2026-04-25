@@ -22,7 +22,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpPost, Route("get-list")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetList(FileTypeGetListPagingRequest request)
         {
             var result = await _service.GetList(request);
@@ -30,7 +30,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             var result = await _service.GetById(request);

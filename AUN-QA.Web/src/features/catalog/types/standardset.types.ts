@@ -8,6 +8,7 @@ export interface StandardSet extends BaseRequest {
   Code: string;
   Name: string;
   EvaluationMode: number;
+  ChartType: number;
   EvaluationMode_Name?: string;
 }
 

@@ -1,10 +1,12 @@
 using System.Text.Json;
+using AUN_QA.Shared.Common;
 using AUN_QA.SystemService.Protos;
 using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Polly;
+using AUN_QA.BusinessService.Services.CoreFeature.Sar;
 
 namespace AUN_QA.BusinessService.Infrastructure.Interceptors;
 
@@ -74,6 +76,8 @@ public class AuditInterceptor : SaveChangesInterceptor
             }
         }
 
+        SarAuditTrail.AddTransitionToAuditValues(newValuesGroup, httpContext);
+
         var controllerName = GetControllerName(httpContext) ?? entries.First().Entity.GetType().Name;
 
         // Build and store the payload — will be sent AFTER commit succeeds
@@ -86,7 +90,7 @@ public class AuditInterceptor : SaveChangesInterceptor
             EntityId = GetEntityId(entries.First()),
             OldValues = oldValuesGroup.Count > 0 ? JsonSerializer.Serialize(oldValuesGroup) : "",
             NewValues = newValuesGroup.Count > 0 ? JsonSerializer.Serialize(newValuesGroup) : "",
-            IpAddress = GetIpAddress(httpContext),
+            IpAddress = httpContext?.GetClientIp() ?? "",
             ServiceName = "BusinessService",
             IsSuccess = true,
             ErrorMessage = ""
@@ -110,6 +114,7 @@ public class AuditInterceptor : SaveChangesInterceptor
         {
             // Clear payload immediately to avoid double-send if SavedChanges fires multiple times
             httpContext.Items.Remove(AuditPayloadKey);
+            SarAuditTrail.ClearTransitionPayload(httpContext);
 
             var capturedPayload = payload;
             var capturedLogger = _logger;
@@ -141,6 +146,22 @@ public class AuditInterceptor : SaveChangesInterceptor
         }
 
         return await base.SavedChangesAsync(eventData, result, cancellationToken);
+    }
+
+    public override Task SaveChangesFailedAsync(
+        DbContextErrorEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        SarAuditTrail.ClearTransitionPayload(_httpContextAccessor.HttpContext);
+        return base.SaveChangesFailedAsync(eventData, cancellationToken);
+    }
+
+    public override Task SaveChangesCanceledAsync(
+        DbContextEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        SarAuditTrail.ClearTransitionPayload(_httpContextAccessor.HttpContext);
+        return base.SaveChangesCanceledAsync(eventData, cancellationToken);
     }
 
     private static string InferAction(List<EntityEntry> entries)
@@ -181,18 +202,6 @@ public class AuditInterceptor : SaveChangesInterceptor
         var keys = entry.Metadata.FindPrimaryKey()?.Properties;
         if (keys == null) return "";
         return string.Join(",", keys.Select(p => entry.Property(p.Name).CurrentValue?.ToString() ?? ""));
-    }
-
-    private static string GetIpAddress(HttpContext? ctx)
-    {
-        if (ctx == null) return "";
-        var fwd = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(fwd)) return fwd.Split(',').FirstOrDefault()?.Trim() ?? "";
-        var remoteIp = ctx.Connection.RemoteIpAddress;
-        if (remoteIp == null) return "";
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
     }
 
     private static Dictionary<string, object?> SerializeEntryValues(PropertyValues values)

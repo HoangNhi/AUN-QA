@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Loader2, Edit3, Eye, ArrowLeft, BarChart3 } from "lucide-react";
+import { Loader2, Edit3, Eye, ArrowLeft, BarChart3, Info } from "lucide-react";
 import {
   Dialog,
   DialogClose,
@@ -38,14 +38,15 @@ import { toast } from "sonner";
 import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
 import { CAMPAIGN_STATUS_OPTIONS } from "@/constants/business.constants";
 import { cn } from "@/lib/utils";
+import { remapTemplateTopicIdsForCampaign } from "../../utils/surveyCampaignTemplate";
 
 const formSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, "Vui lòng nhập tên khỏio sát"),
-  stakeholderType: z.string().min(1, "Vui lòng chơn loại Đ‘ơ‘i tương"),
+  name: z.string().min(1, "Vui lòng nhập tên khảo sát"),
+  stakeholderType: z.string().min(1, "Vui lòng chọn loại đối tượng"),
   status: z.string(),
-  cycleId: z.string().min(1, "Vui lòng chơn chu kỳ Đ‘ánh giá"),
-  templateId: z.string().min(1, "Vui lòng chơn mẫu khỏio sát"),
+  cycleId: z.string().min(1, "Vui lòng chọn chu kỳ đánh giá"),
+  templateId: z.string().min(1, "Vui lòng chọn mẫu khảo sát"),
 });
 
 const PopupSurveyCampaign = ({
@@ -54,6 +55,7 @@ const PopupSurveyCampaign = ({
   onOpenChange,
   saveChange,
   isLoading,
+  readOnly,
 }: {
   surveyCampaign: SurveyCampaign | null;
   isOpen: boolean;
@@ -63,6 +65,7 @@ const PopupSurveyCampaign = ({
     isAddMore: boolean,
   ) => void;
   isLoading?: boolean;
+  readOnly?: boolean;
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,7 +73,7 @@ const PopupSurveyCampaign = ({
       id: surveyCampaign?.Id || uuidv4(),
       name: surveyCampaign?.Name || "",
       stakeholderType: surveyCampaign?.StakeholderType?.toString() || "1",
-      status: surveyCampaign?.Status?.toString() || "0",
+      status: surveyCampaign?.Status?.toString() || "1",
       cycleId: surveyCampaign?.CycleId || "",
       templateId: surveyCampaign?.TemplateId || "",
     },
@@ -84,9 +87,15 @@ const PopupSurveyCampaign = ({
   const { listTopic, setListTopic, collapsedTopics, handlers } =
     useSurveyTopics(surveyCampaign?.ListTopic || []);
 
-  const [mode, setMode] = useState<"edit" | "preview" | "results">("edit");
+  const [mode, setMode] = useState<"edit" | "info" | "preview" | "results">(
+    readOnly ? "info" : "edit",
+  );
 
   const onSubmit = (values: z.infer<typeof formSchema>, isAddMore: boolean) => {
+    if (readOnly) {
+      return;
+    }
+
     const payload = {
       Id: values.id,
       Name: values.name,
@@ -106,7 +115,7 @@ const PopupSurveyCampaign = ({
         id: surveyCampaign.Id || uuidv4(),
         name: surveyCampaign.Name || "",
         stakeholderType: surveyCampaign.StakeholderType?.toString() || "1",
-        status: surveyCampaign.Status?.toString() || "0",
+        status: surveyCampaign.Status?.toString() || "1",
         cycleId: surveyCampaign.CycleId || "",
         templateId: surveyCampaign.TemplateId || "",
       });
@@ -116,7 +125,7 @@ const PopupSurveyCampaign = ({
         id: uuidv4(),
         name: "",
         stakeholderType: "1",
-        status: "0",
+        status: "1",
         cycleId: "",
         templateId: "",
       });
@@ -124,12 +133,18 @@ const PopupSurveyCampaign = ({
     }
   }, [surveyCampaign, form, setListTopic]);
 
+  useEffect(() => {
+    if (isOpen) {
+      setMode(readOnly ? "info" : "edit");
+    }
+  }, [isOpen, readOnly, surveyCampaign?.Id]);
+
   // Transform data for preview
   const getPreviewData = (): SurveyView => {
     const values = form.getValues();
     return {
       Id: values.id,
-      Name: values.name || "Tên khỏio sát (Xem trước)",
+      Name: values.name || "Tên khảo sát (Xem trước)",
       StakeholderType: parseInt(values.stakeholderType || "1"),
       IsSessionCompleted: false,
       ListTopic:
@@ -138,25 +153,25 @@ const PopupSurveyCampaign = ({
   };
 
   const showResultsTab =
-    surveyCampaign?.Status === 1 || surveyCampaign?.Status === 2;
+    surveyCampaign?.Status === 2 || surveyCampaign?.Status === 3;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
           "p-0 gap-0 w-full flex flex-col focus:outline-none overflow-hidden duration-300 transition-all",
-          mode === "preview"
+          mode === "preview" && !readOnly
             ? "max-w-none w-screen h-screen rounded-none border-0 data-[state=open]:slide-in-from-bottom-0"
             : "sm:max-w-4xl max-h-[90vh]",
         )}
         onPointerDownOutside={(e) => e.preventDefault()}
         style={
-          mode === "preview"
+          mode === "preview" && !readOnly
             ? {
-              maxWidth: "100vw",
-              width: "100vw",
-              height: "100vh",
-            }
+                maxWidth: "100vw",
+                width: "100vw",
+                height: "100vh",
+              }
             : undefined
         }
       >
@@ -170,12 +185,12 @@ const PopupSurveyCampaign = ({
             <DialogHeader
               className={cn(
                 "p-6 pb-4 border-b shrink-0 bg-white z-10 transition-all",
-                mode === "preview" ? "py-4 shadow-sm" : "",
+                mode === "preview" && !readOnly ? "py-4 shadow-sm" : "",
               )}
             >
               <DialogTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {mode === "preview" && (
+                  {mode === "preview" && !readOnly && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -187,24 +202,47 @@ const PopupSurveyCampaign = ({
                     </Button>
                   )}
                   <span>
-                    {surveyCampaign?.IsEdit
-                      ? "Cập nhật khỏio sát"
-                      : "Thêm mới khỏio sát"}
+                    {readOnly
+                      ? "Xem chi tiết khảo sát"
+                      : surveyCampaign?.IsEdit
+                        ? "Cập nhật khảo sát"
+                        : "Thêm mới khảo sát"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <Tabs
                     value={mode}
-                    onValueChange={(v) => setMode(v as "edit" | "preview" | "results")}
+                    onValueChange={(v) =>
+                      setMode(v as "edit" | "info" | "preview" | "results")
+                    }
                   >
-                    <TabsList className={`grid w-full ${showResultsTab ? "grid-cols-3" : "grid-cols-2"}`}>
-                      <TabsTrigger value="edit">
-                        <Edit3 size={16} className="mr-2" /> Soạn thảo
-                      </TabsTrigger>
-                      <TabsTrigger value="preview">
-                        <Eye size={16} className="mr-2" /> Xem trước
-                      </TabsTrigger>
+                    <TabsList
+                      className={`grid w-full ${
+                        readOnly
+                          ? showResultsTab
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
+                          : showResultsTab
+                            ? "grid-cols-3"
+                            : "grid-cols-2"
+                      }`}
+                    >
+                      {readOnly && (
+                        <TabsTrigger value="info">
+                          <Info size={16} className="mr-2" /> Thông tin chung
+                        </TabsTrigger>
+                      )}
+                      {!readOnly && (
+                        <TabsTrigger value="edit">
+                          <Edit3 size={16} className="mr-2" /> Soạn thảo
+                        </TabsTrigger>
+                      )}
+                      {!readOnly && (
+                        <TabsTrigger value="preview">
+                          <Eye size={16} className="mr-2" /> Xem trước
+                        </TabsTrigger>
+                      )}
                       {showResultsTab && (
                         <TabsTrigger value="results">
                           <BarChart3 size={16} className="mr-2" /> Kết quả
@@ -216,18 +254,107 @@ const PopupSurveyCampaign = ({
               </DialogTitle>
             </DialogHeader>
 
+            {/* Info Mode Content - read-only display for external reviewers */}
+            {mode === "info" && readOnly && (
+              <div className="flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0">
+                <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Thông tin khảo sát
+                    </p>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Tên khảo sát
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {surveyCampaign?.Name || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Chu kỳ đánh giá
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {surveyCampaign?.CycleName || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Loại đối tượng
+                      </span>
+                      <span className="flex-1 font-medium text-slate-800 text-sm">
+                        {STAKEHOLDER_TYPES.find(
+                          (s) =>
+                            s.Value ===
+                            surveyCampaign?.StakeholderType?.toString(),
+                        )?.Text || "--"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 px-4 py-2.5">
+                      <span className="w-44 shrink-0 text-slate-500 text-xs">
+                        Trạng thái
+                      </span>
+                      <span className="flex-1">
+                        {(() => {
+                          const statusConfig: Record<
+                            number,
+                            { text: string; className: string }
+                          > = {
+                            1: {
+                              text: "Chưa bắt đầu",
+                              className: "bg-gray-100 text-gray-800",
+                            },
+                            2: {
+                              text: "Đang diễn ra",
+                              className: "bg-blue-100 text-blue-800",
+                            },
+                            3: {
+                              text: "Đã kết thúc",
+                              className: "bg-green-100 text-green-800",
+                            },
+                          };
+
+                          const cfg = surveyCampaign?.Status
+                            ? (statusConfig[surveyCampaign.Status] ?? {
+                                text: "--",
+                                className: "bg-gray-100 text-gray-500",
+                              })
+                            : {
+                                text: "--",
+                                className: "bg-gray-100 text-gray-500",
+                              };
+
+                          return (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.className}`}
+                            >
+                              {cfg.text}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Edit Mode Content - Keep mounted but hide when in preview */}
             <div
               className={cn(
                 "flex-1 overflow-y-auto bg-gray-50/50 p-6 min-h-0",
-                mode === "preview" && "hidden",
+                (mode !== "edit" || readOnly) && "hidden",
               )}
             >
               {/* General Info Section */}
               <div className="bg-white rounded-lg border shadow-sm p-4 mb-6 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <div className="h-6 w-1 bg-blue-600 rounded-full"></div>
-                  <h3 className="font-semibold text-gray-700">Thông tin chung</h3>
+                  <h3 className="font-semibold text-gray-700">
+                    Thông tin chung
+                  </h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -238,12 +365,12 @@ const PopupSurveyCampaign = ({
                     render={({ field }) => (
                       <FormItem className="grid gap-2">
                         <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                          Tên khỏio sát
+                          Tên khảo sát
                         </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
-                            placeholder="Nhập tên khỏio sát"
+                            placeholder="Nhập tên khảo sát"
                             className="bg-white"
                           />
                         </FormControl>
@@ -260,12 +387,13 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Chu kỳ Đ‘ánh giá
+                            Chu kỳ đánh giá
                           </FormLabel>
                           <FormControl>
                             <Combobox
                               fetchOptions={async () => {
-                                const res = await cycleService.getComboboxByUser();
+                                const res =
+                                  await cycleService.getComboboxByUser();
                                 return (res.Data || []).map((t) => ({
                                   Value: t.Value ?? "",
                                   Text: t.Text ?? "",
@@ -273,7 +401,7 @@ const PopupSurveyCampaign = ({
                               }}
                               value={field.value}
                               onValueChange={field.onChange}
-                              placeholder="Chơn chu kỳ"
+                              placeholder="Chọn chu kỳ"
                               searchPlaceholder="Tìm kiếm chu kỳ..."
                               emptyText="Không tìm thấy chu kỳ."
                             />
@@ -289,7 +417,7 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Loại Đ‘ơ‘i tương
+                            Loại đối tượng
                           </FormLabel>
                           <FormControl>
                             <Combobox
@@ -298,10 +426,11 @@ const PopupSurveyCampaign = ({
                               onValueChange={(val) => {
                                 field.onChange(val);
                                 form.setValue("templateId", "");
+                                setListTopic([]);
                               }}
-                              placeholder="Chơn Đ‘ơ‘i tương"
-                              searchPlaceholder="Tìm kiếm Đ‘ơ‘i tương..."
-                              emptyText="Không tìm thấy Đ‘ơ‘i tương."
+                              placeholder="Chọn đối tượng"
+                              searchPlaceholder="Tìm kiếm đối tượng..."
+                              emptyText="Không tìm thấy đối tượng."
                             />
                           </FormControl>
                           <FormMessage />
@@ -318,15 +447,16 @@ const PopupSurveyCampaign = ({
                       render={({ field }) => (
                         <FormItem className="grid gap-2">
                           <FormLabel className="after:content-['*'] after:ml-0.5 after:text-red-500">
-                            Máº«u khỏio sát
+                            Mẫu khảo sát
                           </FormLabel>
                           <FormControl>
                             <Combobox
                               key={stakeholderType} // Force re-mount when stakeholder changes
                               fetchOptions={async () => {
-                                const res = await surveyTemplateService.getAllCombobox({
-                                  StakeholderType: parseInt(stakeholderType),
-                                });
+                                const res =
+                                  await surveyTemplateService.getAllCombobox({
+                                    StakeholderType: parseInt(stakeholderType),
+                                  });
                                 return (res.Data || []).map((t) => ({
                                   Value: t.Value ?? "",
                                   Text: t.Text ?? "",
@@ -335,26 +465,39 @@ const PopupSurveyCampaign = ({
                               value={field.value}
                               onValueChange={async (val) => {
                                 field.onChange(val);
-                                if (val) {
-                                  setIsLoadingTemplate(true);
-                                  try {
-                                    const res = await surveyTemplateService.getById(val);
-                                    if (res.Success) {
-                                      setListTopic(res.Data?.ListTopic || []);
-                                    } else {
-                                      setListTopic([]);
-                                      toast.error(res.Message);
-                                    }
-                                  } finally {
-                                    setIsLoadingTemplate(false);
-                                  }
-                                } else {
+
+                                if (!val) {
                                   setListTopic([]);
+                                  return;
+                                }
+
+                                setIsLoadingTemplate(true);
+
+                                try {
+                                  const res =
+                                    await surveyTemplateService.getById(val);
+
+                                  if (!res.Success) {
+                                    setListTopic([]);
+                                    toast.error(res.Message);
+                                    return;
+                                  }
+
+                                  // Template topics must be re-keyed before saving to a campaign update,
+                                  // otherwise backend ownership validation treats them as foreign records.
+                                  const clonedTopics =
+                                    remapTemplateTopicIdsForCampaign(
+                                      res.Data?.ListTopic || [],
+                                    );
+
+                                  setListTopic(clonedTopics);
+                                } finally {
+                                  setIsLoadingTemplate(false);
                                 }
                               }}
-                              placeholder="Chơn mẫu khỏio sát"
-                              searchPlaceholder="Tìm kiếm mẫu khỏio sát..."
-                              emptyText="Không tìm thấy mẫu khỏio sát."
+                              placeholder="Chọn mẫu khảo sát"
+                              searchPlaceholder="Tìm kiếm mẫu khảo sát..."
+                              emptyText="Không tìm thấy mẫu khảo sát."
                             />
                           </FormControl>
                           <FormMessage />
@@ -374,8 +517,8 @@ const PopupSurveyCampaign = ({
                                 options={CAMPAIGN_STATUS_OPTIONS}
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                placeholder="Chơn tráº¡ng thái"
-                                searchPlaceholder="Tìm kiếm tráº¡ng thái..."
+                                placeholder="Chọn trạng thái"
+                                searchPlaceholder="Tìm kiếm trạng thái..."
                                 readonly={true}
                               />
                             </FormControl>
@@ -388,12 +531,12 @@ const PopupSurveyCampaign = ({
                 </div>
               </div>
 
-              <div className="min-h-[200px]">
+              <div className="min-h-50">
                 {templateIdForm ? (
                   isLoadingTemplate ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-                      <p>Đang táº£i dữ liệu mẫu khỏio sát...</p>
+                      <p>Đang tải dữ liệu mẫu khảo sát...</p>
                     </div>
                   ) : (
                     <TopicListEditor
@@ -404,14 +547,14 @@ const PopupSurveyCampaign = ({
                   )
                 ) : (
                   <div className="flex items-center justify-center h-48 border rounded-lg bg-gray-50 text-gray-500">
-                    Vui lòng chơn Máº«u khỏio sát trươ›c.
+                    Vui lòng chọn Mẫu khảo sát trước.
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Preview Mode Content - Render conditionally but only when needed (heavy component) or keep if we want state preservation there too? 
-              SurveyForm is read-only in preview, so remounting is fine/safer to ensure it gets fresh data. 
+            {/* Preview Mode Content - Render conditionally but only when needed (heavy component) or keep if we want state preservation there too?
+              SurveyForm is read-only in preview, so remounting is fine/safer to ensure it gets fresh data.
               But let's keep logic simple: Conditionally render Preview is fine, as long as Edit stays mounted.
            */}
             {mode === "preview" && (
@@ -420,32 +563,68 @@ const PopupSurveyCampaign = ({
                   campaign={getPreviewData()}
                   isPreview={true}
                   onSubmit={() => {
-                    toast.success("Đây chơ‰ lÜ  bản xem trươ›c!");
+                    toast.success("Đây chỉ là bản xem trước!");
                   }}
                 />
               </div>
             )}
 
             {mode === "results" && (
-              <div className="flex-1 overflow-y-auto bg-slate-50 p-6 min-h-0">
-                <SurveyResultsContent
-                  campaignId={surveyCampaign!.Id}
-                  enabled={mode === "results" && isOpen}
-                />
-              </div>
+              <>
+                <div className="px-6 py-2.5 bg-blue-50 border-b border-blue-100 flex items-center gap-3 flex-wrap shrink-0">
+                  <span className="font-semibold text-blue-900 text-sm">
+                    {surveyCampaign?.Name}
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-slate-500 text-sm">
+                    {
+                      STAKEHOLDER_TYPES.find(
+                        (s) =>
+                          s.Value ===
+                          surveyCampaign?.StakeholderType?.toString(),
+                      )?.Text
+                    }
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium",
+                      surveyCampaign?.Status === 3
+                        ? "bg-slate-100 text-slate-600"
+                        : "bg-green-100 text-green-700",
+                    )}
+                  >
+                    {
+                      CAMPAIGN_STATUS_OPTIONS.find(
+                        (s) => s.Value === surveyCampaign?.Status?.toString(),
+                      )?.Text
+                    }
+                  </span>
+                </div>
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-6 min-h-0">
+                  <SurveyResultsContent
+                    campaignId={surveyCampaign!.Id}
+                    enabled={mode === "results" && isOpen}
+                  />
+                </div>
+              </>
             )}
 
-            {mode === "edit" && (
+            {mode === "edit" && !readOnly && (
               <DialogFooter className="p-6 pt-4 border-t shrink-0 bg-white z-10">
                 <DialogClose asChild>
                   <Button variant="outline">Hủy</Button>
                 </DialogClose>
                 <Button
                   type="button"
-                  onClick={form.handleSubmit((values) => onSubmit(values, false))}
+                  onClick={form.handleSubmit((values) =>
+                    onSubmit(values, false),
+                  )}
                   disabled={isLoading}
                 >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isLoading && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Lưu
                 </Button>
                 {!surveyCampaign?.IsEdit && (
@@ -459,7 +638,7 @@ const PopupSurveyCampaign = ({
                     {isLoading && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Lưu vÜ  thêm tiếp
+                    Lưu và thêm tiếp
                   </Button>
                 )}
               </DialogFooter>
@@ -472,4 +651,3 @@ const PopupSurveyCampaign = ({
 };
 
 export default PopupSurveyCampaign;
-

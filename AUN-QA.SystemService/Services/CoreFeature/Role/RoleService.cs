@@ -6,6 +6,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.Role.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.Role.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
 using Npgsql;
@@ -19,15 +20,18 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
         private readonly SystemContext _context;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
         public RoleService(
             SystemContext context,
             IMapper mapper,
-            IHttpContextAccessor contextAccessor)
+            IHttpContextAccessor contextAccessor,
+            ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
+            _referenceGuard = referenceGuard;
         }
 
         public async Task<ModelRole> GetById(GetByIdRequest request)
@@ -153,6 +157,9 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
         {
             foreach (var item in request.Permissions)
             {
+                await _referenceGuard.EnsureRoleExistsAsync(item.RoleId);
+                await _referenceGuard.EnsureMenuExistsAsync(item.MenuId);
+
                 var resultUpdate = await _context.Permissions.FindAsync(item.Id);
                 if (resultUpdate == null)
                 {
@@ -166,12 +173,14 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Role
                 }
 
                 var roleUpdate = await _context.Roles.FindAsync(item.RoleId);
-                if (roleUpdate != null)
+                if (roleUpdate == null)
                 {
-                    roleUpdate.UpdatedAt = DateTime.UtcNow;
-                    roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
-                    _context.Update(roleUpdate);
+                    throw new BusinessException("Vai trò không tồn tại.");
                 }
+
+                roleUpdate.UpdatedAt = DateTime.UtcNow;
+                roleUpdate.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+                _context.Update(roleUpdate);
             }
 
 

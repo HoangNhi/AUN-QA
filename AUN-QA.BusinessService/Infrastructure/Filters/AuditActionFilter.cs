@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AUN_QA.Shared.Common;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Protos;
 using Grpc.Core;
@@ -44,6 +45,12 @@ public class AuditActionFilter : IAsyncActionFilter
         { "delete-list-session", "DELETE_SESSION" },
         { "send-survey-invitation", "SEND_INVITATION" },
         { "submit-survey", "SUBMIT_SURVEY" },
+        { "submit", "SUBMIT" },
+        { "request-revision", "REQUEST_REVISION" },
+        { "assign", "ASSIGN" },
+        { "insert-task", "CREATE" },
+        { "update-task", "UPDATE" },
+        { "delete-task", "DELETE" },
     };
 
     public AuditActionFilter(AuditProto.AuditProtoClient auditClient, ILogger<AuditActionFilter> logger)
@@ -80,7 +87,7 @@ public class AuditActionFilter : IAsyncActionFilter
                 EntityId = "",
                 OldValues = "",
                 NewValues = requestBody ?? "",
-                IpAddress = GetIpAddress(httpContext),
+                IpAddress = httpContext.GetClientIp(),
                 ServiceName = "BusinessService",
                 IsSuccess = false,
                 ErrorMessage = ExtractErrorMessage(executedContext) ?? "Unknown error"
@@ -215,14 +222,4 @@ public class AuditActionFilter : IAsyncActionFilter
             .OfType<RouteAttribute>().FirstOrDefault()?.Template ?? d?.ActionName ?? "";
     }
 
-    private static string GetIpAddress(HttpContext ctx)
-    {
-        var f = ctx.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(f)) return f.Split(',').FirstOrDefault()?.Trim() ?? "";
-        var remoteIp = ctx.Connection.RemoteIpAddress;
-        if (remoteIp == null) return "";
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
-    }
 }

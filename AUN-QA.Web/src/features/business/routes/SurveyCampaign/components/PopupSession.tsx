@@ -111,7 +111,7 @@ export const PopupSession = ({
     async (item: SurveySession) => {
       try {
         await surveyCampaignService.sendSurveyInvitation(item.Id);
-        toast.success("Gửi khảo sát thÃ nh công");
+        toast.success("Gửi khảo sát thành công");
         refetch();
       } catch {
         toast.error("Gửi khảo sát thất bại");
@@ -148,7 +148,7 @@ export const PopupSession = ({
         <DialogContent className="sm:max-w-5xl h-[600px] flex flex-col p-0 gap-0">
           <DialogHeader className="p-6 pb-2 shrink-0 space-y-1">
             <DialogTitle>
-              Danh sách ngươi tham gia
+              Danh sách người tham gia
               {campaignName && (
                 <span className="text-muted-foreground font-normal">
                   {" "}
@@ -157,7 +157,7 @@ export const PopupSession = ({
               )}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Danh sách ngươi tham gia khảo sát
+              Danh sách người tham gia khảo sát
             </DialogDescription>
           </DialogHeader>
 
@@ -198,9 +198,9 @@ export const PopupSession = ({
                         PageIndex: 1,
                       });
                     }}
-                    placeholder="Tất cả tráº¡ng thái"
-                    searchPlaceholder="Tìm kiếm tráº¡ng thái..."
-                    emptyText="Không tìm thấy tráº¡ng thái."
+                    placeholder="Tất cả trạng thái"
+                    searchPlaceholder="Tìm kiếm trạng thái..."
+                    emptyText="Không tìm thấy trạng thái."
                   />
 
                   <InputGroup className="bg-white">
@@ -225,6 +225,7 @@ export const PopupSession = ({
                   onRefresh={refetch}
                   rowSelection={rowSelection}
                   setRowSelection={setRowSelection}
+                  containerClassName="h-[320px] overflow-auto w-full relative"
                 />
               </div>
             </div>
@@ -232,7 +233,7 @@ export const PopupSession = ({
 
           <DialogFooter className="p-4 border-t shrink-0 bg-white">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Đóng
+              Đóng
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -260,4 +261,3 @@ export const PopupSession = ({
     </>
   );
 };
-

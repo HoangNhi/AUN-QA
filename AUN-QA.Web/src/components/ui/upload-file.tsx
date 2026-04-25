@@ -23,6 +23,7 @@ import React, {
 export interface UploadFileProps {
   noUpload?: boolean;
   readonly?: boolean;
+  allowDownload?: boolean;
   listAttachment?: Attachment[];
   setListAttachment?: (attachments: Attachment[]) => void;
   multiFile?: boolean;
@@ -33,6 +34,7 @@ export interface UploadFileProps {
   onSuccess?: () => void;
   hasError?: boolean;
   viewerMode?: "internal" | "external";
+  previewContext?: "evidence" | "taskAttachment" | "ActionPlan";
 }
 
 export interface UploadFileRef {
@@ -45,6 +47,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
     {
       noUpload = false,
       readonly = false,
+      allowDownload = true,
       listAttachment = [],
       setListAttachment,
       multiFile = true,
@@ -55,6 +58,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
       onSuccess,
       hasError = false,
       viewerMode = "internal",
+      previewContext = "evidence",
     },
     ref,
   ) => {
@@ -159,7 +163,7 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
         {listAttachment.length > 0 && (
           <div className="mb-3 border rounded-lg bg-white overflow-hidden shadow-sm">
             <div className="bg-gray-50 px-3 py-2 border-b flex items-center gap-2 font-semibold text-gray-700">
-              <Paperclip size={14} className="text-blue-500" /> TỆP ĐàTẢI LÊN
+              <Paperclip size={14} className="text-blue-500" /> TỆP ĐÃ TẢI LÊN
             </div>
             <div className="divide-y">
               {listAttachment.map((file) => (
@@ -182,14 +186,16 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                     >
                       <Eye size={16} />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDownload(file)}
-                      className="text-gray-400 hover:text-green-500"
-                      title="Tải xuống"
-                    >
-                      <Download size={16} />
-                    </button>
+                    {allowDownload && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(file)}
+                        className="text-gray-400 hover:text-green-500"
+                        title="Tải xuống"
+                      >
+                        <Download size={16} />
+                      </button>
+                    )}
                     {!readonly && (
                       <button
                         type="button"
@@ -241,7 +247,10 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
                     className="flex items-center justify-between bg-white p-2 border rounded gap-2"
                   >
                     <div className="flex flex-1 items-center gap-2 min-w-0">
-                      <FileIcon size={14} className="shrink-0 text-orange-400" />
+                      <FileIcon
+                        size={14}
+                        className="shrink-0 text-orange-400"
+                      />
                       <span
                         className="block flex-1 min-w-0 truncate italic text-xs"
                         title={f.name}
@@ -268,6 +277,8 @@ const UploadFile = forwardRef<UploadFileRef, UploadFileProps>(
           onClose={() => setViewerFile(null)}
           file={viewerFile}
           mode={viewerMode}
+          allowDownload={allowDownload}
+          previewContext={previewContext}
         />
       </div>
     );

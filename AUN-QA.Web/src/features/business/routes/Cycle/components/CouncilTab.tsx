@@ -25,18 +25,21 @@ interface CouncilColumnHandlers {
   handleDeleteCouncil: (id: string) => void;
 }
 
-function getCouncilColumns({
-  userOptions,
-  standards,
-  handleChangeCouncil,
-  handleDeleteCouncil,
-}: CouncilColumnHandlers): ColumnDef<Council>[] {
-  return [
-    {
-      id: "UserId",
-      header: "Thành viên",
-      meta: { className: "w-[220px]" },
-      cell: ({ row }) => (
+function getCouncilMeta(tableMeta: unknown): CouncilColumnHandlers {
+  return tableMeta as CouncilColumnHandlers;
+}
+
+const councilColumns: ColumnDef<Council>[] = [
+  {
+    id: "UserId",
+    header: "Thành viên",
+    meta: { className: "w-[220px]" },
+    cell: ({ row, table }) => {
+      const { userOptions, handleChangeCouncil } = getCouncilMeta(
+        table.options.meta,
+      );
+
+      return (
         <Combobox
           options={userOptions}
           value={row.original.UserId}
@@ -46,13 +49,17 @@ function getCouncilColumns({
           placeholder="Chọn thành viên"
           modal
         />
-      ),
+      );
     },
-    {
-      id: "RoleId",
-      header: "Vai trò",
-      meta: { className: "w-[160px]" },
-      cell: ({ row }) => (
+  },
+  {
+    id: "RoleId",
+    header: "Vai trò",
+    meta: { className: "w-[160px]" },
+    cell: ({ row, table }) => {
+      const { handleChangeCouncil } = getCouncilMeta(table.options.meta);
+
+      return (
         <Combobox
           options={COUNCIL_ROLES}
           value={String(row.original.RoleId)}
@@ -62,59 +69,69 @@ function getCouncilColumns({
           placeholder="Chọn vai trò"
           modal
         />
-      ),
+      );
     },
-    {
-      id: "AssignedStandardIds",
-      header: "Tiêu chuẩn phụ trách",
-      cell: ({ row }) => {
-        const role = Number(row.original.RoleId);
-        if (role === ROLE_HEAD) {
-          return (
-            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-              Tất cả TC
-            </span>
-          );
-        }
-        if (role === ROLE_SECRETARY) {
-          return (
-            <span className="text-xs text-gray-400 italic">
-              Không cần phân công
-            </span>
-          );
-        }
-        const selectedOptions: Option[] = (
-          row.original.AssignedStandardIds ?? []
-        ).flatMap((id) => {
-          const s = standards.find((x) => x.Id === id);
-          return s ? [{ value: id, label: s.Code }] : [];
-        });
-        const allOptions: Option[] = standards.map((s) => ({
-          value: s.Id,
-          label: s.Code,
-        }));
+  },
+  {
+    id: "AssignedStandardIds",
+    header: "Tiêu chuẩn phụ trách",
+    cell: ({ row, table }) => {
+      const { standards, handleChangeCouncil } = getCouncilMeta(
+        table.options.meta,
+      );
+      const role = Number(row.original.RoleId);
+      if (role === ROLE_HEAD) {
         return (
+          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+            Tất cả TC
+          </span>
+        );
+      }
+      if (role === ROLE_SECRETARY) {
+        return (
+          <span className="text-xs text-gray-400 italic">
+            Không cần phân công
+          </span>
+        );
+      }
+      const selectedOptions: Option[] = (
+        row.original.AssignedStandardIds ?? []
+      ).flatMap((id) => {
+        const s = standards.find((x) => x.Id === id);
+        return s ? [{ value: id, label: s.Code }] : [];
+      });
+      const allOptions: Option[] = standards.map((s) => ({
+        value: s.Id,
+        label: s.Code,
+      }));
+      return (
+        <div data-council-selector-row={row.original.Id}>
           <MultipleSelector
             value={selectedOptions}
             defaultOptions={allOptions}
-            onChange={(opts) =>
+            onChange={(opts) => {
               handleChangeCouncil(
                 row.original.Id,
                 "AssignedStandardIds",
                 opts.map((o) => o.value),
-              )
-            }
+              );
+            }}
             placeholder="Chọn tiêu chuẩn..."
             hidePlaceholderWhenSelected
+            keepOpenOnSelect
           />
-        );
-      },
+        </div>
+      );
     },
-    {
-      id: "actions",
-      header: () => <span className="flex justify-center">Xóa</span>,
-      meta: { className: "w-[60px] text-center" },
-      cell: ({ row }) => (
+  },
+  {
+    id: "actions",
+    header: () => <span className="flex justify-center">Xóa</span>,
+    meta: { className: "w-[60px] text-center" },
+    cell: ({ row, table }) => {
+      const { handleDeleteCouncil } = getCouncilMeta(table.options.meta);
+
+      return (
         <div className="flex justify-center">
           <Button
             type="button"
@@ -125,10 +142,10 @@ function getCouncilColumns({
             <Trash className="h-4 w-4 text-red-500" />
           </Button>
         </div>
-      ),
+      );
     },
-  ];
-}
+  },
+];
 
 interface CouncilTabProps {
   listCouncil: Council[];
@@ -162,13 +179,6 @@ export function CouncilTab({
   onDelete,
   onChange,
 }: CouncilTabProps) {
-  const councilColumns = getCouncilColumns({
-    userOptions,
-    standards,
-    handleChangeCouncil: onChange,
-    handleDeleteCouncil: onDelete,
-  });
-
   return (
     <div className="grid gap-3">
       {/* Đ15 validation summary bar */}
@@ -188,9 +198,7 @@ export function CouncilTab({
             <span>
               Tổng thành viên: <strong>{d15.totalMembers}</strong>
               {!d15.enoughMembers && (
-                <span className="text-red-500 ml-1">
-                  (cần ≥ 9 — Đ15.k1)
-                </span>
+                <span className="text-red-500 ml-1">(cần ≥ 9 — Đ15.k1)</span>
               )}
             </span>
           </div>
@@ -261,6 +269,12 @@ export function CouncilTab({
         data={listCouncil}
         getRowId={(row) => row.Id}
         containerClassName="max-h-[400px] overflow-auto w-full relative"
+        meta={{
+          userOptions,
+          standards,
+          handleChangeCouncil: onChange,
+          handleDeleteCouncil: onDelete,
+        }}
         getRowClassName={(row) => {
           const role = Number(row.RoleId);
           const needsAssignment =

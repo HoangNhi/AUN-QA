@@ -10,8 +10,10 @@ import { ListPageLayout } from "@/components/layout/ListPageLayout";
 import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useFileTypeOptions } from "@/features/catalog/hooks/useFileTypeOptions";
 import { useListPage } from "@/hooks/useListPage";
+import { useAuth } from "@/hooks/useAuth";
 
 const EvidenceCycleMapPage = () => {
+  const { isExternalReviewer } = useAuth();
   const {
     data,
     evidenceCycleMap,
@@ -32,8 +34,10 @@ const EvidenceCycleMapPage = () => {
     isApproving,
   } = useEvidenceCycleMap();
 
-  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
-  const { options: fileTypeOptions, isLoading: isFileTypeLoading } = useFileTypeOptions();
+  const { options: cycleOptions, isLoading: isCycleLoading } =
+    useCycleOptions();
+  const { options: fileTypeOptions, isLoading: isFileTypeLoading } =
+    useFileTypeOptions();
 
   const fileTypeMap = useMemo<Record<string, string>>(() => {
     return Object.fromEntries(
@@ -42,8 +46,9 @@ const EvidenceCycleMapPage = () => {
   }, [fileTypeOptions]);
 
   const columns = useMemo(
-    () => getColumns(showPopupDetail, deleteList, fileTypeMap),
-    [showPopupDetail, deleteList, fileTypeMap],
+    () =>
+      getColumns(showPopupDetail, deleteList, fileTypeMap, isExternalReviewer),
+    [showPopupDetail, deleteList, fileTypeMap, isExternalReviewer],
   );
 
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
@@ -90,21 +95,23 @@ const EvidenceCycleMapPage = () => {
       searchInputClassName="col-span-1 bg-background"
       filterContent={
         <>
-          <Combobox
-            options={cycleOptions}
-            loading={isCycleLoading}
-            value={pageRequest.CycleId}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                CycleId: val ? val : undefined,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm kiếm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
-          />
+          {!isExternalReviewer && (
+            <Combobox
+              options={cycleOptions}
+              loading={isCycleLoading}
+              value={pageRequest.CycleId}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  CycleId: val ? val : undefined,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả chu kỳ"
+              searchPlaceholder="Tìm kiếm chu kỳ..."
+              emptyText="Không tìm thấy chu kỳ."
+            />
+          )}
 
           <Combobox
             options={fileTypeOptions}
@@ -138,8 +145,21 @@ const EvidenceCycleMapPage = () => {
           />
         </>
       }
-      onAddClick={() => showPopupDetail("", false)}
-      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      hideAdd={isExternalReviewer}
+      onAddClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              showPopupDetail("", false);
+            }
+      }
+      onDeleteClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              listPage.setShowDeleteConfirm(true);
+            }
+      }
       deleteDisabled={selectedCount === 0}
       showDeleteConfirm={listPage.showDeleteConfirm}
       onDeleteConfirmChange={listPage.setShowDeleteConfirm}
@@ -147,14 +167,16 @@ const EvidenceCycleMapPage = () => {
       deleteItemCount={selectedCount}
       isDeleteLoading={isLoading}
       extraActions={
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={() => setShowSubmitConfirm(true)}
-          disabled={selectedCount === 0}
-        >
-          Gửi duyệt
-        </Button>
+        isExternalReviewer ? null : (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => setShowSubmitConfirm(true)}
+            disabled={selectedCount === 0}
+          >
+            Gửi duyệt
+          </Button>
+        )
       }
     >
       {isOpen && (
@@ -167,22 +189,25 @@ const EvidenceCycleMapPage = () => {
           isLoading={isLoading}
           onApprove={approve}
           isApproving={isApproving}
+          readOnly={isExternalReviewer}
+          isExternalViewer={isExternalReviewer}
         />
       )}
 
-      <ConfirmDeleteDialog
-        open={showSubmitConfirm}
-        onOpenChange={setShowSubmitConfirm}
-        onConfirm={handleSubmitToApprove}
-        itemCount={selectedCount}
-        title="Xác nhận gửi duyệt"
-        description={`Bạn có chắc chắn muốn gửi ${selectedCount} mục đã chọn để duyệt không?`}
-        confirmText="Gửi duyệt"
-        confirmVariant="default"
-      />
+      {!isExternalReviewer && (
+        <ConfirmDeleteDialog
+          open={showSubmitConfirm}
+          onOpenChange={setShowSubmitConfirm}
+          onConfirm={handleSubmitToApprove}
+          itemCount={selectedCount}
+          title="Xác nhận gửi duyệt"
+          description={`Bạn có chắc chắn muốn gửi ${selectedCount} mục đã chọn để duyệt không?`}
+          confirmText="Gửi duyệt"
+          confirmVariant="default"
+        />
+      )}
     </ListPageLayout>
   );
 };
 
 export default EvidenceCycleMapPage;
-

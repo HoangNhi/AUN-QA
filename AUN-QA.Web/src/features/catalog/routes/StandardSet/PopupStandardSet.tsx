@@ -19,14 +19,15 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   ACTIVE_STATUS_OPTIONS,
+  CHART_TYPE_OPTIONS,
   EVALUATION_MODE_OPTIONS,
 } from "@/constants/catalog.constants";
 import type { StandardSet } from "@/features/catalog/types/standardset.types";
-import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { v4 as uuidv4 } from "uuid";
 import * as z from "zod";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 const formSchema = z.object({
@@ -34,6 +35,7 @@ const formSchema = z.object({
   code: z.string().min(1, "Mã bộ tiêu chuẩn là bắt buộc"),
   name: z.string().min(1, "Tên bộ tiêu chuẩn là bắt buộc"),
   evaluationMode: z.number(),
+  chartType: z.number(),
   isActived: z.boolean(),
 });
 
@@ -60,11 +62,11 @@ const PopupStandardSet = ({
       code: standardSet?.Code || "",
       name: standardSet?.Name || "",
       evaluationMode: standardSet?.EvaluationMode ?? 1,
+      chartType: standardSet?.ChartType ?? 0,
       isActived: standardSet?.IsActived ?? true,
     },
   });
 
-  // Sync form when standardSet prop changes
   useEffect(() => {
     if (standardSet) {
       form.reset({
@@ -72,6 +74,7 @@ const PopupStandardSet = ({
         code: standardSet.Code || "",
         name: standardSet.Name || "",
         evaluationMode: standardSet.EvaluationMode ?? 1,
+        chartType: standardSet.ChartType ?? 0,
         isActived: standardSet.IsActived ?? true,
       });
     } else {
@@ -80,6 +83,7 @@ const PopupStandardSet = ({
         code: "",
         name: "",
         evaluationMode: 1,
+        chartType: 0,
         isActived: true,
       });
     }
@@ -91,6 +95,7 @@ const PopupStandardSet = ({
       Code: values.code.trim(),
       Name: values.name.trim(),
       EvaluationMode: values.evaluationMode,
+      ChartType: values.chartType,
       IsActived: values.isActived,
       IsEdit: standardSet?.IsEdit || false,
       FolderUpload: "",
@@ -179,6 +184,27 @@ const PopupStandardSet = ({
 
               <FormField
                 control={form.control}
+                name="chartType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Chart Dashboard</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={CHART_TYPE_OPTIONS}
+                        value={field.value.toString()}
+                        onValueChange={(val) => field.onChange(Number(val))}
+                        placeholder="Chọn loại chart"
+                        searchPlaceholder="Tìm kiếm loại chart..."
+                        emptyText="Không tìm thấy loại chart."
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="isActived"
                 render={({ field }) => (
                   <FormItem>
@@ -201,7 +227,9 @@ const PopupStandardSet = ({
 
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline" type="button">Hủy</Button>
+                <Button variant="outline" type="button">
+                  Hủy
+                </Button>
               </DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -226,4 +254,3 @@ const PopupStandardSet = ({
 };
 
 export default PopupStandardSet;
-

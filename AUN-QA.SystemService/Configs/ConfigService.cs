@@ -1,9 +1,11 @@
+using AUN_QA.BusinessService.Protos;
 using AUN_QA.FileService.Protos;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.Shared.Common;
 using Grpc.Net.Client.Web;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AutoDependencyRegistration;
 using AutoMapper;
 using FluentValidation.AspNetCore;
@@ -29,8 +31,12 @@ namespace AUN_QA.SystemService.Configs
 
             // Audit context and interceptors
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Services.IAuditLogWriter, AUN_QA.SystemService.Infrastructure.Services.AuditLogWriter>();
+            builder.Services.AddScoped<ISystemReferenceGuard, SystemReferenceGuard>();
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Filters.AuditActionFilter>();
             builder.Services.AddScoped<AUN_QA.SystemService.Infrastructure.Interceptors.AuditInterceptor>();
+
+            builder.Services.AddDbContextFactory<SystemContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("System")));
 
             //DATABASE
             builder.Services.AddDbContext<SystemContext>((sp, options) =>
@@ -90,6 +96,17 @@ namespace AUN_QA.SystemService.Configs
             //GRPC
             builder.Services.AddGrpc();
             builder.Services.AddTransient<AUN_QA.Shared.Common.GrpcJwtInterceptor>();
+            builder.Services.AddGrpcClient<BusinessProto.BusinessProtoClient>(o =>
+            {
+                o.Address = new Uri(builder.Configuration["GrpcClients:BusinessService"] ?? "http://BusinessService");
+            })
+            .ConfigureChannel(o =>
+            {
+                o.HttpVersion = new Version(1, 1);
+                o.HttpVersionPolicy = System.Net.Http.HttpVersionPolicy.RequestVersionExact;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()));
+
             builder.Services.AddGrpcClient<FileProto.FileProtoClient>(o =>
             {
                 o.Address = new Uri(builder.Configuration["GrpcClients:FileService"] ?? "http://FileService");

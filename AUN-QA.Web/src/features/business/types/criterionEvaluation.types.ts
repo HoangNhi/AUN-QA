@@ -1,8 +1,7 @@
-export type EvaluationStatus = 0 | 1 | 2 | 3;
+export type EvaluationStatus = 0 | 2 | 3;
 
 export const EVALUATION_STATUS = {
   EMPTY: 0,
-  DRAFT: 1,
   WAITING: 2,
   APPROVED: 3,
 } as const;
@@ -12,9 +11,45 @@ export const EVALUATION_STATUS_CONFIG: Record<
   { label: string; color: string }
 > = {
   0: { label: "Trống", color: "bg-gray-100 text-gray-500" },
-  1: { label: "Nháp", color: "bg-yellow-100 text-yellow-700" },
   2: { label: "Chờ duyệt", color: "bg-orange-100 text-orange-700" },
   3: { label: "Đã duyệt", color: "bg-green-100 text-green-700" },
+};
+
+export const AUN_SCORE_CONFIG: Record<
+  number,
+  { label: string; bgClass: string; textClass: string }
+> = {
+  1: {
+    label: "Không đáp ứng",
+    bgClass: "bg-red-100",
+    textClass: "text-red-700",
+  },
+  2: {
+    label: "Cần cải tiến nhiều",
+    bgClass: "bg-red-100",
+    textClass: "text-red-700",
+  },
+  3: {
+    label: "Cần cải tiến nhỏ",
+    bgClass: "bg-orange-100",
+    textClass: "text-orange-700",
+  },
+  4: { label: "Đáp ứng", bgClass: "bg-slate-100", textClass: "text-slate-600" },
+  5: {
+    label: "Tốt hơn mong đợi",
+    bgClass: "bg-emerald-100",
+    textClass: "text-emerald-700",
+  },
+  6: {
+    label: "Hình mẫu chất lượng",
+    bgClass: "bg-emerald-100",
+    textClass: "text-emerald-700",
+  },
+  7: {
+    label: "Xuất sắc",
+    bgClass: "bg-emerald-200",
+    textClass: "text-emerald-800",
+  },
 };
 
 export type FrameworkType = "AUN" | "MOET";
@@ -26,6 +61,18 @@ export interface CriterionEvaluationSummary {
   PrerequisitePassed: number;
   FailedStandards: number;
   FailedCriteria: number;
+  AunProgramVerdict?: number | null;
+  MoetProgramVerdict?: string | null;
+
+  // Comparison with previous cycle (null = no previous cycle)
+  PreviousCycleId?: string | null;
+  PreviousCycleName?: string | null;
+  PreviousApprovedCriteria?: number | null;
+  PreviousFailedCriteria?: number | null;
+  PreviousFailedStandards?: number | null;
+  PreviousMoetProgramVerdict?: string | null;
+  ImprovedCriteria?: number | null;
+  RegressedCriteria?: number | null;
 }
 
 export interface CriterionEvaluationItem {
@@ -84,6 +131,17 @@ export interface ApproveEvaluationRequest {
   CriterionEvaluationId: string;
   OfficialScore?: number | null;
   OfficialResult?: boolean | null;
+  OfficialCurrentState?: string;
+  OfficialStrengths?: string;
+  OfficialWeaknesses?: string;
+  OfficialActionPlan?: string;
+}
+
+export interface OfficialDescriptiveFields {
+  CurrentState?: string | null;
+  Strengths?: string | null;
+  Weaknesses?: string | null;
+  ActionPlan?: string | null;
 }
 
 export interface CriterionEvaluationGetListRequest {
@@ -125,6 +183,8 @@ export interface CriterionPopupData {
   Evidences: CriterionEvidence[];
   SurveyCampaigns: SurveyCampaignItem[];
   EvaluationMode: number; // 1: AUN, 2: MOET
+  OfficialFields?: OfficialDescriptiveFields | null;
+  IsRevisionAllowed: boolean;
 }
 
 export interface GetPopupDataRequest {

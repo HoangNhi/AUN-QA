@@ -7,7 +7,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.Auth
 {
     public interface IAuthService
     {
-        LoginResponse Login(LoginRequest request, string ipAddress);
+        Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress);
         ModelToken RefreshToken(RefreshTokenRequest request, string ipAddress);
     }
 }

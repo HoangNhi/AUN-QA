@@ -16,7 +16,7 @@ describe("surveyCampaignTemplate utils", () => {
     expect(next[1]).toEqual({ Value: "b", Text: "Template B" });
   });
 
-  it("remaps all nested ids when cloning template topics for campaign", () => {
+  it("remaps nested ids and removes source linkage metadata when cloning template topics for campaign", () => {
     const source: TemplateTopic[] = [
       {
         Id: uuidv4(),

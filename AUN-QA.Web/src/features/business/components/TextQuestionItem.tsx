@@ -30,7 +30,7 @@ export const TextQuestionItem = ({
           value={question.Content}
           onChange={(e) => onUpdate(question.Id, "Content", e.target.value)}
           className="w-full text-sm focus-visible:ring-orange-400"
-          placeholder="VD: Môn hơc nÃ o không cần thiết?"
+          placeholder="VD: Môn học nào không cần thiết?"
         />
         <div className="flex items-center gap-2">
           <Checkbox
@@ -62,4 +62,3 @@ export const TextQuestionItem = ({
     </div>
   );
 };
-

@@ -13,6 +13,7 @@ namespace AUN_QA.BusinessService.Controllers
     [ApiController]
     public class CycleController : BaseController<CycleController>
     {
+        private const string GetComboboxForExternalReviewRoute = "get-combobox-for-external-review";
         private readonly ICycleService _service;
 
         public CycleController(ICycleService service)
@@ -29,7 +30,7 @@ namespace AUN_QA.BusinessService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             var result = await _service.GetById(request);
@@ -65,6 +66,14 @@ namespace AUN_QA.BusinessService.Controllers
         public async Task<IActionResult> GetAllForCombobox()
         {
             var result = await _service.GetComboboxByUser();
+            return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
+        }
+
+        [HttpGet, Route(GetComboboxForExternalReviewRoute)]
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetComboboxForExternalReview()
+        {
+            var result = await _service.GetComboboxForExternalReview();
             return Ok(new BaseResponse<List<ModelCombobox>> { Data = result, Success = true });
         }
 

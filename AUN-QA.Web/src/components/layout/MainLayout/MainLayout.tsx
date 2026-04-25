@@ -58,7 +58,9 @@ export default function MainLayout({ permission }: MainLayoutProps) {
                   </>
                 )}
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{breadcrumbPage || "Home"}</BreadcrumbPage>
+                  <BreadcrumbPage>
+                    {breadcrumbPage || "Tổng quan"}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

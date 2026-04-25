@@ -10,6 +10,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignJustify,
   Heading1,
   Heading2,
   Heading3,
@@ -29,6 +30,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -73,6 +81,9 @@ export function SarEditorToolbar({ editor }: { editor: Editor | null }) {
   const [headingOpen, setHeadingOpen] = useState(false);
   const [tableOpen, setTableOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [tableRows, setTableRows] = useState("3");
+  const [tableCols, setTableCols] = useState("3");
+  const [linkUrl, setLinkUrl] = useState("");
 
   if (!editor) {
     return <div className="h-10 bg-slate-50 border-b px-3 flex items-center gap-1" />;
@@ -108,42 +119,36 @@ export function SarEditorToolbar({ editor }: { editor: Editor | null }) {
 
   // Handle table insertion
   const handleInsertTable = () => {
-    const rowsInput = prompt("Số hàng (mặc định 3):", "3");
-    if (rowsInput === null) return;
-
-    const rows = Math.max(1, parseInt(rowsInput) || 3);
-    const colsInput = prompt("Số cột (mặc định 3):", "3");
-    if (colsInput === null) return;
-
-    const cols = Math.max(1, parseInt(colsInput) || 3);
+    const rows = Math.max(1, parseInt(tableRows) || 3);
+    const cols = Math.max(1, parseInt(tableCols) || 3);
     editor.commands.insertTable({ rows, cols, withHeaderRow: true });
     setTableOpen(false);
+    setTableRows("3");
+    setTableCols("3");
   };
 
   // Handle link insertion/editing
-  const handleLink = () => {
-    const previousUrl = editor.getAttributes("link").href;
-    const url = prompt(
-      "Nhập URL (bắt đầu bằng http:// hoặc https://):",
-      previousUrl || "",
-    );
-
-    if (url === null) return;
-
-    if (!url) {
+  const handleLinkConfirm = () => {
+    if (!linkUrl) {
       editor.commands.unsetLink();
       setLinkOpen(false);
+      setLinkUrl("");
       return;
     }
 
-    // Simple validation: ensure URL starts with http:// or https://
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    if (!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
       alert("URL phải bắt đầu bằng http:// hoặc https://");
       return;
     }
 
-    editor.commands.setLink({ href: url });
+    editor.commands.setLink({ href: linkUrl });
     setLinkOpen(false);
+    setLinkUrl("");
+  };
+
+  const handleLinkOpen = () => {
+    const previousUrl = editor.getAttributes("link").href || "";
+    setLinkUrl(previousUrl);
   };
 
   // Check if in a link
@@ -254,19 +259,12 @@ export function SarEditorToolbar({ editor }: { editor: Editor | null }) {
         icon={AlignRight}
         title="Căn phải"
       />
-      <button
+      <ToolbarButton
         onClick={() => editor.commands.setTextAlign("justify")}
-        className={cn(
-          "h-7 w-7 rounded-md border border-transparent transition-colors",
-          "flex items-center justify-center",
-          "hover:bg-slate-200",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
-          editor.isActive({ textAlign: "justify" }) && "bg-blue-100 border-blue-300 text-blue-700",
-        )}
+        active={editor.isActive({ textAlign: "justify" })}
+        icon={AlignJustify}
         title="Canh đều"
-      >
-        <span className="text-xs font-bold">J</span>
-      </button>
+      />
       <ToolbarSeparator />
 
       {/* Group 5: List & Indent */}
@@ -299,59 +297,107 @@ export function SarEditorToolbar({ editor }: { editor: Editor | null }) {
       <ToolbarSeparator />
 
       {/* Group 7: Insert */}
-      <DropdownMenu open={tableOpen} onOpenChange={setTableOpen}>
-        <DropdownMenuTrigger asChild>
-          <ToolbarButton
-            onClick={() => {}}
-            icon={Table}
-            title="Chèn bảng"
-          />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={handleInsertTable}>
-            <Table className="h-4 w-4 mr-2" />
-            Chèn bảng mới
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Popover open={tableOpen} onOpenChange={setTableOpen}>
+        <PopoverTrigger asChild>
+          <div>
+            <ToolbarButton
+              onClick={() => {}}
+              icon={Table}
+              title="Chèn bảng"
+            />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-3" align="start">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium">Số hàng</label>
+              <Input
+                type="number"
+                min="1"
+                value={tableRows}
+                onChange={(e) => setTableRows(e.target.value)}
+                placeholder="3"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium">Số cột</label>
+              <Input
+                type="number"
+                min="1"
+                value={tableCols}
+                onChange={(e) => setTableCols(e.target.value)}
+                placeholder="3"
+                className="mt-1"
+              />
+            </div>
+            <Button size="sm" onClick={handleInsertTable} className="w-full">
+              Chèn bảng
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
 
-      <DropdownMenu open={linkOpen} onOpenChange={setLinkOpen}>
-        <DropdownMenuTrigger asChild>
-          <ToolbarButton
-            onClick={() => {}}
-            active={isInLink}
-            icon={Link2}
-            title="Chèn/Chỉnh sửa liên kết"
-          />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={handleLink}>
-            <Link2 className="h-4 w-4 mr-2" />
-            {isInLink ? "Chỉnh sửa liên kết" : "Thêm liên kết"}
-          </DropdownMenuItem>
-          {isInLink && (
-            <DropdownMenuItem
-              onClick={() => {
-                editor.commands.unsetLink();
-                setLinkOpen(false);
-              }}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Xóa liên kết
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Popover open={linkOpen} onOpenChange={setLinkOpen}>
+        <PopoverTrigger asChild>
+          <div>
+            <ToolbarButton
+              onClick={() => handleLinkOpen()}
+              active={isInLink}
+              icon={Link2}
+              title="Chèn/Chỉnh sửa liên kết"
+            />
+          </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-3" align="start">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium">URL</label>
+              <Input
+                type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleLinkConfirm} className="flex-1">
+                {isInLink ? "Cập nhật" : "Thêm"}
+              </Button>
+              {isInLink && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    editor.commands.unsetLink();
+                    setLinkOpen(false);
+                    setLinkUrl("");
+                  }}
+                >
+                  Xóa
+                </Button>
+              )}
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
       <ToolbarSeparator />
 
-      {/* Group 8: Clear Formatting */}
+      {/* Group 8: Clear Formatting / Delete Table */}
       <ToolbarButton
         onClick={() => {
-          editor.commands.clearNodes();
-          editor.commands.unsetAllMarks();
+          if (editor.isActive('table')) {
+            if (confirm('Xóa bảng này? Hành động này không thể hoàn tác.')) {
+              editor.commands.deleteTable();
+            }
+          } else {
+            editor.commands.clearNodes();
+            editor.commands.unsetAllMarks();
+          }
         }}
         icon={Trash2}
-        title="Xóa định dạng"
+        title="Xóa định dạng / Xóa bảng"
       />
     </div>
   );

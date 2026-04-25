@@ -41,5 +41,7 @@ public partial class Menu
 
     public bool IsShowMenu { get; set; }
 
+    public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+
     public virtual SystemGroup SystemGroup { get; set; } = null!;
 }

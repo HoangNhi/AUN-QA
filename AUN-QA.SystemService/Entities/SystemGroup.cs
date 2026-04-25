@@ -25,5 +25,9 @@ public partial class SystemGroup
 
     public bool IsDeleted { get; set; }
 
+    public virtual ICollection<SystemGroup> InverseParent { get; set; } = new List<SystemGroup>();
+
     public virtual ICollection<Menu> Menus { get; set; } = new List<Menu>();
+
+    public virtual SystemGroup? Parent { get; set; }
 }

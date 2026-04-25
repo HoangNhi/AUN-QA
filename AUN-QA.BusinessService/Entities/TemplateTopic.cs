@@ -30,4 +30,12 @@ public partial class TemplateTopic
     public Guid? TemplateId { get; set; }
 
     public Guid? CampaignId { get; set; }
+
+    public virtual SurveyCampaign? Campaign { get; set; }
+
+    public virtual SurveyTemplate? Template { get; set; }
+
+    public virtual ICollection<TemplateCategory> TemplateCategories { get; set; } = new List<TemplateCategory>();
+
+    public virtual ICollection<TemplateTextQuestion> TemplateTextQuestions { get; set; } = new List<TemplateTextQuestion>();
 }

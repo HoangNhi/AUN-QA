@@ -22,8 +22,8 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpPost, Route("get-list")]
-        [AttributePermission(Action = ActionType.VIEW)]
-        public async Task<IActionResult> GetList(GetListPagingRequest request)
+        [AttributePermission(Action = ActionType.NONE)]
+        public async Task<IActionResult> GetList(StandardGetListPagingRequest request)
         {
             var result = await _service.GetList(request);
             return Ok(new BaseResponse<GetListPagingResponse<ModelStandardGetListPaging>> { Data = result, Success = true });
@@ -38,7 +38,7 @@ namespace AUN_QA.CatalogService.Controllers
         }
 
         [HttpGet, Route("get-by-id")]
-        [AttributePermission(Action = ActionType.VIEW)]
+        [AttributePermission(Action = ActionType.NONE)]
         public async Task<IActionResult> GetById([FromQuery] GetByIdRequest request)
         {
             var result = await _service.GetById(request);

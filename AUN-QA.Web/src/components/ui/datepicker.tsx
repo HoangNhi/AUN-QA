@@ -14,6 +14,7 @@ export function DatePicker({
   onChange,
   className,
   required,
+  disabled,
   fromYear = 1900,
   toYear = 2100,
 }: {
@@ -22,10 +23,17 @@ export function DatePicker({
   onChange: (date: Date | undefined) => void;
   className?: string;
   required?: boolean;
+  disabled?: boolean;
   fromYear?: number;
   toYear?: number;
 }) {
   const [open, setOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+    }
+  }, [disabled]);
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
@@ -34,6 +42,7 @@ export function DatePicker({
           <Button
             variant="outline"
             className="w-full justify-between font-normal"
+            disabled={disabled}
           >
             {value ? format(value, "dd/MM/yyyy") : optionLabel}
             <ChevronDownIcon />
@@ -49,6 +58,10 @@ export function DatePicker({
             fromYear={fromYear}
             toYear={toYear}
             onSelect={(date: Date | undefined) => {
+              if (disabled) {
+                return;
+              }
+
               setOpen(false);
               onChange(date);
             }}
@@ -58,4 +71,3 @@ export function DatePicker({
     </div>
   );
 }
-

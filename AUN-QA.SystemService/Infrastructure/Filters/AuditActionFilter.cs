@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AUN_QA.Shared.Common;
 using AUN_QA.Shared.DTOs.Base;
 using AUN_QA.SystemService.Entities;
 using AUN_QA.SystemService.Infrastructure.Services;
@@ -103,7 +104,7 @@ public class AuditActionFilter : IAsyncActionFilter
                 EntityId = null,
                 OldValues = null,
                 NewValues = requestBody,
-                IpAddress = GetIpAddress(httpContext),
+                IpAddress = httpContext.GetClientIp(),
                 ServiceName = "SystemService",
                 IsSuccess = false,
                 ErrorMessage = errorMessage,
@@ -266,15 +267,4 @@ public class AuditActionFilter : IAsyncActionFilter
         return httpContext.User?.Claims.FirstOrDefault(c => c.Type == "unique_name")?.Value ?? "Unknown";
     }
 
-    private static string? GetIpAddress(HttpContext httpContext)
-    {
-        var forwarded = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwarded))
-            return forwarded.Split(',').FirstOrDefault()?.Trim();
-        var remoteIp = httpContext.Connection.RemoteIpAddress;
-        if (remoteIp == null) return null;
-        if (remoteIp.IsIPv4MappedToIPv6) return remoteIp.MapToIPv4().ToString();
-        if (remoteIp.ToString() == "::1") return "127.0.0.1";
-        return remoteIp.ToString();
-    }
 }

@@ -2,6 +2,7 @@ using AUN_QA.FileService.Configs;
 using AUN_QA.FileService.Middlewares;
 using AUN_QA.FileService.Services.Grpc;
 using AUN_QA.ServiceDefaults;
+using AUN_QA.Shared.Common;
 using Grpc.AspNetCore.Web;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ if (!string.IsNullOrEmpty(port))
 }
 
 builder.AddServiceDefaults();
+builder.Services.AddMemoryCache();
 
 // Add services to the container.
 
@@ -26,10 +28,12 @@ builder.Services.AddSwaggerGen();
 
 builder.ExecuteConfigService();
 builder.ExecuteConfigAuthentication();
+builder.Services.AddTrustedForwardedHeaders(forwardLimit: 2);
 
 var app = builder.Build();
 
 app.UseMiddleware<GlobalExceptionHandler>();
+app.UseTrustedForwardedHeaders();
 
 app.MapDefaultEndpoints();
 
@@ -57,4 +61,3 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapGrpcService<FileGrpcService>();
 
 app.Run();
-

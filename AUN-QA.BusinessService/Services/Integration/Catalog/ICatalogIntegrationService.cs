@@ -21,6 +21,8 @@ namespace AUN_QA.BusinessService.Services.Integration.Catalog
 
         #region StandardSet
         Task<int> GetStandardSetEvaluationModeAsync(string standardSetId);
+        Task<StandardSetInfoDto> GetStandardSetInfoAsync(string standardSetId);
+        IAsyncEnumerable<CriterionRequirementRow> GetRequirementsByStandardSetStreamAsync(GetRequirementsByStandardSetStreamRequest request, CancellationToken cancellationToken = default);
         #endregion
     }
 }

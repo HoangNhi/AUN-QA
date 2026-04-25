@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "AUN_QA.BusinessService.Protos";
+
+package business;
+
+service BusinessProto {
+  rpc CheckExternalReviewerAccess (CheckExternalReviewerAccessRequest) returns (CheckExternalReviewerAccessResponse);
+}
+
+message CheckExternalReviewerAccessRequest {
+  string user_id = 1;
+}
+
+message CheckExternalReviewerAccessResponse {
+  bool has_access = 1;
+}

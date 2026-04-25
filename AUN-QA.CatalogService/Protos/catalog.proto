@@ -13,6 +13,7 @@ service CatalogProto {
   rpc GetFileTypesStream (GetFileTypesStreamRequest) returns (stream FileTypeInfo);
   rpc GetFileTypesByCriterionStream (GetFileTypesByCriterionStreamRequest) returns (stream FileTypeInfo);
   rpc GetStandardsWithCriteriaStream (GetStandardsWithCriteriaStreamRequest) returns (stream StandardWithCriteriaInfo);
+  rpc GetRequirementsByStandardSetStream (GetRequirementsByStandardSetStreamRequest) returns (stream CriterionRequirementRow);
   rpc GetStandardSetEvaluationMode (GetStandardSetEvaluationModeRequest) returns (GetStandardSetEvaluationModeResponse);
 }
 
@@ -79,6 +80,18 @@ message StandardWithCriteriaInfo {
   int32 criterion_order = 9;
 }
 
+// CriterionRequirement stream
+message GetRequirementsByStandardSetStreamRequest {
+  string standard_set_id = 1;
+}
+
+message CriterionRequirementRow {
+  string criterion_id = 1;
+  string file_type_id = 2;
+  int32 min_quantity = 3;
+  bool is_mandatory = 4;
+}
+
 // StandardSet EvaluationMode
 message GetStandardSetEvaluationModeRequest {
   string standard_set_id = 1;
@@ -86,4 +99,6 @@ message GetStandardSetEvaluationModeRequest {
 
 message GetStandardSetEvaluationModeResponse {
   int32 evaluation_mode = 1; // 1: SCORING_7 (AUN), 2: PASS_FAIL (MOET)
+  int32 chart_type = 2;      // 0: SpiderChart, 1: BarChart
+  string name = 3;           // Tên StandardSet
 }

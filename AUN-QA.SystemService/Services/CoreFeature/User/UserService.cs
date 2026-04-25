@@ -4,6 +4,7 @@ using AUN_QA.SystemService.DTOs.CoreFeature.User.Dtos;
 using AUN_QA.SystemService.DTOs.CoreFeature.User.Requests;
 using AUN_QA.SystemService.Helpers;
 using AUN_QA.SystemService.Infrastructure.Data;
+using AUN_QA.SystemService.Infrastructure.Validation;
 using AUN_QA.SystemService.Services.Commons.UploadFile;
 using AutoDependencyRegistration.Attributes;
 using AutoMapper;
@@ -20,17 +21,20 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _contextAccessor;
         private readonly IUploadFileService _uploadFileService;
+        private readonly ISystemReferenceGuard _referenceGuard;
 
         public UserService(
             SystemContext context,
             IMapper mapper,
             IHttpContextAccessor contextAccessor,
-            IUploadFileService uploadFileService)
+            IUploadFileService uploadFileService,
+            ISystemReferenceGuard referenceGuard)
         {
             _context = context;
             _mapper = mapper;
             _contextAccessor = contextAccessor;
             _uploadFileService = uploadFileService;
+            _referenceGuard = referenceGuard;
         }
 
         public async Task<ModelUser> GetById(GetByIdRequest request)
@@ -51,9 +55,56 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         {
             var users = await _context.Users
                 .AsNoTracking()
-                .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.IsActived)
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted)
                 .ToListAsync();
             return users.Select(x => _mapper.Map<ModelUser>(x)).ToList();
+        }
+
+        public async Task<List<ModelUser>> GetByUsernames(List<string> usernames)
+        {
+            var users = await _context.Users
+                .AsNoTracking()
+                .Where(x => usernames.Contains(x.Username) && !x.IsDeleted)
+                .ToListAsync();
+            return users.Select(x => _mapper.Map<ModelUser>(x)).ToList();
+        }
+
+        public async Task<GetListPagingResponse<ModelUser>> GetByIdsPaged(
+            List<Guid> ids,
+            string? textSearch,
+            int pageIndex,
+            int pageSize)
+        {
+            var safePageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            var safePageSize = pageSize <= 0 ? 10 : pageSize;
+
+            var query = _context.Users
+                .AsNoTracking()
+                .Where(x => ids.Contains(x.Id) && !x.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(textSearch))
+            {
+                var text = textSearch.Trim().ToLower();
+                query = query.Where(x =>
+                    x.Fullname.ToLower().Contains(text)
+                    || x.Username.ToLower().Contains(text)
+                    || x.Email.ToLower().Contains(text));
+            }
+
+            var totalRow = await query.CountAsync();
+            var users = await query
+                .OrderBy(x => x.Username)
+                .Skip((safePageIndex - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToListAsync();
+
+            return new GetListPagingResponse<ModelUser>
+            {
+                PageIndex = safePageIndex,
+                PageSize = safePageSize,
+                TotalRow = totalRow,
+                Data = users.Select(x => _mapper.Map<ModelUser>(x)).ToList()
+            };
         }
 
         public async Task<ModelUser> GetCurrentUser()
@@ -69,6 +120,10 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
                 throw new BusinessException("Không tìm thấy dữ liệu");
             }
             var result = _mapper.Map<ModelUser>(data);
+            result.RoleName = await _context.Roles.AsNoTracking()
+                .Where(x => x.Id == data.RoleId && !x.IsDeleted && x.IsActived)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync();
             return result;
         }
 
@@ -83,6 +138,8 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             {
                 throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại");
             }
+
+            await _referenceGuard.EnsureRoleExistsAsync(request.RoleId);
 
             var add = _mapper.Map<Entities.User>(request);
             add.Id = request.Id == Guid.Empty ? Guid.NewGuid() : request.Id;
@@ -116,6 +173,7 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             }
 
             var oldPassword = update.Password;
+            await _referenceGuard.EnsureRoleExistsAsync(request.RoleId);
             _mapper.Map(request, update);
 
             if (request.Password != DefaultPassword)
@@ -268,6 +326,51 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
             var response = _mapper.Map<ModelUser>(update);
             response.Password = DefaultPassword;
             return response;
+        }
+
+        public async Task<ModelUser> UpdateUserProfileById(
+            Guid userId,
+            string fullname,
+            string username,
+            string email,
+            string? password = null)
+        {
+            var normalizedFullname = fullname.Trim();
+            var normalizedUsername = username.Trim();
+            var normalizedEmail = email.Trim();
+
+            var duplicated = await _context.Users.AnyAsync(x =>
+                x.Id != userId
+                && !x.IsDeleted
+                && (x.Username == normalizedUsername || x.Email == normalizedEmail));
+
+            if (duplicated)
+            {
+                throw new BusinessException("Tên đăng nhập hoặc email đã tồn tại.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId && !x.IsDeleted);
+            if (user == null)
+            {
+                throw new BusinessException("Không tìm thấy tài khoản.");
+            }
+
+            user.Fullname = normalizedFullname;
+            user.Username = normalizedUsername;
+            user.Email = normalizedEmail;
+            user.UpdatedBy = _contextAccessor.HttpContext?.User?.Identity?.Name ?? "System";
+            user.UpdatedAt = DateTime.UtcNow;
+
+            if (!string.IsNullOrWhiteSpace(password) && password != DefaultPassword)
+            {
+                var salt = Encrypt_DecryptHelper.GenerateSalt();
+                user.PasswordSalt = salt;
+                user.Password = Encrypt_DecryptHelper.EncodePassword(password.Trim(), salt);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<ModelUser>(user);
         }
     }
 }

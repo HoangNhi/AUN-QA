@@ -1,6 +1,10 @@
 import api, { type ApiResponse } from "@/lib/api";
 import { API_ENDPOINTS } from "@/config/constants";
-import type { UploadFileRequest, Attachment } from "../types/uploadfile.types";
+import type {
+  UploadFileRequest,
+  Attachment,
+  PreviewFileResult,
+} from "../types/uploadfile.types";
 
 export const fileService = {
   uploadFile: async (
@@ -49,10 +53,64 @@ export const fileService = {
   previewFile: async (
     attachmentId: string,
     mode: "internal" | "external" = "internal",
-  ): Promise<Blob> => {
+  ): Promise<PreviewFileResult> => {
     const response = await api.downloadFile(
       API_ENDPOINTS.Business.Evidence.PREVIEW(attachmentId, mode),
     );
-    return response.data;
+
+    return {
+      blob: response.data,
+      contentType:
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
+    };
+  },
+  previewActionPlanAttachment: async (
+    attachmentId: string,
+    mode: "internal" | "external" = "internal",
+  ): Promise<PreviewFileResult> => {
+    const response = await api.downloadFile(
+      API_ENDPOINTS.Business.ActionPlan.PREVIEW_ATTACHMENT(attachmentId, mode),
+    );
+
+    return {
+      blob: response.data,
+      contentType:
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
+    };
+  },
+  previewTaskAttachment: async (
+    attachmentId: string,
+    mode: "internal" | "external" = "internal",
+  ): Promise<PreviewFileResult> => {
+    const response = await api.downloadFile(
+      API_ENDPOINTS.Business.TaskExecution.PREVIEW_TASK_ATTACHMENT(
+        attachmentId,
+        mode,
+      ),
+    );
+
+    return {
+      blob: response.data,
+      contentType:
+        response.headers["content-type"] ??
+        response.data?.type ??
+        "application/octet-stream",
+      originalContentType:
+        response.headers["x-original-content-type"] || undefined,
+      convertedContentType:
+        response.headers["x-converted-content-type"] || undefined,
+    };
   },
 };

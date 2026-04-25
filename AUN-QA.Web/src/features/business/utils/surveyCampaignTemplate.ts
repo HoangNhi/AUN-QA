@@ -29,26 +29,45 @@ export const remapTemplateTopicIdsForCampaign = (
       const nextCategoryId = uuidv4();
 
       return {
-        ...category,
         Id: nextCategoryId,
         TopicId: nextTopicId,
+        Name: category.Name,
+        Sort: category.Sort,
         ListQuestion: category.ListQuestion.map((question) => ({
-          ...question,
           Id: uuidv4(),
           CategoryId: nextCategoryId,
+          Content: question.Content,
+          Sort: question.Sort,
+          IsActived: question.IsActived,
+          IsEdit: question.IsEdit,
+          FolderUpload: question.FolderUpload,
         })),
+        IsActived: category.IsActived,
+        IsEdit: category.IsEdit,
+        FolderUpload: category.FolderUpload,
       };
     });
 
     return {
-      ...topic,
       Id: nextTopicId,
+      Title: topic.Title,
+      HasTextQuestionPart: topic.HasTextQuestionPart,
+      TextQuestionTitle: topic.TextQuestionTitle,
+      Sort: topic.Sort,
       ListCategory: nextCategories,
       ListTextQuestion: topic.ListTextQuestion.map((textQuestion) => ({
-        ...textQuestion,
         Id: uuidv4(),
         TopicId: nextTopicId,
+        Content: textQuestion.Content,
+        Sort: textQuestion.Sort,
+        IsRequired: textQuestion.IsRequired,
+        IsActived: textQuestion.IsActived,
+        IsEdit: textQuestion.IsEdit,
+        FolderUpload: textQuestion.FolderUpload,
       })),
+      IsActived: topic.IsActived,
+      IsEdit: topic.IsEdit,
+      FolderUpload: topic.FolderUpload,
     };
   });
 };

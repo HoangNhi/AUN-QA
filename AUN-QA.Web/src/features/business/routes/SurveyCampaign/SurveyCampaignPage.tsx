@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { Combobox } from "@/components/ui/combobox";
+import { ListPageLayout } from "@/components/layout/ListPageLayout";
+import { useListPage } from "@/hooks/useListPage";
+import { useAuth } from "@/hooks/useAuth";
+import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
+import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
 import { useSurveyCampaign } from "../../hooks/useSurveyCampaign";
 import { getColumns } from "./columns";
 import PopupSurveyCampaign from "./PopupSurveyCampaign";
 import { PopupSession } from "./components/PopupSession";
-import { Combobox } from "@/components/ui/combobox";
-import { STAKEHOLDER_TYPES } from "@/constants/catalog.constants";
-import { ListPageLayout } from "@/components/layout/ListPageLayout";
-import { useCycleOptions } from "@/features/business/hooks/useCycleOptions";
-import { useListPage } from "@/hooks/useListPage";
 
 const SurveyCampaignPage = () => {
+  const { isExternalReviewer } = useAuth();
   const {
     data,
     surveyCampaign,
@@ -34,10 +36,10 @@ const SurveyCampaignPage = () => {
     name: string;
   } | null>(null);
 
-  const showPopupSession = (id: string, name: string) => {
+  const showPopupSession = useCallback((id: string, name: string) => {
     setSelectedCampaign({ id, name });
     setIsPopupSessionOpen(true);
-  };
+  }, []);
 
   const columns = useMemo(
     () =>
@@ -46,8 +48,15 @@ const SurveyCampaignPage = () => {
         deleteList,
         showPopupSession,
         handleChangeStatus,
+        isExternalReviewer,
       ),
-    [showPopupDetail, deleteList, showPopupSession, handleChangeStatus],
+    [
+      deleteList,
+      handleChangeStatus,
+      isExternalReviewer,
+      showPopupDetail,
+      showPopupSession,
+    ],
   );
 
   const listPage = useListPage({
@@ -60,13 +69,21 @@ const SurveyCampaignPage = () => {
     defaultPageRequest: { StakeholderType: undefined, CycleId: undefined },
   });
 
-  const { options: cycleOptions, isLoading: isCycleLoading } = useCycleOptions();
+  const { options: cycleOptions, isLoading: isCycleLoading } =
+    useCycleOptions();
+
+  const displayData = useMemo(() => {
+    if (!isExternalReviewer) return data;
+
+    const filtered = data.Data.filter((c) => c.Status === 3);
+    return { ...data, Data: filtered, TotalRow: data.TotalRow };
+  }, [data, isExternalReviewer]);
 
   return (
-    <ListPageLayout
+      <ListPageLayout
       columns={columns}
-      data={data.Data}
-      totalRow={data.TotalRow}
+      data={displayData.Data}
+      totalRow={displayData.TotalRow}
       rowSelection={rowSelection}
       setRowSelection={setRowSelection}
       pageRequest={pageRequest}
@@ -76,24 +93,31 @@ const SurveyCampaignPage = () => {
       searchTerm={listPage.searchTerm}
       onSearchTermChange={listPage.setSearchTerm}
       onResetFilters={listPage.handleResetFilters}
-      searchInputClassName="col-span-1 md:col-span-2 bg-background"
+      filterGridCols={isExternalReviewer ? "md:grid-cols-3" : "md:grid-cols-4"}
+      searchInputClassName={
+        isExternalReviewer
+          ? "col-span-2 bg-background"
+          : "col-span-1 bg-background md:col-span-2"
+      }
       filterContent={
         <>
-          <Combobox
-            options={cycleOptions}
-            loading={isCycleLoading}
-            value={pageRequest.CycleId}
-            onValueChange={(val) => {
-              setPageRequest((prev) => ({
-                ...prev,
-                CycleId: val,
-                PageIndex: 1,
-              }));
-            }}
-            placeholder="Tất cả chu kỳ"
-            searchPlaceholder="Tìm kiếm chu kỳ..."
-            emptyText="Không tìm thấy chu kỳ."
-          />
+          {!isExternalReviewer && (
+            <Combobox
+              options={cycleOptions}
+              loading={isCycleLoading}
+              value={pageRequest.CycleId}
+              onValueChange={(val) => {
+                setPageRequest((prev) => ({
+                  ...prev,
+                  CycleId: val,
+                  PageIndex: 1,
+                }));
+              }}
+              placeholder="Tất cả chu kỳ"
+              searchPlaceholder="Tìm kiếm chu kỳ..."
+              emptyText="Không tìm thấy chu kỳ."
+            />
+          )}
 
           <Combobox
             options={STAKEHOLDER_TYPES}
@@ -111,8 +135,21 @@ const SurveyCampaignPage = () => {
           />
         </>
       }
-      onAddClick={() => showPopupDetail("", false)}
-      onDeleteClick={() => listPage.setShowDeleteConfirm(true)}
+      hideAdd={isExternalReviewer}
+      onAddClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              showPopupDetail("", false);
+            }
+      }
+      onDeleteClick={
+        isExternalReviewer
+          ? undefined
+          : () => {
+              listPage.setShowDeleteConfirm(true);
+            }
+      }
       deleteDisabled={Object.keys(rowSelection).length === 0}
       showDeleteConfirm={listPage.showDeleteConfirm}
       onDeleteConfirmChange={listPage.setShowDeleteConfirm}
@@ -120,7 +157,7 @@ const SurveyCampaignPage = () => {
       deleteItemCount={Object.keys(rowSelection).length}
       isDeleteLoading={isLoading}
     >
-      {isOpen && (
+      {isOpen && surveyCampaign && (
         <PopupSurveyCampaign
           key={surveyCampaign?.Id || "new"}
           surveyCampaign={surveyCampaign}
@@ -128,6 +165,7 @@ const SurveyCampaignPage = () => {
           onOpenChange={onOpenChange}
           saveChange={saveChange}
           isLoading={isLoading}
+          readOnly={isExternalReviewer}
         />
       )}
       <PopupSession

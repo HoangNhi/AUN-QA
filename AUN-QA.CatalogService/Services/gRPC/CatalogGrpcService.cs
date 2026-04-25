@@ -110,13 +110,52 @@ namespace AUN_QA.CatalogService.Services.gRPC
             var standardSet = await _context.StandardSets
                 .AsNoTracking()
                 .Where(x => x.Id == id && !x.IsDeleted && x.IsActived)
-                .Select(x => new { x.EvaluationMode })
+                .Select(x => new { x.EvaluationMode, x.ChartType, x.Name })
                 .FirstOrDefaultAsync(context.CancellationToken);
 
             return new GetStandardSetEvaluationModeResponse
             {
-                EvaluationMode = standardSet?.EvaluationMode ?? 1
+                EvaluationMode = standardSet?.EvaluationMode ?? 1,
+                ChartType = standardSet?.ChartType ?? 0,
+                Name = standardSet?.Name ?? string.Empty
             };
+        }
+
+        public override async Task GetRequirementsByStandardSetStream(
+            GetRequirementsByStandardSetStreamRequest request,
+            IServerStreamWriter<CriterionRequirementRow> responseStream,
+            ServerCallContext context)
+        {
+            var standardSetId = Guid.Parse(request.StandardSetId);
+
+            var requirements = await _context.CriterionRequirements
+                .AsNoTracking()
+                .Join(
+                    _context.Criteria.AsNoTracking(),
+                    cr => cr.CriterionId,
+                    c => c.Id,
+                    (cr, c) => new { cr, c }
+                )
+                .Join(
+                    _context.Standards.AsNoTracking(),
+                    x => x.c.StandardId,
+                    s => s.Id,
+                    (x, s) => new { x.cr, s }
+                )
+                .Where(x => x.s.StandardSetId == standardSetId && !x.cr.IsDeleted && x.cr.IsActived && !x.s.IsDeleted && x.s.IsActived)
+                .Select(x => new CriterionRequirementRow
+                {
+                    CriterionId = x.cr.CriterionId.ToString(),
+                    FileTypeId = x.cr.FileTypeId.ToString(),
+                    MinQuantity = x.cr.MinQuantity,
+                    IsMandatory = x.cr.IsMandatory
+                })
+                .ToListAsync(context.CancellationToken);
+
+            foreach (var req in requirements)
+            {
+                await responseStream.WriteAsync(req);
+            }
         }
         #endregion
     }

@@ -75,19 +75,26 @@ namespace AUN_QA.FileService.Services.Grpc
             return Task.FromResult(response);
         }
 
-        public override Task<PreviewFileResponse> PreviewFile(PreviewFileRequest request, ServerCallContext context)
+        public override async Task<PreviewFileResponse> PreviewFile(PreviewFileRequest request, ServerCallContext context)
         {
-            var result = _uploadFileService.PreviewFile(request.FileUrl);
+            Guid.TryParse(request.FileId, out var fileId);
 
-            var response = new PreviewFileResponse
+            var result = await _uploadFileService.PreviewFileAsync(
+                request.FileUrl,
+                fileId == Guid.Empty ? null : fileId,
+                string.IsNullOrWhiteSpace(request.WatermarkText) ? null : request.WatermarkText,
+                request.WatermarkOpacity,
+                request.WatermarkPosition);
+
+            return new PreviewFileResponse
             {
                 FileContent = Google.Protobuf.ByteString.CopyFrom(result.FileContent),
                 ContentType = result.ContentType,
                 FileName = result.FileName,
-                HasWatermark = result.HasWatermark
+                HasWatermark = result.HasWatermark,
+                OriginalContentType = result.OriginalContentType ?? string.Empty,
+                ConvertedContentType = result.ConvertedContentType ?? string.Empty
             };
-
-            return Task.FromResult(response);
         }
     }
 }

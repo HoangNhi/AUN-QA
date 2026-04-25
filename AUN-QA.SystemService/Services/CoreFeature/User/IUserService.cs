@@ -8,6 +8,12 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
     {
         Task<ModelUser> GetById(GetByIdRequest request);
         Task<List<ModelUser>> GetByIds(List<Guid> ids);
+        Task<List<ModelUser>> GetByUsernames(List<string> usernames);
+        Task<GetListPagingResponse<ModelUser>> GetByIdsPaged(
+            List<Guid> ids,
+            string? textSearch,
+            int pageIndex,
+            int pageSize);
         Task<ModelUser> Insert(UserRequest request);
         Task<ModelUser> Update(UserRequest request);
         Task<string> DeleteList(DeleteListRequest request);
@@ -17,5 +23,11 @@ namespace AUN_QA.SystemService.Services.CoreFeature.User
         Task<List<ModelCombobox>> GetAllForCombobox();
         Task<ModelUser> EditProfile(EditProfileRequest request);
         Task<ModelUser> ChangePassword(ChangePasswordRequest request);
+        Task<ModelUser> UpdateUserProfileById(
+            Guid userId,
+            string fullname,
+            string username,
+            string email,
+            string? password = null);
     }
 }

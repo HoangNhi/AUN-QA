@@ -24,4 +24,8 @@ public partial class SurveyScore
     public bool IsActived { get; set; }
 
     public bool IsDeleted { get; set; }
+
+    public virtual TemplateQuestion Question { get; set; } = null!;
+
+    public virtual SurveySession Session { get; set; } = null!;
 }

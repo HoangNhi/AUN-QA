@@ -55,6 +55,10 @@ message UploadAvatarResponse{
 message PreviewFileRequest {
   string file_url = 1;
   string mode = 2;
+  string watermark_text = 3;
+  int32 watermark_opacity = 4;
+  int32 watermark_position = 5;
+  string file_id = 6;
 }
 
 message PreviewFileResponse {
@@ -62,4 +66,6 @@ message PreviewFileResponse {
   string content_type = 2;
   string file_name = 3;
   bool has_watermark = 4;
+  string original_content_type = 5;
+  string converted_content_type = 6;
 }

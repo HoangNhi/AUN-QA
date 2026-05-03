@@ -411,3 +411,4 @@ CLAUDE.md
 /PDCA.AppHost/appsettings.Development.json
 /PDCA.FileService/appsettings.Development.json
 /PDCA.FileService/appsettings.Production.json
+/PDCA.FileService/wwwroot/
